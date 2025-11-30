@@ -1225,7 +1225,7 @@
           credentials: 'include'
         });
         const data = await res.json();
-        return data.authenticated === true;
+        if (data.authenticated === true && data.session?.username) { USERNAME = data.session.username; localStorage.setItem('agent-hub-username', USERNAME); } return data.authenticated === true;
       } catch (e) {
         console.error('Session check failed:', e);
         return false;
@@ -1243,6 +1243,11 @@
         const data = await res.json();
         if (data.success) {
           isAuthenticated = true;
+          // Update USERNAME to the logged-in user's actual username
+          if (data.session?.username) {
+            USERNAME = data.session.username;
+            localStorage.setItem('agent-hub-username', USERNAME);
+          }
           return { success: true };
         }
         return { success: false, error: data.error || 'Login failed' };
