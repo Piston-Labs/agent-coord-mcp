@@ -18,8 +18,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // POST: Write a test agent directly
+    // POST: Test with simple SET/GET instead of hash operations
     if (req.method === 'POST') {
+      const testKey = 'agent-coord:test-simple';
+      const testValue = JSON.stringify({ test: true, timestamp: new Date().toISOString() });
+
+      // Test 1: Simple SET/GET
+      const setResult = await redis.set(testKey, testValue);
+      const getResult = await redis.get(testKey);
+
+      // Test 2: Hash SET/GET with correct object syntax
       const testAgent = {
         id: 'debug-write-test',
         name: 'Debug Write Test',
@@ -30,14 +38,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lastSeen: new Date().toISOString()
       };
 
-      // Use object form for Upstash: hset(key, { field: value })
-      const writeResult = await redis.hset(AGENTS_KEY, { 'debug-write-test': JSON.stringify(testAgent) });
-      const readBack = await redis.hget(AGENTS_KEY, 'debug-write-test');
+      const hsetResult = await redis.hset(AGENTS_KEY, { 'debug-write-test': JSON.stringify(testAgent) });
+      const hgetResult = await redis.hget(AGENTS_KEY, 'debug-write-test');
+      const hgetallResult = await redis.hgetall(AGENTS_KEY);
 
       return res.json({
-        writeResult,
-        readBack,
-        readBackType: typeof readBack,
+        simpleTest: { setResult, getResult, getResultType: typeof getResult },
+        hashTest: { hsetResult, hgetResult, hgetResultType: typeof hgetResult, hgetallResult },
         testAgent
       });
     }
