@@ -657,6 +657,135 @@
     .btn-cancel:hover {
       opacity: 0.9;
     }
+
+    /* Mobile Responsiveness */
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .panel {
+        height: auto;
+        max-height: none;
+      }
+
+      /* Show only chat by default on tablet, make sidebars collapsible */
+      .panel:first-child,
+      .panel:last-child {
+        display: none;
+      }
+
+      .panel:nth-child(2) {
+        display: flex;
+        height: calc(100vh - 53px);
+      }
+    }
+
+    @media (max-width: 768px) {
+      main {
+        grid-template-columns: 1fr;
+        height: calc(100vh - 50px);
+      }
+
+      header {
+        padding: 10px 12px;
+      }
+
+      header h1 {
+        font-size: 16px;
+      }
+
+      .panel-header {
+        padding: 10px 12px;
+        font-size: 12px;
+      }
+
+      .panel-content {
+        padding: 6px;
+      }
+
+      /* Chat adjustments */
+      .chat-messages {
+        padding: 10px;
+        gap: 8px;
+      }
+
+      .message {
+        max-width: 95%;
+      }
+
+      .message-content {
+        padding: 8px 10px;
+        font-size: 13px;
+      }
+
+      .message-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 10px;
+      }
+
+      /* Chat input - sticky at bottom */
+      .chat-input {
+        padding: 8px;
+        gap: 6px;
+      }
+
+      .chat-input input[type="text"] {
+        padding: 10px;
+        font-size: 14px;
+      }
+
+      .chat-input button {
+        padding: 10px 14px;
+        font-size: 13px;
+      }
+
+      /* Agent cards */
+      .agent-card {
+        padding: 10px;
+      }
+
+      .agent-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+      }
+
+      .agent-name {
+        font-size: 13px;
+      }
+
+      /* Modal adjustments */
+      .modal {
+        width: 95%;
+        max-width: none;
+        margin: 10px;
+        max-height: 90vh;
+      }
+
+      .form-group input,
+      .form-group textarea,
+      .form-group select {
+        font-size: 16px; /* Prevents iOS zoom on focus */
+      }
+    }
+
+    /* Touch-friendly adjustments */
+    @media (pointer: coarse) {
+      .chat-input button,
+      .agent-card,
+      .context-item,
+      .modal button {
+        min-height: 44px; /* iOS minimum touch target */
+      }
+
+      .chat-input input[type="text"] {
+        min-height: 44px;
+      }
+    }
+
   </style>
 </head>
 <body>
