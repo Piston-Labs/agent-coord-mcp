@@ -73,7 +73,7 @@ export function createDefaultMemory(agentId: string): AgentMemory {
 export async function getAgentMemory(agentId: string): Promise<AgentMemory> {
   const data = await redis.hget(AGENT_MEMORY_KEY, agentId);
   if (!data) return createDefaultMemory(agentId);
-  return typeof data === 'string' ? JSON.parse(data) : data;
+  return typeof data === 'string' ? JSON.parse(data) : data as AgentMemory;
 }
 
 export async function saveAgentMemory(memory: AgentMemory): Promise<void> {
