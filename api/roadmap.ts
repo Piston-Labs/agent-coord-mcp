@@ -77,9 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Get roadmap items
       const items = await redis.hgetall(ROADMAP_KEY);
-      let roadmapList = Object.values(items || {}).map((item: any) =>
-        typeof item === 'string' ? JSON.parse(item) : item
-      );
+      let roadmapList: RoadmapItem[] = [];
+      for (const [key, value] of Object.entries(items || {})) {
+        try {
+          const item = typeof value === 'string' ? JSON.parse(value) : value;
+          if (item && item.id && item.title) {
+            roadmapList.push(item);
+          }
+        } catch (e) {
+          // Skip corrupted entries, optionally delete them
+          console.error(`Skipping corrupted roadmap entry: ${key}`);
+          await redis.hdel(ROADMAP_KEY, key);
+        }
+      }
 
       // Filter by project
       if (project && typeof project === 'string') {
