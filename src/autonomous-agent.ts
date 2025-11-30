@@ -95,6 +95,45 @@ const TOOLS: Anthropic.Tool[] = [
       },
       required: ['taskId', 'result']
     }
+  },
+  {
+    name: 'load_context_cluster',
+    description: 'Load a context cluster from the Context Engine. Use this to get synthesized knowledge about a domain before working on tasks. Available clusters include: technical, development, company, telemetry, frontend, etc.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        clusters: { 
+          type: 'array', 
+          items: { type: 'string' },
+          description: 'List of cluster names to load (e.g., ["technical", "development"])' 
+        },
+        repo: { type: 'string', description: 'Repository containing the context (default: context-engine)', default: 'context-engine' }
+      },
+      required: ['clusters']
+    }
+  },
+  {
+    name: 'list_context_clusters',
+    description: 'List available context clusters from the Context Engine. Use this to discover what knowledge domains are available before loading.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        repo: { type: 'string', description: 'Repository containing the context (default: context-engine)', default: 'context-engine' }
+      },
+      required: []
+    }
+  },
+  {
+    name: 'analyze_task_for_context',
+    description: 'Analyze a task description and recommend which context clusters to load. Returns cluster recommendations based on keywords and task type.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        task: { type: 'string', description: 'Task description to analyze' },
+        taskType: { type: 'string', description: 'Type of task: feat, fix, docs, refactor, test', default: 'feat' }
+      },
+      required: ['task']
+    }
   }
 ];
 
@@ -198,6 +237,91 @@ async function executeTools(toolName: string, toolInput: Record<string, unknown>
       return `Task ${taskId} marked complete`;
     }
 
+    case 'load_context_cluster': {
+      const { clusters, repo = 'context-engine' } = toolInput as { clusters: string[]; repo?: string };
+      try {
+        const contents: string[] = [];
+        const headers: Record<string, string> = { 'Accept': 'application/vnd.github.v3.raw' };
+        if (CONFIG.GITHUB_TOKEN) headers['Authorization'] = `token ${CONFIG.GITHUB_TOKEN}`;
+        
+        for (const cluster of clusters) {
+          // Try to load cluster INDEX.md or main file
+          const paths = [`context/${cluster}/INDEX.md`, `context/${cluster}.md`, `clusters/${cluster}/INDEX.md`];
+          for (const path of paths) {
+            const url = `https://api.github.com/repos/${CONFIG.GITHUB_ORG}/${repo}/contents/${path}`;
+            const res = await fetch(url, { headers });
+            if (res.ok) {
+              const content = await res.text();
+              contents.push(`## Cluster: ${cluster}\n\n${content}`);
+              break;
+            }
+          }
+        }
+        return contents.length > 0 ? contents.join('\n\n---\n\n') : `No content found for clusters: ${clusters.join(', ')}`;
+      } catch (err) {
+        return `Error loading clusters: ${err}`;
+      }
+    }
+
+    case 'list_context_clusters': {
+      const { repo = 'context-engine' } = toolInput as { repo?: string };
+      try {
+        const headers: Record<string, string> = { 'Accept': 'application/vnd.github.v3+json' };
+        if (CONFIG.GITHUB_TOKEN) headers['Authorization'] = `token ${CONFIG.GITHUB_TOKEN}`;
+        
+        // Try common context directories
+        const contextPaths = ['context', 'clusters', '.'];
+        for (const contextPath of contextPaths) {
+          const url = `https://api.github.com/repos/${CONFIG.GITHUB_ORG}/${repo}/contents/${contextPath}`;
+          const res = await fetch(url, { headers });
+          if (res.ok) {
+            const items = await res.json();
+            const clusters = items.filter((i: any) => i.type === 'dir').map((i: any) => i.name);
+            if (clusters.length > 0) {
+              return `Available clusters in ${repo}/${contextPath}:\n${clusters.map((c: string) => `- ${c}`).join('\n')}`;
+            }
+          }
+        }
+        return `No cluster directories found in ${repo}`;
+      } catch (err) {
+        return `Error listing clusters: ${err}`;
+      }
+    }
+
+    case 'analyze_task_for_context': {
+      const { task, taskType = 'feat' } = toolInput as { task: string; taskType?: string };
+      const taskLower = task.toLowerCase();
+      const recommendations: string[] = [];
+      
+      // Domain detection based on keywords
+      const domainKeywords: Record<string, string[]> = {
+        'technical': ['api', 'database', 'backend', 'server', 'deploy', 'infrastructure'],
+        'development': ['code', 'implement', 'build', 'feature', 'component'],
+        'telemetry': ['gps', 'teltonika', 'tracking', 'fleet', 'vehicle', 'iot'],
+        'frontend': ['ui', 'dashboard', 'react', 'nextjs', 'component', 'page'],
+        'company': ['process', 'team', 'workflow', 'strategy'],
+      };
+      
+      for (const [domain, keywords] of Object.entries(domainKeywords)) {
+        if (keywords.some(kw => taskLower.includes(kw))) {
+          recommendations.push(domain);
+        }
+      }
+      
+      // Task type defaults
+      if (taskType === 'fix' || taskType === 'refactor') {
+        if (!recommendations.includes('technical')) recommendations.unshift('technical');
+      } else if (taskType === 'feat') {
+        if (!recommendations.includes('development')) recommendations.push('development');
+      } else if (taskType === 'docs') {
+        recommendations.push('company');
+      }
+      
+      if (recommendations.length === 0) recommendations.push('technical', 'development');
+      
+      return `Recommended clusters for "${task}" (${taskType}):\n${recommendations.map(r => `- ${r}`).join('\n')}\n\nUse load_context_cluster to load these before starting work.`;
+    }
+
     default:
       return `Unknown tool: ${toolName}`;
   }
@@ -221,9 +345,18 @@ const SYSTEM_PROMPT = `You are ${CONFIG.AGENT_ID}, an autonomous AI agent in the
 
 ## Your Capabilities
 1. **Read code/docs** from any Piston Labs repo to understand architecture
-2. **Post messages** to coordinate with the team and other agents
-3. **Spawn agents** for specialized tasks (code-review, doc-writing, testing)
-4. **Complete tasks** and report results
+2. **Load Context Clusters** - Use analyze_task_for_context to identify relevant clusters, then load_context_cluster to get synthesized knowledge before working on tasks
+3. **Post messages** to coordinate with the team and other agents
+4. **Spawn agents** for specialized tasks (code-review, doc-writing, testing)
+5. **Complete tasks** and report results
+
+## Context Engine Integration
+Before starting any task, you should:
+1. Use analyze_task_for_context to determine which clusters are relevant
+2. Use load_context_cluster to load synthesized knowledge from those clusters
+3. Use this context to inform your approach and decisions
+
+Available context clusters typically include: technical, development, company, telemetry, frontend, etc.
 
 ## Guidelines
 - Be proactive - if you see a problem, propose solutions
