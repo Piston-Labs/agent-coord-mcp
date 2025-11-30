@@ -1374,11 +1374,16 @@
     async function init() {
       console.log('Init starting...');
       updateConnectionStatus(true);
-      await Promise.all([
-        fetchAgents(),
-        fetchMessages(),
-        fetchContext()
-      ]);
+      try {
+        await Promise.all([
+          fetchAgents().catch(e => console.error('fetchAgents failed:', e)),
+          fetchMessages().catch(e => console.error('fetchMessages failed:', e)),
+          fetchContext().catch(e => console.error('fetchContext failed:', e))
+        ]);
+        console.log('Init fetch complete');
+      } catch (e) {
+        console.error('Init error:', e);
+      }
 
       // Start polling
       setInterval(poll, POLL_INTERVAL);
@@ -1517,9 +1522,16 @@
     }
 
     async function fetchAgents() {
-      const res = await fetch(API_BASE + '/agents?includeOffline=true');
-      const data = await res.json();
-      renderAgents(data.agents || [], data.offlineAgents || []);
+      try {
+        console.log('Fetching agents from:', API_BASE + '/agents?includeOffline=true');
+        const res = await fetch(API_BASE + '/agents?includeOffline=true');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        console.log('Agents fetched:', data.agents?.length || 0);
+        renderAgents(data.agents || [], data.offlineAgents || []);
+      } catch (e) {
+        console.error('fetchAgents error:', e);
+      }
     }
 
     // Corporate-style agent hierarchy tiers
@@ -1622,12 +1634,19 @@
     }
 
     async function fetchMessages() {
-      const res = await fetch(API_BASE + '/chat?limit=50');
-      const data = await res.json();
-      renderMessages(data.messages || []);
-      if (data.messages && data.messages.length > 0) {
-        // API returns newest first, so messages[0] is the most recent
-        lastMessageTime = data.messages[0].timestamp;
+      try {
+        console.log('Fetching messages from:', API_BASE + '/chat?limit=50');
+        const res = await fetch(API_BASE + '/chat?limit=50');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        console.log('Messages fetched:', data.messages?.length || 0);
+        renderMessages(data.messages || []);
+        if (data.messages && data.messages.length > 0) {
+          // API returns newest first, so messages[0] is the most recent
+          lastMessageTime = data.messages[0].timestamp;
+        }
+      } catch (e) {
+        console.error('fetchMessages error:', e);
       }
     }
 
