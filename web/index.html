@@ -405,23 +405,64 @@
       </div>
     </div>
 
-    <!-- Chat Panel -->
+    <!-- Main Panel with Tabs -->
     <div class="panel">
-      <div class="panel-header">
-        <span>Group Chat</span>
+      <div class="panel-header tabs-header">
+        <div class="tabs">
+          <button class="tab active" data-tab="chat" onclick="switchTab('chat')">Chat</button>
+          <button class="tab" data-tab="roadmap" onclick="switchTab('roadmap')">Roadmap</button>
+        </div>
         <span id="messageCount">0 messages</span>
       </div>
-      <div class="chat-messages" id="chatMessages">
-        <div class="empty-state">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <p>No messages yet</p>
+
+      <!-- Chat View -->
+      <div class="tab-content active" id="chatView">
+        <div class="chat-messages" id="chatMessages">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p>No messages yet</p>
+          </div>
+        </div>
+        <div class="chat-input">
+          <input type="text" id="messageInput" placeholder="Type a message... (@mention agents)" />
+          <button id="sendBtn">Send</button>
         </div>
       </div>
-      <div class="chat-input">
-        <input type="text" id="messageInput" placeholder="Type a message... (@mention agents)" />
-        <button id="sendBtn">Send</button>
+
+      <!-- Roadmap View -->
+      <div class="tab-content" id="roadmapView">
+        <div class="roadmap-filters">
+          <select id="projectFilter" onchange="fetchRoadmap()">
+            <option value="">All Projects</option>
+            <option value="teltonika">Teltonika Fleet</option>
+            <option value="gran-autismo">Gran Autismo Dashboard</option>
+            <option value="agent-coord">Agent Coordination</option>
+          </select>
+          <select id="assigneeFilter" onchange="fetchRoadmap()">
+            <option value="">All Assignees</option>
+          </select>
+          <button class="add-item-btn" onclick="showAddRoadmapItem()">+ Add Item</button>
+        </div>
+        <div class="roadmap-board" id="roadmapBoard">
+          <div class="roadmap-column" data-status="backlog">
+            <div class="column-header">Backlog</div>
+            <div class="column-items" id="backlogItems"></div>
+          </div>
+          <div class="roadmap-column" data-status="in-progress">
+            <div class="column-header">In Progress</div>
+            <div class="column-items" id="inProgressItems"></div>
+          </div>
+          <div class="roadmap-column" data-status="review">
+            <div class="column-header">Review</div>
+            <div class="column-items" id="reviewItems"></div>
+          </div>
+          <div class="roadmap-column" data-status="done">
+            <div class="column-header">Done</div>
+            <div class="column-items" id="doneItems"></div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -699,11 +740,22 @@
     }
 
     async function fetchContext() {
+      // These endpoints may not exist yet - fail gracefully
+      const fetchSafe = async (url) => {
+        try {
+          const res = await fetch(url);
+          if (!res.ok) return { claims: [], zones: [], locks: [], tasks: [] };
+          return await res.json();
+        } catch {
+          return { claims: [], zones: [], locks: [], tasks: [] };
+        }
+      };
+
       const [claims, zones, locks, tasks] = await Promise.all([
-        fetch(API_BASE + '/claims').then(r => r.json()),
-        fetch(API_BASE + '/zones').then(r => r.json()),
-        fetch(API_BASE + '/locks').then(r => r.json()),
-        fetch(API_BASE + '/tasks').then(r => r.json())
+        fetchSafe(API_BASE + '/claims'),
+        fetchSafe(API_BASE + '/zones'),
+        fetchSafe(API_BASE + '/locks'),
+        fetchSafe(API_BASE + '/tasks')
       ]);
 
       renderContextSection('claimsList', claims.claims || [], 'claim', c => ({
