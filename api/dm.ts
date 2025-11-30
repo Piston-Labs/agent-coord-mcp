@@ -237,7 +237,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST: Send a message
     if (req.method === 'POST') {
-      const { from, fromType, to, toType, message, attachments } = req.body;
+      // Handle body parsing - Vercel sometimes has issues
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch (e) {
+          return res.status(400).json({ error: 'Invalid JSON in request body' });
+        }
+      }
+      const { from, fromType, to, toType, message, attachments } = body || {};
 
       if (!from || !to) {
         return res.status(400).json({ error: 'from and to are required' });
@@ -312,7 +321,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // PATCH: Mark messages as read
     if (req.method === 'PATCH') {
-      const { conversationId, userId, action } = req.body;
+      let body = req.body;
+      if (typeof body === 'string') {
+        try {
+          body = JSON.parse(body);
+        } catch (e) {
+          return res.status(400).json({ error: 'Invalid JSON in request body' });
+        }
+      }
+      const { conversationId, userId, action } = body || {};
 
       if (action !== 'mark-read') {
         return res.status(400).json({ error: 'action must be "mark-read"' });
