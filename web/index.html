@@ -472,6 +472,7 @@
 
     // Initialize
     async function init() {
+      console.log('Init starting...');
       updateConnectionStatus(true);
       await Promise.all([
         fetchAgents(),
@@ -483,10 +484,27 @@
       setInterval(poll, POLL_INTERVAL);
 
       // Setup event listeners
-      document.getElementById('sendBtn').addEventListener('click', sendMessage);
-      document.getElementById('messageInput').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendMessage();
+      const sendBtn = document.getElementById('sendBtn');
+      const messageInput = document.getElementById('messageInput');
+      
+      console.log('sendBtn:', sendBtn);
+      console.log('messageInput:', messageInput);
+      
+      sendBtn.addEventListener('click', function(e) {
+        console.log('Send button clicked');
+        e.preventDefault();
+        sendMessage();
       });
+      
+      messageInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          console.log('Enter pressed');
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      
+      console.log('Event listeners attached');
     }
 
     async function poll() {
@@ -637,13 +655,20 @@
       const input = document.getElementById('messageInput');
       const sendBtn = document.getElementById('sendBtn');
       const message = input.value.trim();
-      if (!message) return;
+      
+      console.log('sendMessage called, message:', message);
+      
+      if (!message) {
+        console.log('Empty message, returning');
+        return;
+      }
 
       // Disable button while sending
       sendBtn.disabled = true;
       sendBtn.textContent = 'Sending...';
 
       try {
+        console.log('Sending to:', API_BASE + '/chat');
         const res = await fetch(API_BASE + '/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -653,6 +678,8 @@
             message
           })
         });
+
+        console.log('Response status:', res.status);
 
         if (!res.ok) {
           const err = await res.json();
