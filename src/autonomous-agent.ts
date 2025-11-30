@@ -520,14 +520,17 @@ async function checkForRenameCommand(messages: ChatMessage[]): Promise<void> {
 
 async function updateStatus(task: string): Promise<void> {
   try {
-    await fetch(`${CONFIG.API_BASE}/api/agents/${CONFIG.AGENT_ID}/status`, {
+    // POST to /api/agents with id in body (not in URL path)
+    await fetch(`${CONFIG.API_BASE}/api/agents`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        id: CONFIG.AGENT_ID,
+        name: CONFIG.AGENT_ID,
         status: 'active',
         currentTask: task,
-        roles: [CONFIG.AGENT_ROLE, 'autonomous'],
-        lastSeen: new Date().toISOString()
+        workingOn: 'agent-coord-mcp',
+        role: CONFIG.AGENT_ROLE
       })
     });
   } catch (err) {
@@ -551,9 +554,9 @@ async function mainLoop(): Promise<void> {
   console.log(`[agent] Starting ${CONFIG.AGENT_ID} (${CONFIG.AGENT_ROLE})`);
   console.log(`[agent] Connecting to ${CONFIG.API_BASE}`);
   console.log(`[agent] Poll interval: ${CONFIG.POLL_INTERVAL}ms`);
-  
-  await updateStatus('Starting up...');
-  await postMessage(`🤖 ${CONFIG.AGENT_ID} is now online! Role: ${CONFIG.AGENT_ROLE}. I can read GitHub repos, spawn agents, and coordinate tasks. Ask me anything!`);
+
+  // Register presence silently - no chat message spam on startup
+  await updateStatus('Online - monitoring chat');
 
   while (true) {
     try {
@@ -590,16 +593,14 @@ async function mainLoop(): Promise<void> {
   }
 }
 
-// Graceful shutdown
+// Graceful shutdown - no chat spam, just log and exit
 process.on('SIGINT', async () => {
-  console.log('[agent] Shutting down...');
-  await postMessage(`🔴 ${CONFIG.AGENT_ID} going offline.`);
+  console.log('[agent] Shutting down (SIGINT)...');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
-  console.log('[agent] Shutting down...');
-  await postMessage(`🔴 ${CONFIG.AGENT_ID} going offline.`);
+  console.log('[agent] Shutting down (SIGTERM)...');
   process.exit(0);
 });
 
