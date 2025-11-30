@@ -726,6 +726,8 @@
         <div class="roadmap-filters">
           <select id="projectFilter" onchange="fetchRoadmap()">
             <option value="">All Projects</option>
+            <option value="piston-dashboard">Piston Dashboard (Consumer + Shop)</option>
+            <option value="piston-hardware">Piston Hardware (IoT/Telemetry)</option>
             <option value="teltonika">Teltonika Fleet</option>
             <option value="gran-autismo">Gran Autismo Dashboard</option>
             <option value="agent-coord">Agent Coordination</option>
@@ -808,6 +810,8 @@
         <div class="form-group">
           <label for="itemProject">Project</label>
           <select id="itemProject" required>
+            <option value="piston-dashboard">Piston Dashboard (Consumer + Shop)</option>
+            <option value="piston-hardware">Piston Hardware (IoT/Telemetry)</option>
             <option value="teltonika">Teltonika Fleet</option>
             <option value="gran-autismo">Gran Autismo Dashboard</option>
             <option value="agent-coord">Agent Coordination</option>
@@ -849,7 +853,24 @@
   <script>
     const API_BASE = window.location.origin + '/api';
     const POLL_INTERVAL = 2000;
-    const HUMAN_ID = 'human-' + Math.random().toString(36).substr(2, 6);
+    
+    // Username persistence - check localStorage or generate random
+    let USERNAME = localStorage.getItem('agent-hub-username') || 'human-' + Math.random().toString(36).substr(2, 6);
+    const HUMAN_ID = USERNAME;
+    
+    // Allow user to set their name
+    function setUsername(name) {
+      if (name && name.trim()) {
+        USERNAME = name.trim();
+        localStorage.setItem('agent-hub-username', USERNAME);
+        alert('Username set to: ' + USERNAME);
+        return true;
+      }
+      return false;
+    }
+    
+    // Expose globally so it can be called from console or UI
+    window.setUsername = setUsername;
 
     let lastMessageTime = null;
     let tokensSaved = 0;
