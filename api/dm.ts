@@ -237,14 +237,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST: Send a message
     if (req.method === 'POST') {
-      // Handle body parsing - Vercel sometimes has issues
-      let body = req.body;
-      if (typeof body === 'string') {
-        try {
+      // Handle body parsing - Vercel runtime can throw on body access
+      let body: any;
+      try {
+        body = req.body;
+        if (typeof body === 'string') {
           body = JSON.parse(body);
-        } catch (e) {
-          return res.status(400).json({ error: 'Invalid JSON in request body' });
         }
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON in request body', details: String(e) });
       }
       const { from, fromType, to, toType, message, attachments } = body || {};
 
@@ -321,13 +322,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // PATCH: Mark messages as read
     if (req.method === 'PATCH') {
-      let body = req.body;
-      if (typeof body === 'string') {
-        try {
+      let body: any;
+      try {
+        body = req.body;
+        if (typeof body === 'string') {
           body = JSON.parse(body);
-        } catch (e) {
-          return res.status(400).json({ error: 'Invalid JSON in request body' });
         }
+      } catch (e) {
+        return res.status(400).json({ error: 'Invalid JSON in request body', details: String(e) });
       }
       const { conversationId, userId, action } = body || {};
 
