@@ -1082,9 +1082,9 @@
     }
 
     async function fetchAgents() {
-      const res = await fetch(API_BASE + '/agents?active=true');
+      const res = await fetch(API_BASE + '/agents?includeOffline=true');
       const data = await res.json();
-      renderAgents(data.agents || []);
+      renderAgents(data.agents || [], data.offlineAgents || []);
     }
 
     // Corporate-style agent hierarchy tiers
@@ -1123,12 +1123,12 @@
       return tags.slice(0, 2);
     }
 
-    function renderAgents(agents) {
+    function renderAgents(agents, offlineAgents = []) {
       const container = document.getElementById('agentsList');
       const countEl = document.getElementById('activeCount');
       const totalEl = document.getElementById('agentCount');
       countEl.textContent = agents.length + ' active';
-      totalEl.textContent = agents.length;
+      totalEl.textContent = agents.length + offlineAgents.length;
 
       if (agents.length === 0) {
         container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No agents online</p></div>`;
@@ -1154,6 +1154,28 @@
           html += grouped[k].map(a => renderCard(a, k)).join('');
         }
       }
+      // Offline agents section
+      if (offlineAgents.length > 0) {
+        html += `<div class="context-title" style="margin:16px 0 8px 0; opacity: 0.7;">💤 Offline (${offlineAgents.length})</div>`;
+        html += offlineAgents.slice(0, 10).map(a => {
+          const lastSeen = a.lastSeen ? timeAgo(new Date(a.lastSeen)) : 'Unknown';
+          const task = a.currentTask || a.workingOn || 'N/A';
+          const truncatedTask = task.length > 60 ? task.substring(0, 60) + '...' : task;
+          return `<div class="agent-card" style="border-left:3px solid #484f58; opacity: 0.6;">
+            <div class="agent-header">
+              <div class="agent-avatar" style="background:#484f58;">${getInitials(a.id)}</div>
+              <span class="agent-name">${a.name||a.id}</span>
+              <span class="agent-status" style="color:#484f58;">offline</span>
+            </div>
+            <div class="agent-task" style="color:var(--text-secondary);">${truncatedTask}</div>
+            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px;">Last seen: ${lastSeen}</div>
+          </div>`;
+        }).join('');
+        if (offlineAgents.length > 10) {
+          html += `<div style="text-align:center;padding:8px;font-size:11px;color:var(--text-secondary);">+${offlineAgents.length - 10} more offline agents</div>`;
+        }
+      }
+
       container.innerHTML = html;
     }
 
