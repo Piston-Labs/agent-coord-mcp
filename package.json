@@ -1,0 +1,40 @@
+{
+  "name": "@piston-labs/agent-coord-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for multi-agent coordination - status, messaging, resource locking, and task management",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "agent-coord-mcp": "./bin/agent-coord-mcp.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx src/index.ts",
+    "test": "npm run build && node --test --import tsx test/*.test.ts"
+  },
+  "keywords": [
+    "mcp",
+    "multi-agent",
+    "coordination",
+    "ai",
+    "llm",
+    "claude",
+    "cursor",
+    "windsurf"
+  ],
+  "author": "Piston Labs",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
