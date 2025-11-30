@@ -23,9 +23,52 @@ interface FileClaim {
  * Prevents agents from editing the same files simultaneously.
  *
  * GET /api/claims - List all active claims
+ * GET /api/claims?action=cleanup - Remove all stale claims
  * POST /api/claims - Create a claim (will fail if already claimed by another agent)
  * DELETE /api/claims?what=filepath&by=agentId - Release a claim
+ * DELETE /api/claims?action=cleanup-stale - Remove all stale claims
+ * DELETE /api/claims?action=release-all&by=agentId - Release all claims by an agent
  */
+
+async function cleanupStaleClaims(): Promise<{ removed: string[]; remaining: number }> {
+  const claimsRaw = await redis.hgetall(CLAIMS_KEY) || {};
+  const now = Date.now();
+  const removed: string[] = [];
+
+  for (const [key, value] of Object.entries(claimsRaw)) {
+    try {
+      const claim = typeof value === 'string' ? JSON.parse(value) : value;
+      const claimTime = new Date(claim.since).getTime();
+      if ((now - claimTime) > CLAIM_EXPIRY_MS) {
+        await redis.hdel(CLAIMS_KEY, key);
+        removed.push(`${claim.what} (was claimed by ${claim.by})`);
+      }
+    } catch (e) {
+      // Remove corrupt entries
+      await redis.hdel(CLAIMS_KEY, key);
+      removed.push(key + ' (corrupt)');
+    }
+  }
+
+  // Get remaining count
+  const remaining = await redis.hlen(CLAIMS_KEY);
+
+  // Post cleanup summary to chat if any were removed
+  if (removed.length > 0) {
+    const chatMessage = {
+      id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
+      author: 'system',
+      authorType: 'system',
+      message: `🧹 Auto-cleanup: Released ${removed.length} stale claim(s)`,
+      timestamp: new Date().toISOString(),
+      reactions: []
+    };
+    await redis.lpush('agent-coord:messages', JSON.stringify(chatMessage));
+  }
+
+  return { removed, remaining };
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -36,8 +79,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // GET: List all claims
+    // GET: List all claims or cleanup
     if (req.method === 'GET') {
+      const { action } = req.query;
+
+      // Cleanup action
+      if (action === 'cleanup') {
+        const result = await cleanupStaleClaims();
+        return res.json({
+          success: true,
+          ...result,
+          message: result.removed.length > 0
+            ? `Cleaned up ${result.removed.length} stale claims`
+            : 'No stale claims to clean up'
+        });
+      }
+
+      // Auto-cleanup stale claims on every GET (keeps claims fresh)
+      await cleanupStaleClaims();
+
       const claimsRaw = await redis.hgetall(CLAIMS_KEY) || {};
       const now = Date.now();
       const claims: FileClaim[] = [];
@@ -113,12 +173,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ success: true, claim });
     }
 
-    // DELETE: Release a claim
+    // DELETE: Release a claim or batch operations
     if (req.method === 'DELETE') {
-      const { what, by } = req.query;
+      const { what, by, action } = req.query;
 
+      // Cleanup stale claims
+      if (action === 'cleanup-stale') {
+        const result = await cleanupStaleClaims();
+        return res.json({
+          success: true,
+          ...result
+        });
+      }
+
+      // Release all claims by a specific agent
+      if (action === 'release-all' && by) {
+        const claimsRaw = await redis.hgetall(CLAIMS_KEY) || {};
+        const released: string[] = [];
+
+        for (const [key, value] of Object.entries(claimsRaw)) {
+          try {
+            const claim = typeof value === 'string' ? JSON.parse(value) : value;
+            if (claim.by === by) {
+              await redis.hdel(CLAIMS_KEY, key);
+              released.push(claim.what);
+            }
+          } catch (e) {
+            await redis.hdel(CLAIMS_KEY, key);
+          }
+        }
+
+        if (released.length > 0) {
+          const chatMessage = {
+            id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
+            author: 'system',
+            authorType: 'system',
+            message: `🔓 **${by}** released all claims (${released.length}): ${released.join(', ')}`,
+            timestamp: new Date().toISOString(),
+            reactions: []
+          };
+          await redis.lpush('agent-coord:messages', JSON.stringify(chatMessage));
+        }
+
+        return res.json({ success: true, released, count: released.length });
+      }
+
+      // Standard single claim release
       if (!what || !by) {
-        return res.status(400).json({ error: 'what and by query params required' });
+        return res.status(400).json({ error: 'what and by query params required (or use action=release-all&by=agentId)' });
       }
 
       const claimKey = `${by}:${what}`;
