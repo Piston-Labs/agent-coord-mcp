@@ -5,13 +5,18 @@
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "agent-coord-mcp": "./bin/agent-coord-mcp.js"
+    "agent-coord-mcp": "./bin/agent-coord-mcp.js",
+    "agent-coord-http": "./bin/agent-coord-http.js"
   },
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:http": "node dist/http-server.js",
     "dev": "tsx src/index.ts",
-    "test": "npm run build && node --test --import tsx test/*.test.ts"
+    "dev:http": "tsx src/http-server.ts",
+    "check": "npm run build",
+    "test": "npm run build && node --test --import tsx test/*.test.ts",
+    "sim": "tsx test/multi-agent-sim.ts"
   },
   "keywords": [
     "mcp",
