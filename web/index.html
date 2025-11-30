@@ -304,6 +304,7 @@
     .context-item.lock { border-left-color: var(--danger); }
     .context-item.zone { border-left-color: var(--success); }
     .context-item.task { border-left-color: var(--accent); }
+    .context-item.feature { border-left-color: #a371f7; }
 
     .context-item-header {
       display: flex;
@@ -715,8 +716,17 @@
             <p>No messages yet</p>
           </div>
         </div>
+        <div id="imagePreview" style="display: none; padding: 8px; background: var(--bg-tertiary); margin: 0 16px 8px 16px; border-radius: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <img id="previewImg" style="max-height: 60px; border-radius: 4px;" />
+            <span id="previewName" style="flex: 1; font-size: 12px;"></span>
+            <button id="clearImage" style="background: var(--error); color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">Remove</button>
+          </div>
+        </div>
         <div class="chat-input">
           <button id="usernameBtn" style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; cursor: pointer; font-size: 12px;" title="Click to set username">👤</button>
+          <input type="file" id="imageInput" accept="image/*" style="display: none;" />
+          <button id="imageBtn" style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px;" title="Upload image">📷</button>
           <input type="text" id="messageInput" placeholder="Type a message... (@mention agents)" />
           <button id="sendBtn">Send</button>
         </div>
@@ -794,6 +804,10 @@
         <div class="context-section">
           <div class="context-title">📋 Tasks <span id="tasksCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="tasksList"></div>
+        </div>
+        <div class="context-section">
+          <div class="context-title">🚀 Planned Features <span id="featuresCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
+          <div id="plannedFeaturesList"></div>
         </div>
         <div class="context-section">
           <div class="context-title">⚡ Token Efficiency</div>
@@ -925,6 +939,43 @@
       // Show current username initial
       usernameBtn.textContent = USERNAME.substring(0, 2).toUpperCase();
       usernameBtn.title = 'Logged in as: ' + USERNAME + ' (click to change)';
+
+      // Image upload handling
+      let pendingImage = null;
+      const imageBtn = document.getElementById('imageBtn');
+      const imageInput = document.getElementById('imageInput');
+      const imagePreview = document.getElementById('imagePreview');
+      const previewImg = document.getElementById('previewImg');
+      const previewName = document.getElementById('previewName');
+      const clearImage = document.getElementById('clearImage');
+
+      imageBtn.addEventListener('click', () => imageInput.click());
+
+      imageInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.size > 500000) {
+          alert('Image too large. Max 500KB allowed.');
+          imageInput.value = '';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          pendingImage = { data: evt.target.result, name: file.name };
+          previewImg.src = evt.target.result;
+          previewName.textContent = file.name;
+          imagePreview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      clearImage.addEventListener('click', () => {
+        pendingImage = null;
+        imageInput.value = '';
+        imagePreview.style.display = 'none';
+      });
       
       sendBtn.addEventListener('click', function(e) {
         console.log('Send button clicked');
@@ -1120,13 +1171,19 @@
       const isOwn = m.author === HUMAN_ID;
       const isHuman = m.authorType === 'human';
       const time = new Date(m.timestamp).toLocaleTimeString();
+      
+      let imageHtml = '';
+      if (m.imageData) {
+        imageHtml = `<div class="message-image"><img src="${m.imageData}" alt="${m.imageName || 'image'}" style="max-width: 300px; max-height: 200px; border-radius: 8px; cursor: pointer; margin-top: 8px;" onclick="window.open(this.src, '_blank')"/></div>`;
+      }
 
       return `
         <div class="message ${isOwn ? 'own' : ''}" data-id="${m.id}">
           <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(m.author)}</div>
           <div class="message-content">
             <div class="message-author">${m.author}</div>
-            <div class="message-text">${escapeHtml(m.message)}</div>
+            ${m.message ? `<div class="message-text">${escapeHtml(m.message)}</div>` : ''}
+            ${imageHtml}
             <div class="message-time">${time}</div>
           </div>
         </div>
@@ -1200,12 +1257,13 @@
         }
       };
 
-      const [claims, zones, locks, tasks, agents] = await Promise.all([
+      const [claims, zones, locks, tasks, agents, features] = await Promise.all([
         fetchSafe(API_BASE + '/claims'),
         fetchSafe(API_BASE + '/zones'),
         fetchSafe(API_BASE + '/locks'),
         fetchSafe(API_BASE + '/tasks'),
-        fetchSafe(API_BASE + '/agents')
+        fetchSafe(API_BASE + '/agents'),
+        fetchSafe(API_BASE + '/planned-features')
       ]);
 
       // Update system stats
@@ -1220,11 +1278,13 @@
       const zonesList = zones.zones || [];
       const locksList = locks.locks || [];
       const tasksList = (tasks.tasks || []).filter(t => t.status !== 'done');
+      const featuresList = features.features || [];
       
       document.getElementById('claimsCount').textContent = '(' + claimsList.length + ')';
       document.getElementById('zonesCount').textContent = '(' + zonesList.length + ')';
       document.getElementById('locksCount').textContent = '(' + locksList.length + ')';
       document.getElementById('tasksCount').textContent = '(' + tasksList.length + ')';
+      document.getElementById('featuresCount').textContent = '(' + featuresList.length + ')';
 
       renderContextSection('claimsList', claimsList, 'claim', c => ({
         title: c.what,
@@ -1248,6 +1308,12 @@
         title: t.title,
         owner: t.assignee || t.createdBy,
         detail: t.status + ' - ' + t.priority
+      }));
+
+      renderContextSection('plannedFeaturesList', featuresList, 'feature', f => ({
+        title: f.title,
+        owner: f.assignedTo || 'unassigned',
+        detail: f.status + ' - ' + f.priority
       }));
     }
 
