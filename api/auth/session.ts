@@ -18,7 +18,9 @@ function getSessionFromCookie(req: VercelRequest): string | null {
 
 interface Session {
   id: string;
+  userId?: string;
   username: string;
+  role?: string;
   createdAt: string;
   expiresAt: string;
 }
@@ -61,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       authenticated: true,
       session: {
         username: session.username,
+        role: session.role || 'admin',
         expiresAt: session.expiresAt,
       },
     });
