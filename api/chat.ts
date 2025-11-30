@@ -11,7 +11,7 @@ const MAX_MESSAGES = 1000;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -61,6 +61,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await redis.ltrim(MESSAGES_KEY, 0, MAX_MESSAGES - 1);
 
       return res.json({ id: newMessage.id, sent: true, timestamp: newMessage.timestamp });
+    }
+
+    // DELETE: Clear all messages
+    if (req.method === 'DELETE') {
+      await redis.del(MESSAGES_KEY);
+      return res.json({ cleared: true, message: 'All messages deleted' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
