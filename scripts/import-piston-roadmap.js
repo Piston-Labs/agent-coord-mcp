@@ -398,47 +398,57 @@ const tomHardwareTasks = [
   }
 ];
 
+async function importTask(task) {
+  const res = await fetch(`${API_BASE}/roadmap`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(task)
+  });
+
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Failed to import "${task.title}": ${err}`);
+  }
+
+  return res.json();
+}
+
 async function importTasks() {
   console.log('\n=== Importing Ryan\'s Dashboard Tasks ===');
+  let dashboardCount = 0;
 
-  try {
-    const dashboardRes = await fetch(`${API_BASE}/roadmap-import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: ryanDashboardTasks,
-        clearProject: 'piston-dashboard'
-      })
-    });
-
-    const dashboardData = await dashboardRes.json();
-    console.log(`Imported ${dashboardData.imported} dashboard tasks`);
-  } catch (err) {
-    console.error('Dashboard import failed:', err.message);
+  for (const task of ryanDashboardTasks) {
+    try {
+      await importTask(task);
+      dashboardCount++;
+      process.stdout.write(`\r  Imported ${dashboardCount}/${ryanDashboardTasks.length}`);
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 100));
+    } catch (err) {
+      console.error(`\n  Error: ${err.message}`);
+    }
   }
+  console.log(`\n  Done: ${dashboardCount} dashboard tasks imported`);
 
   console.log('\n=== Importing Tom\'s Hardware Tasks ===');
+  let hardwareCount = 0;
 
-  try {
-    const hardwareRes = await fetch(`${API_BASE}/roadmap-import`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: tomHardwareTasks,
-        clearProject: 'piston-hardware'
-      })
-    });
-
-    const hardwareData = await hardwareRes.json();
-    console.log(`Imported ${hardwareData.imported} hardware tasks`);
-  } catch (err) {
-    console.error('Hardware import failed:', err.message);
+  for (const task of tomHardwareTasks) {
+    try {
+      await importTask(task);
+      hardwareCount++;
+      process.stdout.write(`\r  Imported ${hardwareCount}/${tomHardwareTasks.length}`);
+      await new Promise(r => setTimeout(r, 100));
+    } catch (err) {
+      console.error(`\n  Error: ${err.message}`);
+    }
   }
+  console.log(`\n  Done: ${hardwareCount} hardware tasks imported`);
 
   console.log('\n=== Import Complete ===');
-  console.log(`Total tasks: ${ryanDashboardTasks.length + tomHardwareTasks.length}`);
-  console.log(`- Ryan (piston-dashboard): ${ryanDashboardTasks.length}`);
-  console.log(`- Tom (piston-hardware): ${tomHardwareTasks.length}`);
+  console.log(`Total tasks: ${dashboardCount + hardwareCount}`);
+  console.log(`- Ryan (piston-dashboard): ${dashboardCount}`);
+  console.log(`- Tom (piston-hardware): ${hardwareCount}`);
   console.log(`\nView at: ${API_BASE.replace('/api', '')}`);
 }
 

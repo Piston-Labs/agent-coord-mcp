@@ -716,6 +716,7 @@
           </div>
         </div>
         <div class="chat-input">
+          <button id="usernameBtn" style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; cursor: pointer; font-size: 12px;" title="Click to set username">👤</button>
           <input type="text" id="messageInput" placeholder="Type a message... (@mention agents)" />
           <button id="sendBtn">Send</button>
         </div>
@@ -892,9 +893,24 @@
       // Setup event listeners
       const sendBtn = document.getElementById('sendBtn');
       const messageInput = document.getElementById('messageInput');
+      const usernameBtn = document.getElementById('usernameBtn');
       
       console.log('sendBtn:', sendBtn);
       console.log('messageInput:', messageInput);
+      
+      // Username button - click to change name
+      usernameBtn.addEventListener('click', function() {
+        const newName = prompt('Enter your username:', USERNAME);
+        if (newName && newName.trim()) {
+          USERNAME = newName.trim();
+          localStorage.setItem('agent-hub-username', USERNAME);
+          usernameBtn.textContent = USERNAME.substring(0, 2).toUpperCase();
+          usernameBtn.title = 'Logged in as: ' + USERNAME;
+        }
+      });
+      // Show current username initial
+      usernameBtn.textContent = USERNAME.substring(0, 2).toUpperCase();
+      usernameBtn.title = 'Logged in as: ' + USERNAME + ' (click to change)';
       
       sendBtn.addEventListener('click', function(e) {
         console.log('Send button clicked');
