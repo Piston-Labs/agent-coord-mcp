@@ -10,7 +10,7 @@ const AGENTS_KEY = 'agent-coord:active-agents';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -18,7 +18,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // Get raw data from Redis to debug
+    // POST: Write a test agent directly
+    if (req.method === 'POST') {
+      const testAgent = {
+        id: 'debug-write-test',
+        name: 'Debug Write Test',
+        status: 'active',
+        currentTask: 'Testing write',
+        workingOn: 'debug',
+        role: 'debug',
+        lastSeen: new Date().toISOString()
+      };
+
+      const writeResult = await redis.hset(AGENTS_KEY, 'debug-write-test', JSON.stringify(testAgent));
+      const readBack = await redis.hget(AGENTS_KEY, 'debug-write-test');
+
+      return res.json({
+        writeResult,
+        readBack,
+        readBackType: typeof readBack,
+        testAgent
+      });
+    }
+
+    // GET: Get raw data from Redis to debug
     const agents = await redis.hgetall(AGENTS_KEY);
     const staleThreshold = Date.now() - 30 * 60 * 1000;
 
@@ -29,8 +52,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         key,
         valueType: typeof value,
         value: value,
-        isString: typeof value === 'string',
-        parsed: typeof value === 'string' ? JSON.parse(value) : value
+        isString: typeof value === 'string'
       })),
       staleThreshold: new Date(staleThreshold).toISOString(),
       now: new Date().toISOString()
