@@ -661,30 +661,50 @@
     /* Mobile Responsiveness */
     @media (max-width: 1024px) {
       main {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        display: flex !important;
+        flex-direction: column;
+        height: calc(100vh - 53px);
+        overflow: hidden;
       }
 
-      .panel {
-        height: auto;
+      /* Hide side panels on mobile - show only chat */
+      .panel:first-child,
+      .panel:last-child {
+        display: none !important;
+      }
+
+      /* Chat panel takes full space */
+      .panel:nth-child(2) {
+        display: flex !important;
+        flex-direction: column;
+        flex: 1;
+        height: 100%;
+        width: 100%;
         max-height: none;
       }
 
-      /* Show only chat by default on tablet, make sidebars collapsible */
-      .panel:first-child,
-      .panel:last-child {
-        display: none;
+      /* Ensure chat content fills available space */
+      .tab-content.active {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
       }
 
-      .panel:nth-child(2) {
-        display: flex;
-        height: calc(100vh - 53px);
+      .chat-messages {
+        flex: 1;
+        overflow-y: auto;
+      }
+
+      .chat-input {
+        flex-shrink: 0;
       }
     }
 
     @media (max-width: 768px) {
       main {
-        grid-template-columns: 1fr;
+        display: flex !important;
+        flex-direction: column;
         height: calc(100vh - 50px);
       }
 
