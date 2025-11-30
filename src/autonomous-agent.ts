@@ -15,11 +15,15 @@ import Anthropic from '@anthropic-ai/sdk';
 const CONFIG = {
   API_BASE: process.env.API_BASE || 'https://agent-coord-mcp.vercel.app',
   AGENT_ID: process.env.AGENT_ID || 'autonomous-agent',
+  AGENT_NAME: process.env.AGENT_NAME || 'BIGBRAIN', // Display name (can be different from ID)
   AGENT_ROLE: process.env.AGENT_ROLE || 'orchestrator',
   POLL_INTERVAL: parseInt(process.env.POLL_INTERVAL || '3000'),
   GITHUB_TOKEN: process.env.GITHUB_TOKEN || '',
   GITHUB_ORG: process.env.GITHUB_ORG || 'Piston-Labs',
 };
+
+// Track display name (can be changed via rename command)
+let agentDisplayName = CONFIG.AGENT_NAME;
 
 const anthropic = new Anthropic();
 
@@ -527,7 +531,8 @@ async function checkForRenameCommand(messages: ChatMessage[]): Promise<void> {
             });
             
             if (res.ok) {
-              await postMessage(`✨ Got it! I'm now **${newName}**. My agent ID remains \`${CONFIG.AGENT_ID}\` but you can call me by my new name.`);
+              agentDisplayName = newName; // Update tracked display name
+            await postMessage(`✨ Got it! I'm now **${newName}**. My agent ID remains \`${CONFIG.AGENT_ID}\` but you can call me by my new name.`);
             } else {
               await postMessage(`❌ Couldn't update my name. API returned ${res.status}.`);
             }
@@ -550,7 +555,7 @@ async function updateStatus(task: string): Promise<void> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         id: CONFIG.AGENT_ID,
-        name: CONFIG.AGENT_ID,
+        name: agentDisplayName, // Use tracked display name, not AGENT_ID
         status: 'active',
         currentTask: task,
         workingOn: 'agent-coord-mcp',
