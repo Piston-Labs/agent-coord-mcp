@@ -23,12 +23,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const agents = await redis.hgetall(AGENTS_KEY);
       const staleThreshold = Date.now() - 30 * 60 * 1000; // 30 minutes
 
-      const agentList = Object.values(agents || {}).map((a: any) =>
-        typeof a === 'string' ? JSON.parse(a) : a
-      ).filter((a: any) => {
-        const lastSeen = new Date(a.lastSeen).getTime();
-        return lastSeen > staleThreshold;
-      });
+      const agentList: any[] = [];
+      for (const [key, value] of Object.entries(agents || {})) {
+        try {
+          const agent = typeof value === 'string' ? JSON.parse(value) : value;
+          const lastSeen = new Date(agent.lastSeen).getTime();
+          if (lastSeen > staleThreshold) {
+            agentList.push(agent);
+          }
+        } catch (parseError) {
+          // Skip invalid entries and optionally clean them up
+          console.error(`Invalid agent entry for ${key}:`, parseError);
+          await redis.hdel(AGENTS_KEY, key);
+        }
+      }
 
       return res.json({ agents: agentList, count: agentList.length });
     }
