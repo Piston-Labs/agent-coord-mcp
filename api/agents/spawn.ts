@@ -82,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       };
 
       // Store agent in registry
-      await redis.hset(AGENTS_KEY, agent.id, JSON.stringify(agent));
+      await redis.hset(AGENTS_KEY, { [agent.id]: JSON.stringify(agent) });
 
       // Add to spawn queue for the main agent service to pick up
       await redis.lpush(SPAWN_QUEUE_KEY, JSON.stringify({

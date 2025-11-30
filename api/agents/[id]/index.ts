@@ -205,7 +205,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }));
       }
 
-      await redis.hset(AGENTS_KEY, id, JSON.stringify(agent));
+      await redis.hset(AGENTS_KEY, { [id]: JSON.stringify(agent) });
       return res.json({ agent, updated: true });
     }
 
