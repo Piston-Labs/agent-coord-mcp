@@ -790,6 +790,27 @@
           </div>
         </div>
         <div class="context-section">
+          <div class="context-title">⚡ Quick Actions</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <button onclick="quickCreateTask()" class="context-item" style="cursor: pointer; border: none; text-align: center; padding: 10px 6px; font-size: 11px;">
+              <div style="font-size: 16px; margin-bottom: 2px;">📋</div>
+              New Task
+            </button>
+            <button onclick="quickClaimFile()" class="context-item" style="cursor: pointer; border: none; text-align: center; padding: 10px 6px; font-size: 11px;">
+              <div style="font-size: 16px; margin-bottom: 2px;">🔒</div>
+              Claim File
+            </button>
+            <button onclick="quickUpdateStatus()" class="context-item" style="cursor: pointer; border: none; text-align: center; padding: 10px 6px; font-size: 11px;">
+              <div style="font-size: 16px; margin-bottom: 2px;">📊</div>
+              My Status
+            </button>
+            <button onclick="quickCreateZone()" class="context-item" style="cursor: pointer; border: none; text-align: center; padding: 10px 6px; font-size: 11px;">
+              <div style="font-size: 16px; margin-bottom: 2px;">📁</div>
+              New Zone
+            </button>
+          </div>
+        </div>
+        <div class="context-section">
           <div class="context-title">🔒 Claims <span id="claimsCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="claimsList"></div>
         </div>
@@ -1265,6 +1286,115 @@
       } finally {
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
+      }
+    }
+
+    // Quick Action Functions
+    async function quickCreateTask() {
+      const title = prompt('Task title:');
+      if (!title) return;
+      const description = prompt('Task description (optional):') || '';
+      
+      try {
+        const res = await fetch(API_BASE + '/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            description,
+            status: 'todo',
+            priority: 'medium',
+            createdBy: USERNAME
+          })
+        });
+        if (res.ok) {
+          alert('Task created!');
+          fetchContext();
+        } else {
+          alert('Failed to create task');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function quickClaimFile() {
+      const filePath = prompt('File path to claim:');
+      if (!filePath) return;
+      const description = prompt('What are you doing with this file?') || 'Editing';
+      
+      try {
+        const res = await fetch(API_BASE + '/claims', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            what: filePath,
+            by: USERNAME,
+            description
+          })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('File claimed!');
+          fetchContext();
+        } else {
+          alert(data.message || data.error || 'Failed to claim file');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function quickUpdateStatus() {
+      const status = prompt('Your current status (active/idle/waiting):') || 'active';
+      const task = prompt('What are you working on?') || '';
+      
+      try {
+        const res = await fetch(API_BASE + '/agents/' + encodeURIComponent(USERNAME) + '/status', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            status,
+            currentTask: task,
+            authorType: 'human'
+          })
+        });
+        if (res.ok) {
+          alert('Status updated!');
+          fetchAgents();
+        } else {
+          alert('Failed to update status');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function quickCreateZone() {
+      const zoneId = prompt('Zone ID (e.g., frontend, backend):');
+      if (!zoneId) return;
+      const path = prompt('Directory path for this zone:') || '/';
+      const description = prompt('Zone description (optional):') || '';
+      
+      try {
+        const res = await fetch(API_BASE + '/zones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            zoneId,
+            owner: USERNAME,
+            path,
+            description
+          })
+        });
+        if (res.ok) {
+          alert('Zone created!');
+          fetchContext();
+        } else {
+          alert('Failed to create zone');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
       }
     }
 
