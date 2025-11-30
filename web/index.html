@@ -22,11 +22,15 @@
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
       background: var(--bg-primary);
       color: var(--text-primary);
-      min-height: 100vh;
       display: flex;
       flex-direction: column;
     }
@@ -38,6 +42,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      flex-shrink: 0;
     }
 
     .logo {
@@ -107,6 +112,7 @@
 
     .panel-content {
       flex: 1;
+      min-height: 0; /* Critical for flex overflow */
       overflow-y: auto;
       padding: 8px;
     }
@@ -169,6 +175,7 @@
     /* Chat Panel */
     .chat-messages {
       flex: 1;
+      min-height: 0; /* Critical for flex overflow */
       overflow-y: auto;
       padding: 16px;
       display: flex;
@@ -240,6 +247,7 @@
       border-top: 1px solid var(--border);
       display: flex;
       gap: 10px;
+      flex-shrink: 0;
     }
 
     .chat-input input {
