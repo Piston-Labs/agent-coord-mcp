@@ -374,10 +374,47 @@ const server = createServer(async (req, res) => {
           status: 'todo',
           createdBy: body.createdBy as string,
           assignee: body.assignee as string,
-          tags: (body.tags as string[]) || []
+          tags: (body.tags as string[]) || [],
+          files: (body.files as string[]) || [],
+          contextClusters: (body.contextClusters as string[]) || [],
+          acceptanceCriteria: body.acceptanceCriteria as string
         });
         return json(res, { created: true, task });
       }
+    }
+
+    // Task-File Binding: claim a task with file locking
+    const taskClaimMatch = path.match(/^\/api\/tasks\/(.+)\/claim$/);
+    if (taskClaimMatch && method === 'POST') {
+      const taskId = taskClaimMatch[1];
+      const body = await parseBody(req);
+      if (!body.agentId) {
+        return error(res, 'agentId required');
+      }
+      const result = store.claimTaskWithFiles(taskId, body.agentId as string);
+      const status = result.success ? 200 : 409;
+      return json(res, result, status);
+    }
+
+    // Task-File Binding: release a task with file unlocking
+    const taskReleaseMatch = path.match(/^\/api\/tasks\/(.+)\/release$/);
+    if (taskReleaseMatch && method === 'POST') {
+      const taskId = taskReleaseMatch[1];
+      const body = await parseBody(req);
+      if (!body.agentId || !body.status) {
+        return error(res, 'agentId and status required');
+      }
+      if (body.status !== 'done' && body.status !== 'blocked') {
+        return error(res, 'status must be "done" or "blocked"');
+      }
+      const result = store.releaseTaskWithFiles(
+        taskId,
+        body.agentId as string,
+        body.status as 'done' | 'blocked',
+        body.blockedReason as string
+      );
+      const status = result.success ? 200 : 400;
+      return json(res, result, status);
     }
 
     const taskMatch = path.match(/^\/api\/tasks\/(.+)$/);

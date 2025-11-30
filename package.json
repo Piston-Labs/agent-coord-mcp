@@ -12,8 +12,11 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "start:http": "node dist/http-server.js",
+    "start:bridge": "node dist/message-bridge.js",
+    "start:bot": "node dist/agent-bot.js",
     "dev": "tsx src/index.ts",
     "dev:http": "tsx src/http-server.ts",
+    "dev:bridge": "tsx src/message-bridge.ts",
     "check": "npm run build",
     "test": "npm run build && node --test --import tsx test/*.test.ts",
     "sim": "tsx test/multi-agent-sim.ts"
@@ -31,6 +34,7 @@
   "author": "Piston Labs",
   "license": "MIT",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.22.0"
   },

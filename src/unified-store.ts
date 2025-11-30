@@ -41,6 +41,11 @@ export interface UnifiedStore {
   updateTaskStatus: typeof memoryStore.updateTaskStatus;
   assignTask: typeof memoryStore.assignTask;
 
+  // Task-File Binding operations
+  claimTaskWithFiles: typeof memoryStore.claimTaskWithFiles;
+  releaseTaskWithFiles: typeof memoryStore.releaseTaskWithFiles;
+  getTasksForFile: typeof memoryStore.getTasksForFile;
+
   // Claim operations
   claim: typeof memoryStore.claim;
   checkClaim: typeof memoryStore.checkClaim;

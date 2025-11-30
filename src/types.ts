@@ -60,6 +60,27 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
   tags: string[];
+
+  // Task-File Binding: files that will be modified by this task
+  files?: string[];
+  // Context clusters to load (for context-engine integration)
+  contextClusters?: string[];
+  // How to know task is complete
+  acceptanceCriteria?: string;
+  // Task ID if blocked by another task
+  blockedBy?: string;
+  // Why it's blocked
+  blockedReason?: string;
+}
+
+export interface TaskClaimResult {
+  success: boolean;
+  task?: Task;
+  lockedFiles?: string[];
+  error?: string;
+  conflictingAgent?: string;
+  conflictingTask?: string;
+  conflictingFile?: string;
 }
 
 export interface Claim {

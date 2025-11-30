@@ -13,6 +13,7 @@ import {
   GroupMessage,
   ResourceLock,
   Task,
+  TaskClaimResult,
   Claim,
   Zone,
   Checkpoint
@@ -301,6 +302,132 @@ export class JsonPersistence {
     task.updatedAt = new Date().toISOString();
     this.scheduleSave();
     return task;
+  }
+
+  // Task-File Binding operations
+  claimTaskWithFiles(taskId: string, agentId: string): TaskClaimResult {
+    const task = this.state.tasks[taskId];
+    if (!task) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    // Check if task is already assigned to someone else
+    if (task.assignee && task.assignee !== agentId) {
+      return {
+        success: false,
+        error: 'Task already assigned',
+        conflictingAgent: task.assignee
+      };
+    }
+
+    // Check if task is already in progress
+    if (task.status === 'in-progress' && task.assignee !== agentId) {
+      return {
+        success: false,
+        error: 'Task already in progress',
+        conflictingAgent: task.assignee
+      };
+    }
+
+    // Check if any of the task's files are locked by another agent
+    const files = task.files || [];
+    for (const file of files) {
+      const lock = this.checkLock(file);
+      if (lock && lock.lockedBy !== agentId) {
+        // Find which task has this file locked
+        let conflictingTask: string | undefined;
+        for (const t of Object.values(this.state.tasks)) {
+          if (t.assignee === lock.lockedBy && t.files?.includes(file)) {
+            conflictingTask = t.id;
+            break;
+          }
+        }
+
+        return {
+          success: false,
+          error: 'File conflict',
+          conflictingFile: file,
+          conflictingAgent: lock.lockedBy,
+          conflictingTask
+        };
+      }
+    }
+
+    // All checks passed - lock all files and claim task
+    const lockedFiles: string[] = [];
+    for (const file of files) {
+      const lock = this.acquireLock(file, agentId, 'file-lock', `Task: ${task.title}`);
+      if (!('error' in lock)) {
+        // Task-based locks don't expire
+        lock.expiresAt = undefined;
+        lockedFiles.push(file);
+      }
+    }
+
+    // Update task
+    task.assignee = agentId;
+    task.status = 'in-progress';
+    task.updatedAt = new Date().toISOString();
+    this.scheduleSave();
+
+    return {
+      success: true,
+      task,
+      lockedFiles
+    };
+  }
+
+  releaseTaskWithFiles(
+    taskId: string,
+    agentId: string,
+    newStatus: 'done' | 'blocked',
+    blockedReason?: string
+  ): TaskClaimResult {
+    const task = this.state.tasks[taskId];
+    if (!task) {
+      return { success: false, error: 'Task not found' };
+    }
+
+    // Verify agent owns the task
+    if (task.assignee !== agentId) {
+      return {
+        success: false,
+        error: 'Not your task',
+        conflictingAgent: task.assignee
+      };
+    }
+
+    // Release all file locks
+    const files = task.files || [];
+    for (const file of files) {
+      this.releaseLock(file, agentId);
+    }
+
+    // Update task
+    task.status = newStatus;
+    task.updatedAt = new Date().toISOString();
+
+    if (newStatus === 'blocked' && blockedReason) {
+      task.blockedReason = blockedReason;
+    }
+
+    if (newStatus === 'done') {
+      task.assignee = undefined;  // Clear assignee when done
+    }
+
+    this.scheduleSave();
+
+    return {
+      success: true,
+      task,
+      lockedFiles: []
+    };
+  }
+
+  getTasksForFile(filePath: string): Task[] {
+    return Object.values(this.state.tasks).filter(
+      t => t.files?.includes(filePath)
+    );
   }
 
   // Claim operations
