@@ -2238,12 +2238,19 @@
     document.getElementById('addItemForm').addEventListener('submit', submitRoadmapItem);
 
     
-    // Start app - check auth first
+    // Start app - auth bypassed for mobile access
     document.addEventListener('DOMContentLoaded', async () => {
       setupLoginForm();
       setupRegisterForm();
       setupAuthToggle();
 
+      // Auth bypassed - load app directly for mobile access
+      // To re-enable auth, uncomment the auth check below
+      isAuthenticated = true;
+      hideLoginModal();
+      init();
+
+      /* Original auth check - re-enable later if needed:
       const authenticated = await checkSession();
       if (authenticated) {
         isAuthenticated = true;
@@ -2252,6 +2259,7 @@
       } else {
         showLoginModal();
       }
+      */
     });
 \n  </script>
 </body>
