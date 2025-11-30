@@ -914,6 +914,9 @@
     let USERNAME = localStorage.getItem('agent-hub-username') || 'human-' + Math.random().toString(36).substr(2, 6);
     const HUMAN_ID = USERNAME;
     
+    // Global pending image for upload
+    let pendingImage = null;
+    
     // Allow user to set their name
     function setUsername(name) {
       if (name && name.trim()) {
@@ -968,7 +971,6 @@
       usernameBtn.title = 'Logged in as: ' + USERNAME + ' (click to change)';
 
       // Image upload handling
-      let pendingImage = null;
       const imageBtn = document.getElementById('imageBtn');
       const imageInput = document.getElementById('imageInput');
       const imagePreview = document.getElementById('imagePreview');
