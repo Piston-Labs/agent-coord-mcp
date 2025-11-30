@@ -1007,8 +1007,17 @@
       const emptyState = container.querySelector('.empty-state');
       if (emptyState) emptyState.remove();
 
-      messages.forEach(m => {
-        container.insertAdjacentHTML('beforeend', renderMessage(m));
+      // Get existing message IDs to prevent duplicates
+      const existingIds = new Set(
+        Array.from(container.querySelectorAll('.message[data-id]'))
+          .map(el => el.dataset.id)
+      );
+
+      // Only append messages that don't already exist (reverse to maintain order)
+      [...messages].reverse().forEach(m => {
+        if (!existingIds.has(m.id)) {
+          container.insertAdjacentHTML('beforeend', renderMessage(m));
+        }
       });
 
       const total = container.querySelectorAll('.message').length;
@@ -1027,7 +1036,7 @@
       const time = new Date(m.timestamp).toLocaleTimeString();
 
       return `
-        <div class="message ${isOwn ? 'own' : ''}">
+        <div class="message ${isOwn ? 'own' : ''}" data-id="${m.id}">
           <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(m.author)}</div>
           <div class="message-content">
             <div class="message-author">${m.author}</div>
@@ -1067,15 +1076,24 @@
         });
 
         console.log('Response status:', res.status);
+        const responseData = await res.json();
 
         if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || 'Failed to send');
+          throw new Error(responseData.error || 'Failed to send');
         }
 
         input.value = '';
-        // Immediately fetch to see our message (this also updates lastMessageTime)
-        await fetchMessages();
+        // Append just our message optimistically (no full re-fetch needed)
+        if (responseData.timestamp) {
+          appendMessages([{
+            id: responseData.id,
+            author: HUMAN_ID,
+            authorType: 'human',
+            message: message,
+            timestamp: responseData.timestamp
+          }]);
+          lastMessageTime = responseData.timestamp;
+        }
       } catch (err) {
         console.error('Send failed:', err);
         alert('Failed to send message: ' + err.message);
