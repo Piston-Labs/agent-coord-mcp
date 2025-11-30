@@ -10,6 +10,21 @@ import { readFileSync, existsSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { unifiedStore as store } from './unified-store.js';
+import {
+  formatAgents,
+  formatTasks,
+  formatClaims,
+  formatLocks,
+  formatZones,
+  formatMessages,
+  formatOutput,
+  type OutputFormat
+} from './toon.js';
+import {
+  optimizeContext,
+  analyzeActivity,
+  getOptimizerStatus
+} from './context-optimizer.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -47,6 +62,26 @@ function json(res: ServerResponse, data: unknown, status = 200) {
     'Access-Control-Allow-Headers': 'Content-Type'
   });
   res.end(JSON.stringify(data, null, 2));
+}
+
+/**
+ * Respond with TOON-formatted data for token efficiency
+ * Use ?format=toon to enable, ?format=json for explicit JSON
+ */
+function respond(res: ServerResponse, data: unknown, format: OutputFormat = 'json', status = 200) {
+  const result = formatOutput(data, format);
+
+  const contentType = result.format === 'toon' ? 'text/plain' : 'application/json';
+
+  res.writeHead(status, {
+    'Content-Type': contentType,
+    'X-Format': result.format,
+    'X-Token-Savings': `${result.savings}%`,
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type'
+  });
+  res.end(result.content);
 }
 
 function error(res: ServerResponse, message: string, status = 400) {
@@ -96,18 +131,24 @@ const server = createServer(async (req, res) => {
         endpoints: [
           'GET  /api/health',
           'GET  /api/agents',
+          'GET  /api/agents?format=toon',
           'POST /api/agents/:id/status',
           'GET  /api/chat',
           'POST /api/chat',
           'GET  /api/tasks',
+          'GET  /api/tasks?format=toon',
           'POST /api/tasks',
           'GET  /api/locks',
+          'GET  /api/locks?format=toon',
           'POST /api/locks',
           'GET  /api/zones',
           'POST /api/zones',
           'GET  /api/claims',
+          'GET  /api/claims?format=toon',
           'POST /api/claims',
-          'GET  /api/work/:agentId'
+          'GET  /api/work/:agentId',
+          'GET  /api/context (optimized)',
+          'GET  /api/activity (summary)'
         ]
       });
     }
@@ -119,6 +160,52 @@ const server = createServer(async (req, res) => {
         timestamp: new Date().toISOString(),
         agents: store.getActiveAgents().length,
         uptime: process.uptime()
+      });
+    }
+
+    // ========== OPTIMIZED CONTEXT ==========
+    if (path === '/api/context') {
+      const targetTokens = parseInt(query.tokens || '4000', 10);
+
+      const optimized = optimizeContext(
+        store.getAllAgents(),
+        store.listTasks(),
+        store.getGroupMessages(200),
+        store.listClaims(true),
+        store.getAllLocks(),
+        store.listZones(),
+        targetTokens
+      );
+
+      return json(res, {
+        optimized: true,
+        targetTokens,
+        stats: optimized.stats,
+        digest: optimized.digest,
+        agents: optimized.agents,
+        tasks: optimized.tasks,
+        messages: optimized.messages.slice(0, 10),  // Just recent for context
+        claims: optimized.claims,
+        locks: optimized.locks,
+        zones: optimized.zones
+      });
+    }
+
+    // ========== ACTIVITY SUMMARY ==========
+    if (path === '/api/activity') {
+      const activity = analyzeActivity(
+        store.getAllAgents(),
+        store.listTasks(),
+        store.getGroupMessages(100),
+        store.listClaims()
+      );
+
+      const optimizerStatus = getOptimizerStatus();
+
+      return json(res, {
+        activity,
+        optimizer: optimizerStatus,
+        timestamp: new Date().toISOString()
       });
     }
 
@@ -173,6 +260,19 @@ const server = createServer(async (req, res) => {
         const agents = query.active === 'true'
           ? store.getActiveAgents()
           : store.getAllAgents();
+        const format = (query.format || 'json') as OutputFormat;
+
+        if (format === 'toon') {
+          const result = formatAgents(agents);
+          res.writeHead(200, {
+            'Content-Type': 'text/plain',
+            'X-Format': result.format,
+            'X-Token-Savings': `${result.savings}%`,
+            'Access-Control-Allow-Origin': '*'
+          });
+          return res.end(result.content);
+        }
+
         return json(res, { agents, count: agents.length });
       }
     }
@@ -246,6 +346,19 @@ const server = createServer(async (req, res) => {
       if (method === 'GET') {
         const status = query.status as 'todo' | 'in-progress' | 'done' | 'blocked' | undefined;
         const tasks = store.listTasks(status);
+        const format = (query.format || 'json') as OutputFormat;
+
+        if (format === 'toon') {
+          const result = formatTasks(tasks);
+          res.writeHead(200, {
+            'Content-Type': 'text/plain',
+            'X-Format': result.format,
+            'X-Token-Savings': `${result.savings}%`,
+            'Access-Control-Allow-Origin': '*'
+          });
+          return res.end(result.content);
+        }
+
         return json(res, { tasks, count: tasks.length });
       }
 
@@ -292,6 +405,19 @@ const server = createServer(async (req, res) => {
     if (path === '/api/locks') {
       if (method === 'GET') {
         const locks = store.getAllLocks();
+        const format = (query.format || 'json') as OutputFormat;
+
+        if (format === 'toon') {
+          const result = formatLocks(locks);
+          res.writeHead(200, {
+            'Content-Type': 'text/plain',
+            'X-Format': result.format,
+            'X-Token-Savings': `${result.savings}%`,
+            'Access-Control-Allow-Origin': '*'
+          });
+          return res.end(result.content);
+        }
+
         return json(res, { locks, count: locks.length });
       }
 
@@ -328,6 +454,19 @@ const server = createServer(async (req, res) => {
     if (path === '/api/zones') {
       if (method === 'GET') {
         const zones = store.listZones();
+        const format = (query.format || 'json') as OutputFormat;
+
+        if (format === 'toon') {
+          const result = formatZones(zones);
+          res.writeHead(200, {
+            'Content-Type': 'text/plain',
+            'X-Format': result.format,
+            'X-Token-Savings': `${result.savings}%`,
+            'Access-Control-Allow-Origin': '*'
+          });
+          return res.end(result.content);
+        }
+
         return json(res, { zones, count: zones.length });
       }
 
@@ -371,6 +510,19 @@ const server = createServer(async (req, res) => {
       if (method === 'GET') {
         const includeStale = query.includeStale === 'true';
         const claims = store.listClaims(includeStale);
+        const format = (query.format || 'json') as OutputFormat;
+
+        if (format === 'toon') {
+          const result = formatClaims(claims);
+          res.writeHead(200, {
+            'Content-Type': 'text/plain',
+            'X-Format': result.format,
+            'X-Token-Savings': `${result.savings}%`,
+            'Access-Control-Allow-Origin': '*'
+          });
+          return res.end(result.content);
+        }
+
         return json(res, { claims, count: claims.length });
       }
 
