@@ -10,7 +10,7 @@ const AGENTS_KEY = 'agent-coord:active-agents';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -18,21 +18,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    // DELETE: Clear all agents (useful for corrupt data)
+    if (req.method === 'DELETE') {
+      await redis.del(AGENTS_KEY);
+      return res.json({ success: true, message: 'All agents cleared' });
+    }
+
     // GET: List active agents
     if (req.method === 'GET') {
-      const agents = await redis.hgetall(AGENTS_KEY);
-      const staleThreshold = Date.now() - 30 * 60 * 1000; // 30 minutes
+      let agents: Record<string, unknown> = {};
+      try {
+        agents = await redis.hgetall(AGENTS_KEY) || {};
+      } catch (hgetError) {
+        // If hgetall fails due to corrupt data, clear and return empty
+        console.error('hgetall failed, clearing corrupt data:', hgetError);
+        await redis.del(AGENTS_KEY);
+        return res.json({ agents: [], count: 0, note: 'Cleared corrupt data' });
+      }
 
+      const staleThreshold = Date.now() - 30 * 60 * 1000; // 30 minutes
       const agentList: any[] = [];
-      for (const [key, value] of Object.entries(agents || {})) {
+
+      for (const [key, value] of Object.entries(agents)) {
         try {
           const agent = typeof value === 'string' ? JSON.parse(value) : value;
-          const lastSeen = new Date(agent.lastSeen).getTime();
-          if (lastSeen > staleThreshold) {
-            agentList.push(agent);
+          if (agent && agent.lastSeen) {
+            const lastSeen = new Date(agent.lastSeen).getTime();
+            if (lastSeen > staleThreshold) {
+              agentList.push(agent);
+            }
           }
         } catch (parseError) {
-          // Skip invalid entries and optionally clean them up
+          // Skip invalid entries and clean them up
           console.error(`Invalid agent entry for ${key}:`, parseError);
           await redis.hdel(AGENTS_KEY, key);
         }
