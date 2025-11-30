@@ -960,59 +960,70 @@
       renderAgents(data.agents || []);
     }
 
-    // Core agents are persistent, long-running agents
-    const CORE_AGENT_IDS = ['autonomous-agent', 'claude-code', 'claude-desktop', 'opus-agent'];
+    // Corporate-style agent hierarchy tiers
+    const HIERARCHY = {
+      leadership: { ids: ['autonomous-agent', 'claude-code', 'claude-desktop'], title: 'Core Leadership', icon: '👔', color: '#a371f7' },
+      senior: { ids: ['opus-agent', 'piston-lead'], title: 'Technical Leads', icon: '⚡', color: '#58a6ff' },
+      engineers: { ids: ['piston-dev-1', 'piston-dev-2'], title: 'Development Team', icon: '💻', color: '#3fb950' },
+      specialists: { roles: ['specialist', 'architect', 'designer', 'ux', 'memory', 'trainer'], title: 'Specialists', icon: '🔧', color: '#d29922' },
+      taskWorkers: { title: 'Task Workers', icon: '📋', color: '#8b949e' }
+    };
+
+    const ROLE_TAGS = {
+      'orchestrator': { label: 'ORCH', color: '#a371f7' },
+      'developer': { label: 'DEV', color: '#58a6ff' },
+      'frontend': { label: 'FE', color: '#3fb950' },
+      'backend': { label: 'BE', color: '#f85149' },
+      'protege': { label: 'TRAINEE', color: '#8b949e' },
+      'tech-lead': { label: 'LEAD', color: '#58a6ff' }
+    };
+
+    function getAgentTier(a) {
+      const id = (a.id || '').toLowerCase();
+      const role = (a.role || '').toLowerCase();
+      const roles = a.roles || [];
+      if (HIERARCHY.leadership.ids.includes(id)) return 'leadership';
+      if (HIERARCHY.senior.ids.includes(id)) return 'senior';
+      if (HIERARCHY.engineers.ids.includes(id)) return 'engineers';
+      if (HIERARCHY.specialists.roles.some(r => role.includes(r) || roles.some(ar => ar.toLowerCase().includes(r)))) return 'specialists';
+      return 'taskWorkers';
+    }
+
+    function getRoleTags(a) {
+      const tags = [];
+      const role = (a.role || '').toLowerCase();
+      for (const [k, v] of Object.entries(ROLE_TAGS)) { if (role.includes(k)) { tags.push(v); break; } }
+      return tags.slice(0, 2);
+    }
 
     function renderAgents(agents) {
       const container = document.getElementById('agentsList');
       const countEl = document.getElementById('activeCount');
       const totalEl = document.getElementById('agentCount');
-
       countEl.textContent = agents.length + ' active';
       totalEl.textContent = agents.length;
 
       if (agents.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-            </svg>
-            <p>No agents online</p>
-          </div>`;
+        container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No agents online</p></div>`;
         return;
       }
 
-      // Split agents into Core (persistent) and Task (spawned/temporary)
-      const coreAgents = agents.filter(a => CORE_AGENT_IDS.includes(a.id) || a.role === 'orchestrator');
-      const taskAgents = agents.filter(a => !CORE_AGENT_IDS.includes(a.id) && a.role !== 'orchestrator');
+      const grouped = { leadership: [], senior: [], engineers: [], specialists: [], taskWorkers: [] };
+      agents.forEach(a => grouped[getAgentTier(a)].push(a));
 
-      const renderAgentCard = (a, isCore) => `
-        <div class="agent-card" style="${isCore ? '' : 'opacity: 0.85; border-left: 3px solid var(--warning);'}">
-          <div class="agent-header">
-            <div class="agent-avatar" style="${isCore ? '' : 'background: var(--warning);'}">${getInitials(a.id)}</div>
-            <span class="agent-name">${a.name || a.id}</span>
-            <span class="agent-status ${a.status}">${a.status}</span>
-          </div>
-          <div class="agent-task">${a.currentTask || a.workingOn || 'Idle'}</div>
-          ${a.spawnedBy ? `<div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">Spawned by: ${a.spawnedBy}</div>` : ''}
-        </div>
-      `;
+      const renderCard = (a, tier) => {
+        const cfg = HIERARCHY[tier];
+        const tags = getRoleTags(a).map(t => `<span style="background:${t.color}22;color:${t.color};padding:1px 4px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px;">${t.label}</span>`).join('');
+        return `<div class="agent-card" style="border-left:3px solid ${cfg.color};"><div class="agent-header"><div class="agent-avatar" style="background:${cfg.color};">${getInitials(a.id)}</div><span class="agent-name">${a.name||a.id}${tags}</span><span class="agent-status ${a.status}">${a.status}</span></div><div class="agent-task">${a.currentTask||a.workingOn||'Idle'}</div>${a.spawnedBy?`<div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">↳ ${a.spawnedBy}</div>`:''}</div>`;
+      };
 
       let html = '';
-
-      // Core Agents Section
-      if (coreAgents.length > 0) {
-        html += `<div class="context-title" style="margin: 8px 0 4px 0;">Core Agents</div>`;
-        html += coreAgents.map(a => renderAgentCard(a, true)).join('');
+      for (const [k, cfg] of Object.entries(HIERARCHY)) {
+        if (grouped[k].length > 0) {
+          html += `<div class="context-title" style="margin:${k==='leadership'?'4px':'12px'} 0 4px 0;">${cfg.icon} ${cfg.title}</div>`;
+          html += grouped[k].map(a => renderCard(a, k)).join('');
+        }
       }
-
-      // Task Agents Section (spawned/temporary)
-      if (taskAgents.length > 0) {
-        html += `<div class="context-title" style="margin: 12px 0 4px 0;">Task Agents</div>`;
-        html += taskAgents.map(a => renderAgentCard(a, false)).join('');
-      }
-
       container.innerHTML = html;
     }
 
