@@ -79,12 +79,16 @@
       grid-template-columns: 260px 1fr 280px;
       gap: 1px;
       background: var(--border);
+      overflow: hidden;
+      height: calc(100vh - 53px); /* Account for header */
     }
 
     .panel {
       background: var(--bg-primary);
       display: flex;
       flex-direction: column;
+      overflow: hidden;
+      height: 100%;
     }
 
     .panel-header {
@@ -98,6 +102,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .panel-content {
@@ -575,7 +580,9 @@
         return;
       }
 
-      container.innerHTML = messages.map(m => renderMessage(m)).join('');
+      // Reverse messages so newest are at the bottom (API returns newest first)
+      const chronological = [...messages].reverse();
+      container.innerHTML = chronological.map(m => renderMessage(m)).join('');
       container.scrollTop = container.scrollHeight;
     }
 
@@ -620,23 +627,40 @@
 
     async function sendMessage() {
       const input = document.getElementById('messageInput');
+      const sendBtn = document.getElementById('sendBtn');
       const message = input.value.trim();
       if (!message) return;
 
-      input.value = '';
+      // Disable button while sending
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Sending...';
 
-      await fetch(API_BASE + '/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          author: HUMAN_ID,
-          authorType: 'human',
-          message
-        })
-      });
+      try {
+        const res = await fetch(API_BASE + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: HUMAN_ID,
+            authorType: 'human',
+            message
+          })
+        });
 
-      // Immediately fetch to see our message
-      await fetchNewMessages();
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to send');
+        }
+
+        input.value = '';
+        // Immediately fetch to see our message
+        await fetchMessages();
+      } catch (err) {
+        console.error('Send failed:', err);
+        alert('Failed to send message: ' + err.message);
+      } finally {
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Send';
+      }
     }
 
     async function fetchContext() {
