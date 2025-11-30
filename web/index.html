@@ -360,6 +360,296 @@
       margin-bottom: 12px;
       opacity: 0.5;
     }
+
+    /* Tabs */
+    .tabs-header {
+      padding: 0 16px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tab {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+
+    .tab:hover {
+      color: var(--text-primary);
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Roadmap View */
+    .roadmap-filters {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .roadmap-filters select {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      color: var(--text-primary);
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .roadmap-filters select:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .add-item-btn {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: auto;
+      transition: opacity 0.15s;
+    }
+
+    .add-item-btn:hover {
+      opacity: 0.9;
+    }
+
+    .roadmap-board {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 16px;
+      overflow-x: auto;
+      min-height: 0;
+    }
+
+    .roadmap-column {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      min-height: 200px;
+    }
+
+    .column-header {
+      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .column-items {
+      flex: 1;
+      padding: 8px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .roadmap-item {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .roadmap-item:hover {
+      border-color: var(--accent);
+    }
+
+    .roadmap-item-title {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .roadmap-item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .roadmap-item-project {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .roadmap-item-priority {
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .roadmap-item-priority.critical { background: rgba(248, 81, 73, 0.2); color: var(--danger); }
+    .roadmap-item-priority.high { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
+    .roadmap-item-priority.medium { background: rgba(88, 166, 255, 0.2); color: var(--accent); }
+    .roadmap-item-priority.low { background: rgba(139, 148, 158, 0.2); color: var(--text-secondary); }
+
+    .roadmap-item-assignee {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+    }
+
+    .assignee-avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .assignee-avatar.human { background: var(--human-color); }
+    .assignee-avatar.bot { background: var(--agent-color); }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .form-group textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+
+    .modal-actions button {
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .btn-cancel {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .btn-submit {
+      background: var(--accent);
+      border: none;
+      color: #fff;
+    }
+
+    .btn-submit:hover,
+    .btn-cancel:hover {
+      opacity: 0.9;
+    }
   </style>
 </head>
 <body>
@@ -501,6 +791,60 @@
       </div>
     </div>
   </main>
+
+  <!-- Add Roadmap Item Modal -->
+  <div class="modal-overlay" id="addItemModal">
+    <div class="modal">
+      <div class="modal-title">Add Roadmap Item</div>
+      <form id="addItemForm">
+        <div class="form-group">
+          <label for="itemTitle">Title</label>
+          <input type="text" id="itemTitle" required placeholder="Feature name or task" />
+        </div>
+        <div class="form-group">
+          <label for="itemDescription">Description</label>
+          <textarea id="itemDescription" placeholder="Details about this item..."></textarea>
+        </div>
+        <div class="form-group">
+          <label for="itemProject">Project</label>
+          <select id="itemProject" required>
+            <option value="teltonika">Teltonika Fleet</option>
+            <option value="gran-autismo">Gran Autismo Dashboard</option>
+            <option value="agent-coord">Agent Coordination</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="itemPriority">Priority</label>
+          <select id="itemPriority">
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="itemAssignee">Assignee</label>
+          <select id="itemAssignee">
+            <option value="">Unassigned</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="itemStatus">Status</label>
+          <select id="itemStatus">
+            <option value="backlog">Backlog</option>
+            <option value="planned">Planned</option>
+            <option value="in-progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideAddRoadmapItem()">Cancel</button>
+          <button type="submit" class="btn-submit">Add Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script>
     const API_BASE = window.location.origin + '/api';
@@ -820,6 +1164,218 @@
       div.textContent = text;
       return div.innerHTML;
     }
+
+    // === ROADMAP FUNCTIONS ===
+
+    let teamMembers = [];
+    let roadmapItems = [];
+
+    function switchTab(tabName) {
+      // Update tab buttons
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.toggle('active', tab.dataset.tab === tabName);
+      });
+
+      // Update tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === tabName + 'View');
+      });
+
+      // Fetch roadmap data when switching to roadmap tab
+      if (tabName === 'roadmap') {
+        fetchTeam();
+        fetchRoadmap();
+      }
+    }
+
+    async function fetchTeam() {
+      try {
+        const res = await fetch(API_BASE + '/roadmap?type=team');
+        const data = await res.json();
+        teamMembers = data.team || [];
+
+        // Populate assignee dropdowns
+        const assigneeFilter = document.getElementById('assigneeFilter');
+        const itemAssignee = document.getElementById('itemAssignee');
+
+        const options = '<option value="">All Assignees</option>' +
+          teamMembers.map(m => `<option value="${m.id}">${m.name} (${m.type})</option>`).join('');
+        assigneeFilter.innerHTML = options;
+
+        const itemOptions = '<option value="">Unassigned</option>' +
+          teamMembers.map(m => `<option value="${m.id}" data-type="${m.type}">${m.name}</option>`).join('');
+        itemAssignee.innerHTML = itemOptions;
+      } catch (err) {
+        console.error('Failed to fetch team:', err);
+      }
+    }
+
+    async function fetchRoadmap() {
+      try {
+        const project = document.getElementById('projectFilter').value;
+        const assignee = document.getElementById('assigneeFilter').value;
+
+        let url = API_BASE + '/roadmap?';
+        if (project) url += 'project=' + encodeURIComponent(project) + '&';
+        if (assignee) url += 'assignee=' + encodeURIComponent(assignee);
+
+        const res = await fetch(url);
+        const data = await res.json();
+        roadmapItems = data.items || [];
+        renderRoadmap();
+      } catch (err) {
+        console.error('Failed to fetch roadmap:', err);
+      }
+    }
+
+    function renderRoadmap() {
+      const columns = {
+        'backlog': document.getElementById('backlogItems'),
+        'planned': document.getElementById('backlogItems'), // combine with backlog
+        'in-progress': document.getElementById('inProgressItems'),
+        'review': document.getElementById('reviewItems'),
+        'done': document.getElementById('doneItems')
+      };
+
+      // Clear all columns
+      Object.values(columns).forEach(col => col.innerHTML = '');
+
+      // Group items by status
+      const grouped = {
+        'backlog': [],
+        'in-progress': [],
+        'review': [],
+        'done': []
+      };
+
+      roadmapItems.forEach(item => {
+        const status = item.status === 'planned' ? 'backlog' : item.status;
+        if (grouped[status]) {
+          grouped[status].push(item);
+        }
+      });
+
+      // Render each group
+      Object.entries(grouped).forEach(([status, items]) => {
+        const container = columns[status];
+        if (!container) return;
+
+        if (items.length === 0) {
+          container.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; text-align: center; padding: 20px;">No items</div>';
+          return;
+        }
+
+        container.innerHTML = items.map(item => {
+          const member = teamMembers.find(m => m.id === item.assignee);
+          const assigneeHtml = member ? `
+            <div class="roadmap-item-assignee">
+              <div class="assignee-avatar ${member.type}" style="background: ${member.color || 'var(--accent)'}">${getInitials(member.name)}</div>
+            </div>
+          ` : '';
+
+          return `
+            <div class="roadmap-item" onclick="showItemDetails('${item.id}')">
+              <div class="roadmap-item-title">${escapeHtml(item.title)}</div>
+              <div class="roadmap-item-meta">
+                <span class="roadmap-item-project">${item.project}</span>
+                <span class="roadmap-item-priority ${item.priority}">${item.priority}</span>
+                ${assigneeHtml}
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    function showAddRoadmapItem() {
+      document.getElementById('addItemModal').classList.add('active');
+      document.getElementById('addItemForm').reset();
+    }
+
+    function hideAddRoadmapItem() {
+      document.getElementById('addItemModal').classList.remove('active');
+    }
+
+    async function submitRoadmapItem(e) {
+      e.preventDefault();
+
+      const assigneeSelect = document.getElementById('itemAssignee');
+      const selectedOption = assigneeSelect.options[assigneeSelect.selectedIndex];
+
+      const item = {
+        title: document.getElementById('itemTitle').value,
+        description: document.getElementById('itemDescription').value,
+        project: document.getElementById('itemProject').value,
+        priority: document.getElementById('itemPriority').value,
+        assignee: assigneeSelect.value || undefined,
+        assigneeType: selectedOption.dataset.type || 'human',
+        status: document.getElementById('itemStatus').value
+      };
+
+      try {
+        const res = await fetch(API_BASE + '/roadmap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to create item');
+        }
+
+        hideAddRoadmapItem();
+        fetchRoadmap();
+      } catch (err) {
+        console.error('Failed to create item:', err);
+        alert('Failed to create item: ' + err.message);
+      }
+    }
+
+    function showItemDetails(itemId) {
+      const item = roadmapItems.find(i => i.id === itemId);
+      if (!item) return;
+
+      // For now, just allow quick status change
+      const newStatus = prompt(
+        `Change status for "${item.title}"?\nCurrent: ${item.status}\n\nOptions: backlog, planned, in-progress, review, done`,
+        item.status
+      );
+
+      if (newStatus && ['backlog', 'planned', 'in-progress', 'review', 'done'].includes(newStatus)) {
+        updateItemStatus(itemId, newStatus);
+      }
+    }
+
+    async function updateItemStatus(itemId, status) {
+      try {
+        const res = await fetch(API_BASE + '/roadmap', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: itemId, status })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Failed to update item');
+        }
+
+        fetchRoadmap();
+      } catch (err) {
+        console.error('Failed to update item:', err);
+        alert('Failed to update: ' + err.message);
+      }
+    }
+
+    // Close modal on overlay click
+    document.getElementById('addItemModal').addEventListener('click', (e) => {
+      if (e.target.classList.contains('modal-overlay')) {
+        hideAddRoadmapItem();
+      }
+    });
+
+    // Form submit handler
+    document.getElementById('addItemForm').addEventListener('submit', submitRoadmapItem);
 
     init();
   </script>
