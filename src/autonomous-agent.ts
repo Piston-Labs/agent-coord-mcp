@@ -10,6 +10,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import ContextManager, { ContextPriority } from './context-manager.js';
 
 // Configuration
 const CONFIG = {
@@ -27,8 +28,75 @@ let agentDisplayName = CONFIG.AGENT_NAME;
 
 const anthropic = new Anthropic();
 
+// Initialize bulletproof context manager
+const contextManager = new ContextManager(CONFIG.AGENT_ID, 50000);
+let checkpointInterval: NodeJS.Timeout | null = null;
+
 // Tool definitions for Claude
 const TOOLS: Anthropic.Tool[] = [
+  {
+    name: 'save_checkpoint',
+    description: 'Save current context state to Redis for persistence. Use this before shutting down or after important decisions.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'sync_context',
+    description: 'Post a context sync message to help other agents get up to speed quickly. Use when agents come online.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: 'record_decision',
+    description: 'Record an important decision for future reference. Decisions are persisted across restarts.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        decision: { type: 'string', description: 'The decision made' },
+        reason: { type: 'string', description: 'Why this decision was made' }
+      },
+      required: ['decision']
+    }
+  },
+  {
+    name: 'add_blocker',
+    description: 'Record a blocker that is preventing progress. Blockers are tracked across restarts.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        blocker: { type: 'string', description: 'Description of what is blocking progress' }
+      },
+      required: ['blocker']
+    }
+  },
+  {
+    name: 'resolve_blocker',
+    description: 'Mark a blocker as resolved.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        blocker: { type: 'string', description: 'The blocker that was resolved (partial match OK)' }
+      },
+      required: ['blocker']
+    }
+  },
+  {
+    name: 'set_focus',
+    description: 'Update the current focus/priority. This is tracked and shared with other agents.',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        focus: { type: 'string', description: 'What you are currently focused on' }
+      },
+      required: ['focus']
+    }
+  },
   {
     name: 'read_github_file',
     description: 'Read a file from a GitHub repository to understand code or documentation',
@@ -144,6 +212,55 @@ const TOOLS: Anthropic.Tool[] = [
 // Tool implementations
 async function executeTools(toolName: string, toolInput: Record<string, unknown>): Promise<string> {
   switch (toolName) {
+    case 'save_checkpoint': {
+      const success = await contextManager.saveCheckpoint();
+      return success ? 'Checkpoint saved successfully' : 'Failed to save checkpoint';
+    }
+
+    case 'sync_context': {
+      const syncMessage = contextManager.generateContextSync();
+      await fetch(`${CONFIG.API_BASE}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ author: CONFIG.AGENT_ID, authorType: 'agent', message: syncMessage })
+      });
+      return 'Context sync posted to chat';
+    }
+
+    case 'record_decision': {
+      const { decision, reason } = toolInput as { decision: string; reason?: string };
+      const fullDecision = reason ? `${decision} (reason: ${reason})` : decision;
+      contextManager.addContextItem({
+        type: 'decision',
+        content: fullDecision,
+        priority: ContextPriority.HIGH
+      });
+      return `Decision recorded: ${fullDecision}`;
+    }
+
+    case 'add_blocker': {
+      const { blocker } = toolInput as { blocker: string };
+      contextManager.addContextItem({
+        type: 'blocker',
+        content: blocker,
+        priority: ContextPriority.CRITICAL
+      });
+      return `Blocker added: ${blocker}`;
+    }
+
+    case 'resolve_blocker': {
+      const { blocker } = toolInput as { blocker: string };
+      contextManager.resolveBlocker(blocker);
+      return `Blocker resolved: ${blocker}`;
+    }
+
+    case 'set_focus': {
+      const { focus } = toolInput as { focus: string };
+      contextManager.setFocus(focus);
+      return `Focus updated to: ${focus}`;
+    }
+
+
     case 'read_github_file': {
       const { repo, path, branch = 'main' } = toolInput as { repo: string; path: string; branch?: string };
       try {
@@ -333,7 +450,11 @@ async function executeTools(toolName: string, toolInput: Record<string, unknown>
 
 
 // System prompt with full context
-const SYSTEM_PROMPT = `You are ${CONFIG.AGENT_ID}, an autonomous AI agent in the Piston Labs multi-agent coordination system.
+// Dynamic system prompt with live context
+function getSystemPrompt(): string {
+  const contextSection = contextManager.getContextForPrompt();
+
+  return `You are ${CONFIG.AGENT_ID}, an autonomous AI agent in the Piston Labs multi-agent coordination system.
 
 ## Your Environment
 - You run 24/7 on Railway, monitoring the group chat at ${CONFIG.API_BASE}
@@ -377,7 +498,13 @@ Available context clusters typically include: technical, development, company, t
 
 ## Current Role: ${CONFIG.AGENT_ROLE}
 
-When humans or agents ask you to do something, use your tools to accomplish it. Think step by step.`;
+When humans or agents ask you to do something, use your tools to accomplish it. Think step by step.
+
+${contextSection ? '\n## LIVE CONTEXT\n' + contextSection : ''}`;
+}
+
+// Legacy static prompt for backwards compatibility
+const SYSTEM_PROMPT = getSystemPrompt();
 
 interface ChatMessage {
   id: string;
@@ -408,6 +535,14 @@ async function getNewMessages(): Promise<ChatMessage[]> {
 async function processWithTools(userContent: string): Promise<string> {
   // Ensure user content is never empty
   const safeUserContent = userContent.trim() || '[No content provided]';
+
+  // Add to context manager for persistence
+  contextManager.addContextItem({
+    type: 'message',
+    content: safeUserContent,
+    priority: ContextPriority.MEDIUM
+  });
+
   conversationHistory.push({ role: 'user', content: safeUserContent });
 
   // Keep history manageable - but ensure we don't break in middle of tool use
@@ -428,7 +563,7 @@ async function processWithTools(userContent: string): Promise<string> {
   let response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: getSystemPrompt(),
     tools: TOOLS,
     messages: conversationHistory
   });
@@ -463,7 +598,7 @@ async function processWithTools(userContent: string): Promise<string> {
     response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
+      system: getSystemPrompt(),
       tools: TOOLS,
       messages: conversationHistory
     });
@@ -584,8 +719,25 @@ async function mainLoop(): Promise<void> {
   console.log(`[agent] Connecting to ${CONFIG.API_BASE}`);
   console.log(`[agent] Poll interval: ${CONFIG.POLL_INTERVAL}ms`);
 
+  // Try to restore from checkpoint (hot start)
+  const restored = await contextManager.restoreFromCheckpoint();
+  if (restored) {
+    console.log('[agent] Context restored from checkpoint - hot start enabled');
+  } else {
+    console.log('[agent] Starting fresh - no checkpoint found');
+  }
+
+  // Sync current system state
+  await contextManager.syncSystemState();
+  console.log('[agent] System state synced');
+
+  // Start auto-checkpoint every 5 minutes
+  checkpointInterval = contextManager.startAutoCheckpoint(5);
+  console.log('[agent] Auto-checkpoint enabled (every 5 minutes)');
+
   // Register presence silently - no chat message spam on startup
   await updateStatus('Online - monitoring chat');
+  contextManager.setFocus('Monitoring chat and coordinating team');
 
   while (true) {
     try {
@@ -595,6 +747,13 @@ async function mainLoop(): Promise<void> {
       if (newMessages.length > 0) {
         console.log(`[agent] Found ${newMessages.length} new message(s)`);
         lastProcessedTimestamp = newMessages[newMessages.length - 1].timestamp;
+
+        // Process messages through context manager
+        contextManager.processMessages(newMessages.map(m => ({
+          author: m.author,
+          message: m.message,
+          authorType: m.authorType
+        })));
 
         // Check for special commands first (like rename)
         await checkForRenameCommand(newMessages);
@@ -618,18 +777,29 @@ async function mainLoop(): Promise<void> {
       console.error('[agent] Loop error:', err);
     }
 
-    await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL));
+    // Periodically sync system state (every 10 polls)
+      if (Math.random() < 0.1) {
+        await contextManager.syncSystemState();
+      }
+
+      await new Promise(resolve => setTimeout(resolve, CONFIG.POLL_INTERVAL));
   }
 }
 
-// Graceful shutdown - no chat spam, just log and exit
+// Graceful shutdown with checkpoint save
 process.on('SIGINT', async () => {
   console.log('[agent] Shutting down (SIGINT)...');
+  if (checkpointInterval) clearInterval(checkpointInterval);
+  await contextManager.saveCheckpoint();
+  console.log('[agent] Checkpoint saved before exit');
   process.exit(0);
 });
 
 process.on('SIGTERM', async () => {
   console.log('[agent] Shutting down (SIGTERM)...');
+  if (checkpointInterval) clearInterval(checkpointInterval);
+  await contextManager.saveCheckpoint();
+  console.log('[agent] Checkpoint saved before exit');
   process.exit(0);
 });
 
