@@ -879,8 +879,10 @@
   <!-- Login Modal -->
   <div id="loginOverlay" class="login-overlay" style="display: none;">
     <div class="login-modal">
-      <h2>🔐 Piston Labs Agent Hub</h2>
-      <p style="color: var(--text-secondary); margin-bottom: 20px;">Login required to access the coordination system</p>
+      <h2 id="authTitle">🔐 Piston Labs Agent Hub</h2>
+      <p id="authSubtitle" style="color: var(--text-secondary); margin-bottom: 20px;">Login required to access the coordination system</p>
+
+      <!-- Login Form -->
       <form id="loginForm">
         <div class="form-group">
           <label>Username</label>
@@ -893,6 +895,35 @@
         <div id="loginError" style="color: #f85149; margin-bottom: 12px; display: none;"></div>
         <button type="submit" class="btn-primary" style="width: 100%;">Login</button>
       </form>
+
+      <!-- Register Form (hidden by default) -->
+      <form id="registerForm" style="display: none;">
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" id="regUsername" placeholder="Choose username (3-30 chars)" required minlength="3" maxlength="30" />
+        </div>
+        <div class="form-group">
+          <label>Password</label>
+          <input type="password" id="regPassword" placeholder="Choose password (min 8 chars)" required minlength="8" />
+        </div>
+        <div class="form-group">
+          <label>Confirm Password</label>
+          <input type="password" id="regPasswordConfirm" placeholder="Confirm password" required />
+        </div>
+        <div class="form-group">
+          <label>Invite Code</label>
+          <input type="text" id="regInviteCode" placeholder="Enter invite code" required />
+        </div>
+        <div id="registerError" style="color: #f85149; margin-bottom: 12px; display: none;"></div>
+        <div id="registerSuccess" style="color: #3fb950; margin-bottom: 12px; display: none;"></div>
+        <button type="submit" class="btn-primary" style="width: 100%;">Create Account</button>
+      </form>
+
+      <!-- Toggle between login/register -->
+      <div style="margin-top: 16px; font-size: 13px; color: var(--text-secondary);">
+        <span id="authToggleText">Don't have an account?</span>
+        <a href="#" id="authToggleLink" style="color: var(--accent); text-decoration: none; margin-left: 4px;">Register</a>
+      </div>
     </div>
   </div>
 
@@ -1220,6 +1251,24 @@
       }
     }
 
+    async function register(username, password, inviteCode) {
+      try {
+        const res = await fetch(API_BASE + '/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ username, password, inviteCode })
+        });
+        const data = await res.json();
+        if (data.success) {
+          return { success: true, user: data.user };
+        }
+        return { success: false, error: data.error || 'Registration failed' };
+      } catch (e) {
+        return { success: false, error: 'Network error' };
+      }
+    }
+
     function showLoginModal() {
       document.getElementById('loginOverlay').style.display = 'flex';
     }
@@ -1247,6 +1296,77 @@
           errorDiv.textContent = result.error;
           errorDiv.style.display = 'block';
         }
+      });
+    }
+
+    function setupRegisterForm() {
+      const form = document.getElementById('registerForm');
+      const errorDiv = document.getElementById('registerError');
+      const successDiv = document.getElementById('registerSuccess');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorDiv.style.display = 'none';
+        successDiv.style.display = 'none';
+
+        const username = document.getElementById('regUsername').value;
+        const password = document.getElementById('regPassword').value;
+        const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+        const inviteCode = document.getElementById('regInviteCode').value;
+
+        if (password !== passwordConfirm) {
+          errorDiv.textContent = 'Passwords do not match';
+          errorDiv.style.display = 'block';
+          return;
+        }
+
+        const result = await register(username, password, inviteCode);
+        if (result.success) {
+          successDiv.textContent = 'Account created! You can now login.';
+          successDiv.style.display = 'block';
+          form.reset();
+          setTimeout(() => toggleAuthMode(), 2000);
+        } else {
+          errorDiv.textContent = result.error;
+          errorDiv.style.display = 'block';
+        }
+      });
+    }
+
+    function toggleAuthMode() {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      const title = document.getElementById('authTitle');
+      const subtitle = document.getElementById('authSubtitle');
+      const toggleText = document.getElementById('authToggleText');
+      const toggleLink = document.getElementById('authToggleLink');
+
+      if (loginForm.style.display !== 'none') {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+        title.textContent = '📝 Create Account';
+        subtitle.textContent = 'Register to join the Piston Labs Agent Hub';
+        toggleText.textContent = 'Already have an account?';
+        toggleLink.textContent = 'Login';
+      } else {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+        title.textContent = '🔐 Piston Labs Agent Hub';
+        subtitle.textContent = 'Login required to access the coordination system';
+        toggleText.textContent = "Don't have an account?";
+        toggleLink.textContent = 'Register';
+      }
+
+      // Clear error messages
+      document.getElementById('loginError').style.display = 'none';
+      document.getElementById('registerError').style.display = 'none';
+      document.getElementById('registerSuccess').style.display = 'none';
+    }
+
+    function setupAuthToggle() {
+      document.getElementById('authToggleLink').addEventListener('click', (e) => {
+        e.preventDefault();
+        toggleAuthMode();
       });
     }
 
@@ -2121,6 +2241,8 @@
     // Start app - check auth first
     document.addEventListener('DOMContentLoaded', async () => {
       setupLoginForm();
+      setupRegisterForm();
+      setupAuthToggle();
 
       const authenticated = await checkSession();
       if (authenticated) {
