@@ -960,7 +960,8 @@
       const data = await res.json();
       renderMessages(data.messages || []);
       if (data.messages && data.messages.length > 0) {
-        lastMessageTime = data.messages[data.messages.length - 1].timestamp;
+        // API returns newest first, so messages[0] is the most recent
+        lastMessageTime = data.messages[0].timestamp;
       }
     }
 
@@ -970,7 +971,8 @@
       const data = await res.json();
       if (data.messages && data.messages.length > 0) {
         appendMessages(data.messages);
-        lastMessageTime = data.messages[data.messages.length - 1].timestamp;
+        // API returns newest first, so messages[0] is the most recent
+        lastMessageTime = data.messages[0].timestamp;
       }
     }
 
@@ -1072,7 +1074,7 @@
         }
 
         input.value = '';
-        // Immediately fetch to see our message
+        // Immediately fetch to see our message (this also updates lastMessageTime)
         await fetchMessages();
       } catch (err) {
         console.error('Send failed:', err);
