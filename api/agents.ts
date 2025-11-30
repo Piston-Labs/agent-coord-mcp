@@ -36,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ agents: [], count: 0, note: 'Cleared corrupt data' });
       }
 
-      const staleThreshold = Date.now() - 30 * 60 * 1000; // 30 minutes
+      const staleThreshold = Date.now() - 2 * 60 * 60 * 1000; // 2 hours
       const agentList: any[] = [];
 
       for (const [key, value] of Object.entries(agents)) {
