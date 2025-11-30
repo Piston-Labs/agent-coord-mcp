@@ -6,7 +6,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const RULES_KEY = 'agent-coord:rules';
+const RULES_KEY = 'agent-coord:rules'; // Coordination guardrails storage
 
 // Default rules - can be overridden via API
 const DEFAULT_RULES = {

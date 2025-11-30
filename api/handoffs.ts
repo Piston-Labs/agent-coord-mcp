@@ -6,7 +6,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const HANDOFFS_KEY = 'agent-coord:handoffs';
+const HANDOFFS_KEY = 'agent-coord:handoffs'; // Code handoff queue storage
 
 interface Handoff {
   id: string;
