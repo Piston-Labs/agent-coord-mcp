@@ -1064,6 +1064,18 @@
     let tokensSaved = 0;
     let totalTokens = 0;
 
+
+    // Cache for agent display names (id -> name)
+    const agentNameCache = {};
+
+    function getAgentDisplayName(authorId) {
+      // Check cache first
+      if (agentNameCache[authorId]) {
+        return agentNameCache[authorId];
+      }
+      // Return the ID if no cached name (will be updated on next agent fetch)
+      return authorId;
+    }
     // Initialize
     async function init() {
       console.log('Init starting...');
@@ -1259,6 +1271,13 @@
       countEl.textContent = agents.length + ' active';
       totalEl.textContent = agents.length + offlineAgents.length;
 
+      // Update agent name cache
+      [...agents, ...offlineAgents].forEach(a => {
+        if (a.name && a.name !== a.id) {
+          agentNameCache[a.id] = a.name;
+        }
+      });
+
       if (agents.length === 0) {
         container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No agents online</p></div>`;
         return;
@@ -1395,9 +1414,9 @@
 
       return `
         <div class="message ${isOwn ? 'own' : ''}" data-id="${m.id}">
-          <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(m.author)}</div>
+          <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
           <div class="message-content">
-            <div class="message-author">${m.author}</div>
+            <div class="message-author">${getAgentDisplayName(m.author)}</div>
             ${m.message ? `<div class="message-text">${escapeHtml(m.message)}</div>` : ''}
             ${imageHtml}
             <div class="message-time">${time}</div>
