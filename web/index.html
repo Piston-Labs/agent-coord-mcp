@@ -960,6 +960,9 @@
       renderAgents(data.agents || []);
     }
 
+    // Core agents are persistent, long-running agents
+    const CORE_AGENT_IDS = ['autonomous-agent', 'claude-code', 'claude-desktop', 'opus-agent'];
+
     function renderAgents(agents) {
       const container = document.getElementById('agentsList');
       const countEl = document.getElementById('activeCount');
@@ -980,16 +983,37 @@
         return;
       }
 
-      container.innerHTML = agents.map(a => `
-        <div class="agent-card">
+      // Split agents into Core (persistent) and Task (spawned/temporary)
+      const coreAgents = agents.filter(a => CORE_AGENT_IDS.includes(a.id) || a.role === 'orchestrator');
+      const taskAgents = agents.filter(a => !CORE_AGENT_IDS.includes(a.id) && a.role !== 'orchestrator');
+
+      const renderAgentCard = (a, isCore) => `
+        <div class="agent-card" style="${isCore ? '' : 'opacity: 0.85; border-left: 3px solid var(--warning);'}">
           <div class="agent-header">
-            <div class="agent-avatar">${getInitials(a.id)}</div>
-            <span class="agent-name">${a.id}</span>
+            <div class="agent-avatar" style="${isCore ? '' : 'background: var(--warning);'}">${getInitials(a.id)}</div>
+            <span class="agent-name">${a.name || a.id}</span>
             <span class="agent-status ${a.status}">${a.status}</span>
           </div>
           <div class="agent-task">${a.currentTask || a.workingOn || 'Idle'}</div>
+          ${a.spawnedBy ? `<div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">Spawned by: ${a.spawnedBy}</div>` : ''}
         </div>
-      `).join('');
+      `;
+
+      let html = '';
+
+      // Core Agents Section
+      if (coreAgents.length > 0) {
+        html += `<div class="context-title" style="margin: 8px 0 4px 0;">Core Agents</div>`;
+        html += coreAgents.map(a => renderAgentCard(a, true)).join('');
+      }
+
+      // Task Agents Section (spawned/temporary)
+      if (taskAgents.length > 0) {
+        html += `<div class="context-title" style="margin: 12px 0 4px 0;">Task Agents</div>`;
+        html += taskAgents.map(a => renderAgentCard(a, false)).join('');
+      }
+
+      container.innerHTML = html;
     }
 
     async function fetchMessages() {
