@@ -464,6 +464,54 @@ async function shouldRespond(messages: ChatMessage[]): Promise<boolean> {
   return false;
 }
 
+// Detect rename commands like "hey @agent your new name is cool-bot"
+async function checkForRenameCommand(messages: ChatMessage[]): Promise<void> {
+  const renamePatterns = [
+    /(?:hey\s+)?@?(\S+)\s+your\s+new\s+name\s+is\s+["']?([^"'\n]+)["']?/i,
+    /rename\s+@?(\S+)\s+to\s+["']?([^"'\n]+)["']?/i,
+    /@?(\S+)\s+(?:you(?:'re| are)\s+now\s+(?:called\s+)?|is\s+now\s+)["']?([^"'\n]+)["']?/i,
+  ];
+
+  for (const msg of messages) {
+    if (msg.authorType !== 'human') continue;
+    
+    for (const pattern of renamePatterns) {
+      const match = msg.message.match(pattern);
+      if (match) {
+        const targetAgent = match[1].toLowerCase().replace('@', '');
+        const newName = match[2].trim();
+        
+        // Check if this rename is for us
+        if (targetAgent === CONFIG.AGENT_ID.toLowerCase() || 
+            targetAgent === 'autonomous-agent' ||
+            targetAgent === 'orchestrator') {
+          
+          console.log(`[agent] Rename command detected: ${CONFIG.AGENT_ID} → ${newName}`);
+          
+          try {
+            // Update via API
+            const res = await fetch(`${CONFIG.API_BASE}/api/agents/${CONFIG.AGENT_ID}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name: newName, optimize: true })
+            });
+            
+            if (res.ok) {
+              await postMessage(`✨ Got it! I'm now **${newName}**. My agent ID remains \`${CONFIG.AGENT_ID}\` but you can call me by my new name.`);
+            } else {
+              await postMessage(`❌ Couldn't update my name. API returned ${res.status}.`);
+            }
+          } catch (err) {
+            console.error('[agent] Rename failed:', err);
+            await postMessage(`❌ Failed to rename: ${err}`);
+          }
+          return;
+        }
+      }
+    }
+  }
+}
+
 async function updateStatus(task: string): Promise<void> {
   try {
     await fetch(`${CONFIG.API_BASE}/api/agents/${CONFIG.AGENT_ID}/status`, {
@@ -509,6 +557,9 @@ async function mainLoop(): Promise<void> {
       if (newMessages.length > 0) {
         console.log(`[agent] Found ${newMessages.length} new message(s)`);
         lastProcessedTimestamp = newMessages[newMessages.length - 1].timestamp;
+
+        // Check for special commands first (like rename)
+        await checkForRenameCommand(newMessages);
 
         if (await shouldRespond(newMessages)) {
           await updateStatus('Processing request...');
