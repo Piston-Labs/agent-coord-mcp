@@ -2,7 +2,7 @@
   "version": 2,
   "builds": [
     {
-      "src": "dist/http-server.js",
+      "src": "api/**/*.ts",
       "use": "@vercel/node"
     },
     {
@@ -11,11 +11,8 @@
     }
   ],
   "routes": [
-    { "src": "/api/(.*)", "dest": "/dist/http-server.js" },
+    { "src": "/api/(.*)", "dest": "/api/$1" },
     { "src": "/(.*)", "dest": "/web/$1" },
     { "src": "/", "dest": "/web/index.html" }
-  ],
-  "env": {
-    "PERSIST": "false"
-  }
+  ]
 }
