@@ -473,9 +473,11 @@ async function shouldRespond(messages: ChatMessage[]): Promise<boolean> {
 // Detect rename commands like "hey @agent your new name is cool-bot"
 async function checkForRenameCommand(messages: ChatMessage[]): Promise<void> {
   const renamePatterns = [
-    /(?:hey\s+)?@?(\S+)\s+your\s+new\s+name\s+is\s+["']?([^"'\n]+)["']?/i,
+    /(?:hey\s+)?@?(\S+)[,\s]+your\s+new\s+name\s+is\s+["']?([^"'\n]+)["']?/i,
+    /(?:hey\s+)?@?(\S+)[,\s]+rename\s+yourself\s+(?:to\s+)?["']?([^"'\n]+)["']?/i,
     /rename\s+@?(\S+)\s+to\s+["']?([^"'\n]+)["']?/i,
-    /@?(\S+)\s+(?:you(?:'re| are)\s+now\s+(?:called\s+)?|is\s+now\s+)["']?([^"'\n]+)["']?/i,
+    /@?(\S+)[,\s]+(?:you(?:'re| are)\s+now\s+(?:called\s+)?|is\s+now\s+)["']?([^"'\n]+)["']?/i,
+    /@?(\S+)[,\s]+call\s+yourself\s+["']?([^"'\n]+)["']?/i,
   ];
 
   for (const msg of messages) {
