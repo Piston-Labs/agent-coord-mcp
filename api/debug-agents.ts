@@ -30,7 +30,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lastSeen: new Date().toISOString()
       };
 
-      const writeResult = await redis.hset(AGENTS_KEY, 'debug-write-test', JSON.stringify(testAgent));
+      // Use object form for Upstash: hset(key, { field: value })
+      const writeResult = await redis.hset(AGENTS_KEY, { 'debug-write-test': JSON.stringify(testAgent) });
       const readBack = await redis.hget(AGENTS_KEY, 'debug-write-test');
 
       return res.json({

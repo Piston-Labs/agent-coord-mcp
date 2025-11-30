@@ -76,7 +76,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lastSeen: new Date().toISOString()
       };
 
-      await redis.hset(AGENTS_KEY, id, JSON.stringify(agent));
+      // Use object form for Upstash: hset(key, { field: value })
+      await redis.hset(AGENTS_KEY, { [id]: JSON.stringify(agent) });
 
       return res.json({ success: true, agent });
     }
