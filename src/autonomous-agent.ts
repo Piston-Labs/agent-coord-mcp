@@ -402,11 +402,23 @@ async function getNewMessages(): Promise<ChatMessage[]> {
 }
 
 async function processWithTools(userContent: string): Promise<string> {
-  conversationHistory.push({ role: 'user', content: userContent });
-  
-  // Keep history manageable
+  // Ensure user content is never empty
+  const safeUserContent = userContent.trim() || '[No content provided]';
+  conversationHistory.push({ role: 'user', content: safeUserContent });
+
+  // Keep history manageable - but ensure we don't break in middle of tool use
   if (conversationHistory.length > 20) {
-    conversationHistory = conversationHistory.slice(-20);
+    // Find a safe point to slice (start from a user message, not tool results)
+    let slicePoint = conversationHistory.length - 20;
+    while (slicePoint > 0 && slicePoint < conversationHistory.length) {
+      const msg = conversationHistory[slicePoint];
+      // Only start from regular user message (string content), not tool results (array content)
+      if (msg.role === 'user' && typeof msg.content === 'string') {
+        break;
+      }
+      slicePoint++;
+    }
+    conversationHistory = conversationHistory.slice(slicePoint);
   }
 
   let response = await anthropic.messages.create({
@@ -424,19 +436,25 @@ async function processWithTools(userContent: string): Promise<string> {
     );
 
     const toolResults: Anthropic.ToolResultBlockParam[] = [];
-    
+
     for (const toolUse of toolUseBlocks) {
       console.log(`[agent] Using tool: ${toolUse.name}`);
       const result = await executeTools(toolUse.name, toolUse.input as Record<string, unknown>);
+      // Ensure tool result is never empty
       toolResults.push({
         type: 'tool_result',
         tool_use_id: toolUse.id,
-        content: result
+        content: result || '[No result]'
       });
     }
 
-    conversationHistory.push({ role: 'assistant', content: response.content });
-    conversationHistory.push({ role: 'user', content: toolResults });
+    // Only push if there's actual content
+    if (response.content && response.content.length > 0) {
+      conversationHistory.push({ role: 'assistant', content: response.content });
+    }
+    if (toolResults.length > 0) {
+      conversationHistory.push({ role: 'user', content: toolResults });
+    }
 
     response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
@@ -452,8 +470,12 @@ async function processWithTools(userContent: string): Promise<string> {
   );
 
   const assistantMessage = textContent?.text || '';
-  conversationHistory.push({ role: 'assistant', content: response.content });
-  
+
+  // Only push if there's actual content
+  if (response.content && response.content.length > 0) {
+    conversationHistory.push({ role: 'assistant', content: response.content });
+  }
+
   return assistantMessage;
 }
 
