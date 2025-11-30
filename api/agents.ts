@@ -24,8 +24,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ success: true, message: 'All agents cleared' });
     }
 
-    // GET: List active agents
+    // GET: List agents (both active and offline)
     if (req.method === 'GET') {
+      const includeOffline = req.query.includeOffline === 'true';
+      
       let agents: Record<string, unknown> = {};
       try {
         agents = await redis.hgetall(AGENTS_KEY) || {};
@@ -33,19 +35,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // If hgetall fails due to corrupt data, clear and return empty
         console.error('hgetall failed, clearing corrupt data:', hgetError);
         await redis.del(AGENTS_KEY);
-        return res.json({ agents: [], count: 0, note: 'Cleared corrupt data' });
+        return res.json({ agents: [], offlineAgents: [], count: 0, note: 'Cleared corrupt data' });
       }
 
-      const staleThreshold = Date.now() - 2 * 60 * 60 * 1000; // 2 hours
-      const agentList: any[] = [];
+      const activeThreshold = Date.now() - 30 * 60 * 1000; // 30 minutes = active
+      const activeAgents: any[] = [];
+      const offlineAgents: any[] = [];
 
       for (const [key, value] of Object.entries(agents)) {
         try {
           const agent = typeof value === 'string' ? JSON.parse(value) : value;
           if (agent && agent.lastSeen) {
             const lastSeen = new Date(agent.lastSeen).getTime();
-            if (lastSeen > staleThreshold) {
-              agentList.push(agent);
+            // Determine status based on lastSeen
+            agent.status = lastSeen > activeThreshold ? 'active' : 'offline';
+            
+            if (lastSeen > activeThreshold) {
+              activeAgents.push(agent);
+            } else {
+              offlineAgents.push(agent);
             }
           }
         } catch (parseError) {
@@ -55,7 +63,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      return res.json({ agents: agentList, count: agentList.length });
+      // Sort by lastSeen (most recent first)
+      activeAgents.sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
+      offlineAgents.sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
+
+      if (includeOffline) {
+        return res.json({ 
+          agents: activeAgents, 
+          offlineAgents: offlineAgents,
+          count: activeAgents.length,
+          offlineCount: offlineAgents.length
+        });
+      }
+      
+      return res.json({ agents: activeAgents, count: activeAgents.length });
     }
 
     // POST: Register/update agent status
