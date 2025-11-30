@@ -1,13 +1,5 @@
 {
   "version": 2,
   "buildCommand": "npm run build",
-  "outputDirectory": "web",
-  "functions": {
-    "api/*.ts": {
-      "runtime": "@vercel/node@3"
-    },
-    "api/*.js": {
-      "runtime": "@vercel/node@3"
-    }
-  }
+  "outputDirectory": "web"
 }
