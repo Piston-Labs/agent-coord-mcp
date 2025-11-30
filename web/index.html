@@ -759,30 +759,44 @@
       </div>
     </div>
 
-    <!-- Context Panel -->
+    <!-- Context Panel - Enhanced -->
     <div class="panel">
       <div class="panel-header">
         <span>Active Context</span>
+        <span id="contextUpdateTime" style="font-size: 10px; font-weight: normal; opacity: 0.7;">--</span>
       </div>
       <div class="panel-content" id="contextPanel">
         <div class="context-section">
-          <div class="context-title">Claims</div>
+          <div class="context-title">📊 System Stats</div>
+          <div id="systemStats" style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+            <div class="context-item" style="text-align: center; padding: 8px;">
+              <div style="font-size: 20px; font-weight: 700; color: var(--accent);" id="statAgents">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Agents</div>
+            </div>
+            <div class="context-item" style="text-align: center; padding: 8px;">
+              <div style="font-size: 20px; font-weight: 700; color: var(--success);" id="statMessages">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Messages</div>
+            </div>
+          </div>
+        </div>
+        <div class="context-section">
+          <div class="context-title">🔒 Claims <span id="claimsCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="claimsList"></div>
         </div>
         <div class="context-section">
-          <div class="context-title">Zones</div>
+          <div class="context-title">📁 Zones <span id="zonesCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="zonesList"></div>
         </div>
         <div class="context-section">
-          <div class="context-title">Locks</div>
+          <div class="context-title">🔐 Locks <span id="locksCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="locksList"></div>
         </div>
         <div class="context-section">
-          <div class="context-title">Tasks</div>
+          <div class="context-title">📋 Tasks <span id="tasksCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="tasksList"></div>
         </div>
         <div class="context-section">
-          <div class="context-title">Token Efficiency</div>
+          <div class="context-title">⚡ Token Efficiency</div>
           <div class="efficiency-bar">
             <div class="efficiency-fill" id="efficiencyBar" style="width: 0%"></div>
           </div>
@@ -1176,43 +1190,61 @@
     }
 
     async function fetchContext() {
-      // These endpoints may not exist yet - fail gracefully
       const fetchSafe = async (url) => {
         try {
           const res = await fetch(url);
-          if (!res.ok) return { claims: [], zones: [], locks: [], tasks: [] };
+          if (!res.ok) return { claims: [], zones: [], locks: [], tasks: [], agents: [], count: 0 };
           return await res.json();
         } catch {
-          return { claims: [], zones: [], locks: [], tasks: [] };
+          return { claims: [], zones: [], locks: [], tasks: [], agents: [], count: 0 };
         }
       };
 
-      const [claims, zones, locks, tasks] = await Promise.all([
+      const [claims, zones, locks, tasks, agents] = await Promise.all([
         fetchSafe(API_BASE + '/claims'),
         fetchSafe(API_BASE + '/zones'),
         fetchSafe(API_BASE + '/locks'),
-        fetchSafe(API_BASE + '/tasks')
+        fetchSafe(API_BASE + '/tasks'),
+        fetchSafe(API_BASE + '/agents')
       ]);
 
-      renderContextSection('claimsList', claims.claims || [], 'claim', c => ({
+      // Update system stats
+      const agentCount = (agents.agents || []).length;
+      const msgCount = document.querySelectorAll('.message').length;
+      document.getElementById('statAgents').textContent = agentCount;
+      document.getElementById('statMessages').textContent = msgCount;
+      document.getElementById('contextUpdateTime').textContent = new Date().toLocaleTimeString();
+
+      // Update counts
+      const claimsList = claims.claims || [];
+      const zonesList = zones.zones || [];
+      const locksList = locks.locks || [];
+      const tasksList = (tasks.tasks || []).filter(t => t.status !== 'done');
+      
+      document.getElementById('claimsCount').textContent = '(' + claimsList.length + ')';
+      document.getElementById('zonesCount').textContent = '(' + zonesList.length + ')';
+      document.getElementById('locksCount').textContent = '(' + locksList.length + ')';
+      document.getElementById('tasksCount').textContent = '(' + tasksList.length + ')';
+
+      renderContextSection('claimsList', claimsList, 'claim', c => ({
         title: c.what,
         owner: c.by,
         detail: c.description || ''
       }));
 
-      renderContextSection('zonesList', zones.zones || [], 'zone', z => ({
+      renderContextSection('zonesList', zonesList, 'zone', z => ({
         title: z.zoneId,
         owner: z.owner,
         detail: z.path
       }));
 
-      renderContextSection('locksList', locks.locks || [], 'lock', l => ({
+      renderContextSection('locksList', locksList, 'lock', l => ({
         title: l.resourcePath,
         owner: l.lockedBy,
         detail: l.reason || ''
       }));
 
-      renderContextSection('tasksList', (tasks.tasks || []).filter(t => t.status !== 'done'), 'task', t => ({
+      renderContextSection('tasksList', tasksList, 'task', t => ({
         title: t.title,
         owner: t.assignee || t.createdBy,
         detail: t.status + ' - ' + t.priority
