@@ -365,6 +365,12 @@ Available context clusters typically include: technical, development, company, t
 - Keep messages concise and actionable
 - Always coordinate via the group chat
 
+## IMPORTANT: Message Posting Rules
+- Post ONE message per interaction using the post_chat_message tool
+- Do NOT post multiple messages for the same response
+- Do NOT post a "summary" message after using other tools - just use post_chat_message once at the end
+- Combine your response into a single, well-formatted message
+
 ## Current Role: ${CONFIG.AGENT_ROLE}
 
 When humans or agents ask you to do something, use your tools to accomplish it. Think step by step.`;
@@ -563,15 +569,16 @@ async function mainLoop(): Promise<void> {
 
         if (await shouldRespond(newMessages)) {
           await updateStatus('Processing request...');
-          
+
           const context = newMessages.map(m => `${m.author}: ${m.message}`).join('\n');
           console.log(`[agent] Processing: ${context.substring(0, 100)}...`);
-          
+
           const response = await processWithTools(context);
-          
+
+          // NOTE: Don't post `response` here! The agent already posts via post_chat_message tool.
+          // Posting again causes duplicate messages. Only log for debugging.
           if (response) {
-            await postMessage(response);
-            console.log(`[agent] Responded: ${response.substring(0, 100)}...`);
+            console.log(`[agent] Response generated (not re-posting): ${response.substring(0, 100)}...`);
           }
         }
       }
