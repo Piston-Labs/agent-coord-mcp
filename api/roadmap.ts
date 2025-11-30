@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (!team || Object.keys(team).length === 0) {
           // Initialize with default team
           for (const member of DEFAULT_TEAM) {
-            await redis.hset(TEAM_KEY, member.id, JSON.stringify(member));
+            await redis.hset(TEAM_KEY, { [member.id]: JSON.stringify(member) });
           }
           team = DEFAULT_TEAM.reduce((acc, m) => ({ ...acc, [m.id]: m }), {});
         }
@@ -124,7 +124,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           role: role || '',
           color: color || '#8b949e'
         };
-        await redis.hset(TEAM_KEY, id, JSON.stringify(member));
+        await redis.hset(TEAM_KEY, { [id]: JSON.stringify(member) });
         return res.json({ success: true, member });
       }
 
@@ -151,7 +151,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         progress: 0
       };
 
-      await redis.hset(ROADMAP_KEY, item.id, JSON.stringify(item));
+      await redis.hset(ROADMAP_KEY, { [item.id]: JSON.stringify(item) });
 
       // Post to group chat
       const chatMessage = {
@@ -187,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         updatedAt: new Date().toISOString()
       };
 
-      await redis.hset(ROADMAP_KEY, id, JSON.stringify(updated));
+      await redis.hset(ROADMAP_KEY, { [id]: JSON.stringify(updated) });
 
       // If status changed, post to chat
       if (updates.status && updates.status !== item.status) {
