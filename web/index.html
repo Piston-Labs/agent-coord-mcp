@@ -1221,7 +1221,7 @@
 
     async function checkSession() {
       try {
-        const res = await fetch(API_BASE + '/api/auth/session', {
+        const res = await fetch(API_BASE + '/auth/session', {
           credentials: 'include'
         });
         const data = await res.json();
@@ -1234,7 +1234,7 @@
 
     async function login(username, password) {
       try {
-        const res = await fetch(API_BASE + '/api/auth/login', {
+        const res = await fetch(API_BASE + '/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -1253,7 +1253,7 @@
 
     async function register(username, password, inviteCode) {
       try {
-        const res = await fetch(API_BASE + '/api/auth/register', {
+        const res = await fetch(API_BASE + '/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
