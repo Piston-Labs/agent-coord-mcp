@@ -4,15 +4,20 @@ WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
+COPY tsconfig.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including dev for build)
+RUN npm ci
 
-# Copy built files
-COPY dist/ ./dist/
+# Copy source files
+COPY src/ ./src/
+COPY api/ ./api/
+
+# Build TypeScript
+RUN npm run build
 
 # Set environment
 ENV NODE_ENV=production
 
-# Run the agent bot
-CMD ["node", "dist/agent-bot.js"]
+# Run the autonomous agent
+CMD ["node", "dist/autonomous-agent.js"]
