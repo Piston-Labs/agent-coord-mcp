@@ -1616,7 +1616,10 @@
     <div class="panel">
       <div class="panel-header">
         <span>Team</span>
-        <span id="activeCount">0 active</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="activeCount">0 active</span>
+          <button onclick="showAddAgentModal()" style="background:var(--accent);color:white;border:none;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;" title="Add External Agent">+</button>
+        </div>
       </div>
       <div class="panel-content" id="agentsList">
         <div class="empty-state">
@@ -1832,6 +1835,46 @@
           <button type="submit" class="btn-submit">Add Item</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Add External Agent Modal -->
+  <div class="modal-overlay" id="addAgentModal" style="display:none;">
+    <div class="modal" style="max-width:450px;">
+      <div class="modal-title">Add External Agent</div>
+      <form id="addAgentForm">
+        <div class="form-group">
+          <label for="agentName">Agent Name *</label>
+          <input type="text" id="agentName" required placeholder="e.g., Team B Helper Agent" />
+        </div>
+        <div class="form-group">
+          <label for="agentDescription">Description</label>
+          <textarea id="agentDescription" placeholder="What does this agent do?" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label for="agentCapabilities">Capabilities (comma-separated)</label>
+          <input type="text" id="agentCapabilities" placeholder="e.g., testing, code-review, deployment" />
+        </div>
+        <div class="form-group">
+          <label for="agentContact">Contact Info (optional)</label>
+          <input type="text" id="agentContact" placeholder="e.g., Slack: @team-b" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideAddAgentModal()">Cancel</button>
+          <button type="submit" class="btn-submit">Add Agent</button>
+        </div>
+      </form>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+        <div style="text-align:center;margin-bottom:12px;color:var(--text-secondary);font-size:12px;">OR</div>
+        <button onclick="generateAgentInvite()" style="width:100%;padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;">
+          Generate Invite Link
+        </button>
+        <div id="inviteLinkResult" style="display:none;margin-top:12px;padding:12px;background:var(--surface);border-radius:6px;">
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Share this link:</div>
+          <input type="text" id="inviteLinkInput" readonly style="width:100%;padding:8px;background:var(--background);border:1px solid var(--border);border-radius:4px;color:var(--text);font-size:12px;" />
+          <button onclick="copyInviteLink()" style="margin-top:8px;padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Copy Link</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2190,11 +2233,16 @@
     async function fetchAgents() {
       try {
         console.log('Fetching agents from:', API_BASE + '/agents?includeOffline=true');
-        const res = await fetch(API_BASE + '/agents?includeOffline=true');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        console.log('Agents fetched:', data.agents?.length || 0);
-        renderAgents(data.agents || [], data.offlineAgents || []);
+        const [agentsRes, externalRes] = await Promise.all([
+          fetch(API_BASE + '/agents?includeOffline=true'),
+          fetch(API_BASE + '/external-agents')
+        ]);
+
+        const data = agentsRes.ok ? await agentsRes.json() : { agents: [], offlineAgents: [] };
+        const externalData = externalRes.ok ? await externalRes.json() : { agents: [] };
+
+        console.log('Agents fetched:', data.agents?.length || 0, 'External:', externalData.agents?.length || 0);
+        renderAgents(data.agents || [], data.offlineAgents || [], externalData.agents || []);
       } catch (e) {
         console.error('fetchAgents error:', e);
       }
@@ -2236,12 +2284,12 @@
       return tags.slice(0, 2);
     }
 
-    function renderAgents(agents, offlineAgents = []) {
+    function renderAgents(agents, offlineAgents = [], externalAgents = []) {
       const container = document.getElementById('agentsList');
       const countEl = document.getElementById('activeCount');
       const totalEl = document.getElementById('agentCount');
       countEl.textContent = agents.length + ' active';
-      totalEl.textContent = agents.length + offlineAgents.length;
+      totalEl.textContent = agents.length + offlineAgents.length + externalAgents.length;
 
       // Update agent name cache
       [...agents, ...offlineAgents].forEach(a => {
@@ -2250,7 +2298,7 @@
         }
       });
 
-      if (agents.length === 0) {
+      if (agents.length === 0 && externalAgents.length === 0) {
         container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg><p>No agents online</p></div>`;
         return;
       }
@@ -2274,6 +2322,28 @@
           html += grouped[k].map(a => renderCard(a, k)).join('');
         }
       }
+      // External agents section
+      if (externalAgents.length > 0) {
+        html += `<div class="context-title" style="margin:16px 0 8px 0;">🔗 External Agents (${externalAgents.length})</div>`;
+        html += externalAgents.map(a => {
+          const caps = (a.capabilities || []).slice(0, 3).join(', ');
+          const sourceIcon = a.source === 'invited' ? '✉️' : '📝';
+          const connType = a.connectionType === 'active' ? 'active' : 'display';
+          return `<div class="agent-card" style="border-left:3px solid #f0883e;">
+            <div class="agent-header">
+              <div class="agent-avatar" style="background:#f0883e;">🔗</div>
+              <span class="agent-name">${a.name}</span>
+              <span class="agent-status" style="color:#f0883e;">${connType}</span>
+            </div>
+            <div class="agent-task" style="color:var(--text-secondary);">${a.description || 'External agent'}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+              <span style="font-size:9px;color:var(--text-secondary);">${sourceIcon} Added by ${a.owner}</span>
+              ${caps ? `<span style="font-size:9px;color:var(--accent);">${caps}</span>` : ''}
+            </div>
+          </div>`;
+        }).join('');
+      }
+
       // Offline agents section
       if (offlineAgents.length > 0) {
         html += `<div class="context-title" style="margin:16px 0 8px 0; opacity: 0.7;">💤 Offline (${offlineAgents.length})</div>`;
@@ -2845,6 +2915,73 @@
     function hideAddRoadmapItem() {
       document.getElementById('addItemModal').classList.remove('active');
     }
+
+    // External Agent Modal Functions
+    function showAddAgentModal() {
+      document.getElementById('addAgentModal').style.display = 'flex';
+      document.getElementById('inviteLinkResult').style.display = 'none';
+      document.getElementById('addAgentForm').reset();
+    }
+
+    function hideAddAgentModal() {
+      document.getElementById('addAgentModal').style.display = 'none';
+    }
+
+    async function generateAgentInvite() {
+      try {
+        const res = await fetch(API_BASE + '/external-agents?action=invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ createdBy: USERNAME, expiresIn: '7d' })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('inviteLinkInput').value = data.joinUrl;
+          document.getElementById('inviteLinkResult').style.display = 'block';
+        } else {
+          alert('Failed to generate invite: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        alert('Error generating invite: ' + e.message);
+      }
+    }
+
+    function copyInviteLink() {
+      const input = document.getElementById('inviteLinkInput');
+      input.select();
+      document.execCommand('copy');
+      alert('Link copied to clipboard!');
+    }
+
+    document.getElementById('addAgentForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const agent = {
+        name: document.getElementById('agentName').value,
+        description: document.getElementById('agentDescription').value,
+        capabilities: document.getElementById('agentCapabilities').value,
+        contactInfo: document.getElementById('agentContact').value,
+        owner: USERNAME
+      };
+
+      try {
+        const res = await fetch(API_BASE + '/external-agents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(agent)
+        });
+        const data = await res.json();
+        if (data.success) {
+          hideAddAgentModal();
+          fetchAgents(); // Refresh the agent list
+          alert('External agent added successfully!');
+        } else {
+          alert('Failed to add agent: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        alert('Error adding agent: ' + e.message);
+      }
+    });
 
     async function submitRoadmapItem(e) {
       e.preventDefault();
