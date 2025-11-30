@@ -1013,6 +1013,39 @@
       });
       
       console.log('Event listeners attached');
+
+      // Keyboard shortcuts
+      document.addEventListener('keydown', (e) => {
+        // Don't trigger shortcuts when typing in inputs
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        // Ctrl/Cmd + shortcuts
+        if (e.ctrlKey || e.metaKey) {
+          switch(e.key) {
+            case 'k': // Focus message input
+              e.preventDefault();
+              document.getElementById('messageInput').focus();
+              break;
+            case 't': // Quick create task
+              e.preventDefault();
+              quickCreateTask();
+              break;
+            case 'l': // Quick claim file
+              e.preventDefault();
+              quickClaimFile();
+              break;
+          }
+        }
+
+        // Number keys for tabs (without modifier)
+        if (e.key >= '1' && e.key <= '3' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          const tabs = ['chat', 'roadmap', 'messages'];
+          const idx = parseInt(e.key) - 1;
+          if (tabs[idx]) switchTab(tabs[idx]);
+        }
+      });
+
+      console.log('Keyboard shortcuts: Ctrl+K=focus, Ctrl+T=task, Ctrl+L=claim, 1-3=tabs');
     }
 
     async function poll() {
