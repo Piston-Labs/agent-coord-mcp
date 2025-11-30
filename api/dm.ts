@@ -166,9 +166,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Get messages
         const messagesRaw = await redis.hget(DM_MESSAGES_KEY, convoIdStr);
-        const messages: DirectMessage[] = messagesRaw
-          ? (typeof messagesRaw === 'string' ? JSON.parse(messagesRaw) : messagesRaw)
-          : [];
+        let messages: DirectMessage[] = [];
+        if (messagesRaw) {
+          if (typeof messagesRaw === 'string') {
+            messages = JSON.parse(messagesRaw);
+          } else if (Array.isArray(messagesRaw)) {
+            messages = messagesRaw;
+          }
+        }
 
         // Mark messages as read for this user
         let updated = false;
@@ -266,9 +271,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Get existing messages and append
       const messagesRaw = await redis.hget(DM_MESSAGES_KEY, conversation.id);
-      const messages: DirectMessage[] = messagesRaw
-        ? (typeof messagesRaw === 'string' ? JSON.parse(messagesRaw) : messagesRaw)
-        : [];
+      let messages: DirectMessage[] = [];
+      if (messagesRaw) {
+        if (typeof messagesRaw === 'string') {
+          messages = JSON.parse(messagesRaw);
+        } else if (Array.isArray(messagesRaw)) {
+          messages = messagesRaw;
+        } else {
+          // Handle edge case where it might be a single object
+          messages = [];
+        }
+      }
 
       messages.push(dm);
 
@@ -322,9 +335,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Mark all messages as read
       const messagesRaw = await redis.hget(DM_MESSAGES_KEY, conversationId);
-      const messages: DirectMessage[] = messagesRaw
-        ? (typeof messagesRaw === 'string' ? JSON.parse(messagesRaw) : messagesRaw)
-        : [];
+      let messages: DirectMessage[] = [];
+      if (messagesRaw) {
+        if (typeof messagesRaw === 'string') {
+          messages = JSON.parse(messagesRaw);
+        } else if (Array.isArray(messagesRaw)) {
+          messages = messagesRaw;
+        }
+      }
 
       const now = new Date().toISOString();
       let markedCount = 0;
