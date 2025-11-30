@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piston Labs - Agent Coordination Hub</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border: #30363d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+      --agent-color: #58a6ff;
+      --human-color: #a371f7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 18px;
+    }
+
+    .logo svg { width: 28px; height: 28px; }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .status-dot.offline { background: var(--danger); }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 260px 1fr 280px;
+      gap: 1px;
+      background: var(--border);
+    }
+
+    .panel {
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      padding: 14px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    /* Agents Panel */
+    .agent-card {
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .agent-card:hover { border-color: var(--accent); }
+
+    .agent-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .agent-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .agent-avatar.human { background: var(--human-color); }
+
+    .agent-name { font-weight: 600; font-size: 14px; }
+
+    .agent-status {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: var(--bg-tertiary);
+      margin-left: auto;
+    }
+
+    .agent-status.active { background: rgba(63, 185, 80, 0.2); color: var(--success); }
+    .agent-status.idle { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
+
+    .agent-task {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Chat Panel */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      display: flex;
+      gap: 10px;
+      max-width: 85%;
+    }
+
+    .message.own { align-self: flex-end; flex-direction: row-reverse; }
+
+    .message-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--agent-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .message-avatar.human { background: var(--human-color); }
+
+    .message-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 14px;
+    }
+
+    .message.own .message-content {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .message-author {
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--accent);
+    }
+
+    .message.own .message-author { color: rgba(255,255,255,0.8); }
+
+    .message-text {
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+
+    .message-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .message.own .message-time { color: rgba(255,255,255,0.6); }
+
+    .chat-input {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+
+    .chat-input input {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      outline: none;
+    }
+
+    .chat-input input:focus { border-color: var(--accent); }
+
+    .chat-input button {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .chat-input button:hover { opacity: 0.9; }
+
+    /* Context Panel */
+    .context-section {
+      margin-bottom: 16px;
+    }
+
+    .context-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      padding: 0 8px;
+    }
+
+    .context-item {
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      margin-bottom: 4px;
+      font-size: 13px;
+      border-left: 3px solid var(--border);
+    }
+
+    .context-item.claim { border-left-color: var(--warning); }
+    .context-item.lock { border-left-color: var(--danger); }
+    .context-item.zone { border-left-color: var(--success); }
+    .context-item.task { border-left-color: var(--accent); }
+
+    .context-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .context-item-title { font-weight: 600; }
+
+    .context-item-owner {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .context-item-detail {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Token efficiency indicator */
+    .efficiency-bar {
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      height: 6px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .efficiency-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--success), var(--accent));
+      transition: width 0.3s;
+    }
+
+    .efficiency-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 6v6l4 2"/>
+      </svg>
+      Piston Labs Agent Hub
+    </div>
+    <div class="status-bar">
+      <div class="status-item">
+        <span class="status-dot" id="connectionDot"></span>
+        <span id="connectionStatus">Connecting...</span>
+      </div>
+      <div class="status-item">
+        <span id="agentCount">0</span> agents online
+      </div>
+      <div class="status-item">
+        <span id="tokenEfficiency">--</span>% token efficiency
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Agents Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Team</span>
+        <span id="activeCount">0 active</span>
+      </div>
+      <div class="panel-content" id="agentsList">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <p>No agents online</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Chat Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Group Chat</span>
+        <span id="messageCount">0 messages</span>
+      </div>
+      <div class="chat-messages" id="chatMessages">
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <p>No messages yet</p>
+        </div>
+      </div>
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Type a message... (@mention agents)" />
+        <button id="sendBtn">Send</button>
+      </div>
+    </div>
+
+    <!-- Context Panel -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Active Context</span>
+      </div>
+      <div class="panel-content" id="contextPanel">
+        <div class="context-section">
+          <div class="context-title">Claims</div>
+          <div id="claimsList"></div>
+        </div>
+        <div class="context-section">
+          <div class="context-title">Zones</div>
+          <div id="zonesList"></div>
+        </div>
+        <div class="context-section">
+          <div class="context-title">Locks</div>
+          <div id="locksList"></div>
+        </div>
+        <div class="context-section">
+          <div class="context-title">Tasks</div>
+          <div id="tasksList"></div>
+        </div>
+        <div class="context-section">
+          <div class="context-title">Token Efficiency</div>
+          <div class="efficiency-bar">
+            <div class="efficiency-fill" id="efficiencyBar" style="width: 0%"></div>
+          </div>
+          <div class="efficiency-label">
+            <span>Context optimized</span>
+            <span id="efficiencyPercent">0%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = window.location.origin + '/api';
+    const POLL_INTERVAL = 2000;
+    const HUMAN_ID = 'human-' + Math.random().toString(36).substr(2, 6);
+
+    let lastMessageTime = null;
+    let tokensSaved = 0;
+    let totalTokens = 0;
+
+    // Initialize
+    async function init() {
+      updateConnectionStatus(true);
+      await Promise.all([
+        fetchAgents(),
+        fetchMessages(),
+        fetchContext()
+      ]);
+
+      // Start polling
+      setInterval(poll, POLL_INTERVAL);
+
+      // Setup event listeners
+      document.getElementById('sendBtn').addEventListener('click', sendMessage);
+      document.getElementById('messageInput').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
+    }
+
+    async function poll() {
+      try {
+        await Promise.all([
+          fetchAgents(),
+          fetchNewMessages(),
+          fetchContext()
+        ]);
+        updateConnectionStatus(true);
+      } catch (err) {
+        updateConnectionStatus(false);
+      }
+    }
+
+    function updateConnectionStatus(connected) {
+      const dot = document.getElementById('connectionDot');
+      const status = document.getElementById('connectionStatus');
+      if (connected) {
+        dot.classList.remove('offline');
+        status.textContent = 'Connected';
+      } else {
+        dot.classList.add('offline');
+        status.textContent = 'Disconnected';
+      }
+    }
+
+    async function fetchAgents() {
+      const res = await fetch(API_BASE + '/agents?active=true');
+      const data = await res.json();
+      renderAgents(data.agents || []);
+    }
+
+    function renderAgents(agents) {
+      const container = document.getElementById('agentsList');
+      const countEl = document.getElementById('activeCount');
+      const totalEl = document.getElementById('agentCount');
+
+      countEl.textContent = agents.length + ' active';
+      totalEl.textContent = agents.length;
+
+      if (agents.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+            <p>No agents online</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = agents.map(a => `
+        <div class="agent-card">
+          <div class="agent-header">
+            <div class="agent-avatar">${getInitials(a.id)}</div>
+            <span class="agent-name">${a.id}</span>
+            <span class="agent-status ${a.status}">${a.status}</span>
+          </div>
+          <div class="agent-task">${a.currentTask || a.workingOn || 'Idle'}</div>
+        </div>
+      `).join('');
+    }
+
+    async function fetchMessages() {
+      const res = await fetch(API_BASE + '/chat?limit=50');
+      const data = await res.json();
+      renderMessages(data.messages || []);
+      if (data.messages && data.messages.length > 0) {
+        lastMessageTime = data.messages[data.messages.length - 1].timestamp;
+      }
+    }
+
+    async function fetchNewMessages() {
+      if (!lastMessageTime) return fetchMessages();
+      const res = await fetch(API_BASE + '/chat?since=' + encodeURIComponent(lastMessageTime));
+      const data = await res.json();
+      if (data.messages && data.messages.length > 0) {
+        appendMessages(data.messages);
+        lastMessageTime = data.messages[data.messages.length - 1].timestamp;
+      }
+    }
+
+    function renderMessages(messages) {
+      const container = document.getElementById('chatMessages');
+      const countEl = document.getElementById('messageCount');
+
+      countEl.textContent = messages.length + ' messages';
+
+      if (messages.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            <p>No messages yet</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = messages.map(m => renderMessage(m)).join('');
+      container.scrollTop = container.scrollHeight;
+    }
+
+    function appendMessages(messages) {
+      const container = document.getElementById('chatMessages');
+      const countEl = document.getElementById('messageCount');
+
+      // Remove empty state if present
+      const emptyState = container.querySelector('.empty-state');
+      if (emptyState) emptyState.remove();
+
+      messages.forEach(m => {
+        container.insertAdjacentHTML('beforeend', renderMessage(m));
+      });
+
+      const total = container.querySelectorAll('.message').length;
+      countEl.textContent = total + ' messages';
+      container.scrollTop = container.scrollHeight;
+
+      // Update token efficiency (messages are compressed)
+      totalTokens += messages.reduce((sum, m) => sum + m.message.length / 4, 0);
+      tokensSaved += messages.reduce((sum, m) => sum + m.message.length / 8, 0);
+      updateEfficiency();
+    }
+
+    function renderMessage(m) {
+      const isOwn = m.author === HUMAN_ID;
+      const isHuman = m.authorType === 'human';
+      const time = new Date(m.timestamp).toLocaleTimeString();
+
+      return `
+        <div class="message ${isOwn ? 'own' : ''}">
+          <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(m.author)}</div>
+          <div class="message-content">
+            <div class="message-author">${m.author}</div>
+            <div class="message-text">${escapeHtml(m.message)}</div>
+            <div class="message-time">${time}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      input.value = '';
+
+      await fetch(API_BASE + '/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author: HUMAN_ID,
+          authorType: 'human',
+          message
+        })
+      });
+
+      // Immediately fetch to see our message
+      await fetchNewMessages();
+    }
+
+    async function fetchContext() {
+      const [claims, zones, locks, tasks] = await Promise.all([
+        fetch(API_BASE + '/claims').then(r => r.json()),
+        fetch(API_BASE + '/zones').then(r => r.json()),
+        fetch(API_BASE + '/locks').then(r => r.json()),
+        fetch(API_BASE + '/tasks').then(r => r.json())
+      ]);
+
+      renderContextSection('claimsList', claims.claims || [], 'claim', c => ({
+        title: c.what,
+        owner: c.by,
+        detail: c.description || ''
+      }));
+
+      renderContextSection('zonesList', zones.zones || [], 'zone', z => ({
+        title: z.zoneId,
+        owner: z.owner,
+        detail: z.path
+      }));
+
+      renderContextSection('locksList', locks.locks || [], 'lock', l => ({
+        title: l.resourcePath,
+        owner: l.lockedBy,
+        detail: l.reason || ''
+      }));
+
+      renderContextSection('tasksList', (tasks.tasks || []).filter(t => t.status !== 'done'), 'task', t => ({
+        title: t.title,
+        owner: t.assignee || t.createdBy,
+        detail: t.status + ' - ' + t.priority
+      }));
+    }
+
+    function renderContextSection(containerId, items, type, mapper) {
+      const container = document.getElementById(containerId);
+      if (items.length === 0) {
+        container.innerHTML = '<div class="context-item" style="color: var(--text-secondary); font-size: 12px;">None</div>';
+        return;
+      }
+      container.innerHTML = items.map(item => {
+        const { title, owner, detail } = mapper(item);
+        return `
+          <div class="context-item ${type}">
+            <div class="context-item-header">
+              <span class="context-item-title">${escapeHtml(title)}</span>
+              <span class="context-item-owner">${escapeHtml(owner)}</span>
+            </div>
+            <div class="context-item-detail">${escapeHtml(detail)}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateEfficiency() {
+      if (totalTokens === 0) return;
+      const efficiency = Math.round((tokensSaved / totalTokens) * 100);
+      document.getElementById('efficiencyBar').style.width = Math.min(efficiency, 100) + '%';
+      document.getElementById('efficiencyPercent').textContent = efficiency + '%';
+      document.getElementById('tokenEfficiency').textContent = efficiency;
+    }
+
+    function getInitials(name) {
+      return name.split('-').map(p => p[0]).join('').toUpperCase().substr(0, 2);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    init();
+  </script>
+</body>
+</html>

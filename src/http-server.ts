@@ -6,9 +6,14 @@
  */
 
 import { createServer, IncomingMessage, ServerResponse } from 'http';
+import { readFileSync, existsSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { unifiedStore as store } from './unified-store.js';
 
 const PORT = parseInt(process.env.PORT || '3001', 10);
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const WEB_DIR = join(__dirname, '..', 'web');
 
 function parseBody(req: IncomingMessage): Promise<Record<string, unknown>> {
   return new Promise((resolve, reject) => {
@@ -67,12 +72,27 @@ const server = createServer(async (req, res) => {
   console.log(`[HTTP] ${method} ${path}`);
 
   try {
-    // ========== ROOT ==========
-    if (path === '/' || path === '/api') {
+    // ========== ROOT - Serve Web UI ==========
+    if (path === '/') {
+      const indexPath = join(WEB_DIR, 'index.html');
+      if (existsSync(indexPath)) {
+        const html = readFileSync(indexPath, 'utf-8');
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        return res.end(html);
+      }
+    }
+
+    // ========== API INFO ==========
+    if (path === '/api') {
       return json(res, {
-        name: 'agent-coord-mcp',
-        version: '0.1.0',
+        name: 'piston-labs-agent-hub',
+        version: '0.2.0',
         mode: 'http',
+        principles: [
+          'Token-efficient coordination',
+          'Self-optimizing context',
+          'Grounded multi-agent collaboration'
+        ],
         endpoints: [
           'GET  /api/health',
           'GET  /api/agents',
@@ -85,6 +105,8 @@ const server = createServer(async (req, res) => {
           'POST /api/locks',
           'GET  /api/zones',
           'POST /api/zones',
+          'GET  /api/claims',
+          'POST /api/claims',
           'GET  /api/work/:agentId'
         ]
       });

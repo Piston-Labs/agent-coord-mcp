@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/http-server.js",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "web/**",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/dist/http-server.js" },
+    { "src": "/(.*)", "dest": "/web/$1" },
+    { "src": "/", "dest": "/web/index.html" }
+  ],
+  "env": {
+    "PERSIST": "false"
+  }
+}
