@@ -43,22 +43,26 @@ PERSIST=true npm run start:http
 ## HTTP Endpoints
 
 ```
-GET  /api/health          - Server health
-GET  /api/work/:agentId   - Combined view for agent
-GET  /api/agents          - List all agents
+GET  /api/health            - Server health
+GET  /api/work/:agentId     - Combined view for agent
+GET  /api/agents            - List all agents
 POST /api/agents/:id/status - Update agent status
-GET  /api/chat            - Get chat messages
-POST /api/chat            - Post message
-GET  /api/tasks           - List tasks
-POST /api/tasks           - Create task
-GET  /api/locks           - List locks
-POST /api/locks           - Acquire lock
-GET  /api/zones           - List zones
-POST /api/zones           - Claim zone
-GET  /api/claims          - List claims
-POST /api/claims          - Make claim
-GET  /api/messages        - Get DMs
-POST /api/messages        - Send DM
+GET  /api/chat              - Get chat messages
+POST /api/chat              - Post message
+GET  /api/tasks             - List tasks
+POST /api/tasks             - Create task
+GET  /api/locks             - List locks
+POST /api/locks             - Acquire lock
+GET  /api/zones             - List zones
+POST /api/zones             - Claim zone
+GET  /api/claims            - List claims
+POST /api/claims            - Make claim
+GET  /api/messages          - Get DMs
+POST /api/messages          - Send DM
+GET  /api/roadmap           - List roadmap items
+POST /api/roadmap           - Create roadmap item
+PUT  /api/roadmap           - Update roadmap item
+GET  /api/whats-next?assignee=name - Get next task for team member
 ```
 
 ## Environment Variables
@@ -68,6 +72,8 @@ POST /api/messages        - Send DM
 | `PORT` | HTTP server port | 3001 |
 | `PERSIST` | Enable file persistence | false |
 | `DATA_PATH` | Custom data file path | ./data/coord-state.json |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis URL | - |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token | - |
 
 ## Simulation
 
