@@ -1,0 +1,89 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Registration Test</title>
+    <style>
+        body { font-family: system-ui; background: #0d1117; color: #c9d1d9; padding: 20px; }
+        .container { max-width: 400px; margin: 0 auto; }
+        h1 { color: #58a6ff; font-size: 24px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; background: #21262d; border: 1px solid #30363d; color: white; border-radius: 6px; font-size: 16px; }
+        button { width: 100%; padding: 12px; background: #238636; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
+        button:disabled { background: #30363d; }
+        .success { color: #3fb950; margin: 10px 0; }
+        .error { color: #f85149; margin: 10px 0; }
+        .result { background: #21262d; padding: 10px; border-radius: 6px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Mobile Registration Test</h1>
+        
+        <input type="text" id="username" placeholder="Username (3-30 chars)" />
+        <input type="password" id="password" placeholder="Password (8+ chars)" />
+        <input type="text" id="inviteCode" value="piston-team-2025" placeholder="Invite Code" />
+        
+        <button id="registerBtn" onclick="register()">Register</button>
+        <button id="loginBtn" onclick="login()" style="margin-top: 10px; background: #1f6feb;">Login</button>
+        
+        <div id="result" class="result" style="display:none;"></div>
+    </div>
+    
+    <script>
+        const API = 'https://agent-coord-mcp.vercel.app/api';
+        
+        async function register() {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.innerHTML = 'Registering...';
+            
+            try {
+                const res = await fetch(API + '/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value,
+                        inviteCode: document.getElementById('inviteCode').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    result.innerHTML = '<span class="success">SUCCESS! User created: ' + data.user.username + '</span>';
+                } else {
+                    result.innerHTML = '<span class="error">Error: ' + data.error + '</span>';
+                }
+            } catch (e) {
+                result.innerHTML = '<span class="error">Network error: ' + e.message + '</span>';
+            }
+        }
+        
+        async function login() {
+            const result = document.getElementById('result');
+            result.style.display = 'block';
+            result.innerHTML = 'Logging in...';
+            
+            try {
+                const res = await fetch(API + '/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        username: document.getElementById('username').value,
+                        password: document.getElementById('password').value
+                    })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    result.innerHTML = '<span class="success">LOGIN SUCCESS! Redirecting...</span>';
+                    setTimeout(() => window.location.href = 'https://agent-coord-mcp.vercel.app', 1500);
+                } else {
+                    result.innerHTML = '<span class="error">Error: ' + data.error + '</span>';
+                }
+            } catch (e) {
+                result.innerHTML = '<span class="error">Network error: ' + e.message + '</span>';
+            }
+        }
+    </script>
+</body>
+</html>
