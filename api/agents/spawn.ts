@@ -6,7 +6,7 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const AGENTS_KEY = 'agent-coord:agents';
+const AGENTS_KEY = 'agent-coord:active-agents';
 const SPAWN_QUEUE_KEY = 'agent-coord:spawn-queue';
 
 interface SpawnRequest {
