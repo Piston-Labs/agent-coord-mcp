@@ -1194,11 +1194,12 @@
       const input = document.getElementById('messageInput');
       const sendBtn = document.getElementById('sendBtn');
       const message = input.value.trim();
-      
+
       console.log('sendMessage called, message:', message);
-      
-      if (!message) {
-        console.log('Empty message, returning');
+
+      // Check if we have an image or message
+      if (!message && !pendingImage) {
+        console.log('Empty message and no image, returning');
         return;
       }
 
@@ -1208,14 +1209,22 @@
 
       try {
         console.log('Sending to:', API_BASE + '/chat');
+        const payload = {
+          author: HUMAN_ID,
+          authorType: 'human',
+          message: message || ''
+        };
+
+        // Add image if present
+        if (pendingImage) {
+          payload.imageData = pendingImage.data;
+          payload.imageName = pendingImage.name;
+        }
+
         const res = await fetch(API_BASE + '/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            author: HUMAN_ID,
-            authorType: 'human',
-            message
-          })
+          body: JSON.stringify(payload)
         });
 
         console.log('Response status:', res.status);
@@ -1226,15 +1235,28 @@
         }
 
         input.value = '';
+
+        // Clear pending image
+        if (pendingImage) {
+          pendingImage = null;
+          document.getElementById('imageInput').value = '';
+          document.getElementById('imagePreview').style.display = 'none';
+        }
+
         // Append just our message optimistically (no full re-fetch needed)
         if (responseData.timestamp) {
-          appendMessages([{
+          const msgObj = {
             id: responseData.id,
             author: HUMAN_ID,
             authorType: 'human',
             message: message,
             timestamp: responseData.timestamp
-          }]);
+          };
+          if (payload.imageData) {
+            msgObj.imageData = payload.imageData;
+            msgObj.imageName = payload.imageName;
+          }
+          appendMessages([msgObj]);
           lastMessageTime = responseData.timestamp;
         }
       } catch (err) {

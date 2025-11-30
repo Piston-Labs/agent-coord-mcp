@@ -39,13 +39,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'POST') {
-      const { author, authorType = 'agent', message } = req.body;
+      const { author, authorType = 'agent', message, imageData, imageName } = req.body;
 
-      if (!author || !message) {
-        return res.status(400).json({ error: 'author and message required' });
+      if (!author || (!message && !imageData)) {
+        return res.status(400).json({ error: 'author and (message or imageData) required' });
       }
 
-      const newMessage = {
+      // Validate image if provided (max 500KB base64)
+      if (imageData) {
+        if (typeof imageData !== 'string' || imageData.length > 700000) {
+          return res.status(400).json({ error: 'Image too large (max 500KB)' });
+        }
+        if (!imageData.startsWith('data:image/')) {
+          return res.status(400).json({ error: 'Invalid image format. Must be base64 data URL' });
+        }
+      }
+
+      const newMessage: Record<string, any> = {
         id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
         author,
         authorType,
@@ -53,6 +63,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         timestamp: new Date().toISOString(),
         reactions: []
       };
+
+      if (imageData) {
+        newMessage.imageData = imageData;
+        newMessage.imageName = imageName || 'image';
+      }
 
       // Push to front of list (newest first)
       await redis.lpush(MESSAGES_KEY, JSON.stringify(newMessage));
