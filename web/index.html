@@ -1108,6 +1108,241 @@
 
 
     /* Telemetry View */
+
+    /* Health Overview Panel */
+    .health-overview {
+      display: none;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(63, 185, 80, 0.05), rgba(139, 92, 246, 0.05));
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .health-overview.visible {
+      display: grid;
+      grid-template-columns: 200px 1fr 1fr;
+      gap: 20px;
+    }
+    
+    .health-gauge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .gauge-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--success) calc(var(--score) * 1%),
+        var(--border) calc(var(--score) * 1%)
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    
+    .gauge-circle.warning {
+      background: conic-gradient(
+        var(--warning) calc(var(--score) * 1%),
+        var(--border) calc(var(--score) * 1%)
+      );
+    }
+    
+    .gauge-circle.critical {
+      background: conic-gradient(
+        var(--danger) calc(var(--score) * 1%),
+        var(--border) calc(var(--score) * 1%)
+      );
+    }
+    
+    .gauge-inner {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .gauge-score {
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+    
+    .gauge-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    
+    .health-breakdown {
+      display: grid;
+      grid-template-rows: repeat(4, 1fr);
+      gap: 8px;
+    }
+    
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    
+    .breakdown-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    
+    .breakdown-icon.excellent { background: rgba(63, 185, 80, 0.2); }
+    .breakdown-icon.good { background: rgba(88, 166, 255, 0.2); }
+    .breakdown-icon.warning { background: rgba(210, 153, 34, 0.2); }
+    .breakdown-icon.critical { background: rgba(248, 81, 73, 0.2); }
+    
+    .breakdown-info {
+      flex: 1;
+    }
+    
+    .breakdown-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    
+    .breakdown-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    
+    .breakdown-bar {
+      width: 60px;
+      height: 6px;
+      background: var(--bg-primary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+    
+    .breakdown-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+    
+    .breakdown-bar-fill.excellent { background: var(--success); }
+    .breakdown-bar-fill.good { background: var(--accent); }
+    .breakdown-bar-fill.warning { background: var(--warning); }
+    .breakdown-bar-fill.critical { background: var(--danger); }
+    
+    .health-alerts {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    
+    .health-alerts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    
+    .health-alerts-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .health-alerts-toggle {
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    
+    .health-alert-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border-left: 3px solid var(--warning);
+    }
+    
+    .health-alert-item.critical {
+      border-left-color: var(--danger);
+    }
+    
+    .health-alert-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--warning);
+      flex-shrink: 0;
+    }
+    
+    .health-alert-item.critical .health-alert-dot {
+      background: var(--danger);
+      animation: pulse 1.5s infinite;
+    }
+    
+    .health-alert-text {
+      flex: 1;
+      font-size: 12px;
+      color: var(--text-primary);
+    }
+    
+    .health-alert-time {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .no-alerts {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+    
+    .no-alerts svg {
+      width: 40px;
+      height: 40px;
+      margin-bottom: 8px;
+      color: var(--success);
+    }
+    
+    .overview-toggle {
+      padding: 4px 10px;
+      font-size: 11px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-primary);
+      cursor: pointer;
+      margin-left: 8px;
+    }
+    
+    .overview-toggle:hover {
+      background: var(--bg-primary);
+    }
+
     .telemetry-header {
       display: flex;
       justify-content: space-between;
@@ -2708,6 +2943,7 @@
           </div>
           <div class="telemetry-controls">
             <button class="map-btn" onclick="toggleMapView()" title="Toggle Fleet Map">Map</button>
+            <button class="overview-toggle" onclick="toggleHealthOverview()" title="Toggle Health Overview">Overview</button>
             <div class="alert-indicator" id="alertIndicator" style="display: none;">
               <span class="alert-count" id="alertCount">0</span> Alerts
             </div>
@@ -2717,6 +2953,74 @@
         <div class="alerts-banner" id="alertsBanner" style="display: none;">
           <div class="alerts-list" id="alertsList"></div>
         </div>
+        <div class="health-overview" id="healthOverview">
+          <div class="health-gauge">
+            <div class="gauge-circle" id="gaugeCircle" style="--score: 85;">
+              <div class="gauge-inner">
+                <span class="gauge-score" id="gaugeScore">--</span>
+                <span class="gauge-label">Fleet Health</span>
+              </div>
+            </div>
+          </div>
+          <div class="health-breakdown">
+            <div class="breakdown-row">
+              <div class="breakdown-icon excellent">✓</div>
+              <div class="breakdown-info">
+                <div class="breakdown-label">Excellent (90-100)</div>
+                <div class="breakdown-value" id="breakdownExcellent">0</div>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-bar-fill excellent" id="barExcellent" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-icon good">●</div>
+              <div class="breakdown-info">
+                <div class="breakdown-label">Good (70-89)</div>
+                <div class="breakdown-value" id="breakdownGood">0</div>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-bar-fill good" id="barGood" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-icon warning">!</div>
+              <div class="breakdown-info">
+                <div class="breakdown-label">Warning (50-69)</div>
+                <div class="breakdown-value" id="breakdownWarning">0</div>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-bar-fill warning" id="barWarning" style="width: 0%"></div>
+              </div>
+            </div>
+            <div class="breakdown-row">
+              <div class="breakdown-icon critical">✕</div>
+              <div class="breakdown-info">
+                <div class="breakdown-label">Critical (0-49)</div>
+                <div class="breakdown-value" id="breakdownCritical">0</div>
+              </div>
+              <div class="breakdown-bar">
+                <div class="breakdown-bar-fill critical" id="barCritical" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="health-alerts">
+            <div class="health-alerts-header">
+              <span class="health-alerts-title">Recent Alerts</span>
+              <span class="health-alerts-toggle" onclick="toggleAllAlerts()">View All</span>
+            </div>
+            <div id="healthAlertsList">
+              <div class="no-alerts">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                  <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                <span>All systems operational</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="fleet-map-container" id="fleetMapContainer">
           <div class="fleet-map" id="fleetMap">
             <div class="map-overlay">
@@ -3912,6 +4216,9 @@
 
         // Render device cards
         renderTelemetryGrid(data.devices || []);
+        
+        // Update health overview panel
+        updateHealthOverview(data.devices || [], data.alerts || []);
 
         // Start auto-refresh if not already running
         if (!telemetryRefreshInterval) {
@@ -3968,6 +4275,97 @@
         const grid = document.getElementById('telemetryGrid');
         // Map will update on next telemetry refresh
       }
+    }
+    
+    let healthOverviewVisible = true;
+    
+    function toggleHealthOverview() {
+      healthOverviewVisible = !healthOverviewVisible;
+      const overview = document.getElementById('healthOverview');
+      overview.classList.toggle('visible', healthOverviewVisible);
+    }
+    
+    function updateHealthOverview(devices, alerts) {
+      if (!devices || devices.length === 0) return;
+      
+      // Calculate breakdown
+      let excellent = 0, good = 0, warning = 0, critical = 0;
+      let totalScore = 0;
+      
+      devices.forEach(device => {
+        const score = device.health?.score || 100;
+        totalScore += score;
+        if (score >= 90) excellent++;
+        else if (score >= 70) good++;
+        else if (score >= 50) warning++;
+        else critical++;
+      });
+      
+      const avgScore = Math.round(totalScore / devices.length);
+      const total = devices.length;
+      
+      // Update gauge
+      const gaugeCircle = document.getElementById('gaugeCircle');
+      gaugeCircle.style.setProperty('--score', avgScore);
+      gaugeCircle.className = 'gauge-circle';
+      if (avgScore < 50) gaugeCircle.classList.add('critical');
+      else if (avgScore < 70) gaugeCircle.classList.add('warning');
+      
+      document.getElementById('gaugeScore').textContent = avgScore;
+      
+      // Update breakdown
+      document.getElementById('breakdownExcellent').textContent = excellent;
+      document.getElementById('breakdownGood').textContent = good;
+      document.getElementById('breakdownWarning').textContent = warning;
+      document.getElementById('breakdownCritical').textContent = critical;
+      
+      // Update bars (percentage of total)
+      document.getElementById('barExcellent').style.width = (excellent / total * 100) + '%';
+      document.getElementById('barGood').style.width = (good / total * 100) + '%';
+      document.getElementById('barWarning').style.width = (warning / total * 100) + '%';
+      document.getElementById('barCritical').style.width = (critical / total * 100) + '%';
+      
+      // Update alerts list
+      const alertsList = document.getElementById('healthAlertsList');
+      if (alerts && alerts.length > 0) {
+        const recentAlerts = alerts.slice(0, 4);
+        alertsList.innerHTML = recentAlerts.map(alert => {
+          const timeAgo = getTimeAgo(new Date(alert.createdAt));
+          return '<div class="health-alert-item ' + (alert.severity === 'critical' ? 'critical' : '') + '">' +
+            '<div class="health-alert-dot"></div>' +
+            '<div class="health-alert-text">' + alert.deviceName + ': ' + alert.message + '</div>' +
+            '<div class="health-alert-time">' + timeAgo + '</div>' +
+          '</div>';
+        }).join('');
+      } else {
+        alertsList.innerHTML = '<div class="no-alerts">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">' +
+          '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>' +
+          '<polyline points="22 4 12 14.01 9 11.01"/>' +
+          '</svg>' +
+          '<span>All systems operational</span>' +
+        '</div>';
+      }
+      
+      // Show overview panel
+      document.getElementById('healthOverview').classList.add('visible');
+    }
+    
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins < 1) return 'Just now';
+      if (diffMins < 60) return diffMins + 'm ago';
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return diffHours + 'h ago';
+      return Math.floor(diffHours / 24) + 'd ago';
+    }
+    
+    function toggleAllAlerts() {
+      const banner = document.getElementById('alertsBanner');
+      banner.style.display = banner.style.display === 'none' ? 'block' : 'none';
     }
 
     function renderFleetMap(devices) {
