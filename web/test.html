@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Hub Test</title>
+</head>
+<body style="background: #0d1117; color: white; font-family: sans-serif; padding: 20px;">
+  <h1>Hub Test Page</h1>
+  <div id="status">Testing...</div>
+  <div id="results" style="margin-top: 20px;"></div>
+  
+  <script>
+    const results = document.getElementById('results');
+    const status = document.getElementById('status');
+    
+    function log(msg) {
+      results.innerHTML += '<div>' + msg + '</div>';
+    }
+    
+    async function runTests() {
+      try {
+        log('1. Testing /api/health...');
+        const health = await fetch('/api/health').then(r => r.json());
+        log('   Health: ' + JSON.stringify(health));
+        
+        log('2. Testing /api/auth/session...');
+        const auth = await fetch('/api/auth/session').then(r => r.json());
+        log('   Auth: ' + JSON.stringify(auth));
+        
+        log('3. Testing /api/chat...');
+        const chat = await fetch('/api/chat?limit=3').then(r => r.json());
+        log('   Chat messages: ' + (chat.messages?.length || 0));
+        
+        status.innerHTML = '<span style="color: #2ecc71;">ALL TESTS PASSED</span>';
+        log('');
+        log('<a href="/" style="color: #3498db;">Click here to go to main hub</a>');
+      } catch (e) {
+        status.innerHTML = '<span style="color: #e74c3c;">ERROR: ' + e.message + '</span>';
+        log('Error: ' + e.stack);
+      }
+    }
+    
+    runTests();
+  </script>
+</body>
+</html>
