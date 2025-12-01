@@ -741,6 +741,269 @@
 
 
 
+    /* === ENHANCED MOBILE EXPERIENCE === */
+    @media (max-width: 768px) {
+      /* Smooth transitions for tab switching */
+      .tab-content {
+        animation: fadeIn 0.2s ease-out;
+      }
+      
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* Better touch scrolling */
+      .panel-content,
+      .chat-messages,
+      .metrics-grid,
+      .roadmap-board {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+      }
+      
+      /* Improved metrics on mobile */
+      .metrics-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+      }
+      
+      .metrics-header h3 {
+        font-size: 15px;
+      }
+      
+      .metrics-period-selector {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .period-btn {
+        flex: 1;
+        padding: 8px;
+        text-align: center;
+      }
+      
+      .metric-big {
+        font-size: 28px;
+      }
+      
+      .metric-hero {
+        flex-wrap: wrap;
+      }
+      
+      /* Better contributor cards on mobile */
+      .contributor-item {
+        padding: 8px 10px;
+      }
+      
+      .contributor-avatar {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+      
+      .contributor-name {
+        font-size: 12px;
+      }
+      
+      .contributor-bar {
+        width: 50px;
+      }
+      
+      /* Improved telemetry on mobile */
+      .telemetry-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px;
+      }
+      
+      .device-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 12px;
+      }
+      
+      .device-card {
+        padding: 12px;
+      }
+      
+      .device-stats {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+      }
+      
+      /* System health on mobile */
+      .health-overview {
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .health-gauge-container {
+        width: 100%;
+        max-width: 200px;
+        margin: 0 auto;
+      }
+      
+      /* Bottom nav improvements */
+      .mobile-nav {
+        padding: 8px 4px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      }
+      
+      .mobile-nav-item {
+        padding: 8px 6px;
+        font-size: 10px;
+        gap: 3px;
+      }
+      
+      .mobile-nav-icon {
+        font-size: 18px;
+      }
+      
+      /* Roadmap on mobile */
+      .roadmap-board {
+        grid-template-columns: 1fr;
+        overflow-x: visible;
+      }
+      
+      .roadmap-column {
+        min-height: auto;
+      }
+      
+      .roadmap-stats {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 10px;
+      }
+      
+      .roadmap-stat {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 80px;
+      }
+      
+      .roadmap-filters {
+        flex-wrap: wrap;
+      }
+      
+      .roadmap-filters select {
+        flex: 1;
+        min-width: 100px;
+      }
+      
+      /* Login modal mobile */
+      .login-modal {
+        width: 95%;
+        max-width: 400px;
+        padding: 20px;
+      }
+      
+      .login-modal h2 {
+        font-size: 20px;
+      }
+      
+      /* DM panel mobile */
+      .dm-panel {
+        width: 100%;
+        right: -100%;
+      }
+      
+      .dm-panel.open {
+        right: 0;
+      }
+      
+      /* Pull-to-refresh hint */
+      .pull-hint {
+        text-align: center;
+        padding: 8px;
+        font-size: 11px;
+        color: var(--text-secondary);
+        opacity: 0;
+        transition: opacity 0.2s;
+      }
+      
+      .pulling .pull-hint {
+        opacity: 1;
+      }
+    }
+
+    /* Extra small screens (iPhone SE, etc) */
+    @media (max-width: 375px) {
+      header {
+        padding: 8px 10px;
+      }
+      
+      .logo {
+        font-size: 14px;
+        gap: 6px;
+      }
+      
+      .logo svg {
+        width: 22px;
+        height: 22px;
+      }
+      
+      .status-bar {
+        gap: 10px;
+        font-size: 11px;
+      }
+      
+      .metric-big {
+        font-size: 24px;
+      }
+      
+      .metrics-card-content {
+        padding: 10px;
+      }
+      
+      .chat-input {
+        padding: 8px;
+      }
+      
+      .chat-input button#sendBtn {
+        padding: 10px 12px;
+        min-width: 50px;
+      }
+    }
+
+    /* Landscape mobile */
+    @media (max-width: 896px) and (orientation: landscape) {
+      main {
+        height: calc(100vh - 45px);
+      }
+      
+      .mobile-nav {
+        padding: 4px;
+      }
+      
+      .mobile-nav-item {
+        padding: 6px 8px;
+      }
+      
+      .modal {
+        max-height: 80vh;
+      }
+    }
+
+    /* High contrast / reduced motion preferences */
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* Dark mode improvements (already dark, but ensure consistency) */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        color-scheme: dark;
+      }
+    }
+
+
     .contributor-name {
       color: var(--text-primary);
       font-weight: 500;
@@ -6732,6 +6995,120 @@
         }
       }
     });
+
+    // === MOBILE ENHANCEMENTS ===
+    
+    // Pull-to-refresh for chat
+    let pullStartY = 0;
+    let isPulling = false;
+    
+    function initPullToRefresh() {
+      const chatMessages = document.getElementById('chatMessages');
+      if (!chatMessages || window.innerWidth > 768) return;
+      
+      chatMessages.addEventListener('touchstart', (e) => {
+        if (chatMessages.scrollTop === 0) {
+          pullStartY = e.touches[0].clientY;
+          isPulling = true;
+        }
+      }, { passive: true });
+      
+      chatMessages.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        const pullDistance = e.touches[0].clientY - pullStartY;
+        if (pullDistance > 60 && chatMessages.scrollTop === 0) {
+          chatMessages.classList.add('pulling');
+        }
+      }, { passive: true });
+      
+      chatMessages.addEventListener('touchend', () => {
+        if (isPulling && chatMessages.classList.contains('pulling')) {
+          chatMessages.classList.remove('pulling');
+          // Trigger refresh
+          fetchMessages();
+          // Show brief feedback
+          showToast('Messages refreshed');
+        }
+        isPulling = false;
+      }, { passive: true });
+    }
+    
+    // Toast notification for mobile
+    function showToast(message, duration = 2000) {
+      const existing = document.querySelector('.mobile-toast');
+      if (existing) existing.remove();
+      
+      const toast = document.createElement('div');
+      toast.className = 'mobile-toast';
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-size: 13px;
+        z-index: 9999;
+        animation: toastIn 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      document.body.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'toastOut 0.3s ease forwards';
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+    
+    // Add toast animations to head
+    const toastStyle = document.createElement('style');
+    toastStyle.textContent = `
+      @keyframes toastIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+      }
+      @keyframes toastOut {
+        from { opacity: 1; transform: translateX(-50%) translateY(0); }
+        to { opacity: 0; transform: translateX(-50%) translateY(20px); }
+      }
+    `;
+    document.head.appendChild(toastStyle);
+    
+    // Haptic feedback helper (where supported)
+    function haptic(type = 'light') {
+      if ('vibrate' in navigator) {
+        const patterns = {
+          light: [10],
+          medium: [20],
+          heavy: [30],
+          success: [10, 50, 10],
+          error: [30, 50, 30]
+        };
+        navigator.vibrate(patterns[type] || patterns.light);
+      }
+    }
+    
+    // Enhanced mobile button feedback
+    function addMobileFeedback() {
+      document.querySelectorAll('button, .mobile-nav-item').forEach(btn => {
+        btn.addEventListener('touchstart', () => {
+          btn.style.transform = 'scale(0.95)';
+          haptic('light');
+        }, { passive: true });
+        btn.addEventListener('touchend', () => {
+          btn.style.transform = '';
+        }, { passive: true });
+      });
+    }
+    
+    // Initialize mobile features
+    if (window.innerWidth <= 768) {
+      initPullToRefresh();
+      addMobileFeedback();
+    }
 
 
 
