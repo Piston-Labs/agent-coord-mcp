@@ -5241,7 +5241,44 @@
   <div id="loadingScreen" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0d1117; display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 16px;">
     <div style="width: 40px; height: 40px; border: 3px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
     <div style="color: #8b949e; font-size: 14px;">Loading Piston Labs Hub...</div>
-    <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+    <style>@keyframes spin { to { transform: rotate(360deg); } }
+    /* Enhanced table cell styles */
+    .speed-cell {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-weight: 600;
+      color: #4ade80;
+    }
+    .speed-cell .unit {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.5);
+      font-weight: 400;
+    }
+    .battery-cell {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-weight: 600;
+    }
+    .battery-cell.good { color: #4ade80; }
+    .battery-cell.warn { color: #fbbf24; }
+    .battery-cell.low { color: #f87171; }
+    .location-cell {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.8rem;
+      color: rgba(255,255,255,0.7);
+    }
+    .time-cell {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.85rem;
+    }
+    .imei-cell {
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 0.85rem;
+      color: #60a5fa;
+    }
+    .vehicle-cell {
+      font-weight: 500;
+    }
+
+    </style>
   </div>
 
   <!-- Login Modal -->
@@ -5791,16 +5828,17 @@
             <thead>
               <tr>
                 <th onclick="sortDeviceListBy('imei')">IMEI ↕</th>
-                <th onclick="sortDeviceListBy('vin')">VIN ↕</th>
                 <th onclick="sortDeviceListBy('name')">Vehicle ↕</th>
                 <th onclick="sortDeviceListBy('status')">Status</th>
+                <th onclick="sortDeviceListBy('speed')">Speed ↕</th>
+                <th onclick="sortDeviceListBy('battery')">Battery ↕</th>
+                <th>Location</th>
                 <th onclick="sortDeviceListBy('health')">Health ↕</th>
                 <th>Last Seen</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="deviceListBody">
-              <tr><td colspan="7" class="loading-row">Loading devices...</td></tr>
+              <tr><td colspan="8" class="loading-row">Loading devices...</td></tr>
             </tbody>
           </table>
         </div>
@@ -7496,7 +7534,7 @@
       if (!tbody) return;
       
       if (!devices || devices.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="loading-row">No devices enrolled</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="loading-row">No devices enrolled</td></tr>';
         return;
       }
       
@@ -7524,6 +7562,14 @@
             aVal = a.status?.movement ? 1 : 0;
             bVal = b.status?.movement ? 1 : 0;
             break;
+          case 'speed':
+            aVal = a.metrics?.speed || 0;
+            bVal = b.metrics?.speed || 0;
+            break;
+          case 'battery':
+            aVal = a.metrics?.batteryVoltage || 0;
+            bVal = b.metrics?.batteryVoltage || 0;
+            break;
           default:
             aVal = a.imei || '';
             bVal = b.imei || '';
@@ -7542,16 +7588,22 @@
         const lastSeen = device.connectivity?.lastSeen ? formatTimeAgo(new Date(device.connectivity.lastSeen)) : '--';
         const statusClass = isMoving ? 'moving' : 'parked';
         const statusText = isMoving ? 'Moving' : 'Parked';
-        
+        const speed = device.metrics?.speed || 0;
+        const battery = device.metrics?.batteryVoltage || '--';
+        const lat = device.position?.lat?.toFixed(4) || '--';
+        const lng = device.position?.lng?.toFixed(4) || '--';
+        const batteryClass = typeof battery === 'number' ? (battery >= 12.4 ? 'good' : battery >= 11.8 ? 'warn' : 'low') : '';
+
         return `
           <tr onclick="openDeviceModal('${device.imei}')" style="cursor: pointer;">
             <td class="imei-cell">${device.imei || '--'}</td>
-            <td class="vin-cell">${vehicle.vin || 'N/A'}</td>
             <td class="vehicle-cell">${vehicleStr}</td>
             <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td class="speed-cell">${speed} <span class="unit">km/h</span></td>
+            <td class="battery-cell ${batteryClass}">${typeof battery === 'number' ? battery.toFixed(1) : battery}V</td>
+            <td class="location-cell">${lat}, ${lng}</td>
             <td><span class="health-score ${health.status}">${health.score}%</span></td>
-            <td>${lastSeen}</td>
-            <td><button class="action-btn" onclick="event.stopPropagation(); openDeviceModal('${device.imei}')">Details</button></td>
+            <td class="time-cell">${lastSeen}</td>
           </tr>
         `;
       }).join('');
