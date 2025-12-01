@@ -40,6 +40,7 @@
     "@anthropic-ai/sdk": "^0.71.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@upstash/redis": "^1.35.7",
+    "playwright": "^1.57.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {

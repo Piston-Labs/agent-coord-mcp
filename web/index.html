@@ -2224,7 +2224,7 @@
 
     .telemetry-grid {
       flex: 1;
-      display: grid;
+      display: grid !important;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 12px;
       padding: 16px;
@@ -3538,6 +3538,8 @@
       margin-bottom: 16px;
       border: 2px solid var(--accent);
       margin-top: 20px;
+      min-height: 200px;
+      overflow: visible;
       overflow: hidden;
     }
     
@@ -5687,7 +5689,7 @@
     <!-- Context Panel - Enhanced -->
 
       <!-- Telemetry View -->
-      <div class="tab-content" id="telemetryView">
+      <div class="tab-content" id="telemetryView" style="overflow-y: auto;">
         <div class="telemetry-header">
           <div class="fleet-summary" id="fleetSummary">
             <div class="fleet-stat">
@@ -5845,7 +5847,7 @@
           </table>
         </div>
         
-        <div class="telemetry-grid" id="telemetryGrid" style="display: none;">
+        <div class="telemetry-grid" id="telemetryGrid">
           <div class="empty-state">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
