@@ -516,6 +516,7 @@ interface ChatMessage {
 
 let lastProcessedTimestamp: string | null = null;
 let conversationHistory: Anthropic.MessageParam[] = [];
+const processedMessageIds = new Set<string>();  // Track processed messages to prevent duplicates
 
 async function getNewMessages(): Promise<ChatMessage[]> {
   try {
@@ -746,22 +747,41 @@ async function mainLoop(): Promise<void> {
 
       if (newMessages.length > 0) {
         console.log(`[agent] Found ${newMessages.length} new message(s)`);
+
+        // Filter out already processed messages to prevent duplicates
+        const unprocessedMessages = newMessages.filter(m => !processedMessageIds.has(m.id));
+
+        if (unprocessedMessages.length === 0) {
+          console.log(`[agent] All ${newMessages.length} messages already processed, skipping`);
+          lastProcessedTimestamp = newMessages[newMessages.length - 1].timestamp;
+          continue;
+        }
+
+        // Mark all new messages as processed BEFORE responding (prevents duplicates)
+        unprocessedMessages.forEach(m => processedMessageIds.add(m.id));
+
+        // Keep set from growing indefinitely (keep last 100)
+        if (processedMessageIds.size > 100) {
+          const toDelete = Array.from(processedMessageIds).slice(0, processedMessageIds.size - 100);
+          toDelete.forEach(id => processedMessageIds.delete(id));
+        }
+
         lastProcessedTimestamp = newMessages[newMessages.length - 1].timestamp;
 
         // Process messages through context manager
-        contextManager.processMessages(newMessages.map(m => ({
+        contextManager.processMessages(unprocessedMessages.map(m => ({
           author: m.author,
           message: m.message,
           authorType: m.authorType
         })));
 
         // Check for special commands first (like rename)
-        await checkForRenameCommand(newMessages);
+        await checkForRenameCommand(unprocessedMessages);
 
-        if (await shouldRespond(newMessages)) {
+        if (await shouldRespond(unprocessedMessages)) {
           await updateStatus('Processing request...');
 
-          const context = newMessages.map(m => `${m.author}: ${m.message}`).join('\n');
+          const context = unprocessedMessages.map(m => `${m.author}: ${m.message}`).join('\n');
           console.log(`[agent] Processing: ${context.substring(0, 100)}...`);
 
           const response = await processWithTools(context);
