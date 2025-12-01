@@ -28,24 +28,37 @@ const ACTIVITIES_KEY = 'piston:crm:activities';
 interface Shop {
   id: string;
   name: string;
+  // Location
   address?: string;
   city?: string;
   state?: string;
   zip?: string;
+  // Shop details
   bays?: number;
   technicians?: number;
   specialty?: string;
   monthlyVolume?: number;
   dealerCompetition?: string;
+  // Primary contact
   contactName?: string;
   contactRole?: string;
   contactEmail?: string;
   contactPhone?: string;
+  // Sales & pipeline
   leadSource?: string;
   assignedTo?: string;
-  estMonthlyValue?: number;
-  devicesNeeded?: number;
   stage: 'prospect' | 'qualified' | 'demo' | 'proposal' | 'customer' | 'churned';
+  // Subscription & devices
+  subscriptionStatus?: 'trial' | 'active' | 'paused' | 'cancelled' | '';
+  monthlyRate?: number;
+  devicesNeeded?: number;
+  devicesDeployed?: number;
+  contractStart?: string;
+  contractEnd?: string;
+  // Financials
+  estMonthlyValue?: number;
+  lifetimeValue?: number;
+  // Other
   notes?: string;
   createdAt: string;
   lastContact: string;
@@ -246,9 +259,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         contactPhone,
         leadSource,
         assignedTo,
-        estMonthlyValue,
-        devicesNeeded,
         stage = 'prospect',
+        // New subscription fields
+        subscriptionStatus,
+        monthlyRate,
+        devicesNeeded,
+        devicesDeployed,
+        contractStart,
+        contractEnd,
+        // Financials
+        estMonthlyValue,
+        lifetimeValue,
         notes
       } = body;
 
@@ -283,9 +304,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (contactPhone !== undefined) shop.contactPhone = contactPhone;
         if (leadSource !== undefined) shop.leadSource = leadSource;
         if (assignedTo !== undefined) shop.assignedTo = assignedTo;
-        if (estMonthlyValue !== undefined) shop.estMonthlyValue = estMonthlyValue;
-        if (devicesNeeded !== undefined) shop.devicesNeeded = devicesNeeded;
         if (stage !== undefined) shop.stage = stage as Shop['stage'];
+        // Subscription fields
+        if (subscriptionStatus !== undefined) shop.subscriptionStatus = subscriptionStatus;
+        if (monthlyRate !== undefined) shop.monthlyRate = monthlyRate;
+        if (devicesNeeded !== undefined) shop.devicesNeeded = devicesNeeded;
+        if (devicesDeployed !== undefined) shop.devicesDeployed = devicesDeployed;
+        if (contractStart !== undefined) shop.contractStart = contractStart;
+        if (contractEnd !== undefined) shop.contractEnd = contractEnd;
+        // Financials
+        if (estMonthlyValue !== undefined) shop.estMonthlyValue = estMonthlyValue;
+        if (lifetimeValue !== undefined) shop.lifetimeValue = lifetimeValue;
         if (notes !== undefined) shop.notes = notes;
         shop.lastContact = now;
       } else {
@@ -308,9 +337,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           contactPhone,
           leadSource,
           assignedTo,
-          estMonthlyValue,
-          devicesNeeded,
           stage: (stage as Shop['stage']) || 'prospect',
+          // Subscription fields
+          subscriptionStatus: subscriptionStatus || '',
+          monthlyRate: monthlyRate || 0,
+          devicesNeeded: devicesNeeded || 0,
+          devicesDeployed: devicesDeployed || 0,
+          contractStart,
+          contractEnd,
+          // Financials
+          estMonthlyValue: estMonthlyValue || 0,
+          lifetimeValue: lifetimeValue || 0,
           notes,
           createdAt: now,
           lastContact: now

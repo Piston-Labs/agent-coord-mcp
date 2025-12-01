@@ -5472,6 +5472,14 @@
       min-height: 80px;
     }
 
+    .crm-form-group small.form-hint {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted, #666);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
     .crm-form-actions {
       display: flex;
       justify-content: flex-end;
@@ -9822,31 +9830,42 @@
       crmEditingShopId = shopId;
       document.getElementById('shopModalTitle').textContent = 'Edit Shop';
 
-      // Populate form fields
+      // Populate form fields - Basic info
       document.getElementById('shopName').value = shop.name;
       document.getElementById('shopAddress').value = shop.address || '';
       document.getElementById('shopCity').value = shop.city || '';
       document.getElementById('shopState').value = shop.state || '';
       document.getElementById('shopZip').value = shop.zip || '';
+      document.getElementById('shopStage').value = shop.stage;
+      // Shop details
       document.getElementById('shopBays').value = shop.bays || '';
       document.getElementById('shopTechnicians').value = shop.technicians || '';
       document.getElementById('shopSpecialty').value = shop.specialty || '';
       document.getElementById('shopMonthlyVolume').value = shop.monthlyVolume || '';
       document.getElementById('shopDealerCompetition').value = shop.dealerCompetition || '';
+      // Contact
       document.getElementById('contactName').value = shop.contactName || '';
       document.getElementById('contactRole').value = shop.contactRole || 'owner';
       document.getElementById('contactEmail').value = shop.contactEmail || '';
       document.getElementById('contactPhone').value = shop.contactPhone || '';
+      // Sales & pipeline
       document.getElementById('shopSource').value = shop.leadSource || '';
-      document.getElementById('shopAssigned').value = shop.assignedTo || 'eli';
-      document.getElementById('shopEstValue').value = shop.estMonthlyValue || '';
+      document.getElementById('shopAssigned').value = shop.assignedTo || 'tyler';
+      // Subscription & devices
+      document.getElementById('shopSubscriptionStatus').value = shop.subscriptionStatus || '';
+      document.getElementById('shopMonthlyRate').value = shop.monthlyRate || '';
       document.getElementById('shopDevicesNeeded').value = shop.devicesNeeded || '';
-      document.getElementById('shopStage').value = shop.stage;
+      document.getElementById('shopDevicesDeployed').value = shop.devicesDeployed || '';
+      document.getElementById('shopContractStart').value = shop.contractStart || '';
+      document.getElementById('shopContractEnd').value = shop.contractEnd || '';
+      // Financials
+      document.getElementById('shopEstValue').value = shop.estMonthlyValue || '';
+      document.getElementById('shopLifetimeValue').value = shop.lifetimeValue || '';
+      // Notes
       document.getElementById('shopNotes').value = shop.notes || '';
 
       // Show the modal overlay (need to show both overlay and modal)
-      const overlay = document.getElementById('shopModalOverlay') || document.querySelector('.crm-modal-overlay');
-      if (overlay) overlay.style.display = 'flex';
+      document.getElementById('shopModalOverlay').style.display = 'flex';
       document.getElementById('shopModal').style.display = 'block';
     }
 
@@ -9862,25 +9881,38 @@
       event.preventDefault();
 
       const shopData = {
+        // Basic info
         name: document.getElementById('shopName').value,
         address: document.getElementById('shopAddress').value,
         city: document.getElementById('shopCity').value,
         state: document.getElementById('shopState').value,
         zip: document.getElementById('shopZip').value,
+        // Shop details
         bays: parseInt(document.getElementById('shopBays').value) || 0,
         technicians: parseInt(document.getElementById('shopTechnicians').value) || 0,
         specialty: document.getElementById('shopSpecialty').value || 'general',
         monthlyVolume: parseInt(document.getElementById('shopMonthlyVolume').value) || 0,
-        dealerCompetition: document.getElementById('shopDealerCompetition').value || 'low',
+        dealerCompetition: document.getElementById('shopDealerCompetition').value || '',
+        // Contact
         contactName: document.getElementById('contactName').value,
         contactRole: document.getElementById('contactRole').value || 'owner',
         contactEmail: document.getElementById('contactEmail').value,
         contactPhone: document.getElementById('contactPhone').value,
-        leadSource: document.getElementById('shopSource').value || 'other',
-        assignedTo: document.getElementById('shopAssigned').value || 'eli',
-        estMonthlyValue: parseInt(document.getElementById('shopEstValue').value) || 0,
-        devicesNeeded: parseInt(document.getElementById('shopDevicesNeeded').value) || 0,
+        // Sales & pipeline
+        leadSource: document.getElementById('shopSource').value || '',
+        assignedTo: document.getElementById('shopAssigned').value || 'tyler',
         stage: document.getElementById('shopStage').value,
+        // Subscription & devices
+        subscriptionStatus: document.getElementById('shopSubscriptionStatus').value || '',
+        monthlyRate: parseFloat(document.getElementById('shopMonthlyRate').value) || 0,
+        devicesNeeded: parseInt(document.getElementById('shopDevicesNeeded').value) || 0,
+        devicesDeployed: parseInt(document.getElementById('shopDevicesDeployed').value) || 0,
+        contractStart: document.getElementById('shopContractStart').value || '',
+        contractEnd: document.getElementById('shopContractEnd').value || '',
+        // Financials
+        estMonthlyValue: parseInt(document.getElementById('shopEstValue').value) || 0,
+        lifetimeValue: parseInt(document.getElementById('shopLifetimeValue').value) || 0,
+        // Notes
         notes: document.getElementById('shopNotes').value
       };
 
@@ -9951,11 +9983,23 @@
         phoneEl.href = shop.contactPhone ? `tel:${shop.contactPhone}` : '#';
       }
 
-      // Populate sales details
+      // Populate sales & pipeline
       document.getElementById('detailSource').textContent = getLeadSourceLabel(shop.leadSource) || '--';
       document.getElementById('detailAssigned').textContent = getAssigneeName(shop.assignedTo) || '--';
-      document.getElementById('detailValue').textContent = shop.estMonthlyValue ? `$${shop.estMonthlyValue}/mo` : '--';
+
+      // Populate subscription & devices
+      document.getElementById('detailSubscriptionStatus').textContent = getSubscriptionStatusLabel(shop.subscriptionStatus) || '--';
+      document.getElementById('detailMonthlyRate').textContent = shop.monthlyRate ? `$${shop.monthlyRate}/mo` : '--';
+      document.getElementById('detailDevicesDeployed').textContent = shop.devicesDeployed || '0';
       document.getElementById('detailDevices').textContent = shop.devicesNeeded || '--';
+      document.getElementById('detailContractStart').textContent = shop.contractStart ? formatDate(shop.contractStart) : '--';
+      document.getElementById('detailContractEnd').textContent = shop.contractEnd ? formatDate(shop.contractEnd) : 'Month-to-month';
+
+      // Populate financials
+      document.getElementById('detailValue').textContent = shop.estMonthlyValue ? `$${shop.estMonthlyValue}/mo` : '--';
+      document.getElementById('detailLifetimeValue').textContent = shop.lifetimeValue ? `$${shop.lifetimeValue.toLocaleString()}` : '$0';
+
+      // Populate notes
       document.getElementById('detailNotes').textContent = shop.notes || '--';
 
       // Populate activity timeline
@@ -10103,6 +10147,23 @@
         ryan: 'Ryan'
       };
       return names[id] || id;
+    }
+
+    function getSubscriptionStatusLabel(status) {
+      const labels = {
+        '': 'Not Started',
+        'trial': 'Trial',
+        'active': 'Active',
+        'paused': 'Paused',
+        'cancelled': 'Cancelled'
+      };
+      return labels[status] || status || 'Not Started';
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '--';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     }
 
     function getSpecialtyLabel(specialty) {
@@ -11627,12 +11688,13 @@
           </div>
 
           <div class="crm-form-section">
-            <h4>Sales Information</h4>
+            <h4>Sales & Pipeline</h4>
             <div class="crm-form-row">
               <div class="crm-form-group">
                 <label for="shopSource">Lead Source</label>
                 <select id="shopSource">
                   <option value="">Select source...</option>
+                  <option value="founder">Founder (Internal)</option>
                   <option value="referral">Referral</option>
                   <option value="website">Website</option>
                   <option value="linkedin">LinkedIn</option>
@@ -11643,27 +11705,80 @@
                 </select>
               </div>
               <div class="crm-form-group">
-                <label for="shopAssigned">Assigned To</label>
+                <label for="shopAssigned">Account Owner</label>
                 <select id="shopAssigned">
-                  <option value="eli">Eli</option>
                   <option value="tyler">Tyler</option>
+                  <option value="eli">Eli</option>
                   <option value="ryan">Ryan</option>
                 </select>
               </div>
             </div>
+          </div>
+
+          <div class="crm-form-section">
+            <h4>Subscription & Devices</h4>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopSubscriptionStatus">Subscription Status</label>
+                <select id="shopSubscriptionStatus">
+                  <option value="">Not Started</option>
+                  <option value="trial">Trial</option>
+                  <option value="active">Active</option>
+                  <option value="paused">Paused</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
+              <div class="crm-form-group">
+                <label for="shopMonthlyRate">Monthly Rate ($)</label>
+                <input type="number" id="shopMonthlyRate" placeholder="0" min="0" step="0.01" />
+                <small class="form-hint">Actual monthly subscription amount</small>
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopDevicesNeeded">Devices Needed</label>
+                <input type="number" id="shopDevicesNeeded" placeholder="0" min="0" />
+                <small class="form-hint">Estimated devices for full deployment</small>
+              </div>
+              <div class="crm-form-group">
+                <label for="shopDevicesDeployed">Devices Deployed</label>
+                <input type="number" id="shopDevicesDeployed" placeholder="0" min="0" />
+                <small class="form-hint">Currently installed and active</small>
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopContractStart">Contract Start</label>
+                <input type="date" id="shopContractStart" />
+              </div>
+              <div class="crm-form-group">
+                <label for="shopContractEnd">Contract End</label>
+                <input type="date" id="shopContractEnd" />
+                <small class="form-hint">Leave blank for month-to-month</small>
+              </div>
+            </div>
+          </div>
+
+          <div class="crm-form-section">
+            <h4>Financials (Estimates)</h4>
             <div class="crm-form-row">
               <div class="crm-form-group">
                 <label for="shopEstValue">Est. Monthly Value ($)</label>
-                <input type="number" id="shopEstValue" placeholder="299" min="0" />
+                <input type="number" id="shopEstValue" placeholder="0" min="0" />
+                <small class="form-hint">Projected revenue when fully deployed</small>
               </div>
               <div class="crm-form-group">
-                <label for="shopDevicesNeeded">Devices Needed</label>
-                <input type="number" id="shopDevicesNeeded" placeholder="10" min="1" />
+                <label for="shopLifetimeValue">Lifetime Value ($)</label>
+                <input type="number" id="shopLifetimeValue" placeholder="0" min="0" />
+                <small class="form-hint">Total revenue to date</small>
               </div>
             </div>
+          </div>
+
+          <div class="crm-form-section">
+            <h4>Notes</h4>
             <div class="crm-form-group">
-              <label for="shopNotes">Notes</label>
-              <textarea id="shopNotes" rows="3" placeholder="Any additional notes about this shop..."></textarea>
+              <textarea id="shopNotes" rows="4" placeholder="Any additional notes about this shop..."></textarea>
             </div>
           </div>
 
@@ -11747,10 +11862,10 @@
             </div>
           </div>
 
-          <!-- Sales Info Card -->
+          <!-- Sales & Pipeline Card -->
           <div class="crm-detail-card">
             <div class="crm-detail-card-header">
-              <h4>Sales Details</h4>
+              <h4>Sales & Pipeline</h4>
             </div>
             <div class="crm-detail-grid">
               <div class="crm-detail-item">
@@ -11758,19 +11873,69 @@
                 <span id="detailSource">--</span>
               </div>
               <div class="crm-detail-item">
-                <label>Assigned To</label>
+                <label>Account Owner</label>
                 <span id="detailAssigned">--</span>
               </div>
+            </div>
+          </div>
+
+          <!-- Subscription & Devices Card -->
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Subscription & Devices</h4>
+            </div>
+            <div class="crm-detail-grid">
               <div class="crm-detail-item">
-                <label>Est. Monthly Value</label>
-                <span id="detailValue">--</span>
+                <label>Status</label>
+                <span id="detailSubscriptionStatus">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Monthly Rate</label>
+                <span id="detailMonthlyRate">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Devices Deployed</label>
+                <span id="detailDevicesDeployed">--</span>
               </div>
               <div class="crm-detail-item">
                 <label>Devices Needed</label>
                 <span id="detailDevices">--</span>
               </div>
+              <div class="crm-detail-item">
+                <label>Contract Start</label>
+                <span id="detailContractStart">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Contract End</label>
+                <span id="detailContractEnd">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financials Card -->
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Financials</h4>
+            </div>
+            <div class="crm-detail-grid">
+              <div class="crm-detail-item">
+                <label>Est. Monthly Value</label>
+                <span id="detailValue">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Lifetime Value</label>
+                <span id="detailLifetimeValue">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notes Card -->
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Notes</h4>
+            </div>
+            <div class="crm-detail-grid">
               <div class="crm-detail-item full-width">
-                <label>Notes</label>
                 <span id="detailNotes">--</span>
               </div>
             </div>
