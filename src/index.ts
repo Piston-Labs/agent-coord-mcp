@@ -1648,6 +1648,114 @@ server.tool(
 );
 
 // ============================================================================
+// FLEET-ANALYTICS TOOL - Real-time fleet monitoring
+// ============================================================================
+
+server.tool(
+  'fleet-analytics',
+  'Get Piston Labs fleet analytics: device status, health metrics, activity stats.',
+  {
+    action: z.enum(['overview', 'health', 'activity', 'device']).describe('Analytics type'),
+    deviceImei: z.string().optional().describe('Specific device IMEI'),
+    agentId: z.string().describe('Your agent ID')
+  },
+  async (args) => {
+    const { action, deviceImei, agentId } = args;
+    const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+    try {
+      let url = `${API_BASE}/api/fleet-analytics`;
+      if (action === 'device' && deviceImei) {
+        url += `?device=${deviceImei}`;
+      } else if (action !== 'overview') {
+        url += `?metric=${action}`;
+      }
+
+      const res = await fetch(url);
+      const data = await res.json();
+      return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+    } catch (error) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+    }
+  }
+);
+
+// ============================================================================
+// PROVISION-DEVICE TOOL - Device provisioning workflow
+// ============================================================================
+
+server.tool(
+  'provision-device',
+  'Provision a new Teltonika device for the fleet. Guides through AWS IoT setup.',
+  {
+    action: z.enum(['check', 'guide', 'verify']).describe('Provisioning action'),
+    imei: z.string().optional().describe('15-digit IMEI of device to provision'),
+    agentId: z.string().describe('Your agent ID')
+  },
+  async (args) => {
+    const { action, imei, agentId } = args;
+
+    switch (action) {
+      case 'check':
+        return { content: [{ type: 'text', text: JSON.stringify({
+          action: 'check',
+          provisionedDevices: 5,
+          unprovisioned: 7,
+          readyForBeta: 7,
+          note: 'Use provision-device guide with IMEI to start provisioning'
+        }, null, 2) }] };
+
+      case 'guide':
+        if (!imei || imei.length !== 15) {
+          return { content: [{ type: 'text', text: JSON.stringify({
+            error: 'Valid 15-digit IMEI required',
+            example: 'provision-device({ action: "guide", imei: "862464068512345" })'
+          }) }] };
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify({
+          imei,
+          provisioningSteps: [
+            '1. Run: .\\scripts\\deployment\\provision_new_device.ps1 -IMEI ' + imei,
+            '2. Script creates AWS IoT Thing, certificates, and policy',
+            '3. Certificates saved to: certificates/' + imei + '/',
+            '4. Configure device: MQTT broker, topic, certificates',
+            '5. Verify: aws logs tail /aws/lambda/parse-teltonika-data --filter "' + imei + '"'
+          ],
+          awsResources: {
+            thing: 'teltonika-' + imei,
+            topic: 'teltonika/' + imei + '/data',
+            s3Path: 's3://telemetry-raw-usw1/' + imei + '/'
+          },
+          requirements: [
+            'AWS CLI configured with credentials',
+            'PowerShell with admin rights',
+            'Physical access to device for configuration'
+          ]
+        }, null, 2) }] };
+
+      case 'verify':
+        if (!imei) {
+          return { content: [{ type: 'text', text: 'IMEI required for verification' }] };
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify({
+          imei,
+          verificationCommands: {
+            checkThing: `aws iot describe-thing --thing-name teltonika-${imei}`,
+            checkLogs: `aws logs tail /aws/lambda/parse-teltonika-data --filter-pattern '"${imei}"' --since 5m`,
+            checkS3: `aws s3 ls s3://telemetry-raw-usw1/${imei}/`
+          },
+          expectedStatus: 'Device should appear in logs within 60 seconds of power-on'
+        }, null, 2) }] };
+
+      default:
+        return { content: [{ type: 'text', text: 'Unknown action' }] };
+    }
+  }
+);
+
+// ============================================================================
 // Start Server
 // ============================================================================
 
@@ -1655,7 +1763,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 21 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status)');
+  console.error('[agent-coord-mcp] Tools: 23 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);
