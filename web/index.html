@@ -9494,7 +9494,7 @@
     // CRM FUNCTIONALITY
     // ============================================
 
-    // CRM Data Store (in-memory with localStorage persistence)
+    // CRM Data Store (in-memory cache, backed by API/Redis)
     let crmShops = [];
     let crmActivities = [];
     let crmCurrentView = 'pipeline';
@@ -9502,6 +9502,10 @@
     let crmStageFilter = 'all';
     let crmSortBy = 'lastContact';
     let crmEditingShopId = null;
+    let crmLoading = false;
+
+    // API base URL
+    const CRM_API_URL = '/api/shops';
 
     // Pipeline stages in order
     const CRM_STAGES = ['prospect', 'qualified', 'demo', 'proposal', 'customer'];
@@ -9514,79 +9518,93 @@
     };
 
     // Initialize CRM
-    function initCrm() {
-      loadCrmData();
+    async function initCrm() {
+      await loadCrmData();
       renderCrm();
       updateCrmStats();
     }
 
-    // Load CRM data from localStorage
-    function loadCrmData() {
+    // Load CRM data from API
+    async function loadCrmData() {
+      crmLoading = true;
       try {
-        const savedShops = localStorage.getItem('crm-shops');
-        const savedActivities = localStorage.getItem('crm-activities');
-        if (savedShops) crmShops = JSON.parse(savedShops);
-        if (savedActivities) crmActivities = JSON.parse(savedActivities);
+        // Fetch shops
+        const shopsRes = await fetch(CRM_API_URL);
+        const shopsData = await shopsRes.json();
+        crmShops = shopsData.shops || [];
 
-        // Add demo data if empty
-        if (crmShops.length === 0) {
-          crmShops = getDemoShops();
-          crmActivities = getDemoActivities();
-          saveCrmData();
-        }
+        // Fetch all activities
+        const activitiesRes = await fetch(`${CRM_API_URL}?activities=true`);
+        const activitiesData = await activitiesRes.json();
+        crmActivities = activitiesData.activities || [];
+
+        console.log(`CRM loaded: ${crmShops.length} shops, ${crmActivities.length} activities`);
       } catch (e) {
-        console.error('Failed to load CRM data:', e);
-        crmShops = getDemoShops();
-        crmActivities = getDemoActivities();
+        console.error('Failed to load CRM data from API:', e);
+        crmShops = [];
+        crmActivities = [];
+      }
+      crmLoading = false;
+    }
+
+    // Save shop to API
+    async function saveShop(shopData) {
+      try {
+        const res = await fetch(CRM_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(shopData)
+        });
+        const data = await res.json();
+        if (data.success) {
+          // Update local cache
+          const index = crmShops.findIndex(s => s.id === data.shop.id);
+          if (index !== -1) {
+            crmShops[index] = data.shop;
+          } else {
+            crmShops.push(data.shop);
+          }
+        }
+        return data;
+      } catch (e) {
+        console.error('Failed to save shop:', e);
+        return { success: false, error: e.message };
       }
     }
 
-    // Save CRM data to localStorage
-    function saveCrmData() {
+    // Delete shop from API
+    async function deleteShopFromApi(shopId) {
       try {
-        localStorage.setItem('crm-shops', JSON.stringify(crmShops));
-        localStorage.setItem('crm-activities', JSON.stringify(crmActivities));
+        const res = await fetch(`${CRM_API_URL}?id=${shopId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (data.success) {
+          crmShops = crmShops.filter(s => s.id !== shopId);
+          crmActivities = crmActivities.filter(a => a.shopId !== shopId);
+        }
+        return data;
       } catch (e) {
-        console.error('Failed to save CRM data:', e);
+        console.error('Failed to delete shop:', e);
+        return { success: false, error: e.message };
       }
     }
 
-    // Demo data for initial setup
-    function getDemoShops() {
-      return [
-        {
-          id: 'shop-001',
-          name: 'ERA Automotive',
-          address: '3537 2nd Avenue',
-          city: 'Sacramento',
-          state: 'CA',
-          zip: '95817',
-          bays: 4,
-          technicians: 2,
-          specialty: 'european',
-          monthlyVolume: 80,
-          dealerCompetition: 'medium',
-          contactName: 'Tyler',
-          contactRole: 'Owner',
-          contactEmail: 'tyler@eraautosac.com',
-          contactPhone: '(916) 234-5330',
-          leadSource: 'founder',
-          assignedTo: 'tyler',
-          estMonthlyValue: 299,
-          devicesNeeded: 4,
-          stage: 'customer',
-          notes: 'Founder\'s shop. Opened October 2024. Specializes in BMW and European vehicles but services all makes. Located in Oak Park, Sacramento. 5-star rating on CARFAX with excellent customer reviews.',
-          createdAt: '2024-10-01T10:00:00Z',
-          lastContact: '2024-12-01T10:00:00Z'
+    // Save activity to API
+    async function saveActivity(activityData) {
+      try {
+        const res = await fetch(CRM_API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...activityData, activity: true })
+        });
+        const data = await res.json();
+        if (data.success && data.activity) {
+          crmActivities.unshift(data.activity);
         }
-      ];
-    }
-
-    function getDemoActivities() {
-      return [
-        { id: 'act-001', shopId: 'shop-001', type: 'note', author: 'tyler', content: 'ERA Automotive launched as Piston Labs\' first customer and pilot location. Full integration with Piston device ecosystem.', timestamp: '2024-10-01T10:00:00Z' },
-        { id: 'act-002', shopId: 'shop-001', type: 'note', author: 'tyler', content: 'Shop fully operational. Collecting real-world usage data for product development.', timestamp: '2024-11-15T14:00:00Z' }
-      ];
+        return data;
+      } catch (e) {
+        console.error('Failed to save activity:', e);
+        return { success: false, error: e.message };
+      }
     }
 
     // Render CRM based on current view
@@ -9840,7 +9858,7 @@
     }
 
     // Handle shop form submit
-    function handleShopSubmit(event) {
+    async function handleShopSubmit(event) {
       event.preventDefault();
 
       const shopData = {
@@ -9863,30 +9881,33 @@
         estMonthlyValue: parseInt(document.getElementById('shopEstValue').value) || 0,
         devicesNeeded: parseInt(document.getElementById('shopDevicesNeeded').value) || 0,
         stage: document.getElementById('shopStage').value,
-        notes: document.getElementById('shopNotes').value,
-        lastContact: new Date().toISOString()
+        notes: document.getElementById('shopNotes').value
       };
 
+      // Include ID if editing
       if (crmEditingShopId) {
-        // Update existing shop
-        const index = crmShops.findIndex(s => s.id === crmEditingShopId);
-        if (index !== -1) {
-          crmShops[index] = { ...crmShops[index], ...shopData };
-        }
-      } else {
-        // Add new shop
-        shopData.id = 'shop-' + Date.now();
-        shopData.createdAt = new Date().toISOString();
-        crmShops.push(shopData);
-
-        // Log activity
-        logCrmActivity(shopData.id, 'note', 'Created new shop record');
+        shopData.id = crmEditingShopId;
       }
 
-      saveCrmData();
-      closeShopModal();
-      renderCrm();
-      updateCrmStats();
+      const isNew = !crmEditingShopId;
+      const result = await saveShop(shopData);
+
+      if (result.success) {
+        // Log activity for new shops
+        if (isNew && result.shop) {
+          await saveActivity({
+            shopId: result.shop.id,
+            type: 'note',
+            author: shopData.assignedTo || 'system',
+            content: 'Created new shop record'
+          });
+        }
+        closeShopModal();
+        renderCrm();
+        updateCrmStats();
+      } else {
+        alert('Failed to save shop: ' + (result.error || 'Unknown error'));
+      }
     }
 
     // Open shop detail modal
@@ -9994,7 +10015,7 @@
     }
 
     // Handle activity form submit
-    function handleActivitySubmit(event) {
+    async function handleActivitySubmit(event) {
       event.preventDefault();
 
       const shopId = document.getElementById('activityShopId').value;
@@ -10008,7 +10029,7 @@
         content += '\n\nNext Steps: ' + activityNextSteps;
       }
 
-      logCrmActivity(shopId, activityType, content);
+      await logCrmActivity(shopId, activityType, content);
       closeActivityModal();
 
       // Refresh detail view if open
@@ -10018,61 +10039,60 @@
     }
 
     // Log a CRM activity
-    function logCrmActivity(shopId, type, content) {
-      const activity = {
-        id: 'act-' + Date.now(),
+    async function logCrmActivity(shopId, type, content) {
+      const author = USERNAME.toLowerCase().includes('eli') ? 'eli' :
+              USERNAME.toLowerCase().includes('tyler') ? 'tyler' :
+              USERNAME.toLowerCase().includes('ryan') ? 'ryan' : 'eli';
+
+      const result = await saveActivity({
         shopId: shopId,
         type: type,
-        author: USERNAME.toLowerCase().includes('eli') ? 'eli' :
-                USERNAME.toLowerCase().includes('tyler') ? 'tyler' :
-                USERNAME.toLowerCase().includes('ryan') ? 'ryan' : 'eli',
-        content: content,
-        timestamp: new Date().toISOString()
-      };
+        author: author,
+        content: content
+      });
 
-      crmActivities.unshift(activity);
-
-      // Update shop's last contact
-      const shop = crmShops.find(s => s.id === shopId);
-      if (shop) {
-        shop.lastContact = activity.timestamp;
+      if (result.success) {
+        // Update local shop's last contact
+        const shop = crmShops.find(s => s.id === shopId);
+        if (shop) {
+          shop.lastContact = new Date().toISOString();
+        }
+        renderCrm();
       }
-
-      saveCrmData();
-      renderCrm();
     }
 
     // Advance shop to next stage
-    function advanceShopStage(shopId) {
+    async function advanceShopStage(shopId) {
       const shop = crmShops.find(s => s.id === shopId);
       if (!shop) return;
 
       const currentIndex = CRM_STAGES.indexOf(shop.stage);
       if (currentIndex < CRM_STAGES.length - 1) {
         const newStage = CRM_STAGES[currentIndex + 1];
-        shop.stage = newStage;
-        shop.lastContact = new Date().toISOString();
 
-        logCrmActivity(shopId, 'note', `Advanced to ${CRM_STAGE_LABELS[newStage]} stage`);
-
-        saveCrmData();
-        closeShopDetail();
-        renderCrm();
-        updateCrmStats();
+        // Update shop via API
+        const result = await saveShop({ id: shopId, stage: newStage });
+        if (result.success) {
+          await logCrmActivity(shopId, 'note', `Advanced to ${CRM_STAGE_LABELS[newStage]} stage`);
+          closeShopDetail();
+          renderCrm();
+          updateCrmStats();
+        }
       }
     }
 
     // Delete shop
-    function deleteShop(shopId) {
+    async function deleteShop(shopId) {
       if (!confirm('Are you sure you want to delete this shop? This cannot be undone.')) return;
 
-      crmShops = crmShops.filter(s => s.id !== shopId);
-      crmActivities = crmActivities.filter(a => a.shopId !== shopId);
-
-      saveCrmData();
-      closeShopDetail();
-      renderCrm();
-      updateCrmStats();
+      const result = await deleteShopFromApi(shopId);
+      if (result.success) {
+        closeShopDetail();
+        renderCrm();
+        updateCrmStats();
+      } else {
+        alert('Failed to delete shop: ' + (result.error || 'Unknown error'));
+      }
     }
 
     // Helper functions

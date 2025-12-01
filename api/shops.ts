@@ -6,36 +6,58 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const SHOPS_KEY = 'piston:shops';
+const SHOPS_KEY = 'piston:crm:shops';
+const ACTIVITIES_KEY = 'piston:crm:activities';
 
 /**
- * Shop/Prospect Tracking API for Piston Labs Sales
- * 
- * Track beta shops, prospects, and sales pipeline
- * 
+ * CRM Shop/Prospect Tracking API for Piston Labs Sales
+ *
+ * Track shops through the sales pipeline
+ *
  * GET /api/shops - List all shops
- * GET /api/shops?status=prospect - Filter by status
+ * GET /api/shops?stage=prospect - Filter by stage
+ * GET /api/shops?id=xxx - Get single shop
  * POST /api/shops - Add or update shop
  * DELETE /api/shops?id=xxx - Remove shop
+ *
+ * Activities:
+ * GET /api/shops?activities=true&shopId=xxx - Get activities for a shop
+ * POST /api/shops with activity=true - Add activity
  */
 
 interface Shop {
   id: string;
   name: string;
-  status: 'prospect' | 'contacted' | 'demo-scheduled' | 'beta-active' | 'churned';
-  owner?: string;
-  phone?: string;
-  email?: string;
   address?: string;
-  notes: string[];
-  tags: string[];
-  assignedTo?: string;  // Sales rep
-  source?: string;      // How we found them
-  lastContact?: string;
-  nextFollowUp?: string;
-  devicesDeployed?: number;
+  city?: string;
+  state?: string;
+  zip?: string;
+  bays?: number;
+  technicians?: number;
+  specialty?: string;
+  monthlyVolume?: number;
+  dealerCompetition?: string;
+  contactName?: string;
+  contactRole?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  leadSource?: string;
+  assignedTo?: string;
+  estMonthlyValue?: number;
+  devicesNeeded?: number;
+  stage: 'prospect' | 'qualified' | 'demo' | 'proposal' | 'customer' | 'churned';
+  notes?: string;
   createdAt: string;
-  updatedAt: string;
+  lastContact: string;
+}
+
+interface Activity {
+  id: string;
+  shopId: string;
+  type: 'call' | 'email' | 'meeting' | 'demo' | 'note' | 'proposal';
+  author: string;
+  content: string;
+  timestamp: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -48,9 +70,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // GET: List shops
+    // GET: List shops or activities
     if (req.method === 'GET') {
-      const { status, assignedTo, tag, id } = req.query;
+      const { stage, assignedTo, id, activities, shopId } = req.query;
+
+      // Get activities for a shop
+      if (activities === 'true') {
+        const activitiesRaw = await redis.hgetall(ACTIVITIES_KEY) || {};
+        let allActivities: Activity[] = Object.values(activitiesRaw).map((a: unknown) =>
+          typeof a === 'string' ? JSON.parse(a) : a
+        ) as Activity[];
+
+        // Filter by shopId if provided
+        if (shopId) {
+          allActivities = allActivities.filter(a => a.shopId === shopId);
+        }
+
+        // Sort by timestamp descending
+        allActivities.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        return res.json({ activities: allActivities });
+      }
 
       // Get single shop by ID
       if (id) {
@@ -69,67 +109,147 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ) as Shop[];
 
       // Apply filters
-      if (status) {
-        shops = shops.filter(s => s.status === status);
+      if (stage) {
+        shops = shops.filter(s => s.stage === stage);
       }
       if (assignedTo) {
         shops = shops.filter(s => s.assignedTo === assignedTo);
       }
-      if (tag) {
-        shops = shops.filter(s => s.tags.includes(String(tag)));
-      }
 
-      // Sort by status priority and last contact
-      const statusOrder = { 
-        'demo-scheduled': 0, 
-        'contacted': 1, 
-        'prospect': 2, 
-        'beta-active': 3, 
-        'churned': 4 
-      };
-      shops.sort((a, b) => {
-        const statusDiff = statusOrder[a.status] - statusOrder[b.status];
-        if (statusDiff !== 0) return statusDiff;
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      });
+      // Sort by last contact descending
+      shops.sort((a, b) => new Date(b.lastContact).getTime() - new Date(a.lastContact).getTime());
 
       // Calculate pipeline stats
       const stats = {
         total: shops.length,
-        byStatus: {
-          prospect: shops.filter(s => s.status === 'prospect').length,
-          contacted: shops.filter(s => s.status === 'contacted').length,
-          demoScheduled: shops.filter(s => s.status === 'demo-scheduled').length,
-          betaActive: shops.filter(s => s.status === 'beta-active').length,
-          churned: shops.filter(s => s.status === 'churned').length
+        byStage: {
+          prospect: shops.filter(s => s.stage === 'prospect').length,
+          qualified: shops.filter(s => s.stage === 'qualified').length,
+          demo: shops.filter(s => s.stage === 'demo').length,
+          proposal: shops.filter(s => s.stage === 'proposal').length,
+          customer: shops.filter(s => s.stage === 'customer').length,
+          churned: shops.filter(s => s.stage === 'churned').length
         },
-        devicesDeployed: shops.reduce((sum, s) => sum + (s.devicesDeployed || 0), 0),
-        needsFollowUp: shops.filter(s => {
-          if (!s.nextFollowUp) return false;
-          return new Date(s.nextFollowUp) <= new Date();
-        }).length
+        totalDevices: shops.reduce((sum, s) => sum + (s.devicesNeeded || 0), 0),
+        totalMonthlyValue: shops.filter(s => s.stage === 'customer').reduce((sum, s) => sum + (s.estMonthlyValue || 0), 0)
       };
 
       return res.json({ shops, stats });
     }
 
-    // POST: Add or update shop
+    // POST: Add or update shop, or add activity, or seed data
     if (req.method === 'POST') {
       const body = req.body || {};
-      const { 
-        id, 
-        name, 
-        status = 'prospect',
-        owner,
-        phone,
-        email,
+
+      // Seed ERA Automotive as first customer
+      if (body.seed === 'era-automotive') {
+        const eraShop: Shop = {
+          id: 'shop-era-automotive',
+          name: 'ERA Automotive',
+          address: '3537 2nd Avenue',
+          city: 'Sacramento',
+          state: 'CA',
+          zip: '95817',
+          bays: 4,
+          technicians: 2,
+          specialty: 'european',
+          monthlyVolume: 80,
+          dealerCompetition: 'medium',
+          contactName: 'Tyler',
+          contactRole: 'Owner',
+          contactEmail: 'tyler@eraautosac.com',
+          contactPhone: '(916) 234-5330',
+          leadSource: 'founder',
+          assignedTo: 'tyler',
+          estMonthlyValue: 299,
+          devicesNeeded: 4,
+          stage: 'customer',
+          notes: 'Founder\'s shop. Opened October 2024. Specializes in BMW and European vehicles but services all makes. Located in Oak Park, Sacramento. 5-star rating on CARFAX with excellent customer reviews.',
+          createdAt: '2024-10-01T10:00:00Z',
+          lastContact: new Date().toISOString()
+        };
+
+        await redis.hset(SHOPS_KEY, { [eraShop.id]: JSON.stringify(eraShop) });
+
+        // Add initial activities
+        const activities: Activity[] = [
+          {
+            id: 'act-era-001',
+            shopId: 'shop-era-automotive',
+            type: 'note',
+            author: 'tyler',
+            content: 'ERA Automotive launched as Piston Labs\' first customer and pilot location. Full integration with Piston device ecosystem.',
+            timestamp: '2024-10-01T10:00:00Z'
+          },
+          {
+            id: 'act-era-002',
+            shopId: 'shop-era-automotive',
+            type: 'note',
+            author: 'tyler',
+            content: 'Shop fully operational. Collecting real-world usage data for product development.',
+            timestamp: '2024-11-15T14:00:00Z'
+          }
+        ];
+
+        for (const act of activities) {
+          await redis.hset(ACTIVITIES_KEY, { [act.id]: JSON.stringify(act) });
+        }
+
+        return res.json({ success: true, message: 'ERA Automotive seeded', shop: eraShop, activities });
+      }
+
+      // Add activity
+      if (body.activity === true) {
+        const { shopId, type, author, content } = body;
+        if (!shopId || !type || !content) {
+          return res.status(400).json({ error: 'shopId, type, and content required for activity' });
+        }
+
+        const activity: Activity = {
+          id: `act-${Date.now()}`,
+          shopId,
+          type,
+          author: author || 'system',
+          content,
+          timestamp: new Date().toISOString()
+        };
+
+        await redis.hset(ACTIVITIES_KEY, { [activity.id]: JSON.stringify(activity) });
+
+        // Update shop's lastContact
+        const shopRaw = await redis.hget(SHOPS_KEY, shopId);
+        if (shopRaw) {
+          const shop = typeof shopRaw === 'string' ? JSON.parse(shopRaw) : shopRaw;
+          shop.lastContact = new Date().toISOString();
+          await redis.hset(SHOPS_KEY, { [shopId]: JSON.stringify(shop) });
+        }
+
+        return res.json({ success: true, activity });
+      }
+
+      // Add or update shop
+      const {
+        id,
+        name,
         address,
-        note,  // Single note to add
-        tags = [],
+        city,
+        state,
+        zip,
+        bays,
+        technicians,
+        specialty,
+        monthlyVolume,
+        dealerCompetition,
+        contactName,
+        contactRole,
+        contactEmail,
+        contactPhone,
+        leadSource,
         assignedTo,
-        source,
-        nextFollowUp,
-        devicesDeployed
+        estMonthlyValue,
+        devicesNeeded,
+        stage = 'prospect',
+        notes
       } = body;
 
       if (!name && !id) {
@@ -137,69 +257,102 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Generate ID from name if not provided
-      const shopId = id || name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const shopId = id || `shop-${Date.now()}`;
 
       // Check if shop exists
       const existingRaw = await redis.hget(SHOPS_KEY, shopId);
       let shop: Shop;
+      const now = new Date().toISOString();
 
       if (existingRaw) {
-        // Update existing
+        // Update existing shop
         shop = typeof existingRaw === 'string' ? JSON.parse(existingRaw) : existingRaw;
-        if (name) shop.name = name;
-        if (status) shop.status = status as Shop['status'];
-        if (owner) shop.owner = owner;
-        if (phone) shop.phone = phone;
-        if (email) shop.email = email;
-        if (address) shop.address = address;
-        if (note) shop.notes.push(`[${new Date().toISOString()}] ${note}`);
-        if (tags.length) shop.tags = [...new Set([...shop.tags, ...tags])];
-        if (assignedTo) shop.assignedTo = assignedTo;
-        if (source) shop.source = source;
-        if (nextFollowUp) shop.nextFollowUp = nextFollowUp;
-        if (devicesDeployed !== undefined) shop.devicesDeployed = devicesDeployed;
-        shop.lastContact = new Date().toISOString();
-        shop.updatedAt = new Date().toISOString();
+        if (name !== undefined) shop.name = name;
+        if (address !== undefined) shop.address = address;
+        if (city !== undefined) shop.city = city;
+        if (state !== undefined) shop.state = state;
+        if (zip !== undefined) shop.zip = zip;
+        if (bays !== undefined) shop.bays = bays;
+        if (technicians !== undefined) shop.technicians = technicians;
+        if (specialty !== undefined) shop.specialty = specialty;
+        if (monthlyVolume !== undefined) shop.monthlyVolume = monthlyVolume;
+        if (dealerCompetition !== undefined) shop.dealerCompetition = dealerCompetition;
+        if (contactName !== undefined) shop.contactName = contactName;
+        if (contactRole !== undefined) shop.contactRole = contactRole;
+        if (contactEmail !== undefined) shop.contactEmail = contactEmail;
+        if (contactPhone !== undefined) shop.contactPhone = contactPhone;
+        if (leadSource !== undefined) shop.leadSource = leadSource;
+        if (assignedTo !== undefined) shop.assignedTo = assignedTo;
+        if (estMonthlyValue !== undefined) shop.estMonthlyValue = estMonthlyValue;
+        if (devicesNeeded !== undefined) shop.devicesNeeded = devicesNeeded;
+        if (stage !== undefined) shop.stage = stage as Shop['stage'];
+        if (notes !== undefined) shop.notes = notes;
+        shop.lastContact = now;
       } else {
-        // Create new
+        // Create new shop
         shop = {
           id: shopId,
           name,
-          status: status as Shop['status'],
-          owner,
-          phone,
-          email,
           address,
-          notes: note ? [`[${new Date().toISOString()}] ${note}`] : [],
-          tags: tags || [],
+          city,
+          state,
+          zip,
+          bays,
+          technicians,
+          specialty: specialty || 'general',
+          monthlyVolume,
+          dealerCompetition,
+          contactName,
+          contactRole,
+          contactEmail,
+          contactPhone,
+          leadSource,
           assignedTo,
-          source,
-          nextFollowUp,
-          devicesDeployed: devicesDeployed || 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
+          estMonthlyValue,
+          devicesNeeded,
+          stage: (stage as Shop['stage']) || 'prospect',
+          notes,
+          createdAt: now,
+          lastContact: now
         };
       }
 
       await redis.hset(SHOPS_KEY, { [shopId]: JSON.stringify(shop) });
 
-      return res.json({ 
-        success: true, 
+      return res.json({
+        success: true,
         shop,
         action: existingRaw ? 'updated' : 'created'
       });
     }
 
-    // DELETE: Remove shop
+    // DELETE: Remove shop or activity
     if (req.method === 'DELETE') {
-      const { id } = req.query;
+      const { id, activityId } = req.query;
+
+      if (activityId) {
+        await redis.hdel(ACTIVITIES_KEY, String(activityId));
+        return res.json({ success: true, removed: activityId, type: 'activity' });
+      }
 
       if (!id) {
         return res.status(400).json({ error: 'id required' });
       }
 
+      // Delete shop and its activities
       await redis.hdel(SHOPS_KEY, String(id));
-      return res.json({ success: true, removed: id });
+
+      // Also delete all activities for this shop
+      const activitiesRaw = await redis.hgetall(ACTIVITIES_KEY) || {};
+      const activities: Activity[] = Object.values(activitiesRaw).map((a: unknown) =>
+        typeof a === 'string' ? JSON.parse(a) : a
+      ) as Activity[];
+      const shopActivities = activities.filter(a => a.shopId === id);
+      for (const act of shopActivities) {
+        await redis.hdel(ACTIVITIES_KEY, act.id);
+      }
+
+      return res.json({ success: true, removed: id, activitiesRemoved: shopActivities.length });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
