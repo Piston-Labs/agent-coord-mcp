@@ -73,6 +73,7 @@ GET  /api/hot-start         - Zero cold start context bundle
 GET  /api/telemetry         - Real-time device telemetry
 GET  /api/cleanup           - Preview stale data cleanup (dry run)
 POST /api/cleanup           - Execute cleanup operations
+GET  /api/metrics           - System analytics and usage stats
 ```
 
 ### Agents & Chat
