@@ -18,6 +18,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { unifiedStore as store } from './unified-store.js';
 
+const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
 const server = new McpServer({
   name: 'agent-coord-mcp',
   version: '0.1.0'
@@ -152,12 +154,26 @@ server.tool(
 
       case 'claim': {
         if (!agentId || !args.what) return { content: [{ type: 'text', text: 'agentId and what required' }] };
-        const existing = store.checkClaim(args.what);
-        if (existing && existing.by !== agentId && !existing.stale) {
-          return { content: [{ type: 'text', text: JSON.stringify({ claimed: false, by: existing.by, since: existing.since }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/claims`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ what: args.what, by: agentId, description: args.description })
+          });
+          const data = await res.json();
+          if (res.status === 409) {
+            return { content: [{ type: 'text', text: JSON.stringify({ claimed: false, by: data.claimedBy, message: data.message }) }] };
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ claimed: true, what: args.what, by: agentId }) }] };
+        } catch (err) {
+          // Fallback to local store
+          const existing = store.checkClaim(args.what);
+          if (existing && existing.by !== agentId && !existing.stale) {
+            return { content: [{ type: 'text', text: JSON.stringify({ claimed: false, by: existing.by, since: existing.since }) }] };
+          }
+          const claim = store.claim(args.what, agentId, args.description);
+          return { content: [{ type: 'text', text: JSON.stringify({ claimed: true, what: claim.what, by: claim.by }) }] };
         }
-        const claim = store.claim(args.what, agentId, args.description);
-        return { content: [{ type: 'text', text: JSON.stringify({ claimed: true, what: claim.what, by: claim.by }) }] };
       }
 
       case 'check-claim': {
@@ -168,13 +184,27 @@ server.tool(
 
       case 'release': {
         if (!agentId || !args.what) return { content: [{ type: 'text', text: 'agentId and what required' }] };
-        const released = store.releaseClaim(args.what, agentId);
-        return { content: [{ type: 'text', text: JSON.stringify({ released, what: args.what, by: agentId }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/claims?what=${encodeURIComponent(args.what)}&by=${encodeURIComponent(agentId)}`, {
+            method: 'DELETE'
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ released: true, what: args.what, by: agentId }) }] };
+        } catch (err) {
+          const released = store.releaseClaim(args.what, agentId);
+          return { content: [{ type: 'text', text: JSON.stringify({ released, what: args.what, by: agentId }) }] };
+        }
       }
 
       case 'list-claims': {
-        const claims = store.listClaims(args.includeStale);
-        return { content: [{ type: 'text', text: JSON.stringify({ claims, count: claims.length }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/claims`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        } catch (err) {
+          const claims = store.listClaims(args.includeStale);
+          return { content: [{ type: 'text', text: JSON.stringify({ claims, count: claims.length }) }] };
+        }
       }
 
       case 'save-checkpoint': {
@@ -325,21 +355,38 @@ server.tool(
       }
 
       case 'lock': {
-        const result = store.acquireLock(
-          resourcePath,
-          agentId,
-          args.resourceType || 'file-lock',
-          args.reason
-        );
-        if ('error' in result) {
-          return { content: [{ type: 'text', text: JSON.stringify({ success: false, error: result.error }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/locks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ resourcePath, lockedBy: agentId, reason: args.reason })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, lock: data.lock }) }] };
+        } catch (err) {
+          const result = store.acquireLock(
+            resourcePath,
+            agentId,
+            args.resourceType || 'file-lock',
+            args.reason
+          );
+          if ('error' in result) {
+            return { content: [{ type: 'text', text: JSON.stringify({ success: false, error: result.error }) }] };
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, lock: result }) }] };
         }
-        return { content: [{ type: 'text', text: JSON.stringify({ success: true, lock: result }) }] };
       }
 
       case 'unlock': {
-        const released = store.releaseLock(resourcePath, agentId);
-        return { content: [{ type: 'text', text: JSON.stringify({ released, resourcePath }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/locks?resourcePath=${encodeURIComponent(resourcePath)}`, {
+            method: 'DELETE'
+          });
+          return { content: [{ type: 'text', text: JSON.stringify({ released: true, resourcePath }) }] };
+        } catch (err) {
+          const released = store.releaseLock(resourcePath, agentId);
+          return { content: [{ type: 'text', text: JSON.stringify({ released, resourcePath }) }] };
+        }
       }
 
       default:
@@ -374,16 +421,34 @@ server.tool(
         if (!args.title || !args.createdBy) {
           return { content: [{ type: 'text', text: 'title and createdBy required' }] };
         }
-        const task = store.createTask({
-          title: args.title,
-          description: args.description,
-          priority: args.priority || 'medium',
-          status: 'todo',
-          createdBy: args.createdBy,
-          assignee: args.assignee,
-          tags: args.tags || []
-        });
-        return { content: [{ type: 'text', text: JSON.stringify({ created: true, task }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: args.title,
+              description: args.description,
+              priority: args.priority || 'medium',
+              status: 'todo',
+              createdBy: args.createdBy,
+              assignee: args.assignee,
+              tags: args.tags || []
+            })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ created: true, task: data.task }) }] };
+        } catch (err) {
+          const task = store.createTask({
+            title: args.title,
+            description: args.description,
+            priority: args.priority || 'medium',
+            status: 'todo',
+            createdBy: args.createdBy,
+            assignee: args.assignee,
+            tags: args.tags || []
+          });
+          return { content: [{ type: 'text', text: JSON.stringify({ created: true, task }) }] };
+        }
       }
 
       case 'get': {
@@ -393,8 +458,15 @@ server.tool(
       }
 
       case 'list': {
-        const tasks = store.listTasks(args.status);
-        return { content: [{ type: 'text', text: JSON.stringify({ tasks, count: tasks.length }) }] };
+        try {
+          const url = args.status ? `${API_BASE}/api/tasks?status=${args.status}` : `${API_BASE}/api/tasks`;
+          const res = await fetch(url);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        } catch (err) {
+          const tasks = store.listTasks(args.status);
+          return { content: [{ type: 'text', text: JSON.stringify({ tasks, count: tasks.length }) }] };
+        }
       }
 
       case 'update-status': {
@@ -441,11 +513,21 @@ server.tool(
         if (!args.zoneId || !args.path || !args.owner) {
           return { content: [{ type: 'text', text: 'zoneId, path, and owner required' }] };
         }
-        const result = store.claimZone(args.zoneId, args.path, args.owner, args.description);
-        if ('error' in result) {
-          return { content: [{ type: 'text', text: JSON.stringify({ success: false, error: result.error }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/zones`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ zoneId: args.zoneId, path: args.path, owner: args.owner, description: args.description })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, zone: data.zone }) }] };
+        } catch (err) {
+          const result = store.claimZone(args.zoneId, args.path, args.owner, args.description);
+          if ('error' in result) {
+            return { content: [{ type: 'text', text: JSON.stringify({ success: false, error: result.error }) }] };
+          }
+          return { content: [{ type: 'text', text: JSON.stringify({ success: true, zone: result }) }] };
         }
-        return { content: [{ type: 'text', text: JSON.stringify({ success: true, zone: result }) }] };
       }
 
       case 'release': {
@@ -463,8 +545,14 @@ server.tool(
       }
 
       case 'list': {
-        const zones = store.listZones();
-        return { content: [{ type: 'text', text: JSON.stringify({ zones, count: zones.length }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/zones`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        } catch (err) {
+          const zones = store.listZones();
+          return { content: [{ type: 'text', text: JSON.stringify({ zones, count: zones.length }) }] };
+        }
       }
 
       case 'my-zones': {
