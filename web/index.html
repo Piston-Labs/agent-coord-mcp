@@ -534,6 +534,243 @@
 
     
     
+    
+    /* Device Detail Modal */
+    .device-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .device-modal-overlay.visible {
+      display: flex;
+    }
+
+    .device-modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 500px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .device-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .device-modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .device-modal-content {
+      padding: 16px 20px;
+    }
+
+    .modal-section {
+      margin-bottom: 20px;
+    }
+
+    .modal-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .modal-section h4 {
+      margin: 0 0 12px 0;
+      font-size: 12px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      letter-spacing: 0.5px;
+    }
+
+    .modal-info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .info-item {
+      background: var(--bg-tertiary);
+      padding: 10px;
+      border-radius: 6px;
+    }
+
+    .info-label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .info-value {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: monospace;
+    }
+
+    .modal-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .modal-metric {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .modal-metric-value {
+      display: block;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .modal-metric-label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+
+    .modal-status-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .status-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .status-indicator .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+    }
+
+    .status-indicator.active {
+      color: var(--success);
+    }
+
+    .status-indicator.active .status-dot {
+      background: var(--success);
+    }
+
+    .modal-health {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .health-bar-container {
+      flex: 1;
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .health-bar {
+      height: 100%;
+      background: var(--success);
+      border-radius: 4px;
+      transition: width 0.3s, background 0.3s;
+    }
+
+    .health-bar.warning {
+      background: var(--warning);
+    }
+
+    .health-bar.critical {
+      background: var(--danger);
+    }
+
+    .health-score-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+      min-width: 40px;
+      text-align: right;
+    }
+
+    .modal-issues {
+      margin-top: 10px;
+    }
+
+    .modal-issue {
+      padding: 8px 12px;
+      background: rgba(248, 81, 73, 0.1);
+      border-left: 3px solid var(--danger);
+      border-radius: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .modal-issue.warning {
+      background: rgba(210, 153, 34, 0.1);
+      border-left-color: var(--warning);
+    }
+
+    .modal-location {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .location-meta {
+      display: block;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+
     /* Fleet Map */
     .fleet-map-container {
       position: relative;
@@ -3779,9 +4016,89 @@
       }).join('');
     }
 
+    // Store current telemetry data for modal access
+    let currentTelemetryData = [];
+
+    function openDeviceModal(imei) {
+      const device = currentTelemetryData.find(d => d.imei === imei);
+      if (!device) return;
+
+      // Vehicle info
+      document.getElementById('modalDeviceName').textContent = device.deviceName || 'Unknown Device';
+      document.getElementById('modalVin').textContent = device.vehicleInfo?.vin || '--';
+      document.getElementById('modalVehicle').textContent = 
+        [device.vehicleInfo?.make, device.vehicleInfo?.model].filter(Boolean).join(' ') || '--';
+      document.getElementById('modalYear').textContent = device.vehicleInfo?.year || '--';
+      document.getElementById('modalImei').textContent = device.imei;
+
+      // Metrics
+      document.getElementById('modalSpeed').textContent = device.metrics?.speed || 0;
+      document.getElementById('modalBattery').textContent = device.metrics?.batteryVoltage || '--';
+      document.getElementById('modalFuel').textContent = device.metrics?.fuelLevel || '--';
+      document.getElementById('modalRpm').textContent = device.metrics?.engineRPM || 0;
+      document.getElementById('modalTemp').textContent = device.metrics?.coolantTemp ? device.metrics.coolantTemp + '°C' : '--';
+      document.getElementById('modalOdometer').textContent = formatOdometer(device.metrics?.odometer);
+
+      // Status indicators
+      setStatusIndicator('modalIgnition', device.status?.ignition);
+      setStatusIndicator('modalMovement', device.status?.movement);
+      setStatusIndicator('modalGps', device.status?.gpsValid);
+      setStatusIndicator('modalCharging', device.status?.charging);
+
+      // Health
+      const health = device.health || { score: 100, status: 'excellent', issues: [] };
+      const healthBar = document.getElementById('modalHealthBar');
+      healthBar.style.width = health.score + '%';
+      healthBar.className = 'health-bar';
+      if (health.score < 50) healthBar.classList.add('critical');
+      else if (health.score < 70) healthBar.classList.add('warning');
+      document.getElementById('modalHealthScore').textContent = health.score;
+
+      // Issues
+      const issuesEl = document.getElementById('modalIssues');
+      if (health.issues && health.issues.length > 0) {
+        issuesEl.innerHTML = health.issues.map(issue => {
+          const severity = issue.toLowerCase().includes('critical') ? 'critical' : 'warning';
+          return '<div class="modal-issue ' + severity + '">' + issue + '</div>';
+        }).join('');
+      } else {
+        issuesEl.innerHTML = '<div style="color: var(--success); font-size: 12px;">All systems normal</div>';
+      }
+
+      // Location
+      document.getElementById('modalLat').textContent = device.position?.lat?.toFixed(4) || '--';
+      document.getElementById('modalLng').textContent = device.position?.lng?.toFixed(4) || '--';
+      document.getElementById('modalHeading').textContent = device.position?.heading || '--';
+      document.getElementById('modalSats').textContent = device.position?.satellites || '--';
+      document.getElementById('modalSignal').textContent = device.connectivity?.signalStrength || '--';
+
+      // Show modal
+      document.getElementById('deviceModalOverlay').classList.add('visible');
+    }
+
+    function closeDeviceModal() {
+      document.getElementById('deviceModalOverlay').classList.remove('visible');
+    }
+
+    function setStatusIndicator(id, active) {
+      const el = document.getElementById(id);
+      if (active) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+    }
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeDeviceModal();
+    });
+
+
 
     function renderTelemetryGrid(devices) {
       const grid = document.getElementById('telemetryGrid');
+      currentTelemetryData = devices || [];
 
       if (!devices || devices.length === 0) {
         grid.innerHTML = `
@@ -3813,7 +4130,7 @@
       const healthIssue = health.issues?.[0] || 'All systems normal';
 
       return `
-        <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'} health-${healthStatus}">
+        <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'} health-${healthStatus}" onclick="openDeviceModal('${device.imei}')" style="cursor:pointer">
           <div class="device-header">
             <span class="device-name">${device.deviceName || 'Unknown'}</span>
             <span class="device-status ${isMoving ? 'moving' : 'parked'}">
@@ -4948,6 +5265,107 @@
       <input type="text" id="dmSearchUser" placeholder="Search users..." style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" oninput="filterDMUsers()" />
       <div class="dm-user-list" id="dmUserList"></div>
       <button style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); cursor: pointer;" onclick="hideNewDMModal()">Cancel</button>
+    </div>
+  </div>
+
+
+  <!-- Device Detail Modal -->
+  <div class="device-modal-overlay" id="deviceModalOverlay" onclick="closeDeviceModal()">
+    <div class="device-modal" onclick="event.stopPropagation()">
+      <div class="device-modal-header">
+        <h3 id="modalDeviceName">Device Name</h3>
+        <button class="modal-close" onclick="closeDeviceModal()">&times;</button>
+      </div>
+      <div class="device-modal-content">
+        <div class="modal-section">
+          <h4>Vehicle Information</h4>
+          <div class="modal-info-grid">
+            <div class="info-item">
+              <span class="info-label">VIN</span>
+              <span class="info-value" id="modalVin">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Make/Model</span>
+              <span class="info-value" id="modalVehicle">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Year</span>
+              <span class="info-value" id="modalYear">--</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">IMEI</span>
+              <span class="info-value" id="modalImei">--</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <h4>Current Metrics</h4>
+          <div class="modal-metrics-grid">
+            <div class="modal-metric">
+              <span class="modal-metric-value" id="modalSpeed">0</span>
+              <span class="modal-metric-label">km/h</span>
+            </div>
+            <div class="modal-metric">
+              <span class="modal-metric-value" id="modalBattery">--</span>
+              <span class="modal-metric-label">Battery (V)</span>
+            </div>
+            <div class="modal-metric">
+              <span class="modal-metric-value" id="modalFuel">--</span>
+              <span class="modal-metric-label">Fuel %</span>
+            </div>
+            <div class="modal-metric">
+              <span class="modal-metric-value" id="modalRpm">0</span>
+              <span class="modal-metric-label">RPM</span>
+            </div>
+            <div class="modal-metric">
+              <span class="modal-metric-value" id="modalTemp">--</span>
+              <span class="modal-metric-label">Coolant</span>
+            </div>
+            <div class="modal-metric">
+              <span class="modal-metric-value" id="modalOdometer">--</span>
+              <span class="modal-metric-label">Odometer</span>
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <h4>Status</h4>
+          <div class="modal-status-grid">
+            <div class="status-indicator" id="modalIgnition">
+              <span class="status-dot"></span> Ignition
+            </div>
+            <div class="status-indicator" id="modalMovement">
+              <span class="status-dot"></span> Movement
+            </div>
+            <div class="status-indicator" id="modalGps">
+              <span class="status-dot"></span> GPS
+            </div>
+            <div class="status-indicator" id="modalCharging">
+              <span class="status-dot"></span> Charging
+            </div>
+          </div>
+        </div>
+        <div class="modal-section">
+          <h4>Health</h4>
+          <div class="modal-health">
+            <div class="health-bar-container">
+              <div class="health-bar" id="modalHealthBar" style="width: 100%"></div>
+            </div>
+            <span class="health-score-label" id="modalHealthScore">100</span>
+          </div>
+          <div class="modal-issues" id="modalIssues"></div>
+        </div>
+        <div class="modal-section">
+          <h4>Location</h4>
+          <div class="modal-location">
+            <span id="modalLat">--</span>, <span id="modalLng">--</span>
+            <span class="location-meta">
+              Heading: <span id="modalHeading">--</span>° | 
+              Satellites: <span id="modalSats">--</span> |
+              Signal: <span id="modalSignal">--</span>/5
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
