@@ -26,6 +26,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // GET: List agents (both active and offline)
     if (req.method === 'GET') {
+      // Short cache for agent list (5 seconds)
+      res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=3');
       const includeOffline = req.query.includeOffline === 'true';
       
       let agents: Record<string, unknown> = {};
