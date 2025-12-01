@@ -703,60 +703,49 @@ server.tool(
 
 server.tool(
   'context-load',
-  'Load context clusters for specialized knowledge. Integrates with Context Engine patterns.',
+  'Load Piston Labs context clusters. Clusters: technical (devices, aws, lambda, databases), product (vision, roadmap, dashboard), sales (strategy, pitch, objections), investor (summary, pitch, traction), team (structure, onboarding), coordination.',
   {
-    cluster: z.enum(['technical', 'development', 'company', 'telemetry', 'frontend', 'backend', 'coordination'])
+    cluster: z.enum(['technical', 'product', 'sales', 'investor', 'team', 'coordination'])
       .describe('Context cluster to load'),
-    depth: z.enum(['summary', 'full']).optional().describe('How much detail to load'),
+    topic: z.string().optional().describe('Specific topic within cluster (e.g., devices, aws, pitch)'),
+    depth: z.enum(['summary', 'full']).optional().describe('summary=quick overview, full=file paths for detailed loading'),
     agentId: z.string().describe('Your agent ID')
   },
   async (args) => {
-    const { cluster, depth = 'summary', agentId } = args;
+    const { cluster, topic, depth = 'summary', agentId } = args;
     const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
 
     try {
-      // Try to fetch from context API
-      const res = await fetch(`${API_BASE}/api/context?cluster=${cluster}&depth=${depth}`);
+      // Build URL for Piston context API
+      let url = `${API_BASE}/api/piston-context?cluster=${cluster}`;
+      if (topic) url += `&topic=${topic}`;
+      if (depth) url += `&depth=${depth}`;
+
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
-        return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
       }
 
-      // Fallback: Return built-in context for coordination cluster
-      const builtInContexts: Record<string, object> = {
-        coordination: {
+      // Fallback: Built-in coordination context
+      if (cluster === 'coordination') {
+        return { content: [{ type: 'text', text: JSON.stringify({
           cluster: 'coordination',
-          description: 'Multi-agent coordination patterns and best practices',
+          description: 'Multi-agent coordination patterns for Piston Labs',
           content: {
             claimBeforeEdit: 'Always claim files before editing using agent-status claim',
             handoffProtocol: 'Use handoff tool to transfer work with full context',
             checkpointFrequency: 'Save checkpoints every 15 minutes or after major decisions',
             mentionProtocol: 'Use @agentId in group chat to notify specific agents',
-            lockExpiry: 'Resource locks expire after 2 hours, claims after 30 minutes'
+            pistonContext: 'Use context-load with cluster=technical/product/sales for domain knowledge'
           }
-        },
-        technical: {
-          cluster: 'technical',
-          description: 'Technical architecture and patterns',
-          content: {
-            stack: 'TypeScript, Node.js, Redis (Upstash), Vercel',
-            mcp: 'Model Context Protocol for agent tools',
-            api: 'REST APIs in /api folder, deployed to Vercel'
-          }
-        },
-        development: {
-          cluster: 'development',
-          description: 'Development workflows and practices',
-          content: {
-            gitFlow: 'Main branch, feature branches, PR reviews',
-            testing: 'Feature tests via /api/feature-tests',
-            deployment: 'Auto-deploy on push to main via Vercel'
-          }
-        }
-      };
+        }, null, 2) }] };
+      }
 
-      const context = builtInContexts[cluster] || { cluster, error: 'Cluster not found', available: Object.keys(builtInContexts) };
-      return { content: [{ type: 'text', text: JSON.stringify(context) }] };
+      return { content: [{ type: 'text', text: JSON.stringify({ 
+        error: 'Context API unavailable',
+        hint: 'Try: technical, product, sales, investor, team, coordination'
+      }) }] };
     } catch (error) {
       return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
     }
