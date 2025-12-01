@@ -1216,6 +1216,145 @@ server.tool(
 );
 
 // ============================================================================
+// PISTON DEVICE TOOL - Fleet management for Teltonika devices
+// ============================================================================
+
+server.tool(
+  'device',
+  'Manage Piston Labs Teltonika GPS device fleet. List devices, check status, update info.',
+  {
+    action: z.enum(['list', 'get', 'update', 'status']).describe('list=all devices, get=specific device, update=modify device, status=fleet summary'),
+    imei: z.string().optional().describe('Device IMEI (15 digits) - required for get/update'),
+    updates: z.object({
+      name: z.string().optional(),
+      status: z.enum(['active', 'inactive', 'provisioning', 'error']).optional(),
+      vehicle: z.object({
+        vin: z.string().optional(),
+        make: z.string().optional(),
+        model: z.string().optional(),
+        year: z.number().optional()
+      }).optional(),
+      notes: z.string().optional()
+    }).optional().describe('Fields to update (for update action)')
+  },
+  async (args) => {
+    const { action, imei, updates } = args;
+    const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+    try {
+      switch (action) {
+        case 'list': {
+          const res = await fetch(`${API_BASE}/api/piston-devices`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'get': {
+          if (!imei) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'imei required for get action' }) }] };
+          }
+          const res = await fetch(`${API_BASE}/api/piston-devices?imei=${imei}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'update': {
+          if (!imei) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'imei required for update action' }) }] };
+          }
+          const res = await fetch(`${API_BASE}/api/piston-devices`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imei, ...updates })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'status': {
+          const res = await fetch(`${API_BASE}/api/piston-devices`);
+          const data = await res.json();
+          const summary = {
+            totalDevices: data.count,
+            activeDevices: data.active,
+            inactiveDevices: data.count - data.active,
+            devices: data.devices.map((d: any) => ({
+              name: d.name,
+              imei: d.imei,
+              status: d.status,
+              model: d.model
+            }))
+          };
+          return { content: [{ type: 'text', text: JSON.stringify(summary, null, 2) }] };
+        }
+
+        default:
+          return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+      }
+    } catch (error) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+    }
+  }
+);
+
+// ============================================================================
+// HOT START TOOL - Zero cold start context loading
+// ============================================================================
+
+server.tool(
+  'hot-start',
+  'Load all context instantly for zero cold start. Returns checkpoint, team status, chat, memories, tips.',
+  {
+    agentId: z.string().describe('Your agent ID'),
+    role: z.enum(['general', 'technical', 'product', 'sales', 'coordination']).optional().describe('Role for optimized memory filtering'),
+    repo: z.string().optional().describe('Repository ID to load context for'),
+    include: z.string().optional().describe('Comma-separated list: checkpoint,team,chat,context,memories,repo,metrics')
+  },
+  async (args) => {
+    const { agentId, role = 'general', repo, include } = args;
+    const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+    try {
+      const params = new URLSearchParams({ agentId });
+      if (role) params.append('role', role);
+      if (repo) params.append('repo', repo);
+      if (include) params.append('include', include);
+
+      const res = await fetch(`${API_BASE}/api/hot-start?${params}`);
+      const data = await res.json();
+
+      // Format a helpful summary
+      const summary = {
+        loadTime: `${data.loadTime}ms`,
+        hasCheckpoint: !!data.checkpoint,
+        activeAgents: data.activeAgents?.length || 0,
+        recentChatMessages: data.recentChat?.length || 0,
+        memoriesLoaded: data.memories?.length || 0,
+        tips: data.tips || [],
+        pistonContextClusters: Object.keys(data.pistonContext || {}),
+        hasRepoContext: !!data.repoContext
+      };
+
+      return {
+        content: [{
+          type: 'text',
+          text: JSON.stringify({
+            summary,
+            checkpoint: data.checkpoint,
+            activeAgents: data.activeAgents,
+            memories: data.memories?.slice(0, 10), // Top 10 for context window
+            tips: data.tips,
+            pistonContext: data.pistonContext
+          }, null, 2)
+        }]
+      };
+    } catch (error) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+    }
+  }
+);
+
+// ============================================================================
 // Start Server
 // ============================================================================
 
@@ -1223,7 +1362,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 15 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics)');
+  console.error('[agent-coord-mcp] Tools: 17 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);
