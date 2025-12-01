@@ -25,10 +25,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
+      const { owner, zoneId } = req.query;
       const zonesRaw = await redis.hgetall(ZONES_KEY) || {};
-      const zones: Zone[] = Object.values(zonesRaw).map(v => 
+      let zones: Zone[] = Object.values(zonesRaw).map(v =>
         typeof v === 'string' ? JSON.parse(v) : v
       );
+
+      // Filter by owner if provided
+      if (owner && typeof owner === 'string') {
+        zones = zones.filter(z => z.owner === owner);
+      }
+
+      // Filter by zoneId if provided
+      if (zoneId && typeof zoneId === 'string') {
+        zones = zones.filter(z => z.zoneId === zoneId);
+      }
+
       return res.json({ zones, count: zones.length });
     }
 

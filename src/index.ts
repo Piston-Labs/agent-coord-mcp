@@ -178,8 +178,15 @@ server.tool(
 
       case 'check-claim': {
         if (!args.what) return { content: [{ type: 'text', text: 'what required' }] };
-        const claim = store.checkClaim(args.what);
-        return { content: [{ type: 'text', text: JSON.stringify(claim ? { claimed: true, ...claim } : { claimed: false }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/claims`);
+          const data = await res.json();
+          const claim = data.claims?.find((c: any) => c.what === args.what);
+          return { content: [{ type: 'text', text: JSON.stringify(claim ? { claimed: true, ...claim } : { claimed: false }) }] };
+        } catch (err) {
+          const claim = store.checkClaim(args.what);
+          return { content: [{ type: 'text', text: JSON.stringify(claim ? { claimed: true, ...claim } : { claimed: false }) }] };
+        }
       }
 
       case 'release': {
@@ -265,42 +272,85 @@ server.tool(
           return { content: [{ type: 'text', text: 'author and message required' }] };
         }
 
-        // Detect @mentions and send notifications
+        // Detect @mentions for notifications
         const mentions = store.extractMentions(args.message);
-        const msg = store.postGroupMessage(args.author, 'agent', args.message);
 
-        // Send mention notifications
-        for (const mentioned of mentions) {
-          store.sendMessage({
-            from: args.author,
-            to: mentioned,
-            type: 'mention',
-            message: `You were mentioned in group chat: "${args.message.substring(0, 100)}..."`
-          });
-        }
-
-        return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              id: msg.id,
-              sent: true,
-              timestamp: msg.timestamp,
-              mentions: { detected: mentions, pinged: mentions }
+        // POST to HTTP API so message persists to Redis and shows in dashboard
+        try {
+          const res = await fetch(`${API_BASE}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              author: args.author,
+              authorType: 'agent',
+              message: args.message
             })
-          }]
-        };
+          });
+          const data = await res.json();
+
+          // Send mention notifications via local store (these are ephemeral)
+          for (const mentioned of mentions) {
+            store.sendMessage({
+              from: args.author,
+              to: mentioned,
+              type: 'mention',
+              message: `You were mentioned in group chat: "${args.message.substring(0, 100)}..."`
+            });
+          }
+
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                id: data.id,
+                sent: true,
+                timestamp: data.timestamp,
+                mentions: { detected: mentions, pinged: mentions },
+                persistedToRedis: true
+              })
+            }]
+          };
+        } catch (err) {
+          // Fallback to local store if HTTP fails
+          const msg = store.postGroupMessage(args.author, 'agent', args.message);
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                id: msg.id,
+                sent: true,
+                timestamp: msg.timestamp,
+                mentions: { detected: mentions, pinged: mentions },
+                persistedToRedis: false,
+                warning: 'Message only saved locally - HTTP API unreachable'
+              })
+            }]
+          };
+        }
       }
 
       case 'get': {
-        const messages = store.getGroupMessages(args.limit || 50);
-        return { content: [{ type: 'text', text: JSON.stringify({ messages, count: messages.length }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/chat?limit=${args.limit || 50}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        } catch (err) {
+          // Fallback to local store
+          const messages = store.getGroupMessages(args.limit || 50);
+          return { content: [{ type: 'text', text: JSON.stringify({ messages, count: messages.length, source: 'local' }) }] };
+        }
       }
 
       case 'get-since': {
         if (!args.since) return { content: [{ type: 'text', text: 'since required' }] };
-        const messages = store.getGroupMessagesSince(args.since);
-        return { content: [{ type: 'text', text: JSON.stringify({ messages, count: messages.length, since: args.since }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/chat?since=${encodeURIComponent(args.since)}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ ...data, since: args.since }) }] };
+        } catch (err) {
+          const messages = store.getGroupMessagesSince(args.since);
+          return { content: [{ type: 'text', text: JSON.stringify({ messages, count: messages.length, since: args.since, source: 'local' }) }] };
+        }
       }
 
       case 'react': {
@@ -336,22 +386,43 @@ server.tool(
 
     switch (action) {
       case 'check': {
-        const lock = store.checkLock(resourcePath);
-        if (!lock) {
-          return { content: [{ type: 'text', text: JSON.stringify({ available: true, locked: false, resourcePath }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/locks`);
+          const data = await res.json();
+          const lock = data.locks?.find((l: any) => l.resourcePath === resourcePath);
+          if (!lock) {
+            return { content: [{ type: 'text', text: JSON.stringify({ available: true, locked: false, resourcePath }) }] };
+          }
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                available: lock.lockedBy === agentId,
+                locked: true,
+                lockedBy: lock.lockedBy,
+                reason: lock.reason,
+                lockedAt: lock.lockedAt
+              })
+            }]
+          };
+        } catch (err) {
+          const lock = store.checkLock(resourcePath);
+          if (!lock) {
+            return { content: [{ type: 'text', text: JSON.stringify({ available: true, locked: false, resourcePath }) }] };
+          }
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                available: lock.lockedBy === agentId,
+                locked: true,
+                lockedBy: lock.lockedBy,
+                reason: lock.reason,
+                lockedAt: lock.lockedAt
+              })
+            }]
+          };
         }
-        return {
-          content: [{
-            type: 'text',
-            text: JSON.stringify({
-              available: lock.lockedBy === agentId,
-              locked: true,
-              lockedBy: lock.lockedBy,
-              reason: lock.reason,
-              lockedAt: lock.lockedAt
-            })
-          }]
-        };
       }
 
       case 'lock': {
@@ -453,8 +524,14 @@ server.tool(
 
       case 'get': {
         if (!args.taskId) return { content: [{ type: 'text', text: 'taskId required' }] };
-        const task = store.getTask(args.taskId);
-        return { content: [{ type: 'text', text: JSON.stringify(task || { error: 'not found' }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/tasks?taskId=${encodeURIComponent(args.taskId)}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data.task || { error: 'not found' }) }] };
+        } catch (err) {
+          const task = store.getTask(args.taskId);
+          return { content: [{ type: 'text', text: JSON.stringify(task || { error: 'not found' }) }] };
+        }
       }
 
       case 'list': {
@@ -473,16 +550,36 @@ server.tool(
         if (!args.taskId || !args.status) {
           return { content: [{ type: 'text', text: 'taskId and status required' }] };
         }
-        const task = store.updateTaskStatus(args.taskId, args.status);
-        return { content: [{ type: 'text', text: JSON.stringify(task ? { updated: true, task } : { error: 'not found' }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/tasks`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: args.taskId, status: args.status })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ updated: true, task: data.task }) }] };
+        } catch (err) {
+          const task = store.updateTaskStatus(args.taskId, args.status);
+          return { content: [{ type: 'text', text: JSON.stringify(task ? { updated: true, task } : { error: 'not found' }) }] };
+        }
       }
 
       case 'assign': {
         if (!args.taskId || !args.assignee) {
           return { content: [{ type: 'text', text: 'taskId and assignee required' }] };
         }
-        const task = store.assignTask(args.taskId, args.assignee);
-        return { content: [{ type: 'text', text: JSON.stringify(task ? { assigned: true, task } : { error: 'not found' }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/tasks`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: args.taskId, assignee: args.assignee })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({ assigned: true, task: data.task }) }] };
+        } catch (err) {
+          const task = store.assignTask(args.taskId, args.assignee);
+          return { content: [{ type: 'text', text: JSON.stringify(task ? { assigned: true, task } : { error: 'not found' }) }] };
+        }
       }
 
       default:
@@ -534,14 +631,28 @@ server.tool(
         if (!args.zoneId || !args.owner) {
           return { content: [{ type: 'text', text: 'zoneId and owner required' }] };
         }
-        const released = store.releaseZone(args.zoneId, args.owner);
-        return { content: [{ type: 'text', text: JSON.stringify({ released, zoneId: args.zoneId }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/zones?zoneId=${encodeURIComponent(args.zoneId)}&owner=${encodeURIComponent(args.owner)}`, {
+            method: 'DELETE'
+          });
+          return { content: [{ type: 'text', text: JSON.stringify({ released: true, zoneId: args.zoneId }) }] };
+        } catch (err) {
+          const released = store.releaseZone(args.zoneId, args.owner);
+          return { content: [{ type: 'text', text: JSON.stringify({ released, zoneId: args.zoneId }) }] };
+        }
       }
 
       case 'check': {
         if (!args.zoneId) return { content: [{ type: 'text', text: 'zoneId required' }] };
-        const zone = store.checkZone(args.zoneId);
-        return { content: [{ type: 'text', text: JSON.stringify(zone ? { claimed: true, ...zone } : { claimed: false }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/zones?zoneId=${encodeURIComponent(args.zoneId)}`);
+          const data = await res.json();
+          const zone = data.zones?.find((z: any) => z.zoneId === args.zoneId);
+          return { content: [{ type: 'text', text: JSON.stringify(zone ? { claimed: true, ...zone } : { claimed: false }) }] };
+        } catch (err) {
+          const zone = store.checkZone(args.zoneId);
+          return { content: [{ type: 'text', text: JSON.stringify(zone ? { claimed: true, ...zone } : { claimed: false }) }] };
+        }
       }
 
       case 'list': {
@@ -557,8 +668,14 @@ server.tool(
 
       case 'my-zones': {
         if (!args.owner) return { content: [{ type: 'text', text: 'owner required' }] };
-        const zones = store.getZonesFor(args.owner);
-        return { content: [{ type: 'text', text: JSON.stringify({ zones, count: zones.length }) }] };
+        try {
+          const res = await fetch(`${API_BASE}/api/zones?owner=${encodeURIComponent(args.owner)}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        } catch (err) {
+          const zones = store.getZonesFor(args.owner);
+          return { content: [{ type: 'text', text: JSON.stringify({ zones, count: zones.length }) }] };
+        }
       }
 
       default:

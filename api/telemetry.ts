@@ -353,29 +353,44 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
     return { ...baseTelemetry, health };
   }
 
-  // Handle ACTIVE devices - generate live telemetry
+  // Handle ACTIVE devices - generate CONSISTENT simulated telemetry
+  // Use deterministic values based on IMEI hash + time to prevent wild jumps
   const hour = now.getHours();
+  const minute = now.getMinutes();
   const isRushHour = (hour >= 7 && hour <= 9) || (hour >= 16 && hour <= 18);
   const isNightTime = hour >= 22 || hour <= 5;
 
-  const movementFactor = Math.sin(Date.now() / 60000) * 0.001;
-  const ignitionProbability = isNightTime ? 0.1 : (isRushHour ? 0.7 : 0.4);
-  const isIgnitionOn = Math.random() < ignitionProbability;
+  // Create a deterministic seed from IMEI - same device always has same behavior pattern
+  const imeiSeed = imei.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
-  const baseSpeed = isIgnitionOn ? (isRushHour ? 25 : 45) : 0;
-  const speedVariation = isIgnitionOn ? Math.random() * 30 : 0;
-  const speed = Math.round(baseSpeed + speedVariation);
+  // Time-based phase - changes slowly (every 5 minutes roughly)
+  const timePhase = Math.floor(Date.now() / 300000); // 5-minute intervals
+  const devicePhase = (imeiSeed + timePhase) % 100;
 
-  const batteryBase = isIgnitionOn ? 13.8 : 12.4;
-  const batteryVariation = (Math.random() - 0.5) * 0.6;
-  const batteryVoltage = Math.round((batteryBase + batteryVariation) * 10) / 10;
+  // Ignition state - consistent for ~5 minute periods, varies by device and time of day
+  const ignitionThreshold = isNightTime ? 85 : (isRushHour ? 30 : 50);
+  const isIgnitionOn = devicePhase < (100 - ignitionThreshold);
 
+  // Speed - smooth sinusoidal variation, not random jumps
+  // Base speed varies by time of day, with gentle oscillation
+  const speedOscillation = Math.sin((Date.now() / 120000) + imeiSeed) * 10; // 2-min cycle, ±10 km/h
+  const baseSpeed = isIgnitionOn ? (isRushHour ? 35 : 25) : 0;
+  const speed = isIgnitionOn ? Math.max(0, Math.round(baseSpeed + speedOscillation)) : 0;
+
+  // Battery voltage - very stable, only varies by 0.1-0.2V normally
+  // 13.8-14.4V when charging (ignition on), 12.4-12.8V when parked
+  const batteryOscillation = Math.sin((Date.now() / 60000) + imeiSeed * 2) * 0.1;
+  const batteryBase = isIgnitionOn ? 14.1 : 12.6;
+  const batteryVoltage = Math.round((batteryBase + batteryOscillation) * 10) / 10;
+
+  // External voltage - follows battery closely when charging
   const externalBase = isIgnitionOn ? 14.2 : 12.6;
-  const externalVariation = (Math.random() - 0.5) * 0.4;
-  const externalVoltage = Math.round((externalBase + externalVariation) * 10) / 10;
+  const externalVoltage = Math.round((externalBase + batteryOscillation) * 10) / 10;
 
-  const lat = profile.baseLat + movementFactor + (Math.random() - 0.5) * 0.01;
-  const lng = profile.baseLng + movementFactor + (Math.random() - 0.5) * 0.01;
+  // Position - very slow drift, consistent movement pattern
+  const positionDrift = Math.sin(Date.now() / 600000) * 0.002; // 10-min cycle, tiny drift
+  const lat = profile.baseLat + positionDrift + (imeiSeed % 100) * 0.0001;
+  const lng = profile.baseLng + positionDrift * 0.8 + (imeiSeed % 50) * 0.0001;
 
   const storedOdometer = stored?.metrics?.odometer || Math.floor(Math.random() * 50000) + 10000;
   const odometerIncrement = isIgnitionOn ? Math.random() * 0.5 : 0;
@@ -394,16 +409,16 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
       externalVoltage,
       speed,
       odometer: Math.round((storedOdometer + odometerIncrement) * 10) / 10,
-      fuelLevel: Math.round(Math.random() * 60 + 20),
-      engineRPM: isIgnitionOn ? Math.round(700 + speed * 30 + Math.random() * 500) : 0,
-      coolantTemp: isIgnitionOn ? Math.round(85 + Math.random() * 15) : Math.round(20 + Math.random() * 10)
+      fuelLevel: Math.round(50 + Math.sin((Date.now() / 3600000) + imeiSeed) * 15),  // 35-65%, hourly cycle
+      engineRPM: isIgnitionOn ? Math.round(800 + speed * 25) : 0,  // RPM based on speed, no random
+      coolantTemp: isIgnitionOn ? Math.round(88 + Math.sin(Date.now() / 300000) * 4) : Math.round(25 + (imeiSeed % 10))  // 84-92°C when running
     },
     position: {
       lat: Math.round(lat * 10000) / 10000,
       lng: Math.round(lng * 10000) / 10000,
-      altitude: Math.round(100 + Math.random() * 200),
-      heading: Math.round(Math.random() * 360),
-      satellites: Math.round(8 + Math.random() * 6)
+      altitude: Math.round(350 + (imeiSeed % 50)),  // Phoenix area is ~350m elevation
+      heading: Math.round((imeiSeed * 3.6 + (Date.now() / 60000)) % 360),  // Slow rotation
+      satellites: Math.round(10 + Math.sin((Date.now() / 120000) + imeiSeed) * 2)  // 8-12 sats
     },
     status: {
       ignition: isIgnitionOn,
@@ -413,7 +428,7 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
       offline: false
     },
     connectivity: {
-      signalStrength: Math.round(3 + Math.random() * 2),
+      signalStrength: Math.round(4 + Math.sin(Date.now() / 600000) * 0.5),  // 4-5 bars, stable
       carrier: ['Verizon', 'AT&T', 'T-Mobile'][Math.floor(Math.random() * 3)],
       lastSeen: now.toISOString()
     },
