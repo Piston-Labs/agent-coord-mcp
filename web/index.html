@@ -1640,6 +1640,167 @@
       color: var(--text-primary);
     }
 
+
+    /* Roadmap Enhancements */
+    .roadmap-stats {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    
+    .roadmap-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    .roadmap-stat-value {
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .roadmap-stat-value.backlog { color: var(--text-secondary); }
+    .roadmap-stat-value.in-progress { color: var(--accent); }
+    .roadmap-stat-value.review { color: var(--warning); }
+    .roadmap-stat-value.done { color: var(--success); }
+    
+    .roadmap-progress {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .roadmap-progress-bar {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+    
+    .roadmap-progress-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .roadmap-progress-segment.done { background: var(--success); }
+    .roadmap-progress-segment.review { background: var(--warning); }
+    .roadmap-progress-segment.in-progress { background: var(--accent); }
+    
+    .roadmap-progress-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    /* Priority filter badges */
+    .priority-filters {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+    
+    .priority-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    
+    .priority-badge.critical { background: rgba(248, 81, 73, 0.15); color: var(--danger); border-color: rgba(248, 81, 73, 0.3); }
+    .priority-badge.high { background: rgba(210, 153, 34, 0.15); color: var(--warning); border-color: rgba(210, 153, 34, 0.3); }
+    .priority-badge.medium { background: rgba(88, 166, 255, 0.15); color: var(--accent); border-color: rgba(88, 166, 255, 0.3); }
+    .priority-badge.low { background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); border-color: rgba(139, 148, 158, 0.3); }
+    
+    .priority-badge.active {
+      border-width: 2px;
+    }
+    
+    .priority-badge:hover {
+      opacity: 0.8;
+    }
+    
+    /* Roadmap item enhancements */
+    .roadmap-item-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 6px 0;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .roadmap-item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .roadmap-item-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      color: var(--text-secondary);
+    }
+    
+    .roadmap-item-due {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .roadmap-item-due.overdue {
+      color: var(--danger);
+      font-weight: 600;
+    }
+    
+    .roadmap-item-due.soon {
+      color: var(--warning);
+    }
+    
+    /* Quick actions on hover */
+    .roadmap-item-actions {
+      display: none;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .roadmap-item:hover .roadmap-item-actions {
+      display: flex;
+    }
+    
+    .roadmap-action-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    .roadmap-action-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
     .roadmap-filters {
       display: flex;
       gap: 10px;
@@ -2233,7 +2394,168 @@
       }
       
       /* Roadmap mobile fixes */
-      .roadmap-filters {
+  
+    /* Roadmap Enhancements */
+    .roadmap-stats {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    
+    .roadmap-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    .roadmap-stat-value {
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .roadmap-stat-value.backlog { color: var(--text-secondary); }
+    .roadmap-stat-value.in-progress { color: var(--accent); }
+    .roadmap-stat-value.review { color: var(--warning); }
+    .roadmap-stat-value.done { color: var(--success); }
+    
+    .roadmap-progress {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .roadmap-progress-bar {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+    
+    .roadmap-progress-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .roadmap-progress-segment.done { background: var(--success); }
+    .roadmap-progress-segment.review { background: var(--warning); }
+    .roadmap-progress-segment.in-progress { background: var(--accent); }
+    
+    .roadmap-progress-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    /* Priority filter badges */
+    .priority-filters {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+    
+    .priority-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    
+    .priority-badge.critical { background: rgba(248, 81, 73, 0.15); color: var(--danger); border-color: rgba(248, 81, 73, 0.3); }
+    .priority-badge.high { background: rgba(210, 153, 34, 0.15); color: var(--warning); border-color: rgba(210, 153, 34, 0.3); }
+    .priority-badge.medium { background: rgba(88, 166, 255, 0.15); color: var(--accent); border-color: rgba(88, 166, 255, 0.3); }
+    .priority-badge.low { background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); border-color: rgba(139, 148, 158, 0.3); }
+    
+    .priority-badge.active {
+      border-width: 2px;
+    }
+    
+    .priority-badge:hover {
+      opacity: 0.8;
+    }
+    
+    /* Roadmap item enhancements */
+    .roadmap-item-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 6px 0;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .roadmap-item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .roadmap-item-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      color: var(--text-secondary);
+    }
+    
+    .roadmap-item-due {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .roadmap-item-due.overdue {
+      color: var(--danger);
+      font-weight: 600;
+    }
+    
+    .roadmap-item-due.soon {
+      color: var(--warning);
+    }
+    
+    /* Quick actions on hover */
+    .roadmap-item-actions {
+      display: none;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .roadmap-item:hover .roadmap-item-actions {
+      display: flex;
+    }
+    
+    .roadmap-action-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    .roadmap-action-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .roadmap-filters {
         flex-direction: column;
         gap: 8px;
       }
@@ -2666,7 +2988,168 @@
         min-height: auto;
       }
 
-      .roadmap-filters {
+  
+    /* Roadmap Enhancements */
+    .roadmap-stats {
+      display: flex;
+      gap: 12px;
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+    
+    .roadmap-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    .roadmap-stat-value {
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .roadmap-stat-value.backlog { color: var(--text-secondary); }
+    .roadmap-stat-value.in-progress { color: var(--accent); }
+    .roadmap-stat-value.review { color: var(--warning); }
+    .roadmap-stat-value.done { color: var(--success); }
+    
+    .roadmap-progress {
+      flex: 1;
+      min-width: 200px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    
+    .roadmap-progress-bar {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+    
+    .roadmap-progress-segment {
+      height: 100%;
+      transition: width 0.3s ease;
+    }
+    
+    .roadmap-progress-segment.done { background: var(--success); }
+    .roadmap-progress-segment.review { background: var(--warning); }
+    .roadmap-progress-segment.in-progress { background: var(--accent); }
+    
+    .roadmap-progress-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    /* Priority filter badges */
+    .priority-filters {
+      display: flex;
+      gap: 6px;
+      margin-left: auto;
+    }
+    
+    .priority-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s;
+    }
+    
+    .priority-badge.critical { background: rgba(248, 81, 73, 0.15); color: var(--danger); border-color: rgba(248, 81, 73, 0.3); }
+    .priority-badge.high { background: rgba(210, 153, 34, 0.15); color: var(--warning); border-color: rgba(210, 153, 34, 0.3); }
+    .priority-badge.medium { background: rgba(88, 166, 255, 0.15); color: var(--accent); border-color: rgba(88, 166, 255, 0.3); }
+    .priority-badge.low { background: rgba(139, 148, 158, 0.15); color: var(--text-secondary); border-color: rgba(139, 148, 158, 0.3); }
+    
+    .priority-badge.active {
+      border-width: 2px;
+    }
+    
+    .priority-badge:hover {
+      opacity: 0.8;
+    }
+    
+    /* Roadmap item enhancements */
+    .roadmap-item-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 6px 0;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .roadmap-item-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .roadmap-item-tag {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      color: var(--text-secondary);
+    }
+    
+    .roadmap-item-due {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+    
+    .roadmap-item-due.overdue {
+      color: var(--danger);
+      font-weight: 600;
+    }
+    
+    .roadmap-item-due.soon {
+      color: var(--warning);
+    }
+    
+    /* Quick actions on hover */
+    .roadmap-item-actions {
+      display: none;
+      gap: 4px;
+      margin-top: 8px;
+    }
+    
+    .roadmap-item:hover .roadmap-item-actions {
+      display: flex;
+    }
+    
+    .roadmap-action-btn {
+      padding: 4px 8px;
+      font-size: 10px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    
+    .roadmap-action-btn:hover {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .roadmap-filters {
         flex-wrap: wrap;
         gap: 8px;
         padding: 10px 12px;
@@ -3230,6 +3713,35 @@
 
       <!-- Roadmap View -->
       <div class="tab-content" id="roadmapView">
+        <div class="roadmap-stats" id="roadmapStats">
+          <div class="roadmap-stat">
+            <span class="roadmap-stat-value backlog" id="roadmapBacklogCount">0</span>
+            <span>Backlog</span>
+          </div>
+          <div class="roadmap-stat">
+            <span class="roadmap-stat-value in-progress" id="roadmapInProgressCount">0</span>
+            <span>In Progress</span>
+          </div>
+          <div class="roadmap-stat">
+            <span class="roadmap-stat-value review" id="roadmapReviewCount">0</span>
+            <span>Review</span>
+          </div>
+          <div class="roadmap-stat">
+            <span class="roadmap-stat-value done" id="roadmapDoneCount">0</span>
+            <span>Done</span>
+          </div>
+          <div class="roadmap-progress">
+            <div class="roadmap-progress-bar">
+              <div class="roadmap-progress-segment done" id="progressDone" style="width: 0%"></div>
+              <div class="roadmap-progress-segment review" id="progressReview" style="width: 0%"></div>
+              <div class="roadmap-progress-segment in-progress" id="progressInProgress" style="width: 0%"></div>
+            </div>
+            <div class="roadmap-progress-label">
+              <span id="progressPercent">0%</span>
+              <span>Complete</span>
+            </div>
+          </div>
+        </div>
         <div class="roadmap-filters">
           <select id="projectFilter" onchange="fetchRoadmap()">
             <option value="">All Projects</option>
@@ -3241,6 +3753,13 @@
           </select>
           <select id="assigneeFilter" onchange="fetchRoadmap()">
             <option value="">All Assignees</option>
+          </select>
+          <select id="priorityFilter" onchange="fetchRoadmap()">
+            <option value="">All Priorities</option>
+            <option value="critical">Critical</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
           </select>
           <button class="add-item-btn" onclick="showAddRoadmapItem()">+ Add Item</button>
         </div>
@@ -5211,18 +5730,55 @@
       try {
         const project = document.getElementById('projectFilter').value;
         const assignee = document.getElementById('assigneeFilter').value;
+        const priority = document.getElementById('priorityFilter')?.value || '';
 
         let url = API_BASE + '/roadmap?';
         if (project) url += 'project=' + encodeURIComponent(project) + '&';
-        if (assignee) url += 'assignee=' + encodeURIComponent(assignee);
+        if (assignee) url += 'assignee=' + encodeURIComponent(assignee) + '&';
+        if (priority) url += 'priority=' + encodeURIComponent(priority);
 
         const res = await fetch(url);
         const data = await res.json();
         roadmapItems = data.items || [];
         renderRoadmap();
+        updateRoadmapStats();
       } catch (err) {
         console.error('Failed to fetch roadmap:', err);
       }
+    }
+    
+    function updateRoadmapStats() {
+      const counts = {
+        backlog: 0,
+        'in-progress': 0,
+        review: 0,
+        done: 0
+      };
+      
+      roadmapItems.forEach(item => {
+        const status = item.status === 'planned' ? 'backlog' : item.status;
+        if (counts[status] !== undefined) {
+          counts[status]++;
+        }
+      });
+      
+      const total = roadmapItems.length || 1;
+      
+      // Update counts
+      document.getElementById('roadmapBacklogCount').textContent = counts.backlog;
+      document.getElementById('roadmapInProgressCount').textContent = counts['in-progress'];
+      document.getElementById('roadmapReviewCount').textContent = counts.review;
+      document.getElementById('roadmapDoneCount').textContent = counts.done;
+      
+      // Update progress bar
+      const donePercent = (counts.done / total) * 100;
+      const reviewPercent = (counts.review / total) * 100;
+      const inProgressPercent = (counts['in-progress'] / total) * 100;
+      
+      document.getElementById('progressDone').style.width = donePercent + '%';
+      document.getElementById('progressReview').style.width = reviewPercent + '%';
+      document.getElementById('progressInProgress').style.width = inProgressPercent + '%';
+      document.getElementById('progressPercent').textContent = Math.round(donePercent) + '%';
     }
 
     function renderRoadmap() {
