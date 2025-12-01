@@ -1756,6 +1756,71 @@ server.tool(
 );
 
 // ============================================================================
+// ALERTS TOOL - Fleet monitoring and notifications
+// ============================================================================
+
+server.tool(
+  'alerts',
+  'Manage fleet alerts: device-offline, battery-low, speed-alert, maintenance-due.',
+  {
+    action: z.enum(['list', 'create', 'acknowledge', 'config']).describe('Alert operation'),
+    alertType: z.enum(['device-offline', 'battery-low', 'geofence-breach', 'maintenance-due', 'speed-alert', 'custom']).optional(),
+    severity: z.enum(['info', 'warning', 'critical']).optional(),
+    message: z.string().optional(),
+    deviceImei: z.string().optional(),
+    alertId: z.string().optional().describe('For acknowledge action'),
+    agentId: z.string().describe('Your agent ID')
+  },
+  async (args) => {
+    const { action, alertType, severity, message, deviceImei, alertId, agentId } = args;
+    const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+    try {
+      switch (action) {
+        case 'list': {
+          const res = await fetch(`${API_BASE}/api/alerts`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+        case 'create': {
+          if (!alertType || !message) {
+            return { content: [{ type: 'text', text: 'alertType and message required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/alerts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: alertType, severity: severity || 'warning', message, deviceImei })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+        case 'acknowledge': {
+          if (!alertId) {
+            return { content: [{ type: 'text', text: 'alertId required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/alerts`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: alertId, acknowledgedBy: agentId })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+        case 'config': {
+          const res = await fetch(`${API_BASE}/api/alerts?action=config`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+        default:
+          return { content: [{ type: 'text', text: 'Unknown action' }] };
+      }
+    } catch (error) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+    }
+  }
+);
+
+// ============================================================================
 // Start Server
 // ============================================================================
 
@@ -1763,7 +1828,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 23 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device)');
+  console.error('[agent-coord-mcp] Tools: 24 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);
