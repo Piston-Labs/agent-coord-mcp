@@ -57,7 +57,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // GET: List roadmap items or team members
     if (req.method === 'GET') {
-      const { type, project, assignee, status } = req.query;
+      const { type, project, assignee, status, priority } = req.query;
 
       // Get team members
       if (type === 'team') {
@@ -104,6 +104,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Filter by status
       if (status && typeof status === 'string') {
         roadmapList = roadmapList.filter((item: RoadmapItem) => item.status === status);
+      }
+
+      // Filter by priority
+      if (priority && typeof priority === 'string') {
+        roadmapList = roadmapList.filter((item: RoadmapItem) => item.priority === priority);
       }
 
       // Sort by priority then by updatedAt
