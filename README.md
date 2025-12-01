@@ -2,6 +2,8 @@
 
 MCP server for multi-agent coordination - enables AI agents to collaborate without conflicts.
 
+**18 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
+
 ## Features
 
 - **Agent Status** - Track who's online, what they're working on
@@ -11,6 +13,13 @@ MCP server for multi-agent coordination - enables AI agents to collaborate witho
 - **Claims** - Announce intent to work on something
 - **Zones** - Claim ownership of directories/modules
 - **Checkpoints** - Save/restore session state for crash recovery
+- **Handoffs** - Transfer work between agents with full context
+- **Shared Memory** - Persistent cross-agent knowledge storage
+- **Context Clusters** - Domain-specific knowledge (Piston Labs)
+- **Workflows** - Collaboration workflow templates
+- **Hot Start** - Zero cold start context loading
+- **Vision** - Image analysis via Claude
+- **Metrics** - Agent efficiency and safety monitoring
 
 ## Quick Start
 
@@ -28,7 +37,7 @@ npm run start:http
 PERSIST=true npm run start:http
 ```
 
-## MCP Tools
+## MCP Tools (18)
 
 | Tool | Description |
 |------|-------------|
@@ -39,16 +48,39 @@ PERSIST=true npm run start:http
 | `task` | Create and manage tasks |
 | `zone` | Claim directory ownership |
 | `message` | Direct messages between agents |
+| `handoff` | Transfer work with full context |
+| `checkpoint` | Save/restore agent state |
+| `context-load` | Load Piston Labs context clusters |
+| `vision` | Analyze images via Claude |
+| `repo-context` | Persistent codebase knowledge |
+| `memory` | Shared cross-agent memory |
+| `ui-test` | UI/UX testing framework |
+| `metrics` | Agent efficiency tracking |
+| `device` | Teltonika fleet management |
+| `hot-start` | Zero cold start context loading |
+| `workflow` | Collaboration workflow templates |
 
 ## HTTP Endpoints
 
+### Core
 ```
-GET  /api/health            - Server health
-GET  /api/work/:agentId     - Combined view for agent
+GET  /api/health            - Server health (detailed=true for stats)
+GET  /api/status            - Real-time dashboard data
+GET  /api/hot-start         - Zero cold start context bundle
+```
+
+### Agents & Chat
+```
 GET  /api/agents            - List all agents
-POST /api/agents/:id/status - Update agent status
+POST /api/agents            - Register/update agent
 GET  /api/chat              - Get chat messages
 POST /api/chat              - Post message
+GET  /api/messages          - Get DMs
+POST /api/messages          - Send DM
+```
+
+### Coordination
+```
 GET  /api/tasks             - List tasks
 POST /api/tasks             - Create task
 GET  /api/locks             - List locks
@@ -57,12 +89,23 @@ GET  /api/zones             - List zones
 POST /api/zones             - Claim zone
 GET  /api/claims            - List claims
 POST /api/claims            - Make claim
-GET  /api/messages          - Get DMs
-POST /api/messages          - Send DM
-GET  /api/roadmap           - List roadmap items
-POST /api/roadmap           - Create roadmap item
-PUT  /api/roadmap           - Update roadmap item
-GET  /api/whats-next?assignee=name - Get next task for team member
+GET  /api/handoffs          - List handoffs
+POST /api/handoffs          - Create handoff
+```
+
+### Knowledge
+```
+GET  /api/memory            - Search/list memories
+POST /api/memory            - Store memory
+GET  /api/piston-context    - Load context clusters
+GET  /api/repo-context      - Get codebase knowledge
+```
+
+### Workflows
+```
+GET  /api/workflows         - List workflow templates
+POST /api/workflows?action=start - Start workflow run
+PATCH /api/workflows        - Update workflow step
 ```
 
 ## Environment Variables
