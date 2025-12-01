@@ -472,7 +472,7 @@
       flex: 1;
       flex-direction: column;
       min-height: 0;
-      overflow: hidden;
+      overflow-y: auto;
     }
 
     .tab-content.active {
@@ -3212,7 +3212,7 @@
         display: flex;
         flex-direction: column;
         flex: 1;
-        overflow: hidden;
+        overflow-y: auto;
       }
 
       .chat-messages {
@@ -5238,7 +5238,33 @@
     }
 
 
-  </style>
+  
+    /* Telemetry content visibility fixes */
+    #telemetryView {
+      overflow-y: auto !important;
+      padding: 16px;
+    }
+
+    #telemetryView .telemetry-grid {
+      display: grid !important;
+      min-height: 300px;
+      margin-bottom: 20px;
+    }
+
+    #telemetryView .device-list-container {
+      display: block !important;
+      min-height: 200px;
+      margin-bottom: 20px;
+    }
+
+    /* Make sure health overview doesn't take all space */
+    .health-overview {
+      max-height: 300px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+
+    </style>
 </head>
 <body>
   <!-- Loading Screen (shown while JS initializes) -->
