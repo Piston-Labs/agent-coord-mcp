@@ -3529,6 +3529,180 @@
       }
       
       /* Roadmap mobile fixes */
+    }
+    
+    /* Device List Table Styles */
+    .device-list-container {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    
+    .device-list-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .device-list-header h3 {
+      margin: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .device-list-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    
+    .device-list-controls select {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+    }
+    
+    .view-toggle-btn {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+    }
+    
+    .view-toggle-btn:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .device-list-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    
+    .device-list-table th {
+      background: var(--bg-tertiary);
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    
+    .device-list-table th:hover {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    
+    .device-list-table td {
+      padding: 12px;
+      border-top: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    
+    .device-list-table tr:hover {
+      background: var(--bg-tertiary);
+    }
+    
+    .device-list-table .imei-cell {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--accent);
+    }
+    
+    .device-list-table .vin-cell {
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .device-list-table .vehicle-cell {
+      font-weight: 500;
+    }
+    
+    .device-list-table .status-badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .device-list-table .status-badge.active {
+      background: rgba(46, 204, 113, 0.2);
+      color: #2ecc71;
+    }
+    
+    .device-list-table .status-badge.parked {
+      background: rgba(149, 165, 166, 0.2);
+      color: #95a5a6;
+    }
+    
+    .device-list-table .status-badge.moving {
+      background: rgba(52, 152, 219, 0.2);
+      color: #3498db;
+    }
+    
+    .device-list-table .health-score {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .device-list-table .health-score.excellent {
+      background: rgba(46, 204, 113, 0.2);
+      color: #2ecc71;
+    }
+    
+    .device-list-table .health-score.good {
+      background: rgba(241, 196, 15, 0.2);
+      color: #f1c40f;
+    }
+    
+    .device-list-table .health-score.warning {
+      background: rgba(230, 126, 34, 0.2);
+      color: #e67e22;
+    }
+    
+    .device-list-table .health-score.critical {
+      background: rgba(231, 76, 60, 0.2);
+      color: #e74c3c;
+    }
+    
+    .device-list-table .action-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    
+    .device-list-table .action-btn:hover {
+      opacity: 0.8;
+    }
+    
+    .loading-row {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-secondary);
+    }
   
     /* Roadmap Enhancements */
     .roadmap-stats {
@@ -5596,7 +5770,42 @@
           </div>
           <button class="map-toggle" onclick="toggleMapView()">Toggle Map</button>
         </div>
-        <div class="telemetry-grid" id="telemetryGrid">
+        
+        <!-- Device List View -->
+        <div class="device-list-container" id="deviceListContainer">
+          <div class="device-list-header">
+            <h3>📋 Enrolled Devices</h3>
+            <div class="device-list-controls">
+              <select id="deviceSortBy" onchange="sortDeviceList()">
+                <option value="imei">Sort by IMEI</option>
+                <option value="vin">Sort by VIN</option>
+                <option value="name">Sort by Name</option>
+                <option value="health">Sort by Health</option>
+              </select>
+              <button class="view-toggle-btn" onclick="toggleDeviceView()" title="Toggle Grid/List View">
+                <span id="viewToggleIcon">☰</span>
+              </button>
+            </div>
+          </div>
+          <table class="device-list-table" id="deviceListTable">
+            <thead>
+              <tr>
+                <th onclick="sortDeviceListBy('imei')">IMEI ↕</th>
+                <th onclick="sortDeviceListBy('vin')">VIN ↕</th>
+                <th onclick="sortDeviceListBy('name')">Vehicle ↕</th>
+                <th onclick="sortDeviceListBy('status')">Status</th>
+                <th onclick="sortDeviceListBy('health')">Health ↕</th>
+                <th>Last Seen</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="deviceListBody">
+              <tr><td colspan="7" class="loading-row">Loading devices...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="telemetry-grid" id="telemetryGrid" style="display: none;">
           <div class="empty-state">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -7266,13 +7475,123 @@
             <p>No devices found</p>
           </div>
         `;
+        renderDeviceList([]);
         return;
       }
 
       grid.innerHTML = devices.map(device => renderDeviceCard(device)).join('');
       
-      // Also update fleet map
+      // Also update fleet map and device list
       renderFleetMap(devices);
+      renderDeviceList(devices);
+    }
+    
+    // Device List View Functions
+    let deviceListSortField = 'imei';
+    let deviceListSortAsc = true;
+    let showGridView = false;
+    
+    function renderDeviceList(devices) {
+      const tbody = document.getElementById('deviceListBody');
+      if (!tbody) return;
+      
+      if (!devices || devices.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="loading-row">No devices enrolled</td></tr>';
+        return;
+      }
+      
+      // Sort devices
+      const sorted = [...devices].sort((a, b) => {
+        let aVal, bVal;
+        switch (deviceListSortField) {
+          case 'imei':
+            aVal = a.imei || '';
+            bVal = b.imei || '';
+            break;
+          case 'vin':
+            aVal = a.vehicleInfo?.vin || '';
+            bVal = b.vehicleInfo?.vin || '';
+            break;
+          case 'name':
+            aVal = a.deviceName || '';
+            bVal = b.deviceName || '';
+            break;
+          case 'health':
+            aVal = a.health?.score || 0;
+            bVal = b.health?.score || 0;
+            break;
+          case 'status':
+            aVal = a.status?.movement ? 1 : 0;
+            bVal = b.status?.movement ? 1 : 0;
+            break;
+          default:
+            aVal = a.imei || '';
+            bVal = b.imei || '';
+        }
+        if (typeof aVal === 'string') {
+          return deviceListSortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+        }
+        return deviceListSortAsc ? aVal - bVal : bVal - aVal;
+      });
+      
+      tbody.innerHTML = sorted.map(device => {
+        const vehicle = device.vehicleInfo || {};
+        const vehicleStr = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') || 'Unknown';
+        const health = device.health || { score: 100, status: 'excellent' };
+        const isMoving = device.status?.movement;
+        const lastSeen = device.connectivity?.lastSeen ? formatTimeAgo(new Date(device.connectivity.lastSeen)) : '--';
+        const statusClass = isMoving ? 'moving' : 'parked';
+        const statusText = isMoving ? 'Moving' : 'Parked';
+        
+        return `
+          <tr onclick="openDeviceModal('${device.imei}')" style="cursor: pointer;">
+            <td class="imei-cell">${device.imei || '--'}</td>
+            <td class="vin-cell">${vehicle.vin || 'N/A'}</td>
+            <td class="vehicle-cell">${vehicleStr}</td>
+            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            <td><span class="health-score ${health.status}">${health.score}%</span></td>
+            <td>${lastSeen}</td>
+            <td><button class="action-btn" onclick="event.stopPropagation(); openDeviceModal('${device.imei}')">Details</button></td>
+          </tr>
+        `;
+      }).join('');
+    }
+    
+    function sortDeviceList() {
+      const select = document.getElementById('deviceSortBy');
+      if (select) {
+        deviceListSortField = select.value;
+        renderDeviceList(currentTelemetryData);
+      }
+    }
+    
+    function sortDeviceListBy(field) {
+      if (deviceListSortField === field) {
+        deviceListSortAsc = !deviceListSortAsc;
+      } else {
+        deviceListSortField = field;
+        deviceListSortAsc = true;
+      }
+      const select = document.getElementById('deviceSortBy');
+      if (select) select.value = field;
+      renderDeviceList(currentTelemetryData);
+    }
+    
+    function toggleDeviceView() {
+      showGridView = !showGridView;
+      const grid = document.getElementById('telemetryGrid');
+      const list = document.getElementById('deviceListContainer');
+      const icon = document.getElementById('viewToggleIcon');
+      
+      if (showGridView) {
+        grid.style.display = 'grid';
+        list.style.display = 'none';
+        if (icon) icon.textContent = '☰';
+      } else {
+        grid.style.display = 'none';
+        list.style.display = 'block';
+        if (icon) icon.textContent = '⊞';
+      }
     }
 
     function renderDeviceCard(device) {
