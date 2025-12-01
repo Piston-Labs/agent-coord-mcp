@@ -13,6 +13,9 @@ const ALERTS_KEY = 'piston:telemetry-alerts';
 /**
  * Device Telemetry API - Real-time vehicle analytics with health monitoring
  *
+ * Data source: Teltonika GPS devices via AWS IoT Core pipeline (teltonika-context-system)
+ * Only shows verified active devices from production fleet - no test data from gran-autismo
+ *
  * GET /api/telemetry - Get telemetry for all devices with health scores
  * GET /api/telemetry?imei=xxx - Get telemetry for specific device
  * GET /api/telemetry?history=true - Include historical data (last 24 readings)
@@ -88,79 +91,50 @@ const THRESHOLDS = {
   OFFLINE_MINUTES: 30,
 };
 
-// Known devices - Fleet of 8 vehicles for comprehensive dashboard demo
-const DEVICE_PROFILES: Record<string, { name: string; vin?: string; make?: string; model?: string; year?: number; baseLat: number; baseLng: number }> = {
+// REAL Piston Labs Fleet - Verified Active Teltonika Devices from AWS IoT Core
+// Source: teltonika-context-system/context/technical/devices.md
+// Last verified: November 26, 2025
+//
+// NOTE: Only these 5 devices are verified active in production.
+// Do NOT add fake test data from gran-autismo or other sources.
+const DEVICE_PROFILES: Record<string, { name: string; description?: string; vin?: string; make?: string; model?: string; year?: number; owner?: string; baseLat: number; baseLng: number }> = {
+  '862464068525406': {
+    name: 'Test Device',
+    description: 'Workbench/temporary vehicles - testing before production deployment',
+    owner: 'Piston Labs',
+    baseLat: 33.4484,
+    baseLng: -112.0740
+  },
   '862464068511489': {
-    name: 'Fleet-01 Honda',
-    vin: '1HGBH41JXMN109186',
-    make: 'Honda',
-    model: 'Accord',
-    year: 2024,
-    baseLat: 40.7128,
-    baseLng: -74.0060
+    name: 'Toyota',
+    description: 'Production deployment vehicle',
+    make: 'Toyota',
+    year: 2008,
+    baseLat: 33.4484,
+    baseLng: -112.0740
   },
   '862464068525638': {
-    name: 'Fleet-02 Toyota',
-    vin: '4T1BF1FK5HU123456',
-    make: 'Toyota',
-    model: 'Camry',
-    year: 2023,
-    baseLat: 34.0522,
-    baseLng: -118.2437
-  },
-  '862464068558217': {
-    name: 'Fleet-03 Lexus',
-    vin: 'JTHBA1D20L5012345',
+    name: 'Lexus NX',
+    description: 'Production deployment vehicle',
     make: 'Lexus',
-    model: 'ES350',
-    year: 2022,
+    model: 'NX',
+    year: 2015,
     baseLat: 33.4484,
     baseLng: -112.0740
   },
   '862464068597504': {
-    name: 'Fleet-04 BMW',
-    vin: 'WBA3A5C51DF123456',
-    make: 'BMW',
-    model: '328i',
-    year: 2021,
-    baseLat: 41.8781,
-    baseLng: -87.6298
+    name: 'OBD2 Emulator',
+    description: 'Feature development with OBD2 emulator - testing new telemetry parameters',
+    owner: 'Tom (Hardware & IoT)',
+    baseLat: 33.4484,
+    baseLng: -112.0740
   },
-  '862464068612345': {
-    name: 'Fleet-05 Tesla',
-    vin: '5YJ3E1EA1LF123456',
-    make: 'Tesla',
-    model: 'Model 3',
-    year: 2024,
-    baseLat: 37.7749,
-    baseLng: -122.4194
-  },
-  '862464068623456': {
-    name: 'Fleet-06 Ford',
-    vin: '1FA6P8TH5L5123456',
-    make: 'Ford',
-    model: 'Mustang',
-    year: 2023,
-    baseLat: 42.3601,
-    baseLng: -71.0589
-  },
-  '862464068634567': {
-    name: 'Fleet-07 Chevy',
-    vin: '1G1YY22G965123456',
-    make: 'Chevrolet',
-    model: 'Corvette',
-    year: 2022,
-    baseLat: 29.7604,
-    baseLng: -95.3698
-  },
-  '862464068645678': {
-    name: 'Fleet-08 Mercedes',
-    vin: 'WDDWF8DB5LA123456',
-    make: 'Mercedes-Benz',
-    model: 'C300',
-    year: 2024,
-    baseLat: 47.6062,
-    baseLng: -122.3321
+  '862464068558217': {
+    name: 'Beta Tester (Pug)',
+    description: 'Beta testing - real-world driving data collection',
+    owner: 'Pug',
+    baseLat: 33.4484,
+    baseLng: -112.0740
   }
 };
 
@@ -471,7 +445,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         },
         devices: allTelemetry.sort((a, b) => a.deviceName.localeCompare(b.deviceName)),
-        thresholds: THRESHOLDS
+        thresholds: THRESHOLDS,
+        source: 'Piston Labs Teltonika Fleet (AWS IoT Core)'
       };
 
       if (includeAlerts === 'true') {
