@@ -3716,17 +3716,32 @@
       const panels = document.querySelectorAll('main > .panel');
       const navItems = document.querySelectorAll('.mobile-nav-item');
 
-      // Map panel names to indices
-      const panelMap = { 'team': 0, 'chat': 1, 'context': 2 };
-      const panelIndex = panelMap[panelName];
-
+      // Map panel names to indices (for main panels)
+      const panelMap = { 'team': 0, 'chat': 1 };
+      
+      // Handle tab-based panels (telemetry, metrics)
+      const tabPanels = ['telemetry', 'metrics'];
+      
       // Remove active class from all panels and nav items
       panels.forEach(p => p.classList.remove('mobile-active'));
       navItems.forEach(n => n.classList.remove('active'));
 
-      // Add active class to selected panel and nav item
-      if (panels[panelIndex]) {
-        panels[panelIndex].classList.add('mobile-active');
+      if (tabPanels.includes(panelName)) {
+        // For tab-based panels, show the main panel (chat area) and switch tab
+        if (panels[1]) {
+          panels[1].classList.add('mobile-active');
+        }
+        switchTab(panelName);
+      } else {
+        // For regular panels, show by index
+        const panelIndex = panelMap[panelName];
+        if (panels[panelIndex] !== undefined) {
+          panels[panelIndex].classList.add('mobile-active');
+        }
+        // If it's chat, make sure we're on chat tab
+        if (panelName === 'chat') {
+          switchTab('chat');
+        }
       }
 
       const navItem = document.querySelector(`.mobile-nav-item[data-panel="${panelName}"]`);
@@ -4395,9 +4410,13 @@
         <span>Chat</span>
         <span class="mobile-nav-badge" id="chatBadge" style="display: none;">0</span>
       </button>
-      <button class="mobile-nav-item" data-panel="context" onclick="switchMobilePanel('context')">
-        <span class="mobile-nav-icon">📊</span>
-        <span>Context</span>
+      <button class="mobile-nav-item" data-panel="telemetry" onclick="switchMobilePanel('telemetry')">
+        <span class="mobile-nav-icon">🚗</span>
+        <span>Fleet</span>
+      </button>
+      <button class="mobile-nav-item" data-panel="metrics" onclick="switchMobilePanel('metrics')">
+        <span class="mobile-nav-icon">📈</span>
+        <span>Stats</span>
       </button>
     </div>
   </nav>
