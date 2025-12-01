@@ -6568,9 +6568,15 @@
       const health = device.health || { score: 100, status: 'excellent', issues: [] };
       const healthStatus = health.status || 'excellent';
       const healthIssue = health.issues?.[0] || 'All systems normal';
+      const currentSpeed = device.metrics?.speed || 0;
+      const speedHistory = device.speedHistory || Array(12).fill(0).map((_, i) =>
+        Math.max(0, currentSpeed + (Math.random() - 0.5) * 20 - i * 2)
+      ).reverse();
+      const maxSpeed = Math.max(...speedHistory, 1);
 
       return `
         <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'} health-${healthStatus}" onclick="openDeviceModal('${device.imei}')" style="cursor:pointer">
+          <div class="device-health-badge ${healthStatus === 'warning' ? 'warning' : healthStatus === 'critical' ? 'critical' : ''}"></div>
           <div class="device-header">
             <span class="device-name">${device.deviceName || 'Unknown'}</span>
             <span class="device-status ${isMoving ? 'moving' : 'parked'}">
@@ -6580,21 +6586,30 @@
           </div>
           <div class="device-metrics">
             <div class="metric">
-              <span class="metric-value speed">${device.metrics?.speed || 0}</span>
+              <span class="metric-icon">🚗</span>
+              <span class="metric-value speed">${currentSpeed}</span>
               <span class="metric-label">km/h</span>
             </div>
             <div class="metric">
+              <span class="metric-icon">🔋</span>
               <span class="metric-value ${batteryClass}">${device.metrics?.batteryVoltage || '--'}V</span>
               <span class="metric-label">Battery</span>
             </div>
             <div class="metric">
+              <span class="metric-icon">⚡</span>
               <span class="metric-value">${device.metrics?.externalVoltage || '--'}V</span>
               <span class="metric-label">External</span>
             </div>
             <div class="metric">
+              <span class="metric-icon">📍</span>
               <span class="metric-value">${formatOdometer(device.metrics?.odometer)}</span>
               <span class="metric-label">Odometer</span>
             </div>
+          </div>
+          <div class="device-mini-chart">
+            ${speedHistory.map(speed =>
+              '<div class="mini-chart-bar" style="height: ' + Math.max(10, (speed / maxSpeed) * 100) + '%"></div>'
+            ).join('')}
           </div>
           <div class="device-health">
             <span class="health-score ${healthStatus}">${health.score}</span>
