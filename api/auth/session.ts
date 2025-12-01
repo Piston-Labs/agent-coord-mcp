@@ -42,8 +42,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const sessionId = getSessionFromCookie(req);
 
+    // AUTH BYPASS: If no session cookie, return authenticated as guest
+    // This allows the hub to work without login during development
     if (!sessionId) {
-      return res.status(401).json({ authenticated: false, error: 'No session' });
+      return res.json({
+        authenticated: true,
+        session: {
+          username: 'guest',
+          role: 'user',
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+        },
+        bypass: true
+      });
     }
 
     const raw = await redis.hget(SESSIONS_KEY, sessionId);
