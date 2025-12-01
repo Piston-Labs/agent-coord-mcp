@@ -2240,9 +2240,9 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 10px;
-      overflow: hidden;
+      overflow: visible;
       transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-      min-height: 120px;
+      padding-bottom: 8px;
     }
 
     .device-card:hover { 
@@ -5171,10 +5171,14 @@
     }
 
     .agent-card,
-    .device-card,
     .metrics-card {
       position: relative;
       overflow: hidden;
+    }
+    
+    .device-card {
+      position: relative;
+      /* overflow: visible to prevent clipping device content */
     }
 
     /* Notification badge pulse */
