@@ -2199,8 +2199,110 @@
     .device-vin {
       font-family: monospace;
       color: var(--text-primary);
+      font-size: 10px;
+      word-break: break-all;
     }
 
+    /* New Device Card Elements */
+    .device-title-row {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .device-imei {
+      font-family: monospace;
+      font-size: 10px;
+      color: var(--accent);
+      opacity: 0.8;
+      letter-spacing: 0.5px;
+    }
+
+    .device-live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(88, 166, 255, 0.1);
+      font-size: 11px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: pulse-live 2s infinite;
+    }
+
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(63, 185, 80, 0); }
+    }
+
+    .signal-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      margin-left: auto;
+    }
+
+    .signal-bar {
+      width: 3px;
+      background: var(--border);
+      border-radius: 1px;
+    }
+
+    .signal-bar:nth-child(1) { height: 4px; }
+    .signal-bar:nth-child(2) { height: 6px; }
+    .signal-bar:nth-child(3) { height: 8px; }
+    .signal-bar:nth-child(4) { height: 10px; }
+    .signal-bar:nth-child(5) { height: 12px; }
+
+    .signal-bar.active {
+      background: var(--success);
+    }
+
+    .device-metrics-row2 {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-small {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .metric-icon-sm {
+      font-size: 12px;
+    }
+
+    .device-location {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 12px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      font-family: monospace;
+      background: var(--bg-primary);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .location-coords {
+      color: var(--accent);
+    }
+
+    .location-heading {
+      opacity: 0.7;
+    }
 
     /* Enhanced Telemetry Styles */
     .device-card {
@@ -7022,15 +7124,36 @@
         Math.max(0, currentSpeed + (Math.random() - 0.5) * 20 - i * 2)
       ).reverse();
       const maxSpeed = Math.max(...speedHistory, 1);
+      const lastSeen = device.connectivity?.lastSeen ? new Date(device.connectivity.lastSeen) : null;
+      const lastSeenStr = lastSeen ? formatTimeAgo(lastSeen) : '--';
+      const signalBars = device.connectivity?.signalStrength || 0;
+      const carrier = device.connectivity?.carrier || 'Unknown';
+      const fuelLevel = device.metrics?.fuelLevel || 0;
+      const engineRPM = device.metrics?.engineRPM || 0;
+      const coolantTemp = device.metrics?.coolantTemp || 0;
+      const lat = device.position?.lat?.toFixed(4) || '--';
+      const lng = device.position?.lng?.toFixed(4) || '--';
+      const heading = device.position?.heading || 0;
+      const satellites = device.position?.satellites || 0;
 
       return `
         <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'} health-${healthStatus}" onclick="openDeviceModal('${device.imei}')" style="cursor:pointer">
           <div class="device-health-badge ${healthStatus === 'warning' ? 'warning' : healthStatus === 'critical' ? 'critical' : ''}"></div>
           <div class="device-header">
-            <span class="device-name">${device.deviceName || 'Unknown'}</span>
+            <div class="device-title-row">
+              <span class="device-name">${device.deviceName || 'Unknown'}</span>
+              <span class="device-imei" title="IMEI">${device.imei}</span>
+            </div>
             <span class="device-status ${isMoving ? 'moving' : 'parked'}">
               <span class="device-status-dot"></span>
               ${isMoving ? 'Moving' : 'Parked'}
+            </span>
+          </div>
+          <div class="device-live-indicator">
+            <span class="live-dot"></span>
+            <span>Last seen: ${lastSeenStr}</span>
+            <span class="signal-bars" title="${carrier} - ${signalBars}/5 bars">
+              ${[1,2,3,4,5].map(i => '<span class="signal-bar ' + (i <= signalBars ? 'active' : '') + '"></span>').join('')}
             </span>
           </div>
           <div class="device-metrics">
@@ -7050,15 +7173,37 @@
               <span class="metric-label">External</span>
             </div>
             <div class="metric">
-              <span class="metric-icon">📍</span>
-              <span class="metric-value">${formatOdometer(device.metrics?.odometer)}</span>
-              <span class="metric-label">Odometer</span>
+              <span class="metric-icon">⛽</span>
+              <span class="metric-value">${fuelLevel}%</span>
+              <span class="metric-label">Fuel</span>
+            </div>
+          </div>
+          <div class="device-metrics-row2">
+            <div class="metric-small">
+              <span class="metric-icon-sm">🔧</span>
+              <span>${engineRPM} RPM</span>
+            </div>
+            <div class="metric-small">
+              <span class="metric-icon-sm">🌡️</span>
+              <span>${coolantTemp}°C</span>
+            </div>
+            <div class="metric-small">
+              <span class="metric-icon-sm">📍</span>
+              <span>${formatOdometer(device.metrics?.odometer)}</span>
+            </div>
+            <div class="metric-small">
+              <span class="metric-icon-sm">🛰️</span>
+              <span>${satellites} sats</span>
             </div>
           </div>
           <div class="device-mini-chart">
             ${speedHistory.map(speed =>
               '<div class="mini-chart-bar" style="height: ' + Math.max(10, (speed / maxSpeed) * 100) + '%"></div>'
             ).join('')}
+          </div>
+          <div class="device-location">
+            <span class="location-coords">${lat}, ${lng}</span>
+            <span class="location-heading">Heading: ${heading}°</span>
           </div>
           <div class="device-health">
             <span class="health-score ${healthStatus}">${health.score}</span>
@@ -7067,7 +7212,7 @@
           ${vehicle.vin || vehicleStr ? `
           <div class="device-vehicle">
             <span>${vehicleStr || 'Unknown Vehicle'}</span>
-            ${vehicle.vin ? `<span class="device-vin">${vehicle.vin.slice(-6)}</span>` : ''}
+            ${vehicle.vin ? `<span class="device-vin">VIN: ${vehicle.vin}</span>` : ''}
           </div>
           ` : ''}
         </div>
