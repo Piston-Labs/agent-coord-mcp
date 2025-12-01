@@ -4627,6 +4627,211 @@
       }
     }
 
+
+    /* === FINAL POLISH === */
+    
+    /* Subtle glow effects */
+    .metric-big {
+      text-shadow: 0 0 20px currentColor;
+    }
+
+    /* Better button styles */
+    button, .btn-primary, .btn-submit {
+      transition: all 0.2s ease;
+    }
+
+    button:active, .btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    /* Improved scrollbar styling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-primary);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
+    }
+
+    /* Selection color */
+    ::selection {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Focus states for accessibility */
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* Smooth page transitions */
+    .panel, .tab-content, .modal {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    /* Loading shimmer effect */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    .loading-shimmer {
+      background: linear-gradient(
+        90deg,
+        var(--bg-secondary) 25%,
+        var(--bg-tertiary) 50%,
+        var(--bg-secondary) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    /* Better empty state styling */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      margin: 0;
+    }
+
+    /* Card shine effect on hover */
+    .agent-card::before,
+    .device-card::before,
+    .metrics-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.03),
+        transparent
+      );
+      transition: left 0.5s ease;
+      pointer-events: none;
+    }
+
+    .agent-card:hover::before,
+    .device-card:hover::before,
+    .metrics-card:hover::before {
+      left: 100%;
+    }
+
+    .agent-card,
+    .device-card,
+    .metrics-card {
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Notification badge pulse */
+    .mobile-nav-badge,
+    .alert-count {
+      animation: badge-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes badge-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    /* Status indicator improvements */
+    .status-dot {
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    /* Panel header gradient */
+    .panel-header {
+      background: linear-gradient(180deg, var(--bg-secondary), var(--bg-primary));
+    }
+
+    /* Tab active indicator */
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .tab-btn {
+      position: relative;
+    }
+
+    /* Improve modal backdrop */
+    .modal-overlay {
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+
+    /* Better link styling in chat */
+    .message-content a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--accent);
+    }
+
+    .message-content a:hover {
+      border-bottom-style: solid;
+    }
+
+    /* Header logo animation */
+    .logo svg {
+      transition: transform 0.3s ease;
+    }
+
+    .logo:hover svg {
+      transform: rotate(10deg);
+    }
+
+    /* Keyboard shortcut hints */
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      font-size: 11px;
+      font-family: inherit;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      box-shadow: 0 1px 0 var(--border);
+    }
+
+
   </style>
 </head>
 <body>
