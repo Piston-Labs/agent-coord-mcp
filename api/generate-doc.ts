@@ -1,191 +1,75 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
+
+const GENERATED_DOCS_KEY = 'agent-coord:generated-docs';
 
 /**
- * Piston Labs Document Generation API
+ * Document Generation API for Piston Labs
  * 
- * Generates sales materials, pitches, and documentation from templates + context
+ * POST /api/generate-doc - Generate a sales document
+ * GET /api/generate-doc - List generated documents
  * 
- * POST /api/generate-doc
- * {
- *   type: 'pitch' | 'proposal' | 'executive-summary' | 'technical-brief' | 'objection-responses',
- *   target: 'shop-owner' | 'investor' | 'partner' | 'developer',
- *   customization?: { shopName, ownerName, specificNeeds, ... }
- * }
+ * Note: Actual Google Drive integration requires local execution.
+ * This API creates document requests that can be fulfilled by claude-desktop.
  */
 
-// Document templates
-const TEMPLATES = {
-  pitch: {
-    'shop-owner': {
-      title: 'Piston Labs - Connected Vehicle Platform for {shopName}',
-      sections: [
-        {
-          heading: 'The Challenge You Face',
-          content: `{ownerName}, you're losing 60% of customers after their first visit - not because of poor service, but because you have no way to stay connected between appointments.
+interface DocRequest {
+  id: string;
+  type: 'pitch_deck' | 'one_pager' | 'shop_brief' | 'investor_brief' | 'technical_brief';
+  target: 'shop-owner' | 'investor' | 'partner' | 'internal';
+  prompt: string;
+  customization?: {
+    shopName?: string;
+    ownerName?: string;
+    location?: string;
+    painPoints?: string[];
+    features?: string[];
+  };
+  status: 'pending' | 'generating' | 'completed' | 'failed';
+  requestedBy: string;
+  requestedAt: string;
+  completedAt?: string;
+  result?: {
+    docUrl?: string;
+    docId?: string;
+    title?: string;
+    error?: string;
+  };
+}
 
-Dealers dominate with connected car data. They know when a customer's oil change is due. They send automated reminders. They make scheduling easy. And customers go back to them - even though your prices are better.`
-        },
-        {
-          heading: 'Our Solution',
-          content: `Piston Labs gives you the same connected vehicle capabilities that dealers have:
-
-1. **OBD-II Telemetry Device** - Plugs into customer vehicles, streams real-time data
-2. **Smart Reminders** - "You've driven 4,800 miles since your last oil change" (not arbitrary 6-month reminders)
-3. **One-Tap Scheduling** - Customer taps notification, appointment lands in your calendar
-
-The VIN connects everything. When you service a vehicle and upload the repair order, our system automatically links the customer, their device, their vehicle, and your shop.`
-        },
-        {
-          heading: 'For {shopName}',
-          content: `**Free Tier (Start Today):**
-- Dashboard to manage customer relationships
-- PDF repair order upload (auto-parses VIN)
-- Customer profiles with service history
-
-**Paid Tier (When Ready):**
-- Calendar scheduling integration
-- Automated service reminders
-- Contextual promotion engine
-
-{specificNeeds}`
-        },
-        {
-          heading: 'Next Steps',
-          content: `1. Sign up for free dashboard (5 minutes)
-2. Upload a few repair orders to see the system work
-3. We'll help you promote devices to your best customers
-4. Watch retention improve as customers stay connected
-
-Ready to stop losing customers to dealers?`
-        }
-      ]
-    },
-    'investor': {
-      title: 'Piston Labs - Investment Overview',
-      sections: [
-        {
-          heading: 'The Opportunity',
-          content: `**$130B automotive aftermarket industry**
-**250,000+ independent repair shops in the U.S.**
-**Zero connected vehicle solutions for independent shops**
-
-Independent shops lose 60% of customers after their first visit. Dealers win with connected car technology. We're leveling the playing field.`
-        },
-        {
-          heading: 'Our Solution',
-          content: `Three components working together:
-
-1. **OBD-II Telemetry Devices** - Real-time vehicle data
-2. **AWS Cloud Infrastructure** - Scalable, proven, operational
-3. **Shop Dashboard** - Free CRM driving device adoption
-
-The VIN-based data model is simple but powerful - it connects consumers, vehicles, shops, and service history without complex integrations.`
-        },
-        {
-          heading: 'Traction',
-          content: `**Technical Infrastructure: Operational**
-- 3 active devices transmitting real-time data
-- AWS IoT Core, Lambda, multi-database architecture
-- <100ms processing, 0% error rate
-- Designed for 1,000+ devices
-
-**This proves we can execute.**`
-        },
-        {
-          heading: 'The Ask',
-          content: `Seed round to fund:
-- Product development (Phase 2 automation features)
-- Beta shop onboarding (5-10 local shops)
-- Consumer acquisition (device subsidies)
-- Team expansion (2 engineers, 1 sales)
-
-**18-month target:** 100 devices, 50 shops, product-market fit signals`
-        }
-      ]
-    }
+// Document type templates (summaries for quick generation)
+const DOC_TEMPLATES = {
+  pitch_deck: {
+    name: 'Pitch Deck',
+    sections: ['Problem', 'Solution', 'Market', 'Product', 'Team', 'Traction', 'Ask'],
+    targetLength: '10-15 slides'
   },
-  'objection-responses': {
-    'shop-owner': {
-      title: 'Common Questions & Answers',
-      sections: [
-        {
-          heading: '"My customers won\'t use an app"',
-          content: `**Reality:** They don't have to. The device works automatically. Customers just get a text/push notification when service is due. One tap to schedule. No app required for basic functionality.
-
-**Evidence:** 78% of consumers prefer text-based appointment reminders over phone calls.`
-        },
-        {
-          heading: '"This sounds expensive"',
-          content: `**Reality:** The dashboard is completely free. Forever. You only pay for premium features like calendar scheduling when you're ready.
-
-**ROI:** If just ONE customer comes back because of a smart reminder, the device pays for itself. Average repair order is $350+.`
-        },
-        {
-          heading: '"I don\'t have time for this"',
-          content: `**Reality:** This SAVES you time. No more phone tag for scheduling. No more manual reminder calls. The system automates customer retention.
-
-**Setup:** 5 minutes to create account. Drag-and-drop PDF upload. We handle the rest.`
-        },
-        {
-          heading: '"How is this different from ShopGenie/Tekmetric?"',
-          content: `**Key difference:** We have the device. They don't.
-
-ShopGenie and Tekmetric are great shop management tools. We integrate with them - we don't replace them. But they can't tell you when a customer has driven 5,000 miles. We can.`
-        },
-        {
-          heading: '"What about data privacy?"',
-          content: `**Our approach:**
-- Customer owns their data
-- Shop sees only vehicles they've serviced
-- No selling data to third parties
-- Full encryption (TLS + at-rest)
-- Compliant with privacy regulations
-
-Customers choose to share data with their preferred shop. That's it.`
-        }
-      ]
-    }
+  one_pager: {
+    name: 'Executive Summary',
+    sections: ['Problem', 'Solution', 'Market Opportunity', 'Business Model', 'Team', 'Ask'],
+    targetLength: '1 page'
   },
-  'executive-summary': {
-    'investor': {
-      title: 'Piston Labs - Executive Summary',
-      sections: [
-        {
-          heading: 'One-Line Pitch',
-          content: `Piston Labs builds the connected vehicle ecosystem for independent automotive shops - giving them the same competitive advantage that dealers have.`
-        },
-        {
-          heading: 'The Problem',
-          content: `Independent shops lose 60% of customers after their first visit. Dealers win with connected car data and automated retention. $130B industry, zero solutions for independents.`
-        },
-        {
-          heading: 'Our Solution',
-          content: `OBD-II device + cloud platform + shop dashboard. VIN-based data model connects everything automatically. Free tier drives adoption, paid tier monetizes.`
-        },
-        {
-          heading: 'Traction',
-          content: `Infrastructure operational. 3 devices, <100ms Lambda, 0% errors. Ready for beta shops.`
-        },
-        {
-          heading: 'Team',
-          content: `Tyler Porras (CEO) - 80% retention at Era Auto. Ryan Morris (CTO) - Dashboard development. Plus sales, hardware, and content founding team.`
-        },
-        {
-          heading: 'Ask',
-          content: `Seed funding for Phase 2 features, beta shop onboarding, and team expansion.`
-        }
-      ]
-    }
+  shop_brief: {
+    name: 'Shop Owner Brief',
+    sections: ['Your Problem', 'Our Solution', 'How It Works', 'What You Get', 'Next Steps'],
+    targetLength: '2 pages'
+  },
+  investor_brief: {
+    name: 'Investor Brief',
+    sections: ['Executive Summary', 'Market', 'Product', 'Traction', 'Team', 'Financials', 'Ask'],
+    targetLength: '3-5 pages'
+  },
+  technical_brief: {
+    name: 'Technical Brief',
+    sections: ['Architecture', 'Infrastructure', 'Data Flow', 'Security', 'Scalability'],
+    targetLength: '5-10 pages'
   }
 };
-
-function fillTemplate(template: string, vars: Record<string, string>): string {
-  let result = template;
-  for (const [key, value] of Object.entries(vars)) {
-    result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), value || `[${key}]`);
-  }
-  return result;
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -196,80 +80,302 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).end();
   }
 
-  // GET: List available templates
-  if (req.method === 'GET') {
-    const available = Object.entries(TEMPLATES).map(([type, targets]) => ({
-      type,
-      targets: Object.keys(targets)
-    }));
-    return res.json({
-      templates: available,
-      usage: 'POST /api/generate-doc with { type, target, customization }'
-    });
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   try {
-    const { type, target, customization = {} } = req.body || {};
+    // GET: List document requests or get templates
+    if (req.method === 'GET') {
+      const { action, status } = req.query;
 
-    if (!type || !target) {
-      return res.status(400).json({ 
-        error: 'type and target required',
-        available: Object.entries(TEMPLATES).map(([t, targets]) => ({
-          type: t,
-          targets: Object.keys(targets)
-        }))
+      // Get available templates
+      if (action === 'templates') {
+        return res.json({ templates: DOC_TEMPLATES });
+      }
+
+      // List document requests
+      const docsRaw = await redis.hgetall(GENERATED_DOCS_KEY) || {};
+      let docs: DocRequest[] = Object.values(docsRaw).map((d: unknown) =>
+        typeof d === 'string' ? JSON.parse(d) : d
+      ) as DocRequest[];
+
+      // Filter by status if provided
+      if (status && typeof status === 'string') {
+        docs = docs.filter(d => d.status === status);
+      }
+
+      // Sort by request time, newest first
+      docs.sort((a, b) => new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime());
+
+      return res.json({
+        docs,
+        count: docs.length,
+        pending: docs.filter(d => d.status === 'pending').length
       });
     }
 
-    const templateType = TEMPLATES[type as keyof typeof TEMPLATES];
-    if (!templateType) {
-      return res.status(404).json({ error: `Template type '${type}' not found` });
+    // POST: Create document request
+    if (req.method === 'POST') {
+      let body: any;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
+
+      const {
+        type = 'pitch_deck',
+        target = 'shop-owner',
+        prompt,
+        customization,
+        requestedBy = 'unknown'
+      } = body;
+
+      if (!prompt) {
+        return res.status(400).json({ error: 'prompt is required' });
+      }
+
+      // Validate type
+      if (!DOC_TEMPLATES[type as keyof typeof DOC_TEMPLATES]) {
+        return res.status(400).json({
+          error: `Invalid type: ${type}`,
+          valid: Object.keys(DOC_TEMPLATES)
+        });
+      }
+
+      const docRequest: DocRequest = {
+        id: `doc-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`,
+        type,
+        target,
+        prompt,
+        customization,
+        status: 'pending',
+        requestedBy,
+        requestedAt: new Date().toISOString()
+      };
+
+      await redis.hset(GENERATED_DOCS_KEY, { [docRequest.id]: JSON.stringify(docRequest) });
+
+      // Generate document content immediately (simplified version)
+      const template = DOC_TEMPLATES[type as keyof typeof DOC_TEMPLATES];
+      const content = generateDocumentContent(docRequest, template);
+
+      // Update with generated content
+      docRequest.status = 'completed';
+      docRequest.completedAt = new Date().toISOString();
+      docRequest.result = {
+        title: `${template.name} - ${customization?.shopName || 'Piston Labs'}`,
+        docId: docRequest.id
+      };
+
+      await redis.hset(GENERATED_DOCS_KEY, { [docRequest.id]: JSON.stringify(docRequest) });
+
+      return res.json({
+        success: true,
+        docRequest,
+        content,
+        note: 'Document content generated. For Google Drive upload, use claude-desktop with local credentials.'
+      });
     }
 
-    const template = templateType[target as keyof typeof templateType];
-    if (!template) {
-      return res.status(404).json({ error: `Target '${target}' not found for type '${type}'` });
-    }
-
-    // Default customization values
-    const vars: Record<string, string> = {
-      shopName: customization.shopName || 'Your Shop',
-      ownerName: customization.ownerName || 'Shop Owner',
-      specificNeeds: customization.specificNeeds || '',
-      ...customization
-    };
-
-    // Generate document
-    const document = {
-      title: fillTemplate(template.title, vars),
-      generatedAt: new Date().toISOString(),
-      type,
-      target,
-      sections: template.sections.map(section => ({
-        heading: fillTemplate(section.heading, vars),
-        content: fillTemplate(section.content, vars)
-      }))
-    };
-
-    // Generate markdown version
-    let markdown = `# ${document.title}\n\n`;
-    markdown += `*Generated: ${new Date().toLocaleString()}*\n\n---\n\n`;
-    for (const section of document.sections) {
-      markdown += `## ${section.heading}\n\n${section.content}\n\n`;
-    }
-
-    return res.json({
-      success: true,
-      document,
-      markdown,
-      wordCount: markdown.split(/\s+/).length
-    });
-
+    return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    return res.status(500).json({ error: String(error) });
+    console.error('Generate doc error:', error);
+    return res.status(500).json({ error: 'Server error', details: String(error) });
   }
+}
+
+function generateDocumentContent(request: DocRequest, template: typeof DOC_TEMPLATES.pitch_deck): string {
+  const { customization, target, prompt } = request;
+  const shopName = customization?.shopName || 'Your Shop';
+  const ownerName = customization?.ownerName || 'Shop Owner';
+  const location = customization?.location || '';
+
+  // Generate content based on type and target
+  let content = `# ${template.name}\n\n`;
+  content += `**Prepared for:** ${shopName}${location ? ` (${location})` : ''}\n`;
+  content += `**Date:** ${new Date().toLocaleDateString()}\n\n`;
+  content += `---\n\n`;
+
+  if (request.type === 'shop_brief' || target === 'shop-owner') {
+    content += generateShopContent(shopName, ownerName, customization?.painPoints || []);
+  } else if (request.type === 'investor_brief' || target === 'investor') {
+    content += generateInvestorContent();
+  } else if (request.type === 'technical_brief') {
+    content += generateTechnicalContent();
+  } else {
+    content += generatePitchContent(shopName, target);
+  }
+
+  return content;
+}
+
+function generateShopContent(shopName: string, ownerName: string, painPoints: string[]): string {
+  return `## The Problem
+
+**60% of customers never return** after their first visit to an independent repair shop. Not because of poor service—because there's no way to stay connected between appointments.
+
+Dealers dominate with connected car data. They know when your customers need service before you do.
+
+## Our Solution
+
+**Piston Labs** gives you the same competitive advantage dealers have: real-time vehicle data and automated customer retention.
+
+### How It Works
+
+1. **Customer gets our OBD-II device** (you promote it, we fulfill)
+2. **Device streams real-time data** (mileage, diagnostics, location)
+3. **Smart notifications** reach your customer: "You've driven 4,800 miles since your last oil change. Schedule with ${shopName}?"
+4. **One-tap scheduling** brings them back to you
+
+### What You Get (FREE)
+
+- **Dashboard** to view all your connected customers
+- **Automated reminders** based on actual mileage (not arbitrary time intervals)
+- **Customer retention** without manual outreach
+- **Competitive advantage** against dealers
+
+## Next Steps
+
+1. Sign up for free beta access
+2. We'll set you up in 15 minutes
+3. Start promoting devices to your best customers
+4. Watch retention improve
+
+**Ready to stop losing customers to dealers?**
+
+Contact: tyler@pistonlabs.com
+`;
+}
+
+function generateInvestorContent(): string {
+  return `## Executive Summary
+
+Piston Labs is building the **connected vehicle ecosystem for independent automotive shops**.
+
+### The Opportunity
+
+- **$130B** automotive aftermarket industry
+- **250,000+** independent repair shops in the U.S.
+- **60%** customer loss rate (industry average)
+- **Zero** existing solutions connect vehicle telemetry to independent shops
+
+### Our Solution
+
+Three components working together:
+1. **OBD-II Telemetry Device** - Plugs into any vehicle, streams real-time data
+2. **Cloud Platform** - AWS infrastructure processing data in real-time
+3. **Shop Dashboard** - Free CRM where shops manage customer relationships
+
+### Traction
+
+- ✅ **3 devices** actively transmitting production data
+- ✅ **<100ms** Lambda processing time
+- ✅ **0%** error rate over 100+ events
+- ✅ **Architecture** designed for 1,000+ devices
+
+### The Team
+
+- **Tyler Porras** - CEO, founded Era Automotive (80% retention rate)
+- **Ryan Morris** - Technical Co-Founder, dashboard infrastructure
+- **Eli** - Sales Engineering
+- **Tom** - Hardware & IoT
+- **Marisa** - Content & Communications
+
+### The Ask
+
+Seed funding to:
+- Complete Phase 2 automation features
+- Onboard 10 beta shops
+- Launch paid tier (scheduling)
+
+**This is Piston Labs. We're building the future of automotive service.**
+`;
+}
+
+function generateTechnicalContent(): string {
+  return `## Technical Architecture
+
+### Infrastructure Stack
+
+- **Devices:** Teltonika FMB920/FMM00A OBD-II trackers
+- **Connectivity:** Soracom cellular SIMs, MQTT over TLS
+- **Cloud:** AWS (IoT Core, Lambda, DynamoDB, S3, Timescale, Redshift)
+- **Security:** X.509 certificates, IAM policies, encryption at rest/transit
+
+### Data Flow
+
+\`\`\`
+Device → MQTT → AWS IoT Core → Lambda → S3 (archive)
+                                      → Timescale (real-time)
+                                      → Redshift (analytics)
+                                      → Supabase (app)
+\`\`\`
+
+### Performance Metrics
+
+- **Processing latency:** <100ms
+- **Error rate:** 0%
+- **Uptime:** 99.9%
+- **Data elements:** 41 AVL parameters mapped
+
+### Scalability
+
+- **Current:** 3 devices, 0.05 messages/second
+- **Tested:** 100 messages/second
+- **Designed for:** 1,000+ devices, 1,000 messages/second
+- **Cost per device:** ~$0.65/month (excluding cellular)
+
+### Security
+
+- X.509 certificate authentication per device
+- TLS 1.2+ for all connections
+- IAM policies with least privilege
+- Encryption at rest (S3, databases)
+- VPC isolation for sensitive resources
+`;
+}
+
+function generatePitchContent(shopName: string, target: string): string {
+  return `## The Problem
+
+Independent auto shops lose **60% of customers** after their first visit.
+
+Not because of poor service. Because they have no way to stay connected.
+
+## The Solution
+
+**Piston Labs** = Connected vehicle ecosystem for independent shops
+
+### Three Components
+
+1. **OBD-II Device** - Plugs into customer's vehicle
+2. **Cloud Platform** - Processes real-time telemetry
+3. **Shop Dashboard** - Free CRM for customer management
+
+### The Magic: VIN-Based Linking
+
+The Vehicle Identification Number connects:
+- Consumer ↔ Vehicle ↔ Shop ↔ Service History
+
+No complex integrations. It just works.
+
+## Why Now
+
+- Affordable professional-grade telemetry devices
+- Cheap cellular connectivity (Soracom, etc.)
+- Pennies-per-message cloud infrastructure
+- Shops desperate for retention tools
+- Dealers pushing connected car features
+
+## Traction
+
+- ✅ 3 devices transmitting production data
+- ✅ <100ms processing, 0% errors
+- ✅ Multi-database architecture operational
+- ✅ Team assembled and executing
+
+## The Ask
+
+Partner with us to revolutionize automotive service.
+
+**Contact:** tyler@pistonlabs.com
+`;
 }
