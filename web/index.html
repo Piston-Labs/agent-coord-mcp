@@ -2134,6 +2134,311 @@
     }
 
 
+    /* Enhanced Telemetry Styles */
+    .device-card {
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.15s;
+    }
+
+    .device-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .device-card.health-excellent { border-left-color: var(--success) !important; }
+    .device-card.health-good { border-left-color: #4ac969 !important; }
+    .device-card.health-warning { border-left-color: var(--warning) !important; }
+    .device-card.health-critical { border-left-color: var(--danger) !important; }
+
+    .device-health-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    .device-health-badge.warning { background: var(--warning); }
+    .device-health-badge.critical { background: var(--danger); animation: pulse-badge 1.5s infinite; }
+
+    @keyframes pulse-badge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(248, 81, 73, 0.4); }
+      50% { box-shadow: 0 0 0 6px rgba(248, 81, 73, 0); }
+    }
+
+    .device-mini-chart {
+      height: 24px;
+      display: flex;
+      align-items: flex-end;
+      gap: 1px;
+      padding: 4px 12px;
+      background: var(--bg-primary);
+      border-top: 1px solid var(--border);
+    }
+
+    .mini-chart-bar {
+      flex: 1;
+      background: var(--accent);
+      border-radius: 1px 1px 0 0;
+      opacity: 0.5;
+      min-height: 2px;
+      max-height: 20px;
+      transition: height 0.3s ease;
+    }
+
+    .mini-chart-bar:last-child {
+      opacity: 1;
+    }
+
+    .device-metrics {
+      position: relative;
+    }
+
+    .metric-icon {
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .metric-value {
+      font-variant-numeric: tabular-nums;
+      transition: color 0.3s ease;
+    }
+
+    .metric-trend {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      margin-left: 4px;
+    }
+
+    .metric-trend.up { color: var(--success); }
+    .metric-trend.down { color: var(--danger); }
+
+    /* Fleet summary enhancements */
+    .fleet-summary {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .fleet-stat {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 8px 16px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      min-width: 70px;
+      transition: transform 0.2s;
+    }
+
+    .fleet-stat:hover {
+      transform: translateY(-2px);
+    }
+
+    .fleet-stat-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-primary);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .fleet-stat.active .fleet-stat-value { color: var(--success); }
+    .fleet-stat.moving .fleet-stat-value { color: var(--accent); }
+    .fleet-stat.health .fleet-stat-value { color: var(--success); }
+
+    .fleet-stat-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    /* Health gauge enhancements */
+    .health-gauge {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .gauge-circle {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: conic-gradient(
+        var(--success) 0deg calc(var(--score) * 3.6deg),
+        var(--bg-tertiary) calc(var(--score) * 3.6deg) 360deg
+      );
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: background 0.5s ease;
+    }
+
+    .gauge-inner {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-score {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--text-primary);
+    }
+
+    .gauge-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    /* Breakdown bars */
+    .health-breakdown {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .breakdown-icon {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .breakdown-icon.excellent { background: rgba(63, 185, 80, 0.2); color: var(--success); }
+    .breakdown-icon.good { background: rgba(74, 201, 105, 0.2); color: #4ac969; }
+    .breakdown-icon.warning { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
+    .breakdown-icon.critical { background: rgba(248, 81, 73, 0.2); color: var(--danger); }
+
+    .breakdown-info {
+      flex: 1;
+    }
+
+    .breakdown-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .breakdown-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .breakdown-bar {
+      width: 80px;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .breakdown-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .breakdown-bar-fill.excellent { background: var(--success); }
+    .breakdown-bar-fill.good { background: #4ac969; }
+    .breakdown-bar-fill.warning { background: var(--warning); }
+    .breakdown-bar-fill.critical { background: var(--danger); }
+
+    /* Alerts styling */
+    .health-alerts {
+      padding: 12px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      margin: 12px;
+    }
+
+    .health-alerts-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .health-alerts-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .health-alerts-toggle {
+      font-size: 11px;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .no-alerts {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+
+    .no-alerts svg {
+      width: 20px;
+      height: 20px;
+      color: var(--success);
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      border-left: 3px solid var(--warning);
+    }
+
+    .alert-item.critical {
+      border-left-color: var(--danger);
+      background: rgba(248, 81, 73, 0.1);
+    }
+
+    .alert-icon {
+      font-size: 14px;
+    }
+
+    .alert-message {
+      flex: 1;
+    }
+
+    .alert-time {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+
     /* Roadmap Enhancements */
     .roadmap-stats {
       display: flex;
@@ -6871,27 +7176,46 @@
     
     // Start app - check auth first
     document.addEventListener('DOMContentLoaded', async () => {
+      console.log('[HUB] DOMContentLoaded fired');
       const loadingScreen = document.getElementById('loadingScreen');
       
+      // Safety timeout - hide loading screen after 5 seconds no matter what
+      const safetyTimeout = setTimeout(() => {
+        console.log('[HUB] Safety timeout - force hiding loading screen');
+        if (loadingScreen) loadingScreen.style.display = 'none';
+      }, 5000);
+      
       try {
+        console.log('[HUB] Setting up forms...');
         setupLoginForm();
         setupRegisterForm();
         setupAuthToggle();
+        console.log('[HUB] Forms setup complete');
 
+        console.log('[HUB] Checking session...');
         const authenticated = await checkSession();
+        console.log('[HUB] Session check result:', authenticated);
         
-        // Hide loading screen once auth check is done
+        // Clear safety timeout since we got here
+        clearTimeout(safetyTimeout);
+        
+        // Hide loading screen
+        console.log('[HUB] Hiding loading screen');
         if (loadingScreen) loadingScreen.style.display = 'none';
         
         if (authenticated) {
+          console.log('[HUB] User authenticated, initializing...');
           isAuthenticated = true;
           hideLoginModal();
           await init();
+          console.log('[HUB] Init complete');
         } else {
+          console.log('[HUB] Not authenticated, showing login');
           showLoginModal();
         }
       } catch (error) {
-        console.error('Startup error:', error);
+        console.error('[HUB] Startup error:', error);
+        clearTimeout(safetyTimeout);
         // Always hide loading screen even on error
         if (loadingScreen) loadingScreen.style.display = 'none';
         // Show login as fallback
