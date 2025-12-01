@@ -412,6 +412,168 @@
     }
 
     /* Roadmap View */
+
+    /* Telemetry View */
+    .telemetry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .fleet-summary {
+      display: flex;
+      gap: 16px;
+    }
+
+    .fleet-stat {
+      text-align: center;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .fleet-stat.active { border-color: var(--success); }
+    .fleet-stat.moving { border-color: var(--accent); }
+
+    .fleet-stat-value {
+      display: block;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .fleet-stat.active .fleet-stat-value { color: var(--success); }
+    .fleet-stat.moving .fleet-stat-value { color: var(--accent); }
+
+    .fleet-stat-label {
+      display: block;
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .refresh-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 16px;
+      color: var(--text-primary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .refresh-btn:hover { border-color: var(--accent); }
+
+    .telemetry-grid {
+      flex: 1;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .device-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color 0.15s;
+    }
+
+    .device-card:hover { border-color: var(--accent); }
+
+    .device-card.ignition-on { border-left: 3px solid var(--success); }
+    .device-card.ignition-off { border-left: 3px solid var(--text-secondary); }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .device-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .device-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: var(--bg-tertiary);
+    }
+
+    .device-status.moving {
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+    }
+
+    .device-status.parked {
+      background: rgba(139, 148, 158, 0.15);
+      color: var(--text-secondary);
+    }
+
+    .device-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .device-metrics {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .metric {
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .metric-value.speed { color: var(--accent); }
+    .metric-value.battery-good { color: var(--success); }
+    .metric-value.battery-warn { color: var(--warning); }
+    .metric-value.battery-low { color: var(--danger); }
+
+    .metric-label {
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .device-vehicle {
+      padding: 8px 12px;
+      background: var(--bg-tertiary);
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .device-vin {
+      font-family: monospace;
+      color: var(--text-primary);
+    }
+
     .roadmap-filters {
       display: flex;
       gap: 10px;
@@ -1640,6 +1802,7 @@
         <div class="tabs">
           <button class="tab active" data-tab="chat" onclick="switchTab('chat')">Chat</button>
           <button class="tab" data-tab="roadmap" onclick="switchTab('roadmap')">Roadmap</button>
+          <button class="tab" data-tab="telemetry" onclick="switchTab('telemetry')">Telemetry</button>
         </div>
         <span id="messageCount">0 messages</span>
       </div>
@@ -1707,7 +1870,42 @@
       </div>
     </div>
 
+    
     <!-- Context Panel - Enhanced -->
+
+      <!-- Telemetry View -->
+      <div class="tab-content" id="telemetryView">
+        <div class="telemetry-header">
+          <div class="fleet-summary" id="fleetSummary">
+            <div class="fleet-stat">
+              <span class="fleet-stat-value" id="fleetTotal">0</span>
+              <span class="fleet-stat-label">Total</span>
+            </div>
+            <div class="fleet-stat active">
+              <span class="fleet-stat-value" id="fleetActive">0</span>
+              <span class="fleet-stat-label">Active</span>
+            </div>
+            <div class="fleet-stat moving">
+              <span class="fleet-stat-value" id="fleetMoving">0</span>
+              <span class="fleet-stat-label">Moving</span>
+            </div>
+            <div class="fleet-stat">
+              <span class="fleet-stat-value" id="fleetAvgBattery">--</span>
+              <span class="fleet-stat-label">Avg Battery</span>
+            </div>
+          </div>
+          <button class="refresh-btn" onclick="fetchTelemetry()">Refresh</button>
+        </div>
+        <div class="telemetry-grid" id="telemetryGrid">
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            <p>Loading telemetry data...</p>
+          </div>
+        </div>
+      </div>
     <div class="panel">
       <div class="panel-header">
         <span>Active Context</span>
@@ -2196,7 +2394,7 @@
 
         // Number keys for tabs (without modifier)
         if (e.key >= '1' && e.key <= '3' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          const tabs = ['chat', 'roadmap', 'messages'];
+          const tabs = ['chat', 'roadmap', 'telemetry', 'messages'];
           const idx = parseInt(e.key) - 1;
           if (tabs[idx]) switchTab(tabs[idx]);
         }
@@ -2806,6 +3004,11 @@
         fetchTeam();
         fetchRoadmap();
       }
+
+      // Fetch telemetry data when switching to telemetry tab
+      if (tabName === 'telemetry') {
+        fetchTelemetry();
+      }
     }
 
     async function fetchTeam() {
@@ -2829,6 +3032,122 @@
         console.error('Failed to fetch team:', err);
       }
     }
+
+
+    // === TELEMETRY FUNCTIONS ===
+
+    let telemetryRefreshInterval = null;
+
+    async function fetchTelemetry() {
+      try {
+        const res = await fetch(API_BASE + '/telemetry');
+        const data = await res.json();
+
+        // Update fleet summary
+        if (data.fleet) {
+          document.getElementById('fleetTotal').textContent = data.fleet.total;
+          document.getElementById('fleetActive').textContent = data.fleet.active;
+          document.getElementById('fleetMoving').textContent = data.fleet.moving;
+          document.getElementById('fleetAvgBattery').textContent = data.fleet.avgBatteryVoltage + 'V';
+        }
+
+        // Render device cards
+        renderTelemetryGrid(data.devices || []);
+
+        // Start auto-refresh if not already running
+        if (!telemetryRefreshInterval) {
+          telemetryRefreshInterval = setInterval(fetchTelemetry, 10000); // Refresh every 10s
+        }
+      } catch (err) {
+        console.error('Failed to fetch telemetry:', err);
+        document.getElementById('telemetryGrid').innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="m15 9-6 6M9 9l6 6"/>
+            </svg>
+            <p>Failed to load telemetry data</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderTelemetryGrid(devices) {
+      const grid = document.getElementById('telemetryGrid');
+
+      if (!devices || devices.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            <p>No devices found</p>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = devices.map(device => renderDeviceCard(device)).join('');
+    }
+
+    function renderDeviceCard(device) {
+      const isMoving = device.status?.movement;
+      const ignitionOn = device.status?.ignition;
+      const batteryClass = getBatteryClass(device.metrics?.batteryVoltage);
+      const vehicle = device.vehicleInfo || {};
+      const vehicleStr = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ');
+
+      return `
+        <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'}">
+          <div class="device-header">
+            <span class="device-name">${device.deviceName || 'Unknown'}</span>
+            <span class="device-status ${isMoving ? 'moving' : 'parked'}">
+              <span class="device-status-dot"></span>
+              ${isMoving ? 'Moving' : 'Parked'}
+            </span>
+          </div>
+          <div class="device-metrics">
+            <div class="metric">
+              <span class="metric-value speed">${device.metrics?.speed || 0}</span>
+              <span class="metric-label">km/h</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value ${batteryClass}">${device.metrics?.batteryVoltage || '--'}V</span>
+              <span class="metric-label">Battery</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">${device.metrics?.externalVoltage || '--'}V</span>
+              <span class="metric-label">External</span>
+            </div>
+            <div class="metric">
+              <span class="metric-value">${formatOdometer(device.metrics?.odometer)}</span>
+              <span class="metric-label">Odometer</span>
+            </div>
+          </div>
+          ${vehicle.vin || vehicleStr ? `
+          <div class="device-vehicle">
+            <span>${vehicleStr || 'Unknown Vehicle'}</span>
+            ${vehicle.vin ? `<span class="device-vin">${vehicle.vin.slice(-6)}</span>` : ''}
+          </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function getBatteryClass(voltage) {
+      if (!voltage) return '';
+      if (voltage >= 12.4) return 'battery-good';
+      if (voltage >= 11.8) return 'battery-warn';
+      return 'battery-low';
+    }
+
+    function formatOdometer(km) {
+      if (!km) return '--';
+      if (km >= 1000) return Math.round(km / 1000) + 'k km';
+      return Math.round(km) + ' km';
+    }
+
 
     async function fetchRoadmap() {
       try {
