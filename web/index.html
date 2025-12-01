@@ -1801,6 +1801,47 @@
       border-color: var(--accent);
     }
 
+
+    /* Drag and Drop */
+    .roadmap-item[draggable="true"] {
+      cursor: grab;
+    }
+    
+    .roadmap-item[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    
+    .roadmap-item.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
+    
+    .roadmap-column.drag-over {
+      background: rgba(88, 166, 255, 0.1);
+      border: 2px dashed var(--accent);
+    }
+    
+    .column-items {
+      min-height: 100px;
+      transition: background 0.2s ease;
+    }
+    
+    .column-items.drag-over {
+      background: rgba(88, 166, 255, 0.05);
+    }
+    
+    .drop-indicator {
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 4px 0;
+      display: none;
+    }
+    
+    .drop-indicator.active {
+      display: block;
+    }
+
     .roadmap-filters {
       display: flex;
       gap: 10px;
@@ -2555,6 +2596,47 @@
       border-color: var(--accent);
     }
 
+
+    /* Drag and Drop */
+    .roadmap-item[draggable="true"] {
+      cursor: grab;
+    }
+    
+    .roadmap-item[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    
+    .roadmap-item.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
+    
+    .roadmap-column.drag-over {
+      background: rgba(88, 166, 255, 0.1);
+      border: 2px dashed var(--accent);
+    }
+    
+    .column-items {
+      min-height: 100px;
+      transition: background 0.2s ease;
+    }
+    
+    .column-items.drag-over {
+      background: rgba(88, 166, 255, 0.05);
+    }
+    
+    .drop-indicator {
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 4px 0;
+      display: none;
+    }
+    
+    .drop-indicator.active {
+      display: block;
+    }
+
     .roadmap-filters {
         flex-direction: column;
         gap: 8px;
@@ -3147,6 +3229,47 @@
       background: var(--accent);
       color: white;
       border-color: var(--accent);
+    }
+
+
+    /* Drag and Drop */
+    .roadmap-item[draggable="true"] {
+      cursor: grab;
+    }
+    
+    .roadmap-item[draggable="true"]:active {
+      cursor: grabbing;
+    }
+    
+    .roadmap-item.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
+    
+    .roadmap-column.drag-over {
+      background: rgba(88, 166, 255, 0.1);
+      border: 2px dashed var(--accent);
+    }
+    
+    .column-items {
+      min-height: 100px;
+      transition: background 0.2s ease;
+    }
+    
+    .column-items.drag-over {
+      background: rgba(88, 166, 255, 0.05);
+    }
+    
+    .drop-indicator {
+      height: 3px;
+      background: var(--accent);
+      border-radius: 2px;
+      margin: 4px 0;
+      display: none;
+    }
+    
+    .drop-indicator.active {
+      display: block;
     }
 
     .roadmap-filters {
@@ -5138,6 +5261,8 @@
       if (tabName === 'roadmap') {
         fetchTeam();
         fetchRoadmap();
+        // Initialize drag-drop after a brief delay for DOM update
+        setTimeout(initDragDrop, 100);
       }
 
       // Fetch telemetry data when switching to telemetry tab
@@ -5848,7 +5973,7 @@
           ` : '';
 
           return `
-            <div class="roadmap-item" onclick="showItemDetails('${item.id}')">
+            <div class="roadmap-item" draggable="true" data-item-id="${item.id}" onclick="showItemDetails('${item.id}')" ondragstart="handleDragStart(event, '${item.id}')" ondragend="handleDragEnd(event)">
               <div class="roadmap-item-title">${escapeHtml(item.title)}</div>
               ${item.description ? `<div class="roadmap-item-description">${escapeHtml(item.description)}</div>` : ''}
               <div class="roadmap-item-meta">
@@ -5860,6 +5985,59 @@
             </div>
           `;
         }).join('');
+      });
+    }
+
+    // Drag and Drop functions
+    let draggedItemId = null;
+    
+    function handleDragStart(e, itemId) {
+      draggedItemId = itemId;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', itemId);
+    }
+    
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+      draggedItemId = null;
+      // Remove all drag-over classes
+      document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    }
+    
+    function handleDragOver(e, status) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      const column = e.currentTarget;
+      column.classList.add('drag-over');
+    }
+    
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+    
+    async function handleDrop(e, newStatus) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      
+      const itemId = e.dataTransfer.getData('text/plain') || draggedItemId;
+      if (!itemId) return;
+      
+      await moveRoadmapItem(itemId, newStatus);
+    }
+    
+    // Initialize drag-drop on columns after DOM ready
+    function initDragDrop() {
+      const columns = document.querySelectorAll('.roadmap-column');
+      columns.forEach(col => {
+        const status = col.dataset.status;
+        const itemsContainer = col.querySelector('.column-items');
+        
+        if (itemsContainer) {
+          itemsContainer.addEventListener('dragover', (e) => handleDragOver(e, status));
+          itemsContainer.addEventListener('dragleave', handleDragLeave);
+          itemsContainer.addEventListener('drop', (e) => handleDrop(e, status));
+        }
       });
     }
 
