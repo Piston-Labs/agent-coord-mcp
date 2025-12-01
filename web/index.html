@@ -7500,6 +7500,7 @@
 
 
     function renderTelemetryGrid(devices) {
+      console.log('[TELEMETRY] renderTelemetryGrid called with', devices?.length || 0, 'devices');
       const grid = document.getElementById('telemetryGrid');
       currentTelemetryData = devices || [];
 
@@ -7530,8 +7531,13 @@
     let showGridView = false;
     
     function renderDeviceList(devices) {
+      console.log('[DEVICELIST] renderDeviceList called with', devices?.length || 0, 'devices');
       const tbody = document.getElementById('deviceListBody');
-      if (!tbody) return;
+      if (!tbody) {
+        console.error('[DEVICELIST] tbody not found!');
+        return;
+      }
+      console.log('[DEVICELIST] tbody found, rendering...');
       
       if (!devices || devices.length === 0) {
         tbody.innerHTML = '<tr><td colspan="8" class="loading-row">No devices enrolled</td></tr>';
