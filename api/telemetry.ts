@@ -53,6 +53,7 @@ interface TelemetryData {
     movement: boolean;
     gpsValid: boolean;
     charging: boolean;
+    offline?: boolean;
   };
   connectivity: {
     signalStrength: number;
@@ -93,17 +94,38 @@ const THRESHOLDS = {
 
 // REAL Piston Labs Fleet - Verified Active Teltonika Devices from AWS IoT Core
 // Source: teltonika-context-system/context/technical/devices.md
-// Last verified: November 26, 2025
+// Last verified: December 1, 2025
+//
+// Device status based on actual AWS S3 telemetry data:
+// - ACTIVE: Toyota, Lexus NX, Beta Tester (Pug) - transmitting live
+// - OFFLINE: Test Device (since Nov 15), OBD2 Emulator (since Nov 26)
 //
 // NOTE: Only these 5 devices are verified active in production.
 // Do NOT add fake test data from gran-autismo or other sources.
-const DEVICE_PROFILES: Record<string, { name: string; description?: string; vin?: string; make?: string; model?: string; year?: number; owner?: string; baseLat: number; baseLng: number }> = {
+
+interface DeviceProfile {
+  name: string;
+  description?: string;
+  vin?: string;
+  make?: string;
+  model?: string;
+  year?: number;
+  owner?: string;
+  baseLat: number;
+  baseLng: number;
+  isActive: boolean;  // true = transmitting, false = offline
+  lastKnownDate?: string;  // ISO date of last transmission (for offline devices)
+}
+
+const DEVICE_PROFILES: Record<string, DeviceProfile> = {
   '862464068525406': {
     name: 'Test Device',
     description: 'Workbench/temporary vehicles - testing before production deployment',
     owner: 'Piston Labs',
     baseLat: 33.4484,
-    baseLng: -112.0740
+    baseLng: -112.0740,
+    isActive: false,
+    lastKnownDate: '2025-11-15T00:00:00Z'  // Offline since Nov 15
   },
   '862464068511489': {
     name: 'Toyota',
@@ -111,7 +133,8 @@ const DEVICE_PROFILES: Record<string, { name: string; description?: string; vin?
     make: 'Toyota',
     year: 2008,
     baseLat: 33.4484,
-    baseLng: -112.0740
+    baseLng: -112.0740,
+    isActive: true  // Live - transmitting now
   },
   '862464068525638': {
     name: 'Lexus NX',
@@ -120,21 +143,25 @@ const DEVICE_PROFILES: Record<string, { name: string; description?: string; vin?
     model: 'NX',
     year: 2015,
     baseLat: 33.4484,
-    baseLng: -112.0740
+    baseLng: -112.0740,
+    isActive: true  // Live - transmitting now
   },
   '862464068597504': {
     name: 'OBD2 Emulator',
     description: 'Feature development with OBD2 emulator - testing new telemetry parameters',
     owner: 'Tom (Hardware & IoT)',
     baseLat: 33.4484,
-    baseLng: -112.0740
+    baseLng: -112.0740,
+    isActive: false,
+    lastKnownDate: '2025-11-26T00:00:00Z'  // Offline since Nov 26
   },
   '862464068558217': {
     name: 'Beta Tester (Pug)',
     description: 'Beta testing - real-world driving data collection',
     owner: 'Pug',
     baseLat: 33.4484,
-    baseLng: -112.0740
+    baseLng: -112.0740,
+    isActive: true  // Live - transmitting now
   }
 };
 
@@ -258,17 +285,76 @@ function generateAlerts(telemetry: TelemetryData): TelemetryAlert[] {
   return alerts;
 }
 
-// Generate realistic telemetry
+// Generate realistic telemetry for ACTIVE devices, static data for OFFLINE devices
 function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): TelemetryData {
   const profile = DEVICE_PROFILES[imei] || {
     name: `Device ${imei.slice(-4)}`,
     baseLat: 39.8283,
-    baseLng: -98.5795
+    baseLng: -98.5795,
+    isActive: false
   };
 
   const now = new Date();
-  const hour = now.getHours();
 
+  // Handle OFFLINE devices - show static last known data
+  if (!profile.isActive) {
+    const lastSeenDate = profile.lastKnownDate || now.toISOString();
+
+    // Use stored data if available, otherwise generate static baseline
+    const storedOdometer = stored?.metrics?.odometer || Math.floor(Math.random() * 50000) + 10000;
+
+    const baseTelemetry = {
+      imei,
+      deviceName: profile.name,
+      vehicleInfo: {
+        vin: profile.vin,
+        make: profile.make,
+        model: profile.model,
+        year: profile.year
+      },
+      metrics: {
+        batteryVoltage: stored?.metrics?.batteryVoltage || 0,  // Unknown - device offline
+        externalVoltage: stored?.metrics?.externalVoltage || 0,
+        speed: 0,
+        odometer: storedOdometer,
+        fuelLevel: stored?.metrics?.fuelLevel,
+        engineRPM: 0,
+        coolantTemp: stored?.metrics?.coolantTemp
+      },
+      position: {
+        lat: stored?.position?.lat || profile.baseLat,
+        lng: stored?.position?.lng || profile.baseLng,
+        altitude: stored?.position?.altitude,
+        heading: stored?.position?.heading,
+        satellites: 0  // No GPS lock when offline
+      },
+      status: {
+        ignition: false,
+        movement: false,
+        gpsValid: false,
+        charging: false,
+        offline: true  // Flag this device as offline
+      },
+      connectivity: {
+        signalStrength: 0,  // No signal - offline
+        carrier: stored?.connectivity?.carrier,
+        lastSeen: lastSeenDate
+      },
+      timestamp: lastSeenDate  // Last known timestamp, not current
+    };
+
+    // Offline devices have degraded health score
+    const health = {
+      score: 0,
+      status: 'critical' as const,
+      issues: ['Device offline - no telemetry data']
+    };
+
+    return { ...baseTelemetry, health };
+  }
+
+  // Handle ACTIVE devices - generate live telemetry
+  const hour = now.getHours();
   const isRushHour = (hour >= 7 && hour <= 9) || (hour >= 16 && hour <= 18);
   const isNightTime = hour >= 22 || hour <= 5;
 
@@ -323,7 +409,8 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
       ignition: isIgnitionOn,
       movement: speed > 0,
       gpsValid: true,
-      charging: isIgnitionOn && batteryVoltage > 13.5
+      charging: isIgnitionOn && batteryVoltage > 13.5,
+      offline: false
     },
     connectivity: {
       signalStrength: Math.round(3 + Math.random() * 2),
@@ -416,8 +503,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Fleet summary with health
-      const activeDevices = allTelemetry.filter(t => t.status.ignition);
-      const movingDevices = allTelemetry.filter(t => t.status.movement);
+      const onlineDevices = allTelemetry.filter(t => !t.status.offline);
+      const offlineDevices = allTelemetry.filter(t => t.status.offline);
+      const activeDevices = onlineDevices.filter(t => t.status.ignition);
+      const movingDevices = onlineDevices.filter(t => t.status.movement);
       const avgBattery = allTelemetry.reduce((sum, t) => sum + t.metrics.batteryVoltage, 0) / allTelemetry.length;
       const avgSpeed = movingDevices.length > 0
         ? movingDevices.reduce((sum, t) => sum + t.metrics.speed, 0) / movingDevices.length
@@ -432,9 +521,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         timestamp: new Date().toISOString(),
         fleet: {
           total: allTelemetry.length,
+          online: onlineDevices.length,
+          offline: offlineDevices.length,
           active: activeDevices.length,
           moving: movingDevices.length,
-          parked: allTelemetry.length - movingDevices.length,
+          parked: onlineDevices.length - movingDevices.length,
           avgBatteryVoltage: Math.round(avgBattery * 10) / 10,
           avgSpeed: Math.round(avgSpeed),
           health: {

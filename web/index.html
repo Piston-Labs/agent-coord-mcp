@@ -505,11 +505,12 @@
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 8px;
-      overflow: hidden;
+      overflow: visible;
+      min-height: 180px;
     }
 
     .metrics-card-title {
-      padding: 10px 12px;
+      padding: 12px 14px;
       font-size: 12px;
       font-weight: 600;
       color: var(--text-secondary);
@@ -519,14 +520,14 @@
     }
 
     .metrics-card-content {
-      padding: 12px;
+      padding: 16px;
     }
 
     .metric-big {
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 700;
       color: var(--accent);
-      line-height: 1;
+      line-height: 1.2;
     }
 
     .metric-big.completion-rate {
@@ -2286,6 +2287,20 @@
     .device-status.parked {
       background: rgba(139, 148, 158, 0.15);
       color: var(--text-secondary);
+    }
+
+    .device-status.offline {
+      background: rgba(248, 81, 73, 0.15);
+      color: var(--danger);
+    }
+
+    .device-card.device-offline {
+      border-left: 4px solid var(--danger);
+    }
+
+    .live-dot.offline {
+      background: var(--danger);
+      animation: none;
     }
 
     .device-status-dot {
@@ -5173,7 +5188,7 @@
     .agent-card,
     .metrics-card {
       position: relative;
-      overflow: hidden;
+      overflow: visible;
     }
     
     .device-card {
@@ -7636,10 +7651,11 @@
         const vehicle = device.vehicleInfo || {};
         const vehicleStr = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ') || 'Unknown';
         const health = device.health || { score: 100, status: 'excellent' };
-        const isMoving = device.status?.movement;
+        const isDeviceOffline = device.status?.offline === true;
+        const isMoving = !isDeviceOffline && device.status?.movement;
         const lastSeen = device.connectivity?.lastSeen ? formatTimeAgo(new Date(device.connectivity.lastSeen)) : '--';
-        const statusClass = isMoving ? 'moving' : 'parked';
-        const statusText = isMoving ? 'Moving' : 'Parked';
+        const statusClass = isDeviceOffline ? 'offline' : (isMoving ? 'moving' : 'parked');
+        const statusText = isDeviceOffline ? 'Offline' : (isMoving ? 'Moving' : 'Parked');
         const speed = device.metrics?.speed || 0;
         const battery = device.metrics?.batteryVoltage || '--';
         const lat = device.position?.lat?.toFixed(4) || '--';
@@ -7699,14 +7715,15 @@
     }
 
     function renderDeviceCard(device) {
-      const isMoving = device.status?.movement;
-      const ignitionOn = device.status?.ignition;
-      const batteryClass = getBatteryClass(device.metrics?.batteryVoltage);
+      const isOffline = device.status?.offline === true;
+      const isMoving = !isOffline && device.status?.movement;
+      const ignitionOn = !isOffline && device.status?.ignition;
+      const batteryClass = isOffline ? '' : getBatteryClass(device.metrics?.batteryVoltage);
       const vehicle = device.vehicleInfo || {};
       const vehicleStr = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ');
       const health = device.health || { score: 100, status: 'excellent', issues: [] };
-      const healthStatus = health.status || 'excellent';
-      const healthIssue = health.issues?.[0] || 'All systems normal';
+      const healthStatus = isOffline ? 'critical' : (health.status || 'excellent');
+      const healthIssue = health.issues?.[0] || (isOffline ? 'Device offline' : 'All systems normal');
       const currentSpeed = device.metrics?.speed || 0;
       const speedHistory = device.speedHistory || Array(12).fill(0).map((_, i) =>
         Math.max(0, currentSpeed + (Math.random() - 0.5) * 20 - i * 2)
@@ -7724,23 +7741,28 @@
       const heading = device.position?.heading || 0;
       const satellites = device.position?.satellites || 0;
 
+      // Determine status text and class
+      const statusClass = isOffline ? 'offline' : (isMoving ? 'moving' : 'parked');
+      const statusText = isOffline ? 'Offline' : (isMoving ? 'Moving' : 'Parked');
+      const cardClass = isOffline ? 'device-offline' : (ignitionOn ? 'ignition-on' : 'ignition-off');
+
       return `
-        <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'} health-${healthStatus}" onclick="openDeviceModal('${device.imei}')" style="cursor:pointer">
+        <div class="device-card ${cardClass} health-${healthStatus}" onclick="openDeviceModal('${device.imei}')" style="cursor:pointer${isOffline ? ';opacity:0.7' : ''}">
           <div class="device-health-badge ${healthStatus === 'warning' ? 'warning' : healthStatus === 'critical' ? 'critical' : ''}"></div>
           <div class="device-header">
             <div class="device-title-row">
               <span class="device-name">${device.deviceName || 'Unknown'}</span>
               <span class="device-imei" title="IMEI">${device.imei}</span>
             </div>
-            <span class="device-status ${isMoving ? 'moving' : 'parked'}">
+            <span class="device-status ${statusClass}">
               <span class="device-status-dot"></span>
-              ${isMoving ? 'Moving' : 'Parked'}
+              ${statusText}
             </span>
           </div>
           <div class="device-live-indicator">
-            <span class="live-dot"></span>
+            <span class="live-dot${isOffline ? ' offline' : ''}"></span>
             <span>Last seen: ${lastSeenStr}</span>
-            <span class="signal-bars" title="${carrier} - ${signalBars}/5 bars">
+            <span class="signal-bars" title="${isOffline ? 'No signal - offline' : carrier + ' - ' + signalBars + '/5 bars'}">
               ${[1,2,3,4,5].map(i => '<span class="signal-bar ' + (i <= signalBars ? 'active' : '') + '"></span>').join('')}
             </span>
           </div>
