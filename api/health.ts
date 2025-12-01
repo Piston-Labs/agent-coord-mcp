@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     status: 'ok',
     timestamp: new Date().toISOString(),
     version: '0.1.0',
-    tools: 17
+    tools: 18
   };
 
   if (detailed !== 'true') {
@@ -38,12 +38,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       agentCount,
       chatLength,
       memoryCount,
-      taskCount
+      taskCount,
+      workflowRunCount,
+      handoffCount,
+      lockCount
     ] = await Promise.all([
       redis.hlen('agent-coord:agents'),
       redis.llen('agent-coord:group-chat'),
       redis.hlen('agent-coord:shared-memory'),
-      redis.hlen('agent-coord:tasks')
+      redis.hlen('agent-coord:tasks'),
+      redis.llen('agent-coord:workflow-runs'),
+      redis.llen('agent-coord:handoffs'),
+      redis.hlen('agent-coord:locks')
     ]);
 
     const redisLatency = Date.now() - startTime;
@@ -58,7 +64,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         agents: agentCount,
         chatMessages: chatLength,
         memories: memoryCount,
-        tasks: taskCount
+        tasks: taskCount,
+        workflowRuns: workflowRunCount,
+        handoffs: handoffCount,
+        activeLocks: lockCount
       },
       endpoints: {
         api: 'https://agent-coord-mcp.vercel.app/api',
@@ -73,7 +82,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Shared memory',
         'Context clusters',
         'Hot-start initialization',
-        'Fleet bridge (Teltonika/AWS)'
+        'Fleet bridge (Teltonika/AWS)',
+        'Collaboration workflows',
+        'Agent handoffs'
       ]
     });
   } catch (error) {
