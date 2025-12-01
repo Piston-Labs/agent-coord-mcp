@@ -9895,7 +9895,9 @@
       crmEditingShopId = null;
       document.getElementById('shopModalTitle').textContent = 'Add New Shop';
       document.getElementById('shopForm').reset();
-      document.getElementById('shopModal').style.display = 'flex';
+      // Show overlay and modal
+      document.getElementById('shopModalOverlay').style.display = 'flex';
+      document.getElementById('shopModal').style.display = 'block';
     }
 
     // Open edit shop modal
@@ -9936,6 +9938,7 @@
 
     // Close shop modal
     function closeShopModal() {
+      document.getElementById('shopModalOverlay').style.display = 'none';
       document.getElementById('shopModal').style.display = 'none';
       crmEditingShopId = null;
     }
@@ -10086,12 +10089,12 @@
     function openActivityModal(shopId) {
       document.getElementById('activityShopId').value = shopId;
       document.getElementById('activityForm').reset();
-      document.getElementById('activityModal').style.display = 'flex';
+      document.getElementById('activityModalOverlay').style.display = 'flex';
     }
 
     // Close activity modal
     function closeActivityModal() {
-      document.getElementById('activityModal').style.display = 'none';
+      document.getElementById('activityModalOverlay').style.display = 'none';
     }
 
     // Handle activity form submit
@@ -10100,13 +10103,20 @@
 
       const shopId = document.getElementById('activityShopId').value;
       const activityType = document.getElementById('activityType').value;
-      const activityContent = document.getElementById('activityContent').value;
+      const activitySummary = document.getElementById('activitySummary').value;
+      const activityNextSteps = document.getElementById('activityNextSteps').value;
 
-      logCrmActivity(shopId, activityType, activityContent);
+      // Combine summary and next steps
+      let content = activitySummary;
+      if (activityNextSteps) {
+        content += '\n\nNext Steps: ' + activityNextSteps;
+      }
+
+      logCrmActivity(shopId, activityType, content);
       closeActivityModal();
 
       // Refresh detail view if open
-      if (document.getElementById('shopDetailModal').style.display === 'flex') {
+      if (document.getElementById('shopDetailModal').style.display !== 'none') {
         renderShopActivities(shopId);
       }
     }
@@ -11574,7 +11584,7 @@
   </nav>
 
   <!-- CRM Add/Edit Shop Modal -->
-  <div class="crm-modal-overlay" id="shopModalOverlay" style="display: none;">
+  <div class="crm-modal-overlay" id="shopModalOverlay" style="display: none;" onclick="if(event.target === this) closeShopModal()">
     <div class="crm-modal" id="shopModal">
       <div class="crm-modal-header">
         <h3 id="shopModalTitle">Add New Shop</h3>
@@ -11748,7 +11758,7 @@
   </div>
 
   <!-- CRM Shop Detail Modal -->
-  <div class="crm-modal-overlay" id="shopDetailOverlay" style="display: none;">
+  <div class="crm-modal-overlay" id="shopDetailOverlay" style="display: none;" onclick="if(event.target === this) closeShopDetail()">
     <div class="crm-modal crm-modal-large" id="shopDetailModal">
       <div class="crm-modal-header">
         <div>
@@ -11874,7 +11884,7 @@
   </div>
 
   <!-- CRM Add Activity Modal -->
-  <div class="crm-modal-overlay" id="activityModalOverlay" style="display: none;">
+  <div class="crm-modal-overlay" id="activityModalOverlay" style="display: none;" onclick="if(event.target === this) closeActivityModal()">
     <div class="crm-modal crm-modal-small">
       <div class="crm-modal-header">
         <h3>Log Activity</h3>
@@ -11882,6 +11892,7 @@
       </div>
       <div class="crm-modal-body">
         <form id="activityForm" onsubmit="handleActivitySubmit(event)">
+          <input type="hidden" id="activityShopId" />
           <div class="crm-form-group">
             <label for="activityType">Activity Type *</label>
             <select id="activityType" required>
