@@ -22,7 +22,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     status: 'ok',
     timestamp: new Date().toISOString(),
     version: '0.1.0',
-    tools: 18
+    tools: 21
   };
 
   if (detailed !== 'true') {
@@ -84,7 +84,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Hot-start initialization',
         'Fleet bridge (Teltonika/AWS)',
         'Collaboration workflows',
-        'Agent handoffs'
+        'Agent handoffs',
+        'Sales document generation',
+        'Sales pipeline (shops)',
+        'AWS infrastructure status'
       ]
     });
   } catch (error) {

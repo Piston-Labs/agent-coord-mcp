@@ -2,7 +2,7 @@
 
 MCP server for multi-agent coordination - enables AI agents to collaborate without conflicts.
 
-**18 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
+**21 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
 
 ## Features
 
@@ -37,7 +37,7 @@ npm run start:http
 PERSIST=true npm run start:http
 ```
 
-## MCP Tools (18)
+## MCP Tools (21)
 
 | Tool | Description |
 |------|-------------|
@@ -59,6 +59,9 @@ PERSIST=true npm run start:http
 | `device` | Teltonika fleet management |
 | `hot-start` | Zero cold start context loading |
 | `workflow` | Collaboration workflow templates |
+| `generate-doc` | Sales document generation |
+| `shop` | Sales pipeline management |
+| `aws-status` | AWS infrastructure status |
 
 ## HTTP Endpoints
 
