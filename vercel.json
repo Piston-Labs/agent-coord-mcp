@@ -1,1 +1,24 @@
-{"version":2,"buildCommand":"npm run build","outputDirectory":"web"}
+{
+    "outputDirectory":  "web",
+    "buildCommand":  "npm run build",
+    "headers":  [
+                    {
+                        "headers":  [
+                                        {
+                                            "key":  "Access-Control-Allow-Origin",
+                                            "value":  "*"
+                                        },
+                                        {
+                                            "key":  "Access-Control-Allow-Methods",
+                                            "value":  "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                                        },
+                                        {
+                                            "key":  "Access-Control-Allow-Headers",
+                                            "value":  "Content-Type, Authorization"
+                                        }
+                                    ],
+                        "source":  "/api/(.*)"
+                    }
+                ],
+    "version":  2
+}
