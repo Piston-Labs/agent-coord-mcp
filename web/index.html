@@ -532,6 +532,147 @@
     }
 
 
+    
+    /* Health indicators */
+    .fleet-stat.health .fleet-stat-value {
+      color: var(--success);
+    }
+
+    .fleet-stat.health.warning .fleet-stat-value {
+      color: var(--warning);
+    }
+
+    .fleet-stat.health.critical .fleet-stat-value {
+      color: var(--danger);
+    }
+
+    .telemetry-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .alert-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(248, 81, 73, 0.15);
+      border: 1px solid var(--danger);
+      border-radius: 6px;
+      color: var(--danger);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .alert-indicator:hover {
+      background: rgba(248, 81, 73, 0.25);
+    }
+
+    .alert-count {
+      background: var(--danger);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .alerts-banner {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 8px 16px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .alert-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 10px;
+      margin: 4px 0;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 12px;
+      border-left: 3px solid var(--warning);
+    }
+
+    .alert-item.critical {
+      border-left-color: var(--danger);
+      background: rgba(248, 81, 73, 0.1);
+    }
+
+    .alert-item.warning {
+      border-left-color: var(--warning);
+    }
+
+    .alert-item.info {
+      border-left-color: var(--accent);
+    }
+
+    .alert-device {
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 80px;
+    }
+
+    .alert-message {
+      flex: 1;
+      color: var(--text-secondary);
+    }
+
+    .alert-time {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    /* Health status on device cards */
+    .device-health {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+    }
+
+    .health-score {
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .health-score.excellent {
+      background: rgba(63, 185, 80, 0.2);
+      color: var(--success);
+    }
+
+    .health-score.good {
+      background: rgba(88, 166, 255, 0.2);
+      color: var(--accent);
+    }
+
+    .health-score.warning {
+      background: rgba(210, 153, 34, 0.2);
+      color: var(--warning);
+    }
+
+    .health-score.critical {
+      background: rgba(248, 81, 73, 0.2);
+      color: var(--danger);
+    }
+
+    .health-issues {
+      flex: 1;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+
     /* Telemetry View */
     .telemetry-header {
       display: flex;
@@ -2126,8 +2267,20 @@
               <span class="fleet-stat-value" id="fleetAvgBattery">--</span>
               <span class="fleet-stat-label">Avg Battery</span>
             </div>
+            <div class="fleet-stat health">
+              <span class="fleet-stat-value" id="fleetHealthScore">--</span>
+              <span class="fleet-stat-label">Health Score</span>
+            </div>
           </div>
-          <button class="refresh-btn" onclick="fetchTelemetry()">Refresh</button>
+          <div class="telemetry-controls">
+            <div class="alert-indicator" id="alertIndicator" style="display: none;">
+              <span class="alert-count" id="alertCount">0</span> Alerts
+            </div>
+            <button class="refresh-btn" onclick="fetchTelemetry()">Refresh</button>
+          </div>
+        </div>
+        <div class="alerts-banner" id="alertsBanner" style="display: none;">
+          <div class="alerts-list" id="alertsList"></div>
         </div>
         <div class="telemetry-grid" id="telemetryGrid">
           <div class="empty-state">
@@ -3278,7 +3431,7 @@
 
     async function fetchTelemetry() {
       try {
-        const res = await fetch(API_BASE + '/telemetry');
+        const res = await fetch(API_BASE + '/telemetry?alerts=true');
         const data = await res.json();
 
         // Update fleet summary
@@ -3287,6 +3440,26 @@
           document.getElementById('fleetActive').textContent = data.fleet.active;
           document.getElementById('fleetMoving').textContent = data.fleet.moving;
           document.getElementById('fleetAvgBattery').textContent = data.fleet.avgBatteryVoltage + 'V';
+          
+          // Update health score
+          const healthEl = document.getElementById('fleetHealthScore');
+          const healthStat = healthEl.closest('.fleet-stat');
+          if (data.fleet.health) {
+            healthEl.textContent = data.fleet.health.avgScore;
+            healthStat.classList.remove('warning', 'critical');
+            if (data.fleet.health.avgScore < 50) healthStat.classList.add('critical');
+            else if (data.fleet.health.avgScore < 70) healthStat.classList.add('warning');
+          }
+        }
+
+        // Update alerts
+        if (data.alertSummary && data.alertSummary.total > 0) {
+          document.getElementById('alertIndicator').style.display = 'flex';
+          document.getElementById('alertCount').textContent = data.alertSummary.total;
+          renderAlerts(data.alerts || []);
+        } else {
+          document.getElementById('alertIndicator').style.display = 'none';
+          document.getElementById('alertsBanner').style.display = 'none';
         }
 
         // Render device cards
@@ -3294,7 +3467,7 @@
 
         // Start auto-refresh if not already running
         if (!telemetryRefreshInterval) {
-          telemetryRefreshInterval = setInterval(fetchTelemetry, 10000); // Refresh every 10s
+          telemetryRefreshInterval = setInterval(fetchTelemetry, 10000);
         }
       } catch (err) {
         console.error('Failed to fetch telemetry:', err);
@@ -3309,6 +3482,31 @@
         `;
       }
     }
+
+    function renderAlerts(alerts) {
+      const banner = document.getElementById('alertsBanner');
+      const list = document.getElementById('alertsList');
+      
+      if (alerts.length === 0) {
+        banner.style.display = 'none';
+        return;
+      }
+
+      banner.style.display = 'block';
+      list.innerHTML = alerts.map(alert => `
+        <div class="alert-item ${alert.severity}">
+          <span class="alert-device">${alert.deviceName}</span>
+          <span class="alert-message">${alert.message}</span>
+          <span class="alert-time">${new Date(alert.createdAt).toLocaleTimeString()}</span>
+        </div>
+      `).join('');
+    }
+
+    // Toggle alerts banner
+    document.getElementById('alertIndicator')?.addEventListener('click', () => {
+      const banner = document.getElementById('alertsBanner');
+      banner.style.display = banner.style.display === 'none' ? 'block' : 'none';
+    });
 
     function renderTelemetryGrid(devices) {
       const grid = document.getElementById('telemetryGrid');
@@ -3335,9 +3533,12 @@
       const batteryClass = getBatteryClass(device.metrics?.batteryVoltage);
       const vehicle = device.vehicleInfo || {};
       const vehicleStr = [vehicle.year, vehicle.make, vehicle.model].filter(Boolean).join(' ');
+      const health = device.health || { score: 100, status: 'excellent', issues: [] };
+      const healthStatus = health.status || 'excellent';
+      const healthIssue = health.issues?.[0] || 'All systems normal';
 
       return `
-        <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'}">
+        <div class="device-card ${ignitionOn ? 'ignition-on' : 'ignition-off'} health-${healthStatus}">
           <div class="device-header">
             <span class="device-name">${device.deviceName || 'Unknown'}</span>
             <span class="device-status ${isMoving ? 'moving' : 'parked'}">
@@ -3362,6 +3563,10 @@
               <span class="metric-value">${formatOdometer(device.metrics?.odometer)}</span>
               <span class="metric-label">Odometer</span>
             </div>
+          </div>
+          <div class="device-health">
+            <span class="health-score ${healthStatus}">${health.score}</span>
+            <span class="health-issues">${healthIssue}</span>
           </div>
           ${vehicle.vin || vehicleStr ? `
           <div class="device-vehicle">
