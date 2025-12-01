@@ -6836,14 +6836,14 @@
         const isMoving = device.status?.movement;
         const isActive = device.status?.ignition;
         
-        return ` + "`" + `
+        return `
           <div class="map-device ${isMoving ? 'moving' : ''} ${isActive ? 'active' : ''}"
                style="left: ${Math.max(10, Math.min(90, x))}%; top: ${Math.max(15, Math.min(85, y))}%"
                title="${device.deviceName}: ${device.metrics?.speed || 0} km/h">
             <div class="map-device-dot"></div>
             <span class="map-device-label">${device.deviceName}</span>
           </div>
-        ` + "`" + `;
+        `;
       }).join('');
     }
 
@@ -7104,7 +7104,7 @@
       fetchMetrics();
     }
 
-    function renderSparkline(containerId, data, color = 'var(--accent)') {
+    function renderMetricsSparkline(containerId, data, color = 'var(--accent)') {
       const container = document.getElementById(containerId);
       if (!container || !data || data.length === 0) return;
       const max = Math.max(...data, 1);
@@ -7149,7 +7149,7 @@
         // Track history for sparklines
         metricsHistory.agents.push(data.agents?.activeNow || 0);
         if (metricsHistory.agents.length > 12) metricsHistory.agents.shift();
-        renderSparkline('agentsSparkline', metricsHistory.agents);
+        renderMetricsSparkline('agentsSparkline', metricsHistory.agents);
         
         // Update trend indicator
         const agentsTrend = document.getElementById('agentsTrend');
@@ -7169,7 +7169,7 @@
         // Track messages history
         metricsHistory.messages.push(data.messages?.last24h || 0);
         if (metricsHistory.messages.length > 12) metricsHistory.messages.shift();
-        renderSparkline('messagesSparkline', metricsHistory.messages, 'var(--success)');
+        renderMetricsSparkline('messagesSparkline', metricsHistory.messages, 'var(--success)');
         
         // Update messages trend
         const msgTrend = document.getElementById('messagesTrend');
