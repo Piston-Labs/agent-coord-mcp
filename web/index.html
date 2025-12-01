@@ -5057,6 +5057,761 @@
     }
 
 
+    /* ========== CRM STYLES ========== */
+
+    /* CRM Header */
+    .crm-header {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .crm-stats {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 8px;
+    }
+
+    .crm-stat {
+      flex: 0 0 auto;
+      min-width: 80px;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+
+    .crm-stat.prospect { border-color: #6366f1; background: rgba(99, 102, 241, 0.1); }
+    .crm-stat.qualified { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+    .crm-stat.demo { border-color: #3b82f6; background: rgba(59, 130, 246, 0.1); }
+    .crm-stat.customer { border-color: #22c55e; background: rgba(34, 197, 94, 0.1); }
+
+    .crm-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: block;
+    }
+
+    .crm-stat.prospect .crm-stat-value { color: #6366f1; }
+    .crm-stat.qualified .crm-stat-value { color: #f59e0b; }
+    .crm-stat.demo .crm-stat-value { color: #3b82f6; }
+    .crm-stat.customer .crm-stat-value { color: #22c55e; }
+
+    .crm-stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .crm-controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .crm-add-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+
+    .crm-add-btn:hover {
+      background: #4a90e0;
+    }
+
+    .crm-controls select,
+    .crm-controls input {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 13px;
+      min-width: 140px;
+    }
+
+    .crm-controls input {
+      flex: 1;
+      min-width: 200px;
+    }
+
+    /* CRM Pipeline View */
+    .crm-pipeline {
+      display: flex;
+      gap: 12px;
+      padding: 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      min-height: 500px;
+    }
+
+    .pipeline-column {
+      flex: 0 0 280px;
+      min-width: 280px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 280px);
+    }
+
+    .pipeline-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 3px solid var(--border);
+      border-radius: 8px 8px 0 0;
+    }
+
+    .pipeline-header.prospect { border-top-color: #6366f1; }
+    .pipeline-header.qualified { border-top-color: #f59e0b; }
+    .pipeline-header.demo { border-top-color: #3b82f6; }
+    .pipeline-header.proposal { border-top-color: #8b5cf6; }
+    .pipeline-header.customer { border-top-color: #22c55e; }
+
+    .pipeline-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .pipeline-count {
+      background: var(--bg-tertiary);
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .pipeline-cards {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pipeline-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .pipeline-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .pipeline-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .pipeline-card-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .pipeline-card-value {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .pipeline-card-contact {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .pipeline-card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .pipeline-card-location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pipeline-card-date {
+      opacity: 0.7;
+    }
+
+    .pipeline-empty {
+      text-align: center;
+      padding: 24px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    /* CRM List View */
+    .crm-list-view {
+      padding: 16px;
+    }
+
+    .crm-list-table-wrapper {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .crm-list-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      min-width: 800px;
+    }
+
+    .crm-list-table th {
+      background: var(--bg-tertiary);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .crm-list-table th:hover {
+      background: var(--bg-secondary);
+    }
+
+    .crm-list-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+
+    .crm-list-table tr:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .crm-list-table .shop-name {
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+    }
+
+    .crm-list-table .shop-name:hover {
+      text-decoration: underline;
+    }
+
+    /* Stage Badges */
+    .crm-stage-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .crm-stage-badge.prospect { background: rgba(99, 102, 241, 0.2); color: #6366f1; }
+    .crm-stage-badge.qualified { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+    .crm-stage-badge.demo { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    .crm-stage-badge.proposal { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
+    .crm-stage-badge.customer { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+    .crm-stage-badge.churned { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+    /* CRM Modals */
+    .crm-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+
+    .crm-modal {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 600px;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border);
+    }
+
+    .crm-modal-large {
+      max-width: 1000px;
+    }
+
+    .crm-modal-small {
+      max-width: 450px;
+    }
+
+    .crm-modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-tertiary);
+    }
+
+    .crm-modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: var(--text-primary);
+    }
+
+    .crm-modal-close {
+      background: none;
+      border: none;
+      font-size: 24px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .crm-modal-close:hover {
+      color: var(--text-primary);
+    }
+
+    .crm-modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    /* CRM Forms */
+    .crm-form-section {
+      margin-bottom: 24px;
+    }
+
+    .crm-form-section h4 {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .crm-form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .crm-form-group {
+      margin-bottom: 12px;
+    }
+
+    .crm-form-group label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .crm-form-group input,
+    .crm-form-group select,
+    .crm-form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+
+    .crm-form-group input:focus,
+    .crm-form-group select:focus,
+    .crm-form-group textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .crm-form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .crm-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 16px;
+    }
+
+    .crm-btn-cancel {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 10px 20px;
+      border-radius: 6px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .crm-btn-save {
+      background: var(--accent);
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .crm-btn-save:hover {
+      background: #4a90e0;
+    }
+
+    /* CRM Detail View */
+    .crm-detail-body {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 20px;
+    }
+
+    .crm-detail-main {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .crm-detail-sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .crm-detail-card {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+
+    .crm-detail-card-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-secondary);
+    }
+
+    .crm-detail-card-header h4 {
+      margin: 0;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .crm-btn-edit,
+    .crm-btn-add {
+      background: none;
+      border: 1px solid var(--border);
+      padding: 4px 12px;
+      border-radius: 4px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .crm-btn-edit:hover,
+    .crm-btn-add:hover {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .crm-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      padding: 1px;
+    }
+
+    .crm-detail-item {
+      background: var(--bg-tertiary);
+      padding: 12px 16px;
+    }
+
+    .crm-detail-item.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .crm-detail-item label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .crm-detail-item span,
+    .crm-detail-item a {
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    .crm-detail-item a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .crm-detail-item a:hover {
+      text-decoration: underline;
+    }
+
+    /* Quick Actions */
+    .crm-quick-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .crm-action-btn {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 10px 16px;
+      border-radius: 6px;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .crm-action-btn:hover {
+      background: var(--bg-secondary);
+      border-color: var(--accent);
+    }
+
+    .crm-action-btn.advance {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .crm-action-btn.advance:hover {
+      background: #2da44e;
+    }
+
+    /* Activity Timeline */
+    .crm-activity-timeline {
+      padding: 16px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .crm-activity-item {
+      display: flex;
+      gap: 12px;
+      padding-bottom: 16px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .crm-activity-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .crm-activity-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .crm-activity-icon.call { background: rgba(59, 130, 246, 0.2); }
+    .crm-activity-icon.email { background: rgba(139, 92, 246, 0.2); }
+    .crm-activity-icon.meeting { background: rgba(34, 197, 94, 0.2); }
+    .crm-activity-icon.demo { background: rgba(245, 158, 11, 0.2); }
+    .crm-activity-icon.note { background: rgba(99, 102, 241, 0.2); }
+    .crm-activity-icon.proposal { background: rgba(236, 72, 153, 0.2); }
+
+    .crm-activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .crm-activity-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+
+    .crm-activity-type {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .crm-activity-date {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .crm-activity-summary {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .crm-activity-empty {
+      text-align: center;
+      color: var(--text-secondary);
+      font-size: 13px;
+      padding: 20px;
+    }
+
+    /* CRM Mobile Responsive */
+    @media (max-width: 768px) {
+      .crm-header {
+        padding: 12px;
+      }
+
+      .crm-stats {
+        gap: 8px;
+      }
+
+      .crm-stat {
+        min-width: 70px;
+        padding: 10px 12px;
+      }
+
+      .crm-stat-value {
+        font-size: 20px;
+      }
+
+      .crm-controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .crm-controls input {
+        min-width: auto;
+      }
+
+      .crm-pipeline {
+        padding: 12px;
+        gap: 8px;
+      }
+
+      .pipeline-column {
+        flex: 0 0 260px;
+        min-width: 260px;
+      }
+
+      .crm-modal {
+        margin: 10px;
+        max-height: calc(100vh - 20px);
+      }
+
+      .crm-modal-large {
+        max-width: 100%;
+      }
+
+      .crm-form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .crm-detail-body {
+        grid-template-columns: 1fr;
+      }
+
+      .crm-detail-sidebar {
+        order: -1;
+      }
+
+      .crm-detail-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .crm-quick-actions {
+        flex-direction: column;
+      }
+
+      .crm-action-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .crm-stat {
+        min-width: 60px;
+        padding: 8px 10px;
+      }
+
+      .crm-stat-value {
+        font-size: 18px;
+      }
+
+      .crm-stat-label {
+        font-size: 9px;
+      }
+
+      .pipeline-column {
+        flex: 0 0 240px;
+        min-width: 240px;
+      }
+
+      .crm-modal-header h3 {
+        font-size: 16px;
+      }
+    }
+
+    /* ========== END CRM STYLES ========== */
+
     /* Direct Messaging Styles */
     .dm-badge {
       position: relative;
@@ -5994,6 +6749,7 @@
           <button class="tab" data-tab="roadmap" onclick="switchTab('roadmap')">Roadmap</button>
           <button class="tab" data-tab="telemetry" onclick="switchTab('telemetry')">Telemetry</button>
           <button class="tab" data-tab="metrics" onclick="switchTab('metrics')">Metrics</button>
+          <button class="tab" data-tab="crm" onclick="switchTab('crm')">CRM</button>
         </div>
         <span id="messageCount">0 messages</span>
       </div>
@@ -6450,6 +7206,104 @@
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
             </svg>
             <p>Loading telemetry data...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- CRM View -->
+      <div class="tab-content" id="crmView" style="overflow-y: auto;">
+        <!-- CRM Header with Stats -->
+        <div class="crm-header">
+          <div class="crm-stats">
+            <div class="crm-stat">
+              <span class="crm-stat-value" id="crmTotalShops">0</span>
+              <span class="crm-stat-label">Total Shops</span>
+            </div>
+            <div class="crm-stat prospect">
+              <span class="crm-stat-value" id="crmProspects">0</span>
+              <span class="crm-stat-label">Prospects</span>
+            </div>
+            <div class="crm-stat qualified">
+              <span class="crm-stat-value" id="crmQualified">0</span>
+              <span class="crm-stat-label">Qualified</span>
+            </div>
+            <div class="crm-stat demo">
+              <span class="crm-stat-value" id="crmDemo">0</span>
+              <span class="crm-stat-label">Demo</span>
+            </div>
+            <div class="crm-stat customer">
+              <span class="crm-stat-value" id="crmCustomers">0</span>
+              <span class="crm-stat-label">Customers</span>
+            </div>
+          </div>
+          <div class="crm-controls">
+            <button class="crm-add-btn" onclick="openAddShopModal()">+ Add Shop</button>
+            <select id="crmViewMode" onchange="switchCrmView(this.value)">
+              <option value="pipeline">Pipeline View</option>
+              <option value="list">List View</option>
+            </select>
+            <input type="text" id="crmSearchInput" placeholder="Search shops..." oninput="filterShops(this.value)">
+          </div>
+        </div>
+
+        <!-- Pipeline View -->
+        <div class="crm-pipeline" id="crmPipeline">
+          <div class="pipeline-column" data-stage="prospect">
+            <div class="pipeline-header prospect">
+              <span class="pipeline-title">Prospect</span>
+              <span class="pipeline-count" id="pipelineProspectCount">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipelineProspect"></div>
+          </div>
+          <div class="pipeline-column" data-stage="qualified">
+            <div class="pipeline-header qualified">
+              <span class="pipeline-title">Qualified</span>
+              <span class="pipeline-count" id="pipelineQualifiedCount">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipelineQualified"></div>
+          </div>
+          <div class="pipeline-column" data-stage="demo">
+            <div class="pipeline-header demo">
+              <span class="pipeline-title">Demo Scheduled</span>
+              <span class="pipeline-count" id="pipelineDemoCount">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipelineDemo"></div>
+          </div>
+          <div class="pipeline-column" data-stage="proposal">
+            <div class="pipeline-header proposal">
+              <span class="pipeline-title">Proposal</span>
+              <span class="pipeline-count" id="pipelineProposalCount">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipelineProposal"></div>
+          </div>
+          <div class="pipeline-column" data-stage="customer">
+            <div class="pipeline-header customer">
+              <span class="pipeline-title">Customer</span>
+              <span class="pipeline-count" id="pipelineCustomerCount">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipelineCustomer"></div>
+          </div>
+        </div>
+
+        <!-- List View (hidden by default) -->
+        <div class="crm-list-view" id="crmListView" style="display: none;">
+          <div class="crm-list-table-wrapper">
+            <table class="crm-list-table" id="crmListTable">
+              <thead>
+                <tr>
+                  <th onclick="sortCrmList('name')">Shop Name</th>
+                  <th onclick="sortCrmList('stage')">Stage</th>
+                  <th onclick="sortCrmList('contact')">Contact</th>
+                  <th onclick="sortCrmList('location')">Location</th>
+                  <th onclick="sortCrmList('bays')">Bays</th>
+                  <th onclick="sortCrmList('lastContact')">Last Contact</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="crmListBody">
+                <tr><td colspan="7" class="loading-row">Loading shops...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -7683,6 +8537,11 @@
       if (tabName === 'metrics') {
         fetchMetrics();
       }
+
+      // Initialize CRM when switching to crm tab
+      if (tabName === 'crm') {
+        initCrm();
+      }
     }
 
     async function fetchTeam() {
@@ -8629,6 +9488,845 @@
         document.getElementById('metricsLoadTime').textContent = 'Error loading';
       }
     }
+
+
+    // ============================================
+    // CRM FUNCTIONALITY
+    // ============================================
+
+    // CRM Data Store (in-memory with localStorage persistence)
+    let crmShops = [];
+    let crmActivities = [];
+    let crmCurrentView = 'pipeline';
+    let crmSearchQuery = '';
+    let crmStageFilter = 'all';
+    let crmSortBy = 'lastContact';
+    let crmEditingShopId = null;
+
+    // Pipeline stages in order
+    const CRM_STAGES = ['prospect', 'qualified', 'demo', 'proposal', 'customer'];
+    const CRM_STAGE_LABELS = {
+      prospect: 'Prospect',
+      qualified: 'Qualified',
+      demo: 'Demo Scheduled',
+      proposal: 'Proposal Sent',
+      customer: 'Customer'
+    };
+
+    // Initialize CRM
+    function initCrm() {
+      loadCrmData();
+      renderCrm();
+      updateCrmStats();
+    }
+
+    // Load CRM data from localStorage
+    function loadCrmData() {
+      try {
+        const savedShops = localStorage.getItem('crm-shops');
+        const savedActivities = localStorage.getItem('crm-activities');
+        if (savedShops) crmShops = JSON.parse(savedShops);
+        if (savedActivities) crmActivities = JSON.parse(savedActivities);
+
+        // Add demo data if empty
+        if (crmShops.length === 0) {
+          crmShops = getDemoShops();
+          crmActivities = getDemoActivities();
+          saveCrmData();
+        }
+      } catch (e) {
+        console.error('Failed to load CRM data:', e);
+        crmShops = getDemoShops();
+        crmActivities = getDemoActivities();
+      }
+    }
+
+    // Save CRM data to localStorage
+    function saveCrmData() {
+      try {
+        localStorage.setItem('crm-shops', JSON.stringify(crmShops));
+        localStorage.setItem('crm-activities', JSON.stringify(crmActivities));
+      } catch (e) {
+        console.error('Failed to save CRM data:', e);
+      }
+    }
+
+    // Demo data for initial setup
+    function getDemoShops() {
+      return [
+        {
+          id: 'shop-001',
+          name: 'Mike\'s Auto Care',
+          address: '1234 Main Street',
+          city: 'Austin',
+          state: 'TX',
+          zip: '78701',
+          bays: 6,
+          technicians: 4,
+          specialty: 'general',
+          monthlyVolume: 180,
+          dealerCompetition: 'low',
+          contactName: 'Mike Johnson',
+          contactRole: 'Owner',
+          contactEmail: 'mike@mikesautocare.com',
+          contactPhone: '(512) 555-0123',
+          leadSource: 'referral',
+          assignedTo: 'eli',
+          estMonthlyValue: 299,
+          devicesNeeded: 6,
+          stage: 'customer',
+          notes: 'Great relationship. Interested in expanding to second location.',
+          createdAt: '2024-08-15T10:00:00Z',
+          lastContact: '2024-11-28T14:30:00Z'
+        },
+        {
+          id: 'shop-002',
+          name: 'Precision Imports',
+          address: '567 Oak Avenue',
+          city: 'Round Rock',
+          state: 'TX',
+          zip: '78664',
+          bays: 8,
+          technicians: 6,
+          specialty: 'european',
+          monthlyVolume: 250,
+          dealerCompetition: 'medium',
+          contactName: 'Sarah Chen',
+          contactRole: 'General Manager',
+          contactEmail: 'sarah@precisionimports.com',
+          contactPhone: '(512) 555-0456',
+          leadSource: 'trade-show',
+          assignedTo: 'eli',
+          estMonthlyValue: 449,
+          devicesNeeded: 8,
+          stage: 'proposal',
+          notes: 'Sent proposal 11/25. Following up next week.',
+          createdAt: '2024-10-20T09:00:00Z',
+          lastContact: '2024-11-25T11:00:00Z'
+        },
+        {
+          id: 'shop-003',
+          name: 'Quick Lube Express',
+          address: '890 Highway 35',
+          city: 'San Marcos',
+          state: 'TX',
+          zip: '78666',
+          bays: 4,
+          technicians: 3,
+          specialty: 'oil-change',
+          monthlyVolume: 400,
+          dealerCompetition: 'high',
+          contactName: 'Tom Williams',
+          contactRole: 'Owner',
+          contactEmail: 'tom@quicklubeexpress.com',
+          contactPhone: '(512) 555-0789',
+          leadSource: 'cold-call',
+          assignedTo: 'tyler',
+          estMonthlyValue: 199,
+          devicesNeeded: 4,
+          stage: 'demo',
+          notes: 'Demo scheduled for Dec 3rd. High volume, lower ticket items.',
+          createdAt: '2024-11-01T14:00:00Z',
+          lastContact: '2024-11-27T16:00:00Z'
+        },
+        {
+          id: 'shop-004',
+          name: 'Hill Country Transmission',
+          address: '234 Commerce Blvd',
+          city: 'Dripping Springs',
+          state: 'TX',
+          zip: '78620',
+          bays: 5,
+          technicians: 4,
+          specialty: 'transmission',
+          monthlyVolume: 60,
+          dealerCompetition: 'low',
+          contactName: 'Dave Roberts',
+          contactRole: 'Owner',
+          contactEmail: 'dave@hillcountrytrans.com',
+          contactPhone: '(512) 555-0321',
+          leadSource: 'website',
+          assignedTo: 'ryan',
+          estMonthlyValue: 349,
+          devicesNeeded: 5,
+          stage: 'qualified',
+          notes: 'Interested in predictive maintenance for transmission rebuilds.',
+          createdAt: '2024-11-10T11:00:00Z',
+          lastContact: '2024-11-22T10:00:00Z'
+        },
+        {
+          id: 'shop-005',
+          name: 'Downtown Auto Works',
+          address: '456 Congress Ave',
+          city: 'Austin',
+          state: 'TX',
+          zip: '78701',
+          bays: 10,
+          technicians: 8,
+          specialty: 'general',
+          monthlyVolume: 300,
+          dealerCompetition: 'medium',
+          contactName: 'Jennifer Martinez',
+          contactRole: 'Operations Manager',
+          contactEmail: 'jennifer@downtownauto.com',
+          contactPhone: '(512) 555-0654',
+          leadSource: 'linkedin',
+          assignedTo: 'eli',
+          estMonthlyValue: 599,
+          devicesNeeded: 10,
+          stage: 'prospect',
+          notes: 'Initial outreach via LinkedIn. Large operation in prime location.',
+          createdAt: '2024-11-20T09:00:00Z',
+          lastContact: '2024-11-20T09:00:00Z'
+        }
+      ];
+    }
+
+    function getDemoActivities() {
+      return [
+        { id: 'act-001', shopId: 'shop-001', type: 'call', author: 'eli', content: 'Monthly check-in call. Everything running smoothly. Discussed potential second location.', timestamp: '2024-11-28T14:30:00Z' },
+        { id: 'act-002', shopId: 'shop-002', type: 'proposal', author: 'eli', content: 'Sent pricing proposal for 8-device package at $449/mo.', timestamp: '2024-11-25T11:00:00Z' },
+        { id: 'act-003', shopId: 'shop-002', type: 'demo', author: 'eli', content: 'Completed product demo. Very interested in predictive maintenance features.', timestamp: '2024-11-18T14:00:00Z' },
+        { id: 'act-004', shopId: 'shop-003', type: 'meeting', author: 'tyler', content: 'On-site visit. Toured facility. Demo scheduled for Dec 3rd.', timestamp: '2024-11-27T16:00:00Z' },
+        { id: 'act-005', shopId: 'shop-004', type: 'call', author: 'ryan', content: 'Discovery call. Discussed pain points with transmission diagnostics.', timestamp: '2024-11-22T10:00:00Z' },
+        { id: 'act-006', shopId: 'shop-005', type: 'email', author: 'eli', content: 'Initial outreach email sent via LinkedIn connection.', timestamp: '2024-11-20T09:00:00Z' }
+      ];
+    }
+
+    // Render CRM based on current view
+    function renderCrm() {
+      if (crmCurrentView === 'pipeline') {
+        renderCrmPipeline();
+      } else {
+        renderCrmList();
+      }
+    }
+
+    // Render pipeline (Kanban) view
+    function renderCrmPipeline() {
+      // Map stage names to element IDs (capitalize first letter)
+      const stageToId = {
+        prospect: 'pipelineProspect',
+        qualified: 'pipelineQualified',
+        demo: 'pipelineDemo',
+        proposal: 'pipelineProposal',
+        customer: 'pipelineCustomer'
+      };
+
+      CRM_STAGES.forEach(stage => {
+        const column = document.getElementById(stageToId[stage]);
+        if (!column) {
+          console.log('CRM: Column not found for stage:', stage);
+          return;
+        }
+
+        const shopsInStage = getFilteredShops().filter(s => s.stage === stage);
+
+        if (shopsInStage.length === 0) {
+          column.innerHTML = '<div class="crm-empty-column">No shops in this stage</div>';
+        } else {
+          column.innerHTML = shopsInStage.map(shop => createShopCard(shop)).join('');
+        }
+
+        // Update column count
+        const countEl = document.getElementById(`pipeline${stage.charAt(0).toUpperCase() + stage.slice(1)}Count`);
+        if (countEl) {
+          countEl.textContent = shopsInStage.length;
+        }
+      });
+
+      // Update header stats
+      document.getElementById('crmTotalShops').textContent = crmShops.length;
+      document.getElementById('crmProspects').textContent = crmShops.filter(s => s.stage === 'prospect').length;
+      document.getElementById('crmQualified').textContent = crmShops.filter(s => s.stage === 'qualified').length;
+      document.getElementById('crmDemo').textContent = crmShops.filter(s => s.stage === 'demo').length;
+      document.getElementById('crmCustomers').textContent = crmShops.filter(s => s.stage === 'customer').length;
+    }
+
+    // Render list view
+    function renderCrmList() {
+      const listBody = document.getElementById('crmListBody');
+      if (!listBody) return;
+
+      const shops = getFilteredShops();
+
+      if (shops.length === 0) {
+        listBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 40px;">No shops found</td></tr>';
+        return;
+      }
+
+      listBody.innerHTML = shops.map(shop => `
+        <tr onclick="openShopDetail('${shop.id}')" style="cursor: pointer;">
+          <td>
+            <div style="font-weight: 500;">${escapeHtml(shop.name)}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(shop.city)}, ${escapeHtml(shop.state)}</div>
+          </td>
+          <td>${escapeHtml(shop.contactName)}</td>
+          <td><span class="crm-stage-badge stage-${shop.stage}">${CRM_STAGE_LABELS[shop.stage]}</span></td>
+          <td>$${shop.estMonthlyValue}/mo</td>
+          <td>${formatTimeAgo(shop.lastContact)}</td>
+          <td>${getAssigneeName(shop.assignedTo)}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Create shop card for pipeline view
+    function createShopCard(shop) {
+      const lastActivity = crmActivities.find(a => a.shopId === shop.id);
+      const activityIcon = lastActivity ? getActivityIcon(lastActivity.type) : '';
+
+      return `
+        <div class="crm-shop-card" onclick="openShopDetail('${shop.id}')">
+          <div class="crm-shop-header">
+            <span class="crm-shop-name">${escapeHtml(shop.name)}</span>
+            <span class="crm-shop-value">$${shop.estMonthlyValue}/mo</span>
+          </div>
+          <div class="crm-shop-contact">${escapeHtml(shop.contactName)} · ${escapeHtml(shop.contactRole)}</div>
+          <div class="crm-shop-meta">
+            <span>${shop.bays} bays · ${shop.technicians} techs</span>
+            <span>${shop.devicesNeeded} devices</span>
+          </div>
+          <div class="crm-shop-footer">
+            <span class="crm-assignee">${getAssigneeName(shop.assignedTo)}</span>
+            <span class="crm-last-contact">${activityIcon} ${formatTimeAgo(shop.lastContact)}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    // Get filtered and sorted shops
+    function getFilteredShops() {
+      let shops = [...crmShops];
+
+      // Apply search filter
+      if (crmSearchQuery) {
+        const query = crmSearchQuery.toLowerCase();
+        shops = shops.filter(s =>
+          s.name.toLowerCase().includes(query) ||
+          s.contactName.toLowerCase().includes(query) ||
+          s.city.toLowerCase().includes(query) ||
+          s.contactEmail.toLowerCase().includes(query)
+        );
+      }
+
+      // Apply stage filter
+      if (crmStageFilter !== 'all') {
+        shops = shops.filter(s => s.stage === crmStageFilter);
+      }
+
+      // Apply sorting
+      shops.sort((a, b) => {
+        switch (crmSortBy) {
+          case 'name':
+            return a.name.localeCompare(b.name);
+          case 'value':
+            return b.estMonthlyValue - a.estMonthlyValue;
+          case 'lastContact':
+          default:
+            return new Date(b.lastContact) - new Date(a.lastContact);
+        }
+      });
+
+      return shops;
+    }
+
+    // Update CRM stats in header
+    function updateCrmStats() {
+      const totalShops = crmShops.length;
+      const totalPipeline = crmShops.filter(s => s.stage !== 'customer').reduce((sum, s) => sum + s.estMonthlyValue, 0);
+      const totalMrr = crmShops.filter(s => s.stage === 'customer').reduce((sum, s) => sum + s.estMonthlyValue, 0);
+      const avgDealSize = totalShops > 0 ? Math.round(crmShops.reduce((sum, s) => sum + s.estMonthlyValue, 0) / totalShops) : 0;
+
+      const statsEl = document.getElementById('crmStatsValue');
+      if (statsEl) {
+        statsEl.innerHTML = `
+          <span>${totalShops} shops</span>
+          <span>·</span>
+          <span>$${totalPipeline.toLocaleString()} pipeline</span>
+          <span>·</span>
+          <span>$${totalMrr.toLocaleString()} MRR</span>
+        `;
+      }
+    }
+
+    // View switching
+    function switchCrmView(view) {
+      crmCurrentView = view;
+
+      // Update view mode select if it exists
+      const viewSelect = document.getElementById('crmViewMode');
+      if (viewSelect) viewSelect.value = view;
+
+      // Toggle view visibility
+      const pipelineEl = document.getElementById('crmPipeline');
+      const listEl = document.getElementById('crmListView');
+
+      if (pipelineEl) pipelineEl.style.display = view === 'pipeline' ? 'flex' : 'none';
+      if (listEl) listEl.style.display = view === 'list' ? 'block' : 'none';
+
+      renderCrm();
+    }
+
+    // Search handler
+    function handleCrmSearch(query) {
+      crmSearchQuery = query;
+      renderCrm();
+    }
+
+    // Filter shops (alias for search - used by HTML)
+    function filterShops(query) {
+      handleCrmSearch(query);
+    }
+
+    // Stage filter handler
+    function handleCrmStageFilter(stage) {
+      crmStageFilter = stage;
+      renderCrm();
+    }
+
+    // Sort handler
+    function handleCrmSort(sortBy) {
+      crmSortBy = sortBy;
+      renderCrm();
+    }
+
+    // Open add shop modal
+    function openAddShopModal() {
+      crmEditingShopId = null;
+      document.getElementById('shopModalTitle').textContent = 'Add New Shop';
+      document.getElementById('shopForm').reset();
+      document.getElementById('shopModal').style.display = 'flex';
+    }
+
+    // Open edit shop modal
+    function openEditShopModal(shopId) {
+      const shop = crmShops.find(s => s.id === shopId);
+      if (!shop) return;
+
+      crmEditingShopId = shopId;
+      document.getElementById('shopModalTitle').textContent = 'Edit Shop';
+
+      // Populate form fields
+      document.getElementById('shopName').value = shop.name;
+      document.getElementById('shopAddress').value = shop.address || '';
+      document.getElementById('shopCity').value = shop.city || '';
+      document.getElementById('shopState').value = shop.state || '';
+      document.getElementById('shopZip').value = shop.zip || '';
+      document.getElementById('shopBays').value = shop.bays || '';
+      document.getElementById('shopTechnicians').value = shop.technicians || '';
+      document.getElementById('shopSpecialty').value = shop.specialty || '';
+      document.getElementById('shopMonthlyVolume').value = shop.monthlyVolume || '';
+      document.getElementById('shopDealerCompetition').value = shop.dealerCompetition || '';
+      document.getElementById('contactName').value = shop.contactName || '';
+      document.getElementById('contactRole').value = shop.contactRole || 'owner';
+      document.getElementById('contactEmail').value = shop.contactEmail || '';
+      document.getElementById('contactPhone').value = shop.contactPhone || '';
+      document.getElementById('shopSource').value = shop.leadSource || '';
+      document.getElementById('shopAssigned').value = shop.assignedTo || 'eli';
+      document.getElementById('shopEstValue').value = shop.estMonthlyValue || '';
+      document.getElementById('shopDevicesNeeded').value = shop.devicesNeeded || '';
+      document.getElementById('shopStage').value = shop.stage;
+      document.getElementById('shopNotes').value = shop.notes || '';
+
+      // Show the modal overlay (need to show both overlay and modal)
+      const overlay = document.getElementById('shopModalOverlay') || document.querySelector('.crm-modal-overlay');
+      if (overlay) overlay.style.display = 'flex';
+      document.getElementById('shopModal').style.display = 'block';
+    }
+
+    // Close shop modal
+    function closeShopModal() {
+      document.getElementById('shopModal').style.display = 'none';
+      crmEditingShopId = null;
+    }
+
+    // Handle shop form submit
+    function handleShopSubmit(event) {
+      event.preventDefault();
+
+      const shopData = {
+        name: document.getElementById('shopName').value,
+        address: document.getElementById('shopAddress').value,
+        city: document.getElementById('shopCity').value,
+        state: document.getElementById('shopState').value,
+        zip: document.getElementById('shopZip').value,
+        bays: parseInt(document.getElementById('shopBays').value) || 0,
+        technicians: parseInt(document.getElementById('shopTechnicians').value) || 0,
+        specialty: document.getElementById('shopSpecialty').value || 'general',
+        monthlyVolume: parseInt(document.getElementById('shopMonthlyVolume').value) || 0,
+        dealerCompetition: document.getElementById('shopDealerCompetition').value || 'low',
+        contactName: document.getElementById('contactName').value,
+        contactRole: document.getElementById('contactRole').value || 'owner',
+        contactEmail: document.getElementById('contactEmail').value,
+        contactPhone: document.getElementById('contactPhone').value,
+        leadSource: document.getElementById('shopSource').value || 'other',
+        assignedTo: document.getElementById('shopAssigned').value || 'eli',
+        estMonthlyValue: parseInt(document.getElementById('shopEstValue').value) || 0,
+        devicesNeeded: parseInt(document.getElementById('shopDevicesNeeded').value) || 0,
+        stage: document.getElementById('shopStage').value,
+        notes: document.getElementById('shopNotes').value,
+        lastContact: new Date().toISOString()
+      };
+
+      if (crmEditingShopId) {
+        // Update existing shop
+        const index = crmShops.findIndex(s => s.id === crmEditingShopId);
+        if (index !== -1) {
+          crmShops[index] = { ...crmShops[index], ...shopData };
+        }
+      } else {
+        // Add new shop
+        shopData.id = 'shop-' + Date.now();
+        shopData.createdAt = new Date().toISOString();
+        crmShops.push(shopData);
+
+        // Log activity
+        logCrmActivity(shopData.id, 'note', 'Created new shop record');
+      }
+
+      saveCrmData();
+      closeShopModal();
+      renderCrm();
+      updateCrmStats();
+    }
+
+    // Open shop detail modal
+    function openShopDetail(shopId) {
+      const shop = crmShops.find(s => s.id === shopId);
+      if (!shop) return;
+
+      // Store current shop ID for actions
+      window.currentShopId = shopId;
+
+      // Populate header
+      const nameEl = document.getElementById('shopDetailName');
+      const stageEl = document.getElementById('shopDetailStage');
+      if (nameEl) nameEl.textContent = shop.name;
+      if (stageEl) {
+        stageEl.textContent = CRM_STAGE_LABELS[shop.stage] || shop.stage;
+        stageEl.className = 'crm-stage-badge stage-' + shop.stage;
+      }
+
+      // Populate shop details
+      const address = `${shop.address || ''}, ${shop.city || ''}, ${shop.state || ''} ${shop.zip || ''}`;
+      document.getElementById('detailAddress').textContent = address.trim() || '--';
+      document.getElementById('detailBays').textContent = shop.bays || '--';
+      document.getElementById('detailTechnicians').textContent = shop.technicians || '--';
+      document.getElementById('detailSpecialty').textContent = getSpecialtyLabel(shop.specialty) || '--';
+      document.getElementById('detailVolume').textContent = shop.monthlyVolume ? `${shop.monthlyVolume} cars/mo` : '--';
+      document.getElementById('detailCompetition').textContent = shop.dealerCompetition ?
+        shop.dealerCompetition.charAt(0).toUpperCase() + shop.dealerCompetition.slice(1) : '--';
+
+      // Populate contact details
+      document.getElementById('detailContactName').textContent = shop.contactName || '--';
+      document.getElementById('detailContactRole').textContent = shop.contactRole || '--';
+      const emailEl = document.getElementById('detailContactEmail');
+      const phoneEl = document.getElementById('detailContactPhone');
+      if (emailEl) {
+        emailEl.textContent = shop.contactEmail || '--';
+        emailEl.href = shop.contactEmail ? `mailto:${shop.contactEmail}` : '#';
+      }
+      if (phoneEl) {
+        phoneEl.textContent = shop.contactPhone || '--';
+        phoneEl.href = shop.contactPhone ? `tel:${shop.contactPhone}` : '#';
+      }
+
+      // Populate sales details
+      document.getElementById('detailSource').textContent = getLeadSourceLabel(shop.leadSource) || '--';
+      document.getElementById('detailAssigned').textContent = getAssigneeName(shop.assignedTo) || '--';
+      document.getElementById('detailValue').textContent = shop.estMonthlyValue ? `$${shop.estMonthlyValue}/mo` : '--';
+      document.getElementById('detailDevices').textContent = shop.devicesNeeded || '--';
+      document.getElementById('detailNotes').textContent = shop.notes || '--';
+
+      // Populate activity timeline
+      renderShopActivities(shopId);
+
+      // Show the modal
+      const overlay = document.getElementById('shopDetailOverlay');
+      if (overlay) overlay.style.display = 'flex';
+      document.getElementById('shopDetailModal').style.display = 'block';
+      document.getElementById('shopDetailModal').dataset.shopId = shopId;
+    }
+
+    // Close shop detail modal
+    function closeShopDetail() {
+      const overlay = document.getElementById('shopDetailOverlay');
+      if (overlay) overlay.style.display = 'none';
+      document.getElementById('shopDetailModal').style.display = 'none';
+    }
+
+    // Render activity timeline for a shop
+    function renderShopActivities(shopId) {
+      const container = document.getElementById('shopActivityTimeline') || document.getElementById('detailActivityTimeline');
+      const activities = crmActivities.filter(a => a.shopId === shopId).sort((a, b) =>
+        new Date(b.timestamp) - new Date(a.timestamp)
+      );
+
+      if (activities.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">No activities logged yet</div>';
+        return;
+      }
+
+      container.innerHTML = activities.map(activity => `
+        <div class="activity-timeline-item">
+          <div class="activity-icon ${activity.type}">${getActivityIcon(activity.type)}</div>
+          <div class="activity-content">
+            <div class="activity-header">
+              <span class="activity-type">${getActivityTypeLabel(activity.type)}</span>
+              <span class="activity-time">${formatDateTime(activity.timestamp)}</span>
+            </div>
+            <div class="activity-text">${escapeHtml(activity.content)}</div>
+            <div class="activity-author">by ${getAssigneeName(activity.author)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Open activity log modal
+    function openActivityModal(shopId) {
+      document.getElementById('activityShopId').value = shopId;
+      document.getElementById('activityForm').reset();
+      document.getElementById('activityModal').style.display = 'flex';
+    }
+
+    // Close activity modal
+    function closeActivityModal() {
+      document.getElementById('activityModal').style.display = 'none';
+    }
+
+    // Handle activity form submit
+    function handleActivitySubmit(event) {
+      event.preventDefault();
+
+      const shopId = document.getElementById('activityShopId').value;
+      const activityType = document.getElementById('activityType').value;
+      const activityContent = document.getElementById('activityContent').value;
+
+      logCrmActivity(shopId, activityType, activityContent);
+      closeActivityModal();
+
+      // Refresh detail view if open
+      if (document.getElementById('shopDetailModal').style.display === 'flex') {
+        renderShopActivities(shopId);
+      }
+    }
+
+    // Log a CRM activity
+    function logCrmActivity(shopId, type, content) {
+      const activity = {
+        id: 'act-' + Date.now(),
+        shopId: shopId,
+        type: type,
+        author: USERNAME.toLowerCase().includes('eli') ? 'eli' :
+                USERNAME.toLowerCase().includes('tyler') ? 'tyler' :
+                USERNAME.toLowerCase().includes('ryan') ? 'ryan' : 'eli',
+        content: content,
+        timestamp: new Date().toISOString()
+      };
+
+      crmActivities.unshift(activity);
+
+      // Update shop's last contact
+      const shop = crmShops.find(s => s.id === shopId);
+      if (shop) {
+        shop.lastContact = activity.timestamp;
+      }
+
+      saveCrmData();
+      renderCrm();
+    }
+
+    // Advance shop to next stage
+    function advanceShopStage(shopId) {
+      const shop = crmShops.find(s => s.id === shopId);
+      if (!shop) return;
+
+      const currentIndex = CRM_STAGES.indexOf(shop.stage);
+      if (currentIndex < CRM_STAGES.length - 1) {
+        const newStage = CRM_STAGES[currentIndex + 1];
+        shop.stage = newStage;
+        shop.lastContact = new Date().toISOString();
+
+        logCrmActivity(shopId, 'note', `Advanced to ${CRM_STAGE_LABELS[newStage]} stage`);
+
+        saveCrmData();
+        closeShopDetail();
+        renderCrm();
+        updateCrmStats();
+      }
+    }
+
+    // Delete shop
+    function deleteShop(shopId) {
+      if (!confirm('Are you sure you want to delete this shop? This cannot be undone.')) return;
+
+      crmShops = crmShops.filter(s => s.id !== shopId);
+      crmActivities = crmActivities.filter(a => a.shopId !== shopId);
+
+      saveCrmData();
+      closeShopDetail();
+      renderCrm();
+      updateCrmStats();
+    }
+
+    // Helper functions
+    function getAssigneeName(id) {
+      const names = {
+        eli: 'Eli',
+        tyler: 'Tyler',
+        ryan: 'Ryan'
+      };
+      return names[id] || id;
+    }
+
+    function getSpecialtyLabel(specialty) {
+      const labels = {
+        general: 'General Repair',
+        european: 'European Imports',
+        asian: 'Asian Imports',
+        domestic: 'Domestic Vehicles',
+        diesel: 'Diesel',
+        transmission: 'Transmission',
+        'oil-change': 'Oil Change/Quick Lube',
+        collision: 'Collision/Body',
+        tire: 'Tire & Alignment'
+      };
+      return labels[specialty] || specialty;
+    }
+
+    function getLeadSourceLabel(source) {
+      const labels = {
+        referral: 'Referral',
+        'cold-call': 'Cold Call',
+        website: 'Website',
+        'trade-show': 'Trade Show',
+        linkedin: 'LinkedIn',
+        advertising: 'Advertising',
+        other: 'Other'
+      };
+      return labels[source] || source;
+    }
+
+    function getActivityIcon(type) {
+      const icons = {
+        call: '📞',
+        email: '📧',
+        meeting: '👥',
+        demo: '🖥️',
+        note: '📝',
+        proposal: '📄'
+      };
+      return icons[type] || '📌';
+    }
+
+    function getActivityTypeLabel(type) {
+      const labels = {
+        call: 'Phone Call',
+        email: 'Email',
+        meeting: 'Meeting',
+        demo: 'Demo',
+        note: 'Note',
+        proposal: 'Proposal'
+      };
+      return labels[type] || type;
+    }
+
+    function formatTimeAgo(dateString) {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - date;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+
+      if (diffMins < 60) return diffMins + 'm ago';
+      if (diffHours < 24) return diffHours + 'h ago';
+      if (diffDays < 7) return diffDays + 'd ago';
+      return date.toLocaleDateString();
+    }
+
+    function formatDateTime(dateString) {
+      const date = new Date(dateString);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Make functions globally available
+    window.switchCrmView = switchCrmView;
+    window.handleCrmSearch = handleCrmSearch;
+    window.handleCrmStageFilter = handleCrmStageFilter;
+    window.handleCrmSort = handleCrmSort;
+    window.openAddShopModal = openAddShopModal;
+    window.openEditShopModal = openEditShopModal;
+    window.closeShopModal = closeShopModal;
+    window.handleShopSubmit = handleShopSubmit;
+    window.openShopDetail = openShopDetail;
+    window.closeShopDetail = closeShopDetail;
+    window.openActivityModal = openActivityModal;
+    window.closeActivityModal = closeActivityModal;
+    window.handleActivitySubmit = handleActivitySubmit;
+    window.advanceShopStage = advanceShopStage;
+    window.deleteShop = deleteShop;
+    window.filterShops = filterShops;
+    window.sortCrmList = handleCrmSort;
+
+    // Additional helper functions for the HTML buttons
+    window.logActivity = function(type) {
+      if (window.currentShopId) {
+        openActivityModalWithType(window.currentShopId, type);
+      }
+    };
+    window.scheduleDemo = function() {
+      if (window.currentShopId) {
+        openActivityModalWithType(window.currentShopId, 'demo');
+      }
+    };
+    window.advanceStage = function() {
+      if (window.currentShopId) {
+        advanceShopStage(window.currentShopId);
+      }
+    };
+    window.editCurrentShop = function() {
+      if (window.currentShopId) {
+        closeShopDetail();
+        openEditShopModal(window.currentShopId);
+      }
+    };
+    window.openAddActivity = function() {
+      if (window.currentShopId) {
+        openActivityModal(window.currentShopId);
+      }
+    };
+
+    // Open activity modal with pre-selected type
+    function openActivityModalWithType(shopId, type) {
+      // Check if there's a dedicated activity modal
+      const activityModal = document.getElementById('activityModal');
+      if (activityModal) {
+        document.getElementById('activityShopId').value = shopId;
+        document.getElementById('activityType').value = type;
+        activityModal.style.display = 'flex';
+      } else {
+        // Fallback: just log a note
+        const content = prompt(`Enter ${type} details:`);
+        if (content) {
+          logCrmActivity(shopId, type, content);
+          if (document.getElementById('shopDetailModal').style.display !== 'none') {
+            renderShopActivities(shopId);
+          }
+        }
+      }
+    }
+
+    // ============================================
+    // END CRM FUNCTIONALITY
+    // ============================================
 
 
     async function fetchRoadmap() {
@@ -9875,6 +11573,346 @@
     </div>
   </nav>
 
+  <!-- CRM Add/Edit Shop Modal -->
+  <div class="crm-modal-overlay" id="shopModalOverlay" style="display: none;">
+    <div class="crm-modal" id="shopModal">
+      <div class="crm-modal-header">
+        <h3 id="shopModalTitle">Add New Shop</h3>
+        <button class="crm-modal-close" onclick="closeShopModal()">&times;</button>
+      </div>
+      <div class="crm-modal-body">
+        <form id="shopForm" onsubmit="handleShopSubmit(event)">
+          <input type="hidden" id="shopId" />
+
+          <div class="crm-form-section">
+            <h4>Shop Information</h4>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopName">Shop Name *</label>
+                <input type="text" id="shopName" required placeholder="e.g., Mike's Auto Repair" />
+              </div>
+              <div class="crm-form-group">
+                <label for="shopStage">Stage *</label>
+                <select id="shopStage" required>
+                  <option value="prospect">Prospect</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="demo">Demo Scheduled</option>
+                  <option value="proposal">Proposal</option>
+                  <option value="customer">Customer</option>
+                  <option value="churned">Churned</option>
+                </select>
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopAddress">Address</label>
+                <input type="text" id="shopAddress" placeholder="123 Main St" />
+              </div>
+              <div class="crm-form-group">
+                <label for="shopCity">City</label>
+                <input type="text" id="shopCity" placeholder="Austin" />
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopState">State</label>
+                <input type="text" id="shopState" placeholder="TX" maxlength="2" />
+              </div>
+              <div class="crm-form-group">
+                <label for="shopZip">Zip Code</label>
+                <input type="text" id="shopZip" placeholder="78701" />
+              </div>
+            </div>
+          </div>
+
+          <div class="crm-form-section">
+            <h4>Shop Details</h4>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopBays">Number of Bays</label>
+                <input type="number" id="shopBays" placeholder="4" min="1" max="50" />
+              </div>
+              <div class="crm-form-group">
+                <label for="shopTechnicians">Technicians</label>
+                <input type="number" id="shopTechnicians" placeholder="3" min="0" max="100" />
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopSpecialty">Specialty</label>
+                <select id="shopSpecialty">
+                  <option value="">General Automotive</option>
+                  <option value="european">European Vehicles</option>
+                  <option value="asian">Asian Vehicles</option>
+                  <option value="domestic">Domestic Vehicles</option>
+                  <option value="diesel">Diesel/Heavy Duty</option>
+                  <option value="fleet">Fleet Services</option>
+                  <option value="tire">Tire & Alignment</option>
+                  <option value="transmission">Transmission</option>
+                </select>
+              </div>
+              <div class="crm-form-group">
+                <label for="shopMonthlyVolume">Monthly Car Volume</label>
+                <input type="number" id="shopMonthlyVolume" placeholder="150" min="0" />
+              </div>
+            </div>
+            <div class="crm-form-group">
+              <label for="shopDealerCompetition">Nearby Dealership Competition</label>
+              <select id="shopDealerCompetition">
+                <option value="">Unknown</option>
+                <option value="none">None nearby</option>
+                <option value="low">Low (1-2 within 5mi)</option>
+                <option value="medium">Medium (3-5 within 5mi)</option>
+                <option value="high">High (5+ within 5mi)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="crm-form-section">
+            <h4>Primary Contact</h4>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="contactName">Contact Name *</label>
+                <input type="text" id="contactName" required placeholder="Mike Johnson" />
+              </div>
+              <div class="crm-form-group">
+                <label for="contactRole">Role</label>
+                <select id="contactRole">
+                  <option value="owner">Owner</option>
+                  <option value="manager">Service Manager</option>
+                  <option value="tech">Lead Technician</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="contactEmail">Email</label>
+                <input type="email" id="contactEmail" placeholder="mike@shop.com" />
+              </div>
+              <div class="crm-form-group">
+                <label for="contactPhone">Phone</label>
+                <input type="tel" id="contactPhone" placeholder="(512) 555-1234" />
+              </div>
+            </div>
+          </div>
+
+          <div class="crm-form-section">
+            <h4>Sales Information</h4>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopSource">Lead Source</label>
+                <select id="shopSource">
+                  <option value="">Select source...</option>
+                  <option value="referral">Referral</option>
+                  <option value="website">Website</option>
+                  <option value="linkedin">LinkedIn</option>
+                  <option value="coldcall">Cold Call</option>
+                  <option value="trade_show">Trade Show</option>
+                  <option value="partner">Partner</option>
+                  <option value="inbound">Inbound Inquiry</option>
+                </select>
+              </div>
+              <div class="crm-form-group">
+                <label for="shopAssigned">Assigned To</label>
+                <select id="shopAssigned">
+                  <option value="eli">Eli</option>
+                  <option value="tyler">Tyler</option>
+                  <option value="ryan">Ryan</option>
+                </select>
+              </div>
+            </div>
+            <div class="crm-form-row">
+              <div class="crm-form-group">
+                <label for="shopEstValue">Est. Monthly Value ($)</label>
+                <input type="number" id="shopEstValue" placeholder="299" min="0" />
+              </div>
+              <div class="crm-form-group">
+                <label for="shopDevicesNeeded">Devices Needed</label>
+                <input type="number" id="shopDevicesNeeded" placeholder="10" min="1" />
+              </div>
+            </div>
+            <div class="crm-form-group">
+              <label for="shopNotes">Notes</label>
+              <textarea id="shopNotes" rows="3" placeholder="Any additional notes about this shop..."></textarea>
+            </div>
+          </div>
+
+          <div class="crm-form-actions">
+            <button type="button" class="crm-btn-cancel" onclick="closeShopModal()">Cancel</button>
+            <button type="submit" class="crm-btn-save">Save Shop</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRM Shop Detail Modal -->
+  <div class="crm-modal-overlay" id="shopDetailOverlay" style="display: none;">
+    <div class="crm-modal crm-modal-large" id="shopDetailModal">
+      <div class="crm-modal-header">
+        <div>
+          <h3 id="shopDetailName">Shop Name</h3>
+          <span class="crm-stage-badge" id="shopDetailStage">Stage</span>
+        </div>
+        <button class="crm-modal-close" onclick="closeShopDetail()">&times;</button>
+      </div>
+      <div class="crm-modal-body crm-detail-body">
+        <div class="crm-detail-main">
+          <!-- Shop Info Card -->
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Shop Information</h4>
+              <button class="crm-btn-edit" onclick="editCurrentShop()">Edit</button>
+            </div>
+            <div class="crm-detail-grid">
+              <div class="crm-detail-item">
+                <label>Address</label>
+                <span id="detailAddress">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Bays</label>
+                <span id="detailBays">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Technicians</label>
+                <span id="detailTechnicians">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Specialty</label>
+                <span id="detailSpecialty">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Monthly Volume</label>
+                <span id="detailVolume">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Dealer Competition</label>
+                <span id="detailCompetition">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Info Card -->
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Primary Contact</h4>
+            </div>
+            <div class="crm-detail-grid">
+              <div class="crm-detail-item">
+                <label>Name</label>
+                <span id="detailContactName">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Role</label>
+                <span id="detailContactRole">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Email</label>
+                <a id="detailContactEmail" href="#">--</a>
+              </div>
+              <div class="crm-detail-item">
+                <label>Phone</label>
+                <a id="detailContactPhone" href="#">--</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sales Info Card -->
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Sales Details</h4>
+            </div>
+            <div class="crm-detail-grid">
+              <div class="crm-detail-item">
+                <label>Lead Source</label>
+                <span id="detailSource">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Assigned To</label>
+                <span id="detailAssigned">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Est. Monthly Value</label>
+                <span id="detailValue">--</span>
+              </div>
+              <div class="crm-detail-item">
+                <label>Devices Needed</label>
+                <span id="detailDevices">--</span>
+              </div>
+              <div class="crm-detail-item full-width">
+                <label>Notes</label>
+                <span id="detailNotes">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="crm-quick-actions">
+            <button class="crm-action-btn" onclick="logActivity('call')">Log Call</button>
+            <button class="crm-action-btn" onclick="logActivity('email')">Log Email</button>
+            <button class="crm-action-btn" onclick="logActivity('meeting')">Log Meeting</button>
+            <button class="crm-action-btn" onclick="scheduleDemo()">Schedule Demo</button>
+            <button class="crm-action-btn advance" onclick="advanceStage()">Advance Stage</button>
+          </div>
+        </div>
+
+        <!-- Activity Timeline Sidebar -->
+        <div class="crm-detail-sidebar">
+          <div class="crm-detail-card">
+            <div class="crm-detail-card-header">
+              <h4>Activity Timeline</h4>
+              <button class="crm-btn-add" onclick="openAddActivity()">+ Add</button>
+            </div>
+            <div class="crm-activity-timeline" id="shopActivityTimeline">
+              <div class="crm-activity-empty">No activity recorded yet</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CRM Add Activity Modal -->
+  <div class="crm-modal-overlay" id="activityModalOverlay" style="display: none;">
+    <div class="crm-modal crm-modal-small">
+      <div class="crm-modal-header">
+        <h3>Log Activity</h3>
+        <button class="crm-modal-close" onclick="closeActivityModal()">&times;</button>
+      </div>
+      <div class="crm-modal-body">
+        <form id="activityForm" onsubmit="handleActivitySubmit(event)">
+          <div class="crm-form-group">
+            <label for="activityType">Activity Type *</label>
+            <select id="activityType" required>
+              <option value="call">Phone Call</option>
+              <option value="email">Email</option>
+              <option value="meeting">Meeting</option>
+              <option value="demo">Demo</option>
+              <option value="note">Note</option>
+              <option value="proposal">Proposal Sent</option>
+            </select>
+          </div>
+          <div class="crm-form-group">
+            <label for="activityDate">Date *</label>
+            <input type="datetime-local" id="activityDate" required />
+          </div>
+          <div class="crm-form-group">
+            <label for="activitySummary">Summary *</label>
+            <textarea id="activitySummary" rows="3" required placeholder="What happened?"></textarea>
+          </div>
+          <div class="crm-form-group">
+            <label for="activityNextSteps">Next Steps</label>
+            <textarea id="activityNextSteps" rows="2" placeholder="What's the follow-up?"></textarea>
+          </div>
+          <div class="crm-form-actions">
+            <button type="button" class="crm-btn-cancel" onclick="closeActivityModal()">Cancel</button>
+            <button type="submit" class="crm-btn-save">Log Activity</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
 
   <!-- Direct Messages Panel -->
   <div class="dm-panel" id="dmPanel">
