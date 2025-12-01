@@ -413,6 +413,125 @@
 
     /* Roadmap View */
 
+    
+    /* Metrics View */
+    .metrics-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .metrics-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .metrics-card-title {
+      padding: 10px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-tertiary);
+    }
+
+    .metrics-card-content {
+      padding: 12px;
+    }
+
+    .metric-big {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .metric-big.completion-rate {
+      color: var(--success);
+    }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .metric-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .metric-row:last-child {
+      border-bottom: none;
+    }
+
+    .metric-row span:first-child {
+      color: var(--text-secondary);
+    }
+
+    .metric-row span:last-child {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .metrics-footer {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .top-contributors {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .contributor-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+      font-size: 12px;
+    }
+
+    .contributor-name {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .contributor-count {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .category-tag {
+      display: inline-block;
+      padding: 2px 6px;
+      margin: 2px;
+      font-size: 10px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      color: var(--text-secondary);
+    }
+
+
     /* Telemetry View */
     .telemetry-header {
       display: flex;
@@ -1803,6 +1922,7 @@
           <button class="tab active" data-tab="chat" onclick="switchTab('chat')">Chat</button>
           <button class="tab" data-tab="roadmap" onclick="switchTab('roadmap')">Roadmap</button>
           <button class="tab" data-tab="telemetry" onclick="switchTab('telemetry')">Telemetry</button>
+          <button class="tab" data-tab="metrics" onclick="switchTab('metrics')">Metrics</button>
         </div>
         <span id="messageCount">0 messages</span>
       </div>
@@ -1871,6 +1991,119 @@
     </div>
 
     
+    
+      <!-- Metrics View -->
+      <div class="tab-content" id="metricsView">
+        <div class="metrics-header">
+          <h3 style="margin: 0; font-size: 16px;">System Analytics</h3>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <span id="metricsLoadTime" style="font-size: 11px; color: var(--text-secondary);">--</span>
+            <button class="refresh-btn" onclick="fetchMetrics()">Refresh</button>
+          </div>
+        </div>
+        <div class="metrics-grid" id="metricsGrid">
+          <div class="metrics-card">
+            <div class="metrics-card-title">Agents</div>
+            <div class="metrics-card-content">
+              <div class="metric-big" id="metricAgentsActive">0</div>
+              <div class="metric-label">Active Now</div>
+              <div class="metric-row">
+                <span>Total registered:</span>
+                <span id="metricAgentsTotal">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Active (24h):</span>
+                <span id="metricAgents24h">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">Messages</div>
+            <div class="metrics-card-content">
+              <div class="metric-big" id="metricMessagesTotal">0</div>
+              <div class="metric-label">Total Messages</div>
+              <div class="metric-row">
+                <span>Last 24h:</span>
+                <span id="metricMessages24h">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Avg/day:</span>
+                <span id="metricMessagesAvg">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">Tasks</div>
+            <div class="metrics-card-content">
+              <div class="metric-big completion-rate" id="metricTasksRate">0%</div>
+              <div class="metric-label">Completion Rate</div>
+              <div class="metric-row">
+                <span>Total:</span>
+                <span id="metricTasksTotal">0</span>
+              </div>
+              <div class="metric-row">
+                <span>In Progress:</span>
+                <span id="metricTasksProgress">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">Coordination</div>
+            <div class="metrics-card-content">
+              <div class="metric-row">
+                <span>Active Locks:</span>
+                <span id="metricLocks">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Active Claims:</span>
+                <span id="metricClaims">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Pending Handoffs:</span>
+                <span id="metricHandoffs">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Workflow Runs:</span>
+                <span id="metricWorkflows">0</span>
+              </div>
+            </div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">Memory</div>
+            <div class="metrics-card-content">
+              <div class="metric-big" id="metricMemoryTotal">0</div>
+              <div class="metric-label">Total Items</div>
+              <div id="memoryCategories" style="margin-top: 8px;"></div>
+            </div>
+          </div>
+          <div class="metrics-card">
+            <div class="metrics-card-title">Fleet Telemetry</div>
+            <div class="metrics-card-content">
+              <div class="metric-row">
+                <span>Total Devices:</span>
+                <span id="metricDevices">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Active (ignition on):</span>
+                <span id="metricDevicesActive">0</span>
+              </div>
+              <div class="metric-row">
+                <span>Avg Battery:</span>
+                <span id="metricBattery">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="metrics-footer">
+          <div class="top-contributors" id="topContributors">
+            <h4 style="margin: 0 0 8px 0; font-size: 13px; color: var(--text-secondary);">Top Contributors</h4>
+            <div id="contributorsList">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
     <!-- Context Panel - Enhanced -->
 
       <!-- Telemetry View -->
@@ -2394,7 +2627,7 @@
 
         // Number keys for tabs (without modifier)
         if (e.key >= '1' && e.key <= '3' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          const tabs = ['chat', 'roadmap', 'telemetry', 'messages'];
+          const tabs = ['chat', 'roadmap', 'telemetry', 'metrics', 'messages'];
           const idx = parseInt(e.key) - 1;
           if (tabs[idx]) switchTab(tabs[idx]);
         }
@@ -3009,6 +3242,11 @@
       if (tabName === 'telemetry') {
         fetchTelemetry();
       }
+
+      // Fetch metrics data when switching to metrics tab
+      if (tabName === 'metrics') {
+        fetchMetrics();
+      }
     }
 
     async function fetchTeam() {
@@ -3146,6 +3384,75 @@
       if (!km) return '--';
       if (km >= 1000) return Math.round(km / 1000) + 'k km';
       return Math.round(km) + ' km';
+    }
+
+
+    
+    // === METRICS FUNCTIONS ===
+
+    async function fetchMetrics() {
+      try {
+        const res = await fetch(API_BASE + '/metrics');
+        const data = await res.json();
+
+        // Update load time
+        document.getElementById('metricsLoadTime').textContent = 
+          'Loaded in ' + (data._meta?.loadTime || '--');
+
+        // Update agents
+        document.getElementById('metricAgentsActive').textContent = data.agents?.activeNow || 0;
+        document.getElementById('metricAgentsTotal').textContent = data.agents?.total || 0;
+        document.getElementById('metricAgents24h').textContent = data.agents?.active24h || 0;
+
+        // Update messages
+        document.getElementById('metricMessagesTotal').textContent = data.messages?.total || 0;
+        document.getElementById('metricMessages24h').textContent = data.messages?.last24h || 0;
+        document.getElementById('metricMessagesAvg').textContent = data.messages?.avgPerDay || 0;
+
+        // Update tasks
+        document.getElementById('metricTasksRate').textContent = data.tasks?.completionRate || '0%';
+        document.getElementById('metricTasksTotal').textContent = data.tasks?.total || 0;
+        document.getElementById('metricTasksProgress').textContent = data.tasks?.inProgress || 0;
+
+        // Update coordination
+        document.getElementById('metricLocks').textContent = data.coordination?.activeLocks || 0;
+        document.getElementById('metricClaims').textContent = data.coordination?.activeClaims || 0;
+        document.getElementById('metricHandoffs').textContent = data.coordination?.pendingHandoffs || 0;
+        document.getElementById('metricWorkflows').textContent = data.workflows?.totalRuns || 0;
+
+        // Update memory
+        document.getElementById('metricMemoryTotal').textContent = data.memory?.totalItems || 0;
+        const categoriesEl = document.getElementById('memoryCategories');
+        if (data.memory?.categories) {
+          categoriesEl.innerHTML = Object.entries(data.memory.categories)
+            .map(([cat, count]) => `<span class="category-tag">${cat}: ${count}</span>`)
+            .join('');
+        }
+
+        // Update telemetry
+        document.getElementById('metricDevices').textContent = data.telemetry?.totalDevices || 0;
+        document.getElementById('metricDevicesActive').textContent = data.telemetry?.activeDevices || 0;
+        document.getElementById('metricBattery').textContent = 
+          (data.telemetry?.avgBatteryVoltage || '--') + 'V';
+
+        // Update top contributors
+        const contributorsEl = document.getElementById('contributorsList');
+        if (data.agents?.topContributors?.length > 0) {
+          contributorsEl.innerHTML = data.agents.topContributors
+            .map(c => `
+              <div class="contributor-item">
+                <span class="contributor-name">${c.agentId}</span>
+                <span class="contributor-count">${c.messagesSent} msgs</span>
+              </div>
+            `).join('');
+        } else {
+          contributorsEl.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px;">No activity yet</div>';
+        }
+
+      } catch (err) {
+        console.error('Failed to fetch metrics:', err);
+        document.getElementById('metricsLoadTime').textContent = 'Error loading';
+      }
     }
 
 
