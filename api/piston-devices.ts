@@ -7,85 +7,76 @@ const redis = new Redis({
 });
 
 const DEVICES_KEY = 'piston:devices';
+const DEVICE_TELEMETRY_KEY = 'piston:device-telemetry';
 
 /**
  * Piston Labs Device Fleet API
  * 
- * Manages Teltonika GPS device inventory for the telemetry platform.
+ * Manages Teltonika OBD-II device fleet for the telemetry platform.
  * 
  * GET /api/piston-devices - List all devices
- * GET /api/piston-devices?imei=862464068511489 - Get specific device
- * POST /api/piston-devices - Add/update device
- * DELETE /api/piston-devices?imei=xxx - Remove device
+ * GET /api/piston-devices?imei=xxx - Get device status
+ * POST /api/piston-devices - Register new device
+ * POST /api/piston-devices?action=telemetry - Record telemetry
  */
 
-interface TeltonikaDevice {
+interface Device {
   imei: string;
   name: string;
-  model: string;  // FMB920, FMM00A, etc.
-  status: 'active' | 'inactive' | 'provisioning' | 'error';
+  model: 'FMB920' | 'FMM00A' | 'FMC130' | 'unknown';
+  status: 'active' | 'idle' | 'offline' | 'provisioning';
   vehicle?: {
-    vin?: string;
     make?: string;
     model?: string;
     year?: number;
-    owner?: string;
+    vin?: string;
   };
-  connectivity: {
-    lastSeen?: string;
-    signalStrength?: number;
-    carrier?: string;
+  simIccid?: string;
+  firmwareVersion?: string;
+  lastSeen?: string;
+  lastLocation?: {
+    lat: number;
+    lng: number;
+    speed: number;
+    heading: number;
   };
-  telemetry?: {
-    lastPosition?: { lat: number; lng: number };
-    lastSpeed?: number;
-    lastOdometer?: number;
-    lastUpdate?: string;
-  };
-  provisioning: {
-    certificatePath?: string;
-    provisionedAt?: string;
-    provisionedBy?: string;
-  };
-  createdAt: string;
-  updatedAt: string;
+  registeredAt: string;
+  provisionedBy?: string;
   notes?: string;
+  // Telemetry stats
+  totalMessages?: number;
+  messagesLast24h?: number;
+  lastOdometer?: number;
+  lastFuelLevel?: number;
 }
 
-// Known devices from teltonika-context-system
-const KNOWN_DEVICES: Record<string, Partial<TeltonikaDevice>> = {
+// Known Piston Labs devices (from teltonika-context-system)
+const KNOWN_DEVICES: Record<string, Partial<Device>> = {
   '862464068511489': {
     name: 'Test Device',
     model: 'FMB920',
-    status: 'active',
-    vehicle: { make: 'Test', model: 'Vehicle', year: 2024 },
-    notes: 'Primary development/testing device'
+    vehicle: { make: 'Test', model: 'Vehicle', year: 2024 }
   },
   '862464068525638': {
-    name: 'Toyota',
-    model: 'FMM00A',
-    status: 'active',
-    vehicle: { make: 'Toyota', model: 'Camry' },
-    notes: 'Production device - customer vehicle'
+    name: 'Toyota Device',
+    model: 'FMB920',
+    vehicle: { make: 'Toyota', model: 'Camry', year: 2020 }
   },
   '862464068558217': {
-    name: 'Lexus',
+    name: 'Lexus Device',
     model: 'FMM00A',
-    status: 'active',
-    vehicle: { make: 'Lexus' },
-    notes: 'Production device - customer vehicle'
+    vehicle: { make: 'Lexus', model: 'RX350', year: 2019 }
   },
   '862464068597504': {
-    name: 'Device 4',
-    model: 'FMM00A',
-    status: 'inactive',
-    notes: 'Spare device - not deployed'
+    name: 'Fleet Device 4',
+    model: 'FMB920',
+    vehicle: { make: 'Honda', model: 'Civic', year: 2021 }
   }
 };
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -93,144 +84,198 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
+    const { imei, action } = req.query;
+
     // GET: List devices or get specific device
     if (req.method === 'GET') {
-      const { imei, status } = req.query;
-
       // Get specific device
       if (imei && typeof imei === 'string') {
-        // Check Redis first
-        const cached = await redis.hget(DEVICES_KEY, imei);
-        if (cached) {
-          const device = typeof cached === 'string' ? JSON.parse(cached) : cached;
-          return res.json({ device });
+        const deviceRaw = await redis.hget(DEVICES_KEY, imei);
+        
+        if (!deviceRaw) {
+          // Check if it's a known device not yet in Redis
+          if (KNOWN_DEVICES[imei]) {
+            const knownDevice: Device = {
+              imei,
+              ...KNOWN_DEVICES[imei],
+              name: KNOWN_DEVICES[imei].name || `Device ${imei}`,
+              model: KNOWN_DEVICES[imei].model || 'unknown',
+              status: 'active',
+              registeredAt: new Date().toISOString()
+            };
+            // Save to Redis
+            await redis.hset(DEVICES_KEY, { [imei]: JSON.stringify(knownDevice) });
+            return res.json({ device: knownDevice, source: 'known_devices' });
+          }
+          return res.status(404).json({ error: 'Device not found', imei });
         }
 
-        // Fall back to known devices
-        const known = KNOWN_DEVICES[imei];
-        if (known) {
-          const device: TeltonikaDevice = {
-            imei,
-            name: known.name || `Device ${imei.slice(-4)}`,
-            model: known.model || 'Unknown',
-            status: known.status || 'inactive',
-            vehicle: known.vehicle,
-            connectivity: {},
-            provisioning: {
-              certificatePath: `certificates/${imei}/`,
-            },
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            notes: known.notes
-          };
-          return res.json({ device, source: 'known_devices' });
-        }
+        const device: Device = typeof deviceRaw === 'string' ? JSON.parse(deviceRaw) : deviceRaw;
+        
+        // Get recent telemetry
+        const telemetryRaw = await redis.lrange(`${DEVICE_TELEMETRY_KEY}:${imei}`, 0, 9);
+        const recentTelemetry = telemetryRaw.map((t: unknown) => 
+          typeof t === 'string' ? JSON.parse(t) : t
+        );
 
-        return res.status(404).json({ error: 'Device not found' });
+        return res.json({ 
+          device, 
+          recentTelemetry,
+          health: calculateDeviceHealth(device)
+        });
       }
 
       // List all devices
-      const cachedDevices = await redis.hgetall(DEVICES_KEY) || {};
-      const devices: TeltonikaDevice[] = [];
+      const devicesRaw = await redis.hgetall(DEVICES_KEY) || {};
+      let devices: Device[] = Object.values(devicesRaw).map((d: unknown) =>
+        typeof d === 'string' ? JSON.parse(d) : d
+      ) as Device[];
 
-      // Add cached devices
-      for (const [deviceImei, data] of Object.entries(cachedDevices)) {
-        const device = typeof data === 'string' ? JSON.parse(data) : data;
-        devices.push(device);
-      }
-
-      // Add known devices not in cache
-      for (const [deviceImei, known] of Object.entries(KNOWN_DEVICES)) {
-        if (!cachedDevices[deviceImei]) {
-          devices.push({
-            imei: deviceImei,
-            name: known.name || `Device ${deviceImei.slice(-4)}`,
-            model: known.model || 'Unknown',
-            status: known.status || 'inactive',
-            vehicle: known.vehicle,
-            connectivity: {},
-            provisioning: {
-              certificatePath: `certificates/${deviceImei}/`,
-            },
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            notes: known.notes
-          });
+      // Add known devices if not in Redis
+      for (const [knownImei, knownData] of Object.entries(KNOWN_DEVICES)) {
+        if (!devices.find(d => d.imei === knownImei)) {
+          const device: Device = {
+            imei: knownImei,
+            ...knownData,
+            name: knownData.name || `Device ${knownImei}`,
+            model: knownData.model || 'unknown',
+            status: 'active',
+            registeredAt: new Date().toISOString()
+          };
+          devices.push(device);
+          // Save to Redis
+          await redis.hset(DEVICES_KEY, { [knownImei]: JSON.stringify(device) });
         }
       }
 
-      // Filter by status if requested
-      let filteredDevices = devices;
-      if (status && typeof status === 'string') {
-        filteredDevices = devices.filter(d => d.status === status);
-      }
+      // Calculate fleet stats
+      const stats = {
+        total: devices.length,
+        active: devices.filter(d => d.status === 'active').length,
+        idle: devices.filter(d => d.status === 'idle').length,
+        offline: devices.filter(d => d.status === 'offline').length
+      };
 
-      // Sort by name
-      filteredDevices.sort((a, b) => a.name.localeCompare(b.name));
-
-      return res.json({
-        devices: filteredDevices,
-        count: filteredDevices.length,
-        active: filteredDevices.filter(d => d.status === 'active').length
-      });
+      return res.json({ devices, stats });
     }
 
-    // POST: Add or update device
+    // POST: Register device or record telemetry
     if (req.method === 'POST') {
-      const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-      const { imei, name, model, status, vehicle, notes, connectivity, telemetry } = body;
+      let body: any;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
 
-      if (!imei) {
+      // Record telemetry
+      if (action === 'telemetry') {
+        const { imei: telemetryImei, data } = body;
+        if (!telemetryImei || !data) {
+          return res.status(400).json({ error: 'imei and data required' });
+        }
+
+        // Store telemetry (keep last 100 entries)
+        const telemetryEntry = {
+          ...data,
+          receivedAt: new Date().toISOString()
+        };
+        await redis.lpush(`${DEVICE_TELEMETRY_KEY}:${telemetryImei}`, JSON.stringify(telemetryEntry));
+        await redis.ltrim(`${DEVICE_TELEMETRY_KEY}:${telemetryImei}`, 0, 99);
+
+        // Update device last seen
+        const deviceRaw = await redis.hget(DEVICES_KEY, telemetryImei);
+        if (deviceRaw) {
+          const device: Device = typeof deviceRaw === 'string' ? JSON.parse(deviceRaw) : deviceRaw;
+          device.lastSeen = new Date().toISOString();
+          device.status = 'active';
+          if (data.location) device.lastLocation = data.location;
+          if (data.odometer) device.lastOdometer = data.odometer;
+          if (data.fuelLevel) device.lastFuelLevel = data.fuelLevel;
+          device.totalMessages = (device.totalMessages || 0) + 1;
+          await redis.hset(DEVICES_KEY, { [telemetryImei]: JSON.stringify(device) });
+        }
+
+        return res.json({ success: true, message: 'Telemetry recorded' });
+      }
+
+      // Register new device
+      const { 
+        imei: newImei, 
+        name, 
+        model = 'FMB920', 
+        vehicle, 
+        simIccid,
+        provisionedBy 
+      } = body;
+
+      if (!newImei) {
         return res.status(400).json({ error: 'imei is required' });
       }
 
-      // Get existing or create new
-      let device: TeltonikaDevice;
-      const existing = await redis.hget(DEVICES_KEY, imei);
-      
+      // Check if already exists
+      const existing = await redis.hget(DEVICES_KEY, newImei);
       if (existing) {
-        device = typeof existing === 'string' ? JSON.parse(existing) : existing;
-      } else {
-        const known = KNOWN_DEVICES[imei];
-        device = {
-          imei,
-          name: known?.name || name || `Device ${imei.slice(-4)}`,
-          model: known?.model || model || 'Unknown',
-          status: known?.status || status || 'inactive',
-          vehicle: known?.vehicle || vehicle,
-          connectivity: {},
-          provisioning: {},
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          notes: known?.notes || notes
-        };
+        return res.status(409).json({ error: 'Device already registered', imei: newImei });
       }
 
-      // Update fields
-      if (name) device.name = name;
-      if (model) device.model = model;
-      if (status) device.status = status;
-      if (vehicle) device.vehicle = { ...device.vehicle, ...vehicle };
-      if (notes) device.notes = notes;
-      if (connectivity) device.connectivity = { ...device.connectivity, ...connectivity };
-      if (telemetry) device.telemetry = { ...device.telemetry, ...telemetry };
-      device.updatedAt = new Date().toISOString();
+      const device: Device = {
+        imei: newImei,
+        name: name || `Device ${newImei}`,
+        model: model as Device['model'],
+        status: 'provisioning',
+        vehicle,
+        simIccid,
+        provisionedBy,
+        registeredAt: new Date().toISOString()
+      };
 
-      await redis.hset(DEVICES_KEY, { [imei]: JSON.stringify(device) });
+      await redis.hset(DEVICES_KEY, { [newImei]: JSON.stringify(device) });
 
-      return res.json({ success: true, device });
+      return res.json({
+        success: true,
+        device,
+        nextSteps: [
+          '1. Generate AWS IoT certificate',
+          '2. Configure device with certificate',
+          '3. Insert SIM card',
+          '4. Install in vehicle OBD-II port',
+          '5. Device will auto-connect and start transmitting'
+        ],
+        provisioningScript: `powershell -File scripts/deployment/provision_new_device.ps1 -IMEI ${newImei}`
+      });
     }
 
-    // DELETE: Remove device
-    if (req.method === 'DELETE') {
-      const { imei } = req.query;
-
-      if (!imei || typeof imei !== 'string') {
+    // PUT: Update device
+    if (req.method === 'PUT') {
+      const updateImei = imei as string;
+      if (!updateImei) {
         return res.status(400).json({ error: 'imei query parameter required' });
       }
 
-      await redis.hdel(DEVICES_KEY, imei);
-      return res.json({ success: true, removed: imei });
+      let body: any;
+      try {
+        body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON' });
+      }
+
+      const deviceRaw = await redis.hget(DEVICES_KEY, updateImei);
+      if (!deviceRaw) {
+        return res.status(404).json({ error: 'Device not found' });
+      }
+
+      const device: Device = typeof deviceRaw === 'string' ? JSON.parse(deviceRaw) : deviceRaw;
+      
+      // Update allowed fields
+      if (body.name) device.name = body.name;
+      if (body.status) device.status = body.status;
+      if (body.vehicle) device.vehicle = { ...device.vehicle, ...body.vehicle };
+      if (body.notes) device.notes = body.notes;
+
+      await redis.hset(DEVICES_KEY, { [updateImei]: JSON.stringify(device) });
+
+      return res.json({ success: true, device });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
@@ -238,4 +283,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Device API error:', error);
     return res.status(500).json({ error: 'Server error', details: String(error) });
   }
+}
+
+function calculateDeviceHealth(device: Device): { score: number; status: string; issues: string[] } {
+  const issues: string[] = [];
+  let score = 100;
+
+  // Check last seen
+  if (device.lastSeen) {
+    const lastSeenMs = Date.now() - new Date(device.lastSeen).getTime();
+    const hoursSinceLastSeen = lastSeenMs / (1000 * 60 * 60);
+    
+    if (hoursSinceLastSeen > 24) {
+      score -= 40;
+      issues.push(`No data in ${Math.floor(hoursSinceLastSeen)} hours`);
+    } else if (hoursSinceLastSeen > 1) {
+      score -= 10;
+      issues.push(`Last data ${Math.floor(hoursSinceLastSeen)} hours ago`);
+    }
+  } else {
+    score -= 20;
+    issues.push('No telemetry data received yet');
+  }
+
+  // Check status
+  if (device.status === 'offline') {
+    score -= 30;
+    issues.push('Device offline');
+  } else if (device.status === 'provisioning') {
+    score -= 10;
+    issues.push('Device still provisioning');
+  }
+
+  const status = score >= 80 ? 'healthy' : score >= 50 ? 'warning' : 'critical';
+
+  return { score, status, issues };
 }
