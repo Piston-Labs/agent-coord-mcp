@@ -7613,8 +7613,8 @@
           </tr>
         `;
       }).join('');
+      console.log('[DEVICELIST] innerHTML set, tbody now has', tbody.children.length, 'rows');
     }
-    
     function sortDeviceList() {
       const select = document.getElementById('deviceSortBy');
       if (select) {
