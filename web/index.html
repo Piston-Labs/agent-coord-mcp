@@ -3265,6 +3265,41 @@
       header h1 {
         font-size: 16px;
       }
+      
+      /* Tabs header - stack on mobile */
+      .tabs-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        padding: 8px 12px !important;
+        gap: 8px;
+      }
+      
+      .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 2px;
+      }
+      
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+      
+      .tab {
+        padding: 10px 12px;
+        font-size: 12px;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      
+      #messageCount {
+        font-size: 11px;
+        text-align: center;
+        padding: 4px 8px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+        order: -1;
+      }
 
       .panel-header {
         padding: 10px 12px;
@@ -3524,6 +3559,77 @@
       
       .fleet-map {
         height: 100%;
+      }
+      
+      /* Mobile Device List Table */
+      .device-list-container {
+        margin: 8px;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      
+      .device-list-header {
+        flex-direction: column;
+        gap: 8px;
+        padding: 10px 12px;
+      }
+      
+      .device-list-header h3 {
+        font-size: 13px;
+      }
+      
+      .device-list-controls {
+        width: 100%;
+        justify-content: space-between;
+      }
+      
+      .device-list-table {
+        font-size: 11px;
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      
+      .device-list-table thead,
+      .device-list-table tbody,
+      .device-list-table tr {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+      }
+      
+      .device-list-table th,
+      .device-list-table td {
+        padding: 8px 6px;
+        font-size: 10px;
+        white-space: nowrap;
+      }
+      
+      .device-list-table .imei-cell {
+        font-size: 9px;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      /* Hide less important columns on mobile */
+      .device-list-table th:nth-child(6),
+      .device-list-table td:nth-child(6),
+      .device-list-table th:nth-child(7),
+      .device-list-table td:nth-child(7),
+      .device-list-table th:nth-child(8),
+      .device-list-table td:nth-child(8) {
+        display: none;
+      }
+      
+      .device-list-table .status-badge {
+        padding: 2px 6px;
+        font-size: 9px;
+      }
+      
+      .device-list-table .health-score {
+        padding: 2px 6px;
+        font-size: 10px;
       }
       
       /* Device modal - full screen on mobile */
