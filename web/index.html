@@ -6871,21 +6871,30 @@
     
     // Start app - check auth first
     document.addEventListener('DOMContentLoaded', async () => {
-      setupLoginForm();
-      setupRegisterForm();
-      setupAuthToggle();
-
-      const authenticated = await checkSession();
-      
-      // Hide loading screen once auth check is done
       const loadingScreen = document.getElementById('loadingScreen');
-      if (loadingScreen) loadingScreen.style.display = 'none';
       
-      if (authenticated) {
-        isAuthenticated = true;
-        hideLoginModal();
-        await init();
-      } else {
+      try {
+        setupLoginForm();
+        setupRegisterForm();
+        setupAuthToggle();
+
+        const authenticated = await checkSession();
+        
+        // Hide loading screen once auth check is done
+        if (loadingScreen) loadingScreen.style.display = 'none';
+        
+        if (authenticated) {
+          isAuthenticated = true;
+          hideLoginModal();
+          await init();
+        } else {
+          showLoginModal();
+        }
+      } catch (error) {
+        console.error('Startup error:', error);
+        // Always hide loading screen even on error
+        if (loadingScreen) loadingScreen.style.display = 'none';
+        // Show login as fallback
         showLoginModal();
       }
     });
