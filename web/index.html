@@ -1014,6 +1014,86 @@
         padding: 12px;
       }
       
+      /* Fix: Fleet stat labels - increase from 10px to 12px for readability */
+      .fleet-stat-label {
+        font-size: 12px !important;
+        letter-spacing: 0.2px;
+      }
+      
+      /* Fix: Fleet stat values - ensure readable size */
+      .fleet-stat-value {
+        font-size: 18px;
+      }
+      
+      /* Fix: Fleet summary wrapping and spacing */
+      .fleet-summary {
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+      
+      .fleet-stat {
+        flex: 1 1 calc(33% - 8px);
+        min-width: 65px;
+        max-width: 100px;
+        padding: 8px 10px;
+      }
+      
+      /* Fix: Telemetry controls - ensure proper touch targets (44x44px minimum) */
+      .telemetry-controls {
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+      
+      .telemetry-controls button,
+      .telemetry-controls .map-btn,
+      .telemetry-controls .refresh-btn,
+      .telemetry-controls .overview-toggle {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px 14px;
+        font-size: 12px;
+      }
+      
+      /* Fix: Live indicator spacing */
+      .live-indicator {
+        font-size: 11px;
+        gap: 6px;
+      }
+      
+      .last-updated {
+        font-size: 10px;
+      }
+      
+      /* Fix: Device list table - horizontal scrolling */
+      .device-list-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0;
+      }
+      
+      .device-list-table {
+        min-width: 600px;
+        font-size: 11px;
+      }
+      
+      .device-list-table th,
+      .device-list-table td {
+        padding: 8px 6px;
+        font-size: 11px;
+      }
+      
+      .device-list-header {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      
+      .device-list-header h3 {
+        font-size: 14px;
+      }
+      
       .device-grid {
         grid-template-columns: 1fr;
         gap: 10px;
@@ -1027,6 +1107,40 @@
       .device-stats {
         grid-template-columns: repeat(2, 1fr);
         gap: 8px;
+      }
+      
+      /* Fix: Health overview on mobile */
+      .health-overview {
+        padding: 12px;
+        gap: 16px;
+      }
+      
+      .health-gauge {
+        transform: scale(0.85);
+        margin: -10px 0;
+      }
+      
+      .gauge-score {
+        font-size: 24px;
+      }
+      
+      .breakdown-label {
+        font-size: 11px;
+      }
+      
+      .breakdown-value {
+        font-size: 12px;
+      }
+      
+      /* Fix: Alerts banner on mobile */
+      .alerts-banner {
+        padding: 8px 12px;
+      }
+      
+      .alert-indicator {
+        padding: 6px 10px;
+        font-size: 11px;
+        min-height: 36px;
       }
       
       /* System health on mobile */
@@ -1159,6 +1273,42 @@
       .chat-input button#sendBtn {
         padding: 10px 12px;
         min-width: 50px;
+      }
+      
+      /* Extra small telemetry fixes */
+      .fleet-stat {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 60px;
+        padding: 6px 8px;
+      }
+      
+      .fleet-stat-value {
+        font-size: 16px;
+      }
+      
+      .fleet-stat-label {
+        font-size: 11px !important;
+      }
+      
+      .telemetry-controls button,
+      .telemetry-controls .map-btn,
+      .telemetry-controls .refresh-btn {
+        padding: 8px 12px;
+        font-size: 11px;
+      }
+      
+      .device-list-table {
+        font-size: 10px;
+      }
+      
+      .device-list-table th,
+      .device-list-table td {
+        padding: 6px 4px;
+      }
+      
+      .health-gauge {
+        transform: scale(0.75);
+        margin: -15px 0;
       }
     }
 
