@@ -206,6 +206,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // GET: Retrieve context
     if (req.method === 'GET') {
+      // Cache built-in context for 5 minutes (reduces Redis calls)
+      res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=60');
       const { cluster, topic, depth = 'summary' } = req.query;
 
       // List all clusters
