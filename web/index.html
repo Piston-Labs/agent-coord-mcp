@@ -536,6 +536,91 @@
     
     
     /* Device Detail Modal */
+
+    /* Sparkline Charts */
+    .sparkline-container {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    
+    .sparkline-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .sparkline-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    
+    .sparkline-value {
+      font-size: 12px;
+      color: var(--accent);
+    }
+    
+    .sparkline {
+      height: 40px;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      background: var(--bg-primary);
+      border-radius: 4px;
+      padding: 4px;
+    }
+    
+    .sparkline-bar {
+      flex: 1;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+      min-width: 4px;
+      transition: height 0.3s ease;
+      opacity: 0.7;
+    }
+    
+    .sparkline-bar:hover {
+      opacity: 1;
+    }
+    
+    .sparkline-bar.warning {
+      background: var(--warning);
+    }
+    
+    .sparkline-bar.critical {
+      background: var(--danger);
+    }
+    
+    .sparkline-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+      font-size: 9px;
+      color: var(--text-secondary);
+    }
+    
+    .chart-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 12px;
+    }
+    
+    .chart-card {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid var(--border);
+    }
+    
+    .chart-card-title {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
     .device-modal-overlay {
       display: none;
       position: fixed;
@@ -1108,6 +1193,58 @@
 
 
     /* Telemetry View */
+
+
+    /* Real-time Indicators */
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+    
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      animation: livePulse 2s infinite;
+    }
+    
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    
+    .last-updated {
+      font-size: 10px;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+    
+    .refresh-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .data-stale {
+      color: var(--warning);
+    }
+    
+    .refresh-btn.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
 
     /* Health Overview Panel */
     .health-overview {
@@ -2942,12 +3079,17 @@
             </div>
           </div>
           <div class="telemetry-controls">
+            <div class="live-indicator" id="liveIndicator">
+              <span class="live-dot"></span>
+              <span>Live</span>
+              <span class="last-updated" id="telemetryLastUpdated">--</span>
+            </div>
             <button class="map-btn" onclick="toggleMapView()" title="Toggle Fleet Map">Map</button>
             <button class="overview-toggle" onclick="toggleHealthOverview()" title="Toggle Health Overview">Overview</button>
             <div class="alert-indicator" id="alertIndicator" style="display: none;">
               <span class="alert-count" id="alertCount">0</span> Alerts
             </div>
-            <button class="refresh-btn" onclick="fetchTelemetry()">Refresh</button>
+            <button class="refresh-btn" id="telemetryRefreshBtn" onclick="fetchTelemetry()">Refresh</button>
           </div>
         </div>
         <div class="alerts-banner" id="alertsBanner" style="display: none;">
@@ -4182,6 +4324,12 @@
     let telemetryRefreshInterval = null;
 
     async function fetchTelemetry() {
+      const refreshBtn = document.getElementById('telemetryRefreshBtn');
+      if (refreshBtn) {
+        refreshBtn.classList.add('loading');
+        refreshBtn.innerHTML = '<span class="refresh-spinner"></span>';
+      }
+      
       try {
         const res = await fetch(API_BASE + '/telemetry?alerts=true');
         const data = await res.json();
@@ -4219,6 +4367,12 @@
         
         // Update health overview panel
         updateHealthOverview(data.devices || [], data.alerts || []);
+        
+        // Update last updated time
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const lastUpdatedEl = document.getElementById('telemetryLastUpdated');
+        if (lastUpdatedEl) lastUpdatedEl.textContent = timeStr;
 
         // Start auto-refresh if not already running
         if (!telemetryRefreshInterval) {
@@ -4235,6 +4389,14 @@
             <p>Failed to load telemetry data</p>
           </div>
         `;
+        const lastUpdatedEl = document.getElementById('telemetryLastUpdated');
+        if (lastUpdatedEl) lastUpdatedEl.classList.add('data-stale');
+      } finally {
+        const refreshBtn = document.getElementById('telemetryRefreshBtn');
+        if (refreshBtn) {
+          refreshBtn.classList.remove('loading');
+          refreshBtn.innerHTML = 'Refresh';
+        }
       }
     }
 
@@ -4472,10 +4634,68 @@
 
       // Show modal
       document.getElementById('deviceModalOverlay').classList.add('visible');
+      
+      // Fetch and display history
+      fetchDeviceHistory(imei);
     }
 
     function closeDeviceModal() {
       document.getElementById('deviceModalOverlay').classList.remove('visible');
+    }
+    
+    async function fetchDeviceHistory(imei) {
+      try {
+        const res = await fetch(API_BASE + '/telemetry?imei=' + imei + '&history=true');
+        const data = await res.json();
+        if (data.history && data.history.length > 0) {
+          document.getElementById('modalHistorySection').style.display = 'block';
+          renderSparkline('batterySparkline', data.history, 'batteryVoltage', 10, 15);
+          renderSparkline('speedSparkline', data.history, 'speed', 0, 150);
+        } else {
+          document.getElementById('modalHistorySection').style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Failed to fetch device history:', err);
+        document.getElementById('modalHistorySection').style.display = 'none';
+      }
+    }
+    
+    function renderSparkline(containerId, history, metric, minVal, maxVal) {
+      const container = document.getElementById(containerId);
+      if (!container) return;
+      
+      // Reverse so oldest is first
+      const data = [...history].reverse();
+      
+      // Get values
+      const values = data.map(h => {
+        if (metric === 'batteryVoltage') return h.batteryVoltage || h.metrics?.batteryVoltage || 0;
+        if (metric === 'speed') return h.speed || h.metrics?.speed || 0;
+        return 0;
+      });
+      
+      // Calculate range
+      const actualMin = Math.min(...values.filter(v => v > 0)) * 0.9;
+      const actualMax = Math.max(...values) * 1.1;
+      const range = actualMax - actualMin || 1;
+      
+      // Render bars
+      container.innerHTML = values.map((val, i) => {
+        const heightPercent = ((val - actualMin) / range) * 100;
+        const height = Math.max(4, Math.min(100, heightPercent));
+        
+        // Determine bar color
+        let barClass = '';
+        if (metric === 'batteryVoltage') {
+          if (val < 11.0) barClass = 'critical';
+          else if (val < 11.8) barClass = 'warning';
+        } else if (metric === 'speed') {
+          if (val > 120) barClass = 'critical';
+          else if (val > 100) barClass = 'warning';
+        }
+        
+        return '<div class="sparkline-bar ' + barClass + '" style="height: ' + height + '%" title="' + val.toFixed(1) + '"></div>';
+      }).join('');
     }
 
     function setStatusIndicator(id, active) {
@@ -5761,6 +5981,27 @@
               Satellites: <span id="modalSats">--</span> |
               Signal: <span id="modalSignal">--</span>/5
             </span>
+          </div>
+        </div>
+        <div class="modal-section sparkline-container" id="modalHistorySection" style="display:none;">
+          <h4>24-Hour History</h4>
+          <div class="chart-row">
+            <div class="chart-card">
+              <div class="chart-card-title">Battery Voltage</div>
+              <div class="sparkline" id="batterySparkline"></div>
+              <div class="sparkline-labels">
+                <span>24h ago</span>
+                <span>Now</span>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-card-title">Speed (km/h)</div>
+              <div class="sparkline" id="speedSparkline"></div>
+              <div class="sparkline-labels">
+                <span>24h ago</span>
+                <span>Now</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
