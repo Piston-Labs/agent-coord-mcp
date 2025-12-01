@@ -5826,18 +5826,60 @@
             </div>
           ` : '';
 
+          // Determine available quick actions based on current status
+          const quickActions = {
+            'backlog': ['in-progress'],
+            'in-progress': ['review', 'backlog'],
+            'review': ['done', 'in-progress'],
+            'done': ['review']
+          };
+          const actions = quickActions[status] || [];
+          const actionLabels = {
+            'backlog': '← Back',
+            'in-progress': '→ Start',
+            'review': '→ Review',
+            'done': '✓ Done'
+          };
+          
+          const actionsHtml = actions.length > 0 ? `
+            <div class="roadmap-item-actions">
+              ${actions.map(a => `<button class="roadmap-action-btn" onclick="event.stopPropagation(); moveRoadmapItem('${item.id}', '${a}')">${actionLabels[a] || a}</button>`).join('')}
+            </div>
+          ` : '';
+
           return `
             <div class="roadmap-item" onclick="showItemDetails('${item.id}')">
               <div class="roadmap-item-title">${escapeHtml(item.title)}</div>
+              ${item.description ? `<div class="roadmap-item-description">${escapeHtml(item.description)}</div>` : ''}
               <div class="roadmap-item-meta">
                 <span class="roadmap-item-project">${item.project}</span>
                 <span class="roadmap-item-priority ${item.priority}">${item.priority}</span>
                 ${assigneeHtml}
               </div>
+              ${actionsHtml}
             </div>
           `;
         }).join('');
       });
+    }
+
+    async function moveRoadmapItem(itemId, newStatus) {
+      try {
+        const res = await fetch(API_BASE + '/roadmap', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: itemId, status: newStatus })
+        });
+        
+        if (res.ok) {
+          // Refresh roadmap
+          await fetchRoadmap();
+        } else {
+          console.error('Failed to move item');
+        }
+      } catch (err) {
+        console.error('Error moving roadmap item:', err);
+      }
     }
 
     function showAddRoadmapItem() {
