@@ -1,19 +1,17 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { Redis } from '@upstash/redis';
 import Anthropic from '@anthropic-ai/sdk';
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-interface AnalyzeRequest {
-  imageData: string; // base64 data URL (data:image/png;base64,...)
-  prompt?: string; // Optional custom prompt for analysis
-  context?: string; // Optional context about what to look for
-}
+const MESSAGES_KEY = 'agent-coord:messages';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -25,52 +23,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { imageData, prompt, context } = req.body as AnalyzeRequest;
+    const { messageId, imageData: directImageData, prompt } = req.body;
+    
+    let imageData: string | null = null;
+    let imageName: string = 'uploaded-image';
+
+    // If messageId provided, fetch image from chat message
+    if (messageId) {
+      const messages = await redis.lrange(MESSAGES_KEY, 0, 999);
+      const parsedMessages = messages.map((m: any) => typeof m === 'string' ? JSON.parse(m) : m);
+      const targetMessage = parsedMessages.find((m: any) => m.id === messageId);
+      
+      if (!targetMessage) {
+        return res.status(404).json({ error: 'Message not found' });
+      }
+      
+      if (!targetMessage.imageData) {
+        return res.status(400).json({ error: 'Message has no image attached' });
+      }
+      
+      imageData = targetMessage.imageData;
+      imageName = targetMessage.imageName || 'chat-image';
+    } else if (directImageData) {
+      imageData = directImageData;
+    }
 
     if (!imageData) {
-      return res.status(400).json({ error: 'imageData is required (base64 data URL)' });
+      return res.status(400).json({ error: 'messageId or imageData required' });
     }
 
-    // Validate image format
-    if (!imageData.startsWith('data:image/')) {
-      return res.status(400).json({ error: 'Invalid image format. Must be base64 data URL (data:image/...)' });
-    }
-
-    // Extract media type and base64 data
+    // Extract base64 data and media type
     const matches = imageData.match(/^data:(image\/[^;]+);base64,(.+)$/);
     if (!matches) {
-      return res.status(400).json({ error: 'Invalid base64 image format' });
+      return res.status(400).json({ error: 'Invalid image data format' });
     }
-
+    
     const mediaType = matches[1] as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
     const base64Data = matches[2];
 
-    // Validate supported media types
-    const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!supportedTypes.includes(mediaType)) {
-      return res.status(400).json({
-        error: `Unsupported image type: ${mediaType}. Supported: ${supportedTypes.join(', ')}`
-      });
-    }
 
-    // Build the analysis prompt
-    let analysisPrompt = prompt || 'Please analyze this image and provide a detailed description. Include:';
-    if (!prompt) {
-      analysisPrompt += `
-1. What is shown in the image (objects, people, text, UI elements, etc.)
-2. Any text visible in the image (transcribe it)
-3. Key details that would help someone understand the context
-4. If it's a screenshot, describe the application/interface shown`;
-    }
+    // Initialize Anthropic client
+    const anthropic = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    });
 
-    if (context) {
-      analysisPrompt += `\n\nAdditional context: ${context}`;
-    }
-
-    // Call Claude Vision API
+    // Call Claude vision API
+    const analysisPrompt = prompt || 'Analyze this image. Describe what you see in detail, including any text, objects, UI elements, or relevant information.';
+    
     const response = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2048,
+      max_tokens: 1024,
       messages: [
         {
           role: 'user',
@@ -92,36 +94,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ],
     });
 
-    // Extract the text response
+    // Extract text response
     const textContent = response.content.find(c => c.type === 'text');
-    const analysis = textContent ? textContent.text : 'No analysis generated';
+    const analysis = textContent ? textContent.text : 'No analysis available';
+
 
     return res.json({
       success: true,
+      messageId: messageId || null,
+      imageName,
       analysis,
-      model: response.model,
-      usage: {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-      },
+      model: 'claude-sonnet-4-20250514',
       timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
     console.error('Image analysis error:', error);
-
-    // Handle specific Anthropic errors
-    if (error instanceof Anthropic.APIError) {
-      return res.status(error.status || 500).json({
-        error: 'API error',
-        message: error.message,
-        code: error.status,
-      });
-    }
-
-    return res.status(500).json({
-      error: 'Server error',
-      details: String(error)
+    return res.status(500).json({ 
+      error: 'Image analysis failed', 
+      details: error instanceof Error ? error.message : String(error) 
     });
   }
 }

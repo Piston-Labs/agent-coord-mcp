@@ -1355,6 +1355,146 @@ server.tool(
 );
 
 // ============================================================================
+// WORKFLOW TOOL - Collaboration workflow templates
+// ============================================================================
+
+server.tool(
+  'workflow',
+  'Use predefined collaboration workflows for common tasks. Workflows guide multi-step processes with dependencies, checkpoints, and suggested tools.',
+  {
+    action: z.enum(['list', 'get', 'start', 'update', 'runs']).describe('list=all workflows, get=specific workflow, start=begin a run, update=update step status, runs=recent runs'),
+    workflowId: z.string().optional().describe('Workflow ID (e.g., feature-development, bug-fix, code-review, handoff, research)'),
+    runId: z.string().optional().describe('Run ID for update action'),
+    stepId: z.string().optional().describe('Step ID to update'),
+    status: z.enum(['pending', 'in_progress', 'completed', 'skipped']).optional().describe('New step status'),
+    agentId: z.string().describe('Your agent ID'),
+    notes: z.string().optional().describe('Notes for the run')
+  },
+  async (args) => {
+    const { action, agentId } = args;
+    const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+    try {
+      switch (action) {
+        case 'list': {
+          const res = await fetch(`${API_BASE}/api/workflows`);
+          const data = await res.json();
+
+          // Format for easy reading
+          const formatted = {
+            workflows: data.workflows?.map((w: any) => ({
+              id: w.id,
+              name: w.name,
+              category: w.category,
+              steps: w.steps?.length || 0,
+              description: w.description
+            })),
+            builtinCount: data.builtinCount,
+            customCount: data.customCount
+          };
+
+          return { content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }] };
+        }
+
+        case 'get': {
+          if (!args.workflowId) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'workflowId required' }) }] };
+          }
+
+          const res = await fetch(`${API_BASE}/api/workflows?id=${encodeURIComponent(args.workflowId)}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'start': {
+          if (!args.workflowId) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'workflowId required to start a workflow' }) }] };
+          }
+
+          const res = await fetch(`${API_BASE}/api/workflows?action=start`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              workflowId: args.workflowId,
+              startedBy: agentId
+            })
+          });
+
+          const data = await res.json();
+
+          // Format helpful output
+          if (data.run && data.workflow) {
+            const output = {
+              runId: data.run.id,
+              workflow: data.workflow.name,
+              status: data.run.status,
+              firstStep: data.workflow.steps?.[0],
+              allSteps: data.workflow.steps?.map((s: any) => ({
+                id: s.id,
+                name: s.name,
+                status: data.run.stepStatus[s.id],
+                tools: s.tools,
+                checkpoints: s.checkpoints
+              })),
+              message: `Workflow started! Begin with step: ${data.workflow.steps?.[0]?.name}`
+            };
+            return { content: [{ type: 'text', text: JSON.stringify(output, null, 2) }] };
+          }
+
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'update': {
+          if (!args.runId) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'runId required for update' }) }] };
+          }
+
+          const res = await fetch(`${API_BASE}/api/workflows`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              runId: args.runId,
+              stepId: args.stepId,
+              status: args.status,
+              agentId,
+              notes: args.notes
+            })
+          });
+
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'runs': {
+          const res = await fetch(`${API_BASE}/api/workflows?action=runs`);
+          const data = await res.json();
+
+          // Format for easy reading
+          const formatted = {
+            runs: data.runs?.slice(0, 10).map((r: any) => ({
+              id: r.id,
+              workflow: r.workflowName,
+              status: r.status,
+              startedBy: r.startedBy,
+              startedAt: r.startedAt,
+              participants: r.participants
+            })),
+            totalRuns: data.count
+          };
+
+          return { content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }] };
+        }
+
+        default:
+          return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+      }
+    } catch (error) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+    }
+  }
+);
+
+// ============================================================================
 // Start Server
 // ============================================================================
 
@@ -1362,7 +1502,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 17 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start)');
+  console.error('[agent-coord-mcp] Tools: 18 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);
