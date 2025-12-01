@@ -510,6 +510,236 @@
       padding: 6px 0;
       font-size: 12px;
     }
+    /* Enhanced Metrics Dashboard Styles */
+    .metrics-dashboard {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .metrics-header h3::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: pulse-dot 2s ease-in-out infinite;
+      display: inline-block;
+      margin-right: 8px;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    .metrics-period-selector {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      padding: 3px;
+    }
+
+    .period-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .period-btn:hover {
+      color: var(--text-primary);
+    }
+
+    .period-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .metrics-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .metrics-card.highlight {
+      border-color: var(--accent);
+    }
+
+    .card-icon {
+      font-size: 14px;
+    }
+
+    .metric-hero {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .metric-big.success { color: var(--success); }
+    .metric-big.warning { color: var(--warning); }
+    .metric-big.danger { color: var(--danger); }
+
+    .metric-trend {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .metric-trend.up {
+      color: var(--success);
+      background: rgba(63, 185, 80, 0.15);
+    }
+
+    .metric-trend.down {
+      color: var(--danger);
+      background: rgba(248, 81, 73, 0.15);
+    }
+
+    .metric-trend.neutral {
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+    }
+
+    .metric-sparkline {
+      height: 32px;
+      margin: 12px 0 8px 0;
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .sparkline-bar {
+      flex: 1;
+      background: var(--accent);
+      border-radius: 2px 2px 0 0;
+      min-height: 4px;
+      transition: height 0.3s ease;
+      opacity: 0.6;
+    }
+
+    .sparkline-bar:last-child {
+      opacity: 1;
+    }
+
+    .sparkline-bar:hover {
+      opacity: 1;
+    }
+
+    .metric-progress-bar {
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .metric-progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.5s ease-out;
+    }
+
+    .metric-progress-fill.success { background: linear-gradient(90deg, var(--success), #4ac969); }
+    .metric-progress-fill.warning { background: linear-gradient(90deg, var(--warning), #e5b42a); }
+    .metric-progress-fill.danger { background: linear-gradient(90deg, var(--danger), #f96a64); }
+    .metric-progress-fill.accent { background: linear-gradient(90deg, var(--accent), #7bb8ff); }
+
+    .metric-row-icon {
+      width: 16px;
+      height: 16px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    .metric-row-icon.lock { background: rgba(248, 81, 73, 0.2); }
+    .metric-row-icon.claim { background: rgba(210, 153, 34, 0.2); }
+    .metric-row-icon.handoff { background: rgba(88, 166, 255, 0.2); }
+    .metric-row-icon.workflow { background: rgba(163, 113, 247, 0.2); }
+
+    .contributors-header {
+      padding: 12px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .contributor-rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+    }
+
+    .contributor-rank.gold { background: linear-gradient(135deg, #ffd700, #ffec8b); color: #000; }
+    .contributor-rank.silver { background: linear-gradient(135deg, #c0c0c0, #e8e8e8); color: #000; }
+    .contributor-rank.bronze { background: linear-gradient(135deg, #cd7f32, #daa06d); color: #000; }
+
+    .contributor-bar {
+      width: 60px;
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .contributor-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 3px;
+    }
+
+    .live-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--success);
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      animation: live-pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes live-pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 4px rgba(63, 185, 80, 0); }
+    }
+
+    /* Metrics mobile */
+    @media (max-width: 1200px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+
 
     .contributor-name {
       color: var(--text-primary);
@@ -3921,16 +4151,29 @@
         <div class="metrics-header">
           <h3 style="margin: 0; font-size: 16px;">System Analytics</h3>
           <div style="display: flex; gap: 10px; align-items: center;">
+            <div class="live-indicator">
+              <span class="live-dot"></span>
+              <span>Live</span>
+            </div>
+            <div class="metrics-period-selector">
+              <button class="period-btn active" onclick="setMetricsPeriod('24h')">24h</button>
+              <button class="period-btn" onclick="setMetricsPeriod('7d')">7d</button>
+              <button class="period-btn" onclick="setMetricsPeriod('30d')">30d</button>
+            </div>
             <span id="metricsLoadTime" style="font-size: 11px; color: var(--text-secondary);">--</span>
-            <button class="refresh-btn" onclick="fetchMetrics()">Refresh</button>
+            <button class="refresh-btn" onclick="fetchMetrics()">↻</button>
           </div>
         </div>
         <div class="metrics-grid" id="metricsGrid">
           <div class="metrics-card">
-            <div class="metrics-card-title">Agents</div>
+            <div class="metrics-card-title"><span class="card-icon">👥</span> Agents</div>
             <div class="metrics-card-content">
-              <div class="metric-big" id="metricAgentsActive">0</div>
+              <div class="metric-hero">
+                <div class="metric-big" id="metricAgentsActive">0</div>
+                <span class="metric-trend up" id="agentsTrend">+0</span>
+              </div>
               <div class="metric-label">Active Now</div>
+              <div class="metric-sparkline" id="agentsSparkline"></div>
               <div class="metric-row">
                 <span>Total registered:</span>
                 <span id="metricAgentsTotal">0</span>
@@ -3942,10 +4185,14 @@
             </div>
           </div>
           <div class="metrics-card">
-            <div class="metrics-card-title">Messages</div>
+            <div class="metrics-card-title"><span class="card-icon">💬</span> Messages</div>
             <div class="metrics-card-content">
-              <div class="metric-big" id="metricMessagesTotal">0</div>
+              <div class="metric-hero">
+                <div class="metric-big" id="metricMessagesTotal">0</div>
+                <span class="metric-trend neutral" id="messagesTrend">--</span>
+              </div>
               <div class="metric-label">Total Messages</div>
+              <div class="metric-sparkline" id="messagesSparkline"></div>
               <div class="metric-row">
                 <span>Last 24h:</span>
                 <span id="metricMessages24h">0</span>
@@ -3957,62 +4204,79 @@
             </div>
           </div>
           <div class="metrics-card">
-            <div class="metrics-card-title">Tasks</div>
+            <div class="metrics-card-title"><span class="card-icon">✅</span> Tasks</div>
             <div class="metrics-card-content">
-              <div class="metric-big completion-rate" id="metricTasksRate">0%</div>
+              <div class="metric-hero">
+                <div class="metric-big success" id="metricTasksRate">0%</div>
+              </div>
               <div class="metric-label">Completion Rate</div>
-              <div class="metric-row">
-                <span>Total:</span>
-                <span id="metricTasksTotal">0</span>
+              <div class="metric-progress-bar">
+                <div class="metric-progress-fill success" id="tasksProgressBar" style="width: 0%"></div>
               </div>
               <div class="metric-row">
-                <span>In Progress:</span>
+                <span>✓ Completed:</span>
+                <span id="metricTasksCompleted">0</span>
+              </div>
+              <div class="metric-row">
+                <span>⏳ In Progress:</span>
                 <span id="metricTasksProgress">0</span>
+              </div>
+              <div class="metric-row">
+                <span>📋 Total:</span>
+                <span id="metricTasksTotal">0</span>
               </div>
             </div>
           </div>
           <div class="metrics-card">
-            <div class="metrics-card-title">Coordination</div>
+            <div class="metrics-card-title"><span class="card-icon">🔗</span> Coordination</div>
             <div class="metrics-card-content">
               <div class="metric-row">
-                <span>Active Locks:</span>
+                <span><span class="metric-row-icon lock">🔒</span> Active Locks:</span>
                 <span id="metricLocks">0</span>
               </div>
               <div class="metric-row">
-                <span>Active Claims:</span>
+                <span><span class="metric-row-icon claim">🏷️</span> Active Claims:</span>
                 <span id="metricClaims">0</span>
               </div>
               <div class="metric-row">
-                <span>Pending Handoffs:</span>
+                <span><span class="metric-row-icon handoff">🤝</span> Pending Handoffs:</span>
                 <span id="metricHandoffs">0</span>
               </div>
               <div class="metric-row">
-                <span>Workflow Runs:</span>
+                <span><span class="metric-row-icon workflow">⚙️</span> Workflow Runs:</span>
                 <span id="metricWorkflows">0</span>
               </div>
             </div>
           </div>
           <div class="metrics-card">
-            <div class="metrics-card-title">Memory</div>
+            <div class="metrics-card-title"><span class="card-icon">🧠</span> Memory</div>
             <div class="metrics-card-content">
-              <div class="metric-big" id="metricMemoryTotal">0</div>
-              <div class="metric-label">Total Items</div>
+              <div class="metric-hero">
+                <div class="metric-big" id="metricMemoryTotal">0</div>
+              </div>
+              <div class="metric-label">Total Items Stored</div>
+              <div class="metric-progress-bar">
+                <div class="metric-progress-fill accent" id="memoryProgressBar" style="width: 50%"></div>
+              </div>
               <div id="memoryCategories" style="margin-top: 8px;"></div>
             </div>
           </div>
           <div class="metrics-card">
-            <div class="metrics-card-title">Fleet Telemetry</div>
+            <div class="metrics-card-title"><span class="card-icon">🚗</span> Fleet Telemetry</div>
             <div class="metrics-card-content">
-              <div class="metric-row">
-                <span>Total Devices:</span>
-                <span id="metricDevices">0</span>
+              <div class="metric-hero">
+                <div class="metric-big" id="metricDevices">0</div>
+              </div>
+              <div class="metric-label">Total Devices</div>
+              <div class="metric-progress-bar">
+                <div class="metric-progress-fill success" id="fleetActiveBar" style="width: 0%"></div>
               </div>
               <div class="metric-row">
-                <span>Active (ignition on):</span>
+                <span>🟢 Active (ignition on):</span>
                 <span id="metricDevicesActive">0</span>
               </div>
               <div class="metric-row">
-                <span>Avg Battery:</span>
+                <span>🔋 Avg Battery:</span>
                 <span id="metricBattery">--</span>
               </div>
             </div>
@@ -4020,7 +4284,10 @@
         </div>
         <div class="metrics-footer">
           <div class="top-contributors" id="topContributors">
-            <h4 style="margin: 0 0 8px 0; font-size: 13px; color: var(--text-secondary);">Top Contributors</h4>
+            <div class="contributors-header">
+              <span>🏆 Top Contributors</span>
+              <span id="contributorPeriod">24h</span>
+            </div>
             <div id="contributorsList">Loading...</div>
           </div>
         </div>
@@ -5792,63 +6059,177 @@
     
     // === METRICS FUNCTIONS ===
 
+    let currentMetricsPeriod = '24h';
+    let metricsHistory = { agents: [], messages: [] };
+
+    function setMetricsPeriod(period) {
+      currentMetricsPeriod = period;
+      document.querySelectorAll('.period-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === period);
+      });
+      const periodEl = document.getElementById('contributorPeriod');
+      if (periodEl) periodEl.textContent = period;
+      fetchMetrics();
+    }
+
+    function renderSparkline(containerId, data, color = 'var(--accent)') {
+      const container = document.getElementById(containerId);
+      if (!container || !data || data.length === 0) return;
+      const max = Math.max(...data, 1);
+      container.innerHTML = data.map((val, i) => {
+        const height = Math.max(4, (val / max) * 100);
+        const opacity = i === data.length - 1 ? '1' : '0.5';
+        return '<div class="sparkline-bar" style="height: ' + height + '%; background: ' + color + '; opacity: ' + opacity + ';"></div>';
+      }).join('');
+    }
+
+    function animateNumber(elementId, newValue) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const current = parseInt(el.textContent) || 0;
+      const diff = newValue - current;
+      if (Math.abs(diff) === 0) { el.textContent = newValue; return; }
+      let step = 0;
+      const steps = 15;
+      const stepValue = diff / steps;
+      const animate = () => {
+        step++;
+        el.textContent = step === steps ? newValue : Math.round(current + stepValue * step);
+        if (step < steps) requestAnimationFrame(animate);
+      };
+      requestAnimationFrame(animate);
+    }
+
     async function fetchMetrics() {
       try {
-        const res = await fetch(API_BASE + '/metrics');
+        const res = await fetch(API_BASE + '/metrics?period=' + currentMetricsPeriod);
         const data = await res.json();
 
         // Update load time
         document.getElementById('metricsLoadTime').textContent = 
           'Loaded in ' + (data._meta?.loadTime || '--');
 
-        // Update agents
-        document.getElementById('metricAgentsActive').textContent = data.agents?.activeNow || 0;
-        document.getElementById('metricAgentsTotal').textContent = data.agents?.total || 0;
-        document.getElementById('metricAgents24h').textContent = data.agents?.active24h || 0;
-
-        // Update messages
-        document.getElementById('metricMessagesTotal').textContent = data.messages?.total || 0;
-        document.getElementById('metricMessages24h').textContent = data.messages?.last24h || 0;
-        document.getElementById('metricMessagesAvg').textContent = data.messages?.avgPerDay || 0;
-
-        // Update tasks
-        document.getElementById('metricTasksRate').textContent = data.tasks?.completionRate || '0%';
-        document.getElementById('metricTasksTotal').textContent = data.tasks?.total || 0;
-        document.getElementById('metricTasksProgress').textContent = data.tasks?.inProgress || 0;
-
-        // Update coordination
-        document.getElementById('metricLocks').textContent = data.coordination?.activeLocks || 0;
-        document.getElementById('metricClaims').textContent = data.coordination?.activeClaims || 0;
-        document.getElementById('metricHandoffs').textContent = data.coordination?.pendingHandoffs || 0;
-        document.getElementById('metricWorkflows').textContent = data.workflows?.totalRuns || 0;
-
-        // Update memory
-        document.getElementById('metricMemoryTotal').textContent = data.memory?.totalItems || 0;
-        const categoriesEl = document.getElementById('memoryCategories');
-        if (data.memory?.categories) {
-          categoriesEl.innerHTML = Object.entries(data.memory.categories)
-            .map(([cat, count]) => `<span class="category-tag">${cat}: ${count}</span>`)
-            .join('');
+        // Update agents with animation
+        animateNumber('metricAgentsActive', data.agents?.activeNow || 0);
+        animateNumber('metricAgentsTotal', data.agents?.total || 0);
+        animateNumber('metricAgents24h', data.agents?.active24h || 0);
+        
+        // Track history for sparklines
+        metricsHistory.agents.push(data.agents?.activeNow || 0);
+        if (metricsHistory.agents.length > 12) metricsHistory.agents.shift();
+        renderSparkline('agentsSparkline', metricsHistory.agents);
+        
+        // Update trend indicator
+        const agentsTrend = document.getElementById('agentsTrend');
+        if (agentsTrend && metricsHistory.agents.length > 1) {
+          const prev = metricsHistory.agents[metricsHistory.agents.length - 2] || 0;
+          const curr = metricsHistory.agents[metricsHistory.agents.length - 1];
+          const change = curr - prev;
+          agentsTrend.className = 'metric-trend ' + (change > 0 ? 'up' : change < 0 ? 'down' : 'neutral');
+          agentsTrend.textContent = change > 0 ? '+' + change : change < 0 ? change : '--';
         }
 
-        // Update telemetry
-        document.getElementById('metricDevices').textContent = data.telemetry?.totalDevices || 0;
-        document.getElementById('metricDevicesActive').textContent = data.telemetry?.activeDevices || 0;
-        document.getElementById('metricBattery').textContent = 
+        // Update messages with animation
+        animateNumber('metricMessagesTotal', data.messages?.total || 0);
+        animateNumber('metricMessages24h', data.messages?.last24h || 0);
+        animateNumber('metricMessagesAvg', data.messages?.avgPerDay || 0);
+        
+        // Track messages history
+        metricsHistory.messages.push(data.messages?.last24h || 0);
+        if (metricsHistory.messages.length > 12) metricsHistory.messages.shift();
+        renderSparkline('messagesSparkline', metricsHistory.messages, 'var(--success)');
+        
+        // Update messages trend
+        const msgTrend = document.getElementById('messagesTrend');
+        if (msgTrend) {
+          const avg = data.messages?.avgPerDay || 0;
+          const today = data.messages?.last24h || 0;
+          if (today > avg * 1.1) {
+            msgTrend.className = 'metric-trend up';
+            msgTrend.textContent = '+' + Math.round(((today - avg) / Math.max(avg, 1)) * 100) + '%';
+          } else if (today < avg * 0.9) {
+            msgTrend.className = 'metric-trend down';
+            msgTrend.textContent = Math.round(((today - avg) / Math.max(avg, 1)) * 100) + '%';
+          } else {
+            msgTrend.className = 'metric-trend neutral';
+            msgTrend.textContent = 'avg';
+          }
+        }
+
+        // Update tasks with progress bar animation
+        const rate = data.tasks?.completionRate || '0%';
+        document.getElementById('metricTasksRate').textContent = rate;
+        animateNumber('metricTasksTotal', data.tasks?.total || 0);
+        animateNumber('metricTasksProgress', data.tasks?.inProgress || 0);
+        const completedEl = document.getElementById('metricTasksCompleted');
+        if (completedEl) animateNumber('metricTasksCompleted', data.tasks?.completed || 0);
+        
+        // Update tasks progress bar
+        const progressBar = document.getElementById('tasksProgressBar');
+        if (progressBar) {
+          progressBar.style.width = rate;
+          const rateNum = parseInt(rate) || 0;
+          if (rateNum >= 75) progressBar.className = 'metric-progress-fill success';
+          else if (rateNum >= 50) progressBar.className = 'metric-progress-fill warning';
+          else progressBar.className = 'metric-progress-fill danger';
+        }
+
+        // Update coordination with animations
+        animateNumber('metricLocks', data.coordination?.activeLocks || 0);
+        animateNumber('metricClaims', data.coordination?.activeClaims || 0);
+        animateNumber('metricHandoffs', data.coordination?.pendingHandoffs || 0);
+        animateNumber('metricWorkflows', data.workflows?.totalRuns || 0);
+
+        // Update memory with animation
+        animateNumber('metricMemoryTotal', data.memory?.totalItems || 0);
+        const categoriesEl = document.getElementById('memoryCategories');
+        if (data.memory?.categories && Object.keys(data.memory.categories).length > 0) {
+          categoriesEl.innerHTML = Object.entries(data.memory.categories)
+            .slice(0, 4)
+            .map(([cat, count]) => `<div class="metric-row"><span>${cat}</span><span>${count}</span></div>`)
+            .join('');
+        } else {
+          categoriesEl.innerHTML = '<div style="color: var(--text-secondary); font-size: 11px;">No items stored</div>';
+        }
+
+        // Update telemetry with progress bar
+        const totalDevices = data.telemetry?.totalDevices || 0;
+        const activeDevices = data.telemetry?.activeDevices || 0;
+        animateNumber('metricDevices', totalDevices);
+        animateNumber('metricDevicesActive', activeDevices);
+        document.getElementById('metricBattery').textContent =
           (data.telemetry?.avgBatteryVoltage || '--') + 'V';
 
-        // Update top contributors
+        // Update fleet active bar
+        const fleetBar = document.getElementById('fleetActiveBar');
+        if (fleetBar && totalDevices > 0) {
+          fleetBar.style.width = Math.round((activeDevices / totalDevices) * 100) + '%';
+        }
+
+        // Update top contributors with ranking
         const contributorsEl = document.getElementById('contributorsList');
         if (data.agents?.topContributors?.length > 0) {
+          const maxMsgs = Math.max(...data.agents.topContributors.map(c => c.messagesSent), 1);
           contributorsEl.innerHTML = data.agents.topContributors
-            .map(c => `
+            .map((c, i) => {
+              const rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '';
+              const avatarBg = c.agentId.toLowerCase().includes('claude') ? 'var(--agent-color)' : 'var(--human-color)';
+              const barWidth = Math.round((c.messagesSent / maxMsgs) * 100);
+              return `
               <div class="contributor-item">
-                <span class="contributor-name">${c.agentId}</span>
-                <span class="contributor-count">${c.messagesSent} msgs</span>
+                <div class="contributor-rank ${rankClass}">${i + 1}</div>
+                <div class="contributor-avatar" style="background: ${avatarBg}">${c.agentId.substring(0, 2).toUpperCase()}</div>
+                <div class="contributor-info">
+                  <div class="contributor-name">${c.agentId}</div>
+                  <div class="contributor-stat">${c.messagesSent} messages</div>
+                </div>
+                <div class="contributor-bar">
+                  <div class="contributor-bar-fill" style="width: ${barWidth}%"></div>
+                </div>
               </div>
-            `).join('');
+            `}).join('');
         } else {
-          contributorsEl.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px;">No activity yet</div>';
+          contributorsEl.innerHTML = '<div style="color: var(--text-secondary); font-size: 12px; padding: 12px;">No activity recorded yet</div>';
         }
 
       } catch (err) {
