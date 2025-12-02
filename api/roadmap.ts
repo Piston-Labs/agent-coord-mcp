@@ -45,6 +45,17 @@ interface RoadmapItem {
   completedAt?: string;     // When status changed to 'done'
   archivedAt?: string;      // When status changed to 'archived'
   lastActivityBy?: string;  // Who last modified this item
+
+  // GitHub Integration
+  githubPR?: {
+    number: number;
+    title: string;
+    url: string;
+    state: 'open' | 'closed';
+    merged: boolean;
+    repository: string;
+    lastUpdated: string;
+  };
 }
 
 interface TeamMember {
