@@ -7,7 +7,7 @@ const redis = new Redis({
 });
 
 const FEATURES_KEY = 'agent-coord:planned-features';
-const CHAT_KEY = 'agent-coord:group-chat';
+const CHAT_KEY = 'agent-coord:messages';  // Chat messages stored here
 
 interface PlannedFeature {
   id: string;
