@@ -2236,6 +2236,192 @@ server.tool(
 );
 
 // ============================================================================
+// AUTO-POLL TOOL - Continuous monitoring without manual prompting
+// ============================================================================
+
+server.tool(
+  'auto-poll',
+  'Start/stop automatic polling for new messages and tasks. Returns accumulated updates since last poll.',
+  {
+    action: z.enum(['start', 'stop', 'check', 'poll-once'])
+      .describe('start=begin polling, stop=end polling, check=get status, poll-once=single poll'),
+    agentId: z.string().describe('Your agent ID'),
+    intervalMs: z.number().optional().describe('Poll interval in milliseconds (default: 5000, min: 2000)'),
+    sources: z.array(z.enum(['chat', 'tasks', 'claims', 'mentions']))
+      .optional()
+      .describe('What to poll for (default: all)')
+  },
+  async ({ action, agentId, intervalMs = 5000, sources }) => {
+    // Enforce minimum interval
+    const interval = Math.max(intervalMs, 2000);
+    const pollSources = sources || ['chat', 'tasks', 'claims', 'mentions'];
+
+    // Track polling state per agent (in-memory for this session)
+    const pollStateKey = `poll:${agentId}`;
+
+    // Helper to perform a single poll
+    const doPoll = async (since: string) => {
+      const updates: {
+        chat: any[];
+        tasks: any[];
+        claims: any[];
+        mentions: any[];
+        pollTime: string;
+      } = {
+        chat: [],
+        tasks: [],
+        claims: [],
+        mentions: [],
+        pollTime: new Date().toISOString()
+      };
+
+      try {
+        // Poll chat messages
+        if (pollSources.includes('chat')) {
+          const chatRes = await fetch(`${API_BASE}/api/chat?since=${encodeURIComponent(since)}`);
+          if (chatRes.ok) {
+            const data = await chatRes.json();
+            updates.chat = data.messages || [];
+          }
+        }
+
+        // Poll for mentions specifically
+        if (pollSources.includes('mentions')) {
+          const chatRes = await fetch(`${API_BASE}/api/chat?since=${encodeURIComponent(since)}`);
+          if (chatRes.ok) {
+            const data = await chatRes.json();
+            updates.mentions = (data.messages || []).filter((m: any) =>
+              m.message?.toLowerCase().includes(`@${agentId.toLowerCase()}`)
+            );
+          }
+        }
+
+        // Poll tasks assigned to this agent
+        if (pollSources.includes('tasks')) {
+          const tasksRes = await fetch(`${API_BASE}/api/tasks?assignee=${encodeURIComponent(agentId)}&status=todo`);
+          if (tasksRes.ok) {
+            const data = await tasksRes.json();
+            updates.tasks = data.tasks || [];
+          }
+        }
+
+        // Poll claims that might affect this agent
+        if (pollSources.includes('claims')) {
+          const claimsRes = await fetch(`${API_BASE}/api/claims`);
+          if (claimsRes.ok) {
+            const data = await claimsRes.json();
+            updates.claims = (data.claims || []).filter((c: any) =>
+              new Date(c.since) > new Date(since)
+            );
+          }
+        }
+      } catch (err) {
+        console.error('[auto-poll] Poll error:', err);
+      }
+
+      return updates;
+    };
+
+    switch (action) {
+      case 'poll-once': {
+        // Single poll - get everything since 5 minutes ago
+        const since = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+        const updates = await doPoll(since);
+
+        const hasUpdates = updates.chat.length > 0 ||
+                          updates.tasks.length > 0 ||
+                          updates.claims.length > 0 ||
+                          updates.mentions.length > 0;
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              agentId,
+              hasUpdates,
+              since,
+              updates: {
+                newMessages: updates.chat.length,
+                newTasks: updates.tasks.length,
+                newClaims: updates.claims.length,
+                mentions: updates.mentions.length,
+                chat: updates.chat.slice(0, 10),
+                tasks: updates.tasks.slice(0, 5),
+                claims: updates.claims.slice(0, 5),
+                mentionedIn: updates.mentions.slice(0, 5)
+              },
+              nextPoll: `Call auto-poll with action='poll-once' again to check for more updates`
+            }, null, 2)
+          }]
+        };
+      }
+
+      case 'start': {
+        // For MCP, we can't truly run a background loop, but we can return
+        // instructions for the client to poll
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              agentId,
+              polling: true,
+              interval,
+              sources: pollSources,
+              instructions: [
+                `Polling mode activated for ${agentId}`,
+                `Recommended: Call 'auto-poll' with action='poll-once' every ${interval}ms`,
+                `Or use the autonomous-agent pattern with built-in polling`,
+                `To check for mentions: messages containing @${agentId}`
+              ],
+              tip: 'For continuous monitoring, consider using the autonomous-agent deployment'
+            }, null, 2)
+          }]
+        };
+      }
+
+      case 'stop': {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              agentId,
+              polling: false,
+              message: 'Polling stopped. Call auto-poll action=start to resume.'
+            }, null, 2)
+          }]
+        };
+      }
+
+      case 'check': {
+        // Quick status check
+        const since = new Date(Date.now() - 60 * 1000).toISOString(); // Last minute
+        const updates = await doPoll(since);
+
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({
+              agentId,
+              status: 'checking',
+              lastMinute: {
+                messages: updates.chat.length,
+                tasks: updates.tasks.length,
+                claims: updates.claims.length,
+                mentions: updates.mentions.length
+              },
+              hasPendingWork: updates.tasks.length > 0 || updates.mentions.length > 0
+            }, null, 2)
+          }]
+        };
+      }
+
+      default:
+        return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+    }
+  }
+);
+
+// ============================================================================
 // Start Server
 // ============================================================================
 
@@ -2243,7 +2429,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 26 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel)');
+  console.error('[agent-coord-mcp] Tools: 27 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);

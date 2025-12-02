@@ -6009,6 +6009,417 @@
 
     /* ========== END CRM STYLES ========== */
 
+    /* ========== SALES ENGINEERING STYLES ========== */
+
+    /* Sales View Layout */
+    .sales-view.active {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    /* Sales Header */
+    .sales-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .sales-stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .sales-stat {
+      text-align: center;
+      padding: 8px 16px;
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .sales-stat.templates { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+    .sales-stat.pending { border-color: var(--warning); background: rgba(210, 153, 34, 0.1); }
+    .sales-stat.generated { border-color: var(--success); background: rgba(63, 185, 80, 0.1); }
+
+    .sales-stat-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .sales-stat-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+
+    .sales-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .sales-add-btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .sales-add-btn:hover {
+      background: #4493e6;
+    }
+
+    .sales-controls input {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 6px;
+      color: var(--text-primary);
+      width: 200px;
+    }
+
+    /* Sales Content - 3 Column Layout */
+    .sales-content {
+      display: grid;
+      grid-template-columns: 300px 1fr 250px;
+      gap: 1px;
+      background: var(--border);
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    /* Sales Chat Panel */
+    .sales-chat-panel {
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sales-chat-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .sales-agent-status {
+      font-size: 12px;
+      color: var(--success);
+    }
+
+    .sales-chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sales-chat-msg {
+      display: flex;
+      gap: 10px;
+    }
+
+    .sales-chat-msg.user {
+      flex-direction: row-reverse;
+    }
+
+    .sales-msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .sales-msg-content {
+      background: var(--bg-secondary);
+      padding: 10px 14px;
+      border-radius: 12px;
+      max-width: 85%;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .sales-msg-content strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+
+    .sales-msg-content ul {
+      margin: 8px 0;
+      padding-left: 18px;
+    }
+
+    .sales-msg-content li {
+      margin: 4px 0;
+    }
+
+    .sales-chat-msg.user .sales-msg-content {
+      background: var(--accent);
+      color: white;
+    }
+
+    .sales-chat-msg.user .sales-msg-avatar {
+      background: var(--human-color);
+    }
+
+    .sales-chat-input {
+      display: flex;
+      gap: 8px;
+      padding: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sales-chat-input input {
+      flex: 1;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      padding: 12px;
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 13px;
+    }
+
+    .sales-chat-input button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Sales Doc Panel */
+    .sales-doc-panel {
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sales-doc-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .sales-doc-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .sales-doc-actions button {
+      background: var(--bg-tertiary);
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .sales-doc-actions button:hover {
+      background: var(--bg-secondary);
+    }
+
+    .sales-doc-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    /* Template Grid */
+    .sales-template-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 16px;
+    }
+
+    .sales-template-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sales-template-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .template-icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+    }
+
+    .template-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 6px;
+    }
+
+    .template-desc {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Sales Files Panel */
+    .sales-files-panel {
+      background: var(--bg-primary);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .sales-files-header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .sales-files-header button {
+      background: var(--bg-tertiary);
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .sales-folder-tree {
+      padding: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sales-folder {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .sales-folder:hover {
+      background: var(--bg-secondary);
+    }
+
+    .sales-folder.active {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--accent);
+    }
+
+    .folder-icon { font-size: 14px; }
+    .folder-name { flex: 1; }
+    .folder-count {
+      background: var(--bg-tertiary);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .sales-files-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .sales-file-empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .sales-file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      border: 1px solid transparent;
+    }
+
+    .sales-file-item:hover {
+      background: var(--bg-secondary);
+      border-color: var(--border);
+    }
+
+    .sales-file-icon { font-size: 16px; }
+    .sales-file-name { flex: 1; }
+    .sales-file-date {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Sales Mobile Responsive */
+    @media (max-width: 768px) {
+      .sales-content {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr auto;
+      }
+
+      .sales-chat-panel {
+        max-height: 200px;
+      }
+
+      .sales-files-panel {
+        max-height: 200px;
+      }
+
+      .sales-stats {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .sales-stat {
+        min-width: 80px;
+      }
+    }
+
+    /* ========== END SALES ENGINEERING STYLES ========== */
+
     /* Direct Messaging Styles */
     .dm-badge {
       position: relative;
@@ -6947,6 +7358,7 @@
           <button class="tab" data-tab="telemetry" onclick="switchTab('telemetry')">Telemetry</button>
           <button class="tab" data-tab="metrics" onclick="switchTab('metrics')">Metrics</button>
           <button class="tab" data-tab="crm" onclick="switchTab('crm')">CRM</button>
+          <button class="tab" data-tab="sales" onclick="switchTab('sales')">Sales Eng</button>
         </div>
         <span id="messageCount">0 messages</span>
       </div>
@@ -7515,6 +7927,150 @@
                 <tr><td colspan="7" class="loading-row">Loading shops...</td></tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Engineering View -->
+      <div class="tab-content sales-view" id="salesView">
+        <!-- Sales Eng Header with Stats -->
+        <div class="sales-header">
+          <div class="sales-stats">
+            <div class="sales-stat">
+              <span class="sales-stat-value" id="salesTotalDocs">0</span>
+              <span class="sales-stat-label">Documents</span>
+            </div>
+            <div class="sales-stat templates">
+              <span class="sales-stat-value" id="salesTemplates">5</span>
+              <span class="sales-stat-label">Templates</span>
+            </div>
+            <div class="sales-stat pending">
+              <span class="sales-stat-value" id="salesPending">0</span>
+              <span class="sales-stat-label">Pending Tasks</span>
+            </div>
+            <div class="sales-stat generated">
+              <span class="sales-stat-value" id="salesGenerated">0</span>
+              <span class="sales-stat-label">Generated Today</span>
+            </div>
+          </div>
+          <div class="sales-controls">
+            <button class="sales-add-btn" onclick="openNewDocModal()">+ New Document</button>
+            <input type="text" id="salesSearchInput" placeholder="Search files..." oninput="filterSalesFiles(this.value)">
+          </div>
+        </div>
+
+        <!-- Main Sales Content: Chat + Files -->
+        <div class="sales-content">
+          <!-- Left: Agent Chat for Eli -->
+          <div class="sales-chat-panel">
+            <div class="sales-chat-header">
+              <span>💬 Sales Assistant</span>
+              <span class="sales-agent-status">🟢 Online</span>
+            </div>
+            <div class="sales-chat-messages" id="salesChatMessages">
+              <div class="sales-chat-msg assistant">
+                <div class="sales-msg-avatar">🤖</div>
+                <div class="sales-msg-content">
+                  <strong>Sales Assistant</strong>
+                  <p>Hi Eli! I'm here to help with sales engineering tasks. I can:</p>
+                  <ul>
+                    <li>Generate pitch decks and proposals</li>
+                    <li>Create customer-specific materials</li>
+                    <li>Draft follow-up emails</li>
+                    <li>Help prepare for demos</li>
+                  </ul>
+                  <p>What would you like to work on?</p>
+                </div>
+              </div>
+            </div>
+            <div class="sales-chat-input">
+              <input type="text" id="salesChatInput" placeholder="Ask me to generate a document..." onkeypress="if(event.key==='Enter')sendSalesChat()" />
+              <button onclick="sendSalesChat()">Send</button>
+            </div>
+          </div>
+
+          <!-- Center: Document Generator/Preview -->
+          <div class="sales-doc-panel">
+            <div class="sales-doc-header">
+              <span>📄 Document Generator</span>
+              <div class="sales-doc-actions">
+                <button onclick="previewDoc()" title="Preview">👁️</button>
+                <button onclick="downloadDoc()" title="Download">⬇️</button>
+                <button onclick="saveDoc()" title="Save">💾</button>
+              </div>
+            </div>
+            <div class="sales-doc-content" id="salesDocContent">
+              <div class="sales-template-grid">
+                <div class="sales-template-card" onclick="selectTemplate('pitch-deck')">
+                  <div class="template-icon">📊</div>
+                  <div class="template-name">Pitch Deck</div>
+                  <div class="template-desc">Investor & partner presentations</div>
+                </div>
+                <div class="sales-template-card" onclick="selectTemplate('proposal')">
+                  <div class="template-icon">📝</div>
+                  <div class="template-name">Proposal</div>
+                  <div class="template-desc">Customer proposals & quotes</div>
+                </div>
+                <div class="sales-template-card" onclick="selectTemplate('one-pager')">
+                  <div class="template-icon">📃</div>
+                  <div class="template-name">One-Pager</div>
+                  <div class="template-desc">Product overview sheets</div>
+                </div>
+                <div class="sales-template-card" onclick="selectTemplate('email')">
+                  <div class="template-icon">✉️</div>
+                  <div class="template-name">Email Template</div>
+                  <div class="template-desc">Follow-up & outreach emails</div>
+                </div>
+                <div class="sales-template-card" onclick="selectTemplate('demo-script')">
+                  <div class="template-icon">🎬</div>
+                  <div class="template-name">Demo Script</div>
+                  <div class="template-desc">Product demo talking points</div>
+                </div>
+                <div class="sales-template-card" onclick="selectTemplate('case-study')">
+                  <div class="template-icon">📈</div>
+                  <div class="template-name">Case Study</div>
+                  <div class="template-desc">Customer success stories</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: File Browser -->
+          <div class="sales-files-panel">
+            <div class="sales-files-header">
+              <span>📁 My Files</span>
+              <button onclick="createNewFolder()" title="New Folder">➕</button>
+            </div>
+            <div class="sales-folder-tree" id="salesFolderTree">
+              <div class="sales-folder" data-folder="proposals">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">Proposals</span>
+                <span class="folder-count" id="folderProposalsCount">0</span>
+              </div>
+              <div class="sales-folder" data-folder="pitch-decks">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">Pitch Decks</span>
+                <span class="folder-count" id="folderPitchCount">0</span>
+              </div>
+              <div class="sales-folder" data-folder="emails">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">Email Templates</span>
+                <span class="folder-count" id="folderEmailsCount">0</span>
+              </div>
+              <div class="sales-folder" data-folder="one-pagers">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">One-Pagers</span>
+                <span class="folder-count" id="folderOnePagersCount">0</span>
+              </div>
+              <div class="sales-folder" data-folder="demos">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">Demo Scripts</span>
+                <span class="folder-count" id="folderDemosCount">0</span>
+              </div>
+            </div>
+            <div class="sales-files-list" id="salesFilesList">
+              <div class="sales-file-empty">Select a folder to view files</div>
+            </div>
           </div>
         </div>
       </div>
@@ -8753,6 +9309,11 @@
       // Initialize CRM when switching to crm tab
       if (tabName === 'crm') {
         initCrm();
+      }
+
+      // Initialize Sales Engineering when switching to sales tab
+      if (tabName === 'sales') {
+        initSalesEng();
       }
     }
 
@@ -10561,6 +11122,383 @@
 
     // ============================================
     // END CRM FUNCTIONALITY
+    // ============================================
+
+    // ============================================
+    // SALES ENGINEERING FUNCTIONALITY
+    // ============================================
+
+    const SALES_API_URL = '/api/sales-files';
+    let salesFiles = [];
+    let salesCurrentFolder = null;
+    let salesSelectedTemplate = null;
+    let salesChatHistory = [];
+
+    function initSalesEng() {
+      fetchSalesFiles();
+      setupSalesFolderListeners();
+    }
+
+    async function fetchSalesFiles() {
+      try {
+        const res = await fetch(SALES_API_URL);
+        if (res.ok) {
+          const data = await res.json();
+          salesFiles = data.files || [];
+          updateSalesFolderCounts();
+          updateSalesStats();
+        }
+      } catch (err) {
+        console.error('Failed to fetch sales files:', err);
+        // Use mock data for now
+        salesFiles = [];
+      }
+    }
+
+    function updateSalesFolderCounts() {
+      const counts = {
+        proposals: salesFiles.filter(f => f.folder === 'proposals').length,
+        'pitch-decks': salesFiles.filter(f => f.folder === 'pitch-decks').length,
+        emails: salesFiles.filter(f => f.folder === 'emails').length,
+        'one-pagers': salesFiles.filter(f => f.folder === 'one-pagers').length,
+        demos: salesFiles.filter(f => f.folder === 'demos').length
+      };
+
+      document.getElementById('folderProposalsCount').textContent = counts.proposals;
+      document.getElementById('folderPitchCount').textContent = counts['pitch-decks'];
+      document.getElementById('folderEmailsCount').textContent = counts.emails;
+      document.getElementById('folderOnePagersCount').textContent = counts['one-pagers'];
+      document.getElementById('folderDemosCount').textContent = counts.demos;
+    }
+
+    function updateSalesStats() {
+      document.getElementById('salesTotalDocs').textContent = salesFiles.length;
+      const todayFiles = salesFiles.filter(f => {
+        const today = new Date().toDateString();
+        return new Date(f.createdAt).toDateString() === today;
+      });
+      document.getElementById('salesGenerated').textContent = todayFiles.length;
+    }
+
+    function setupSalesFolderListeners() {
+      document.querySelectorAll('.sales-folder').forEach(folder => {
+        folder.addEventListener('click', () => {
+          document.querySelectorAll('.sales-folder').forEach(f => f.classList.remove('active'));
+          folder.classList.add('active');
+          salesCurrentFolder = folder.dataset.folder;
+          renderSalesFiles(salesCurrentFolder);
+        });
+      });
+    }
+
+    function renderSalesFiles(folderName) {
+      const filesList = document.getElementById('salesFilesList');
+      const files = salesFiles.filter(f => f.folder === folderName);
+
+      if (files.length === 0) {
+        filesList.innerHTML = '<div class="sales-file-empty">No files in this folder</div>';
+        return;
+      }
+
+      filesList.innerHTML = files.map(file => `
+        <div class="sales-file-item" onclick="openSalesFile('${file.id}')">
+          <span class="sales-file-icon">${getFileIcon(file.type)}</span>
+          <span class="sales-file-name">${file.name}</span>
+          <span class="sales-file-date">${formatDate(file.createdAt)}</span>
+        </div>
+      `).join('');
+    }
+
+    function getFileIcon(type) {
+      const icons = {
+        'pitch-deck': '📊',
+        'proposal': '📝',
+        'one-pager': '📃',
+        'email': '✉️',
+        'demo-script': '🎬',
+        'case-study': '📈'
+      };
+      return icons[type] || '📄';
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function selectTemplate(templateType) {
+      salesSelectedTemplate = templateType;
+      const docContent = document.getElementById('salesDocContent');
+
+      // Show template editor
+      docContent.innerHTML = `
+        <div class="template-editor">
+          <div style="margin-bottom: 16px;">
+            <span style="font-size: 32px;">${getFileIcon(templateType)}</span>
+            <h3 style="margin: 8px 0; font-size: 18px;">${templateType.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary);">Document Name</label>
+            <input type="text" id="salesDocName" placeholder="Enter document name..." style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" />
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary);">Customer/Target (optional)</label>
+            <input type="text" id="salesDocTarget" placeholder="e.g., ABC Auto Shop" style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" />
+          </div>
+          <div class="form-group" style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-secondary);">Additional Notes</label>
+            <textarea id="salesDocNotes" rows="4" placeholder="Any specific requirements or talking points..." style="width: 100%; padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); resize: vertical;"></textarea>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button onclick="generateDocument()" style="flex: 1; background: var(--accent); color: white; padding: 14px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">🤖 Generate with AI</button>
+            <button onclick="showTemplateGrid()" style="background: var(--bg-tertiary); color: var(--text-primary); padding: 14px 20px; border: none; border-radius: 8px; cursor: pointer;">Cancel</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function showTemplateGrid() {
+      salesSelectedTemplate = null;
+      const docContent = document.getElementById('salesDocContent');
+      docContent.innerHTML = `
+        <div class="sales-template-grid">
+          <div class="sales-template-card" onclick="selectTemplate('pitch-deck')">
+            <div class="template-icon">📊</div>
+            <div class="template-name">Pitch Deck</div>
+            <div class="template-desc">Investor & partner presentations</div>
+          </div>
+          <div class="sales-template-card" onclick="selectTemplate('proposal')">
+            <div class="template-icon">📝</div>
+            <div class="template-name">Proposal</div>
+            <div class="template-desc">Customer proposals & quotes</div>
+          </div>
+          <div class="sales-template-card" onclick="selectTemplate('one-pager')">
+            <div class="template-icon">📃</div>
+            <div class="template-name">One-Pager</div>
+            <div class="template-desc">Product overview sheets</div>
+          </div>
+          <div class="sales-template-card" onclick="selectTemplate('email')">
+            <div class="template-icon">✉️</div>
+            <div class="template-name">Email Template</div>
+            <div class="template-desc">Follow-up & outreach emails</div>
+          </div>
+          <div class="sales-template-card" onclick="selectTemplate('demo-script')">
+            <div class="template-icon">🎬</div>
+            <div class="template-name">Demo Script</div>
+            <div class="template-desc">Product demo talking points</div>
+          </div>
+          <div class="sales-template-card" onclick="selectTemplate('case-study')">
+            <div class="template-icon">📈</div>
+            <div class="template-name">Case Study</div>
+            <div class="template-desc">Customer success stories</div>
+          </div>
+        </div>
+      `;
+    }
+
+    async function generateDocument() {
+      const name = document.getElementById('salesDocName')?.value || 'Untitled';
+      const target = document.getElementById('salesDocTarget')?.value || '';
+      const notes = document.getElementById('salesDocNotes')?.value || '';
+
+      if (!name.trim()) {
+        alert('Please enter a document name');
+        return;
+      }
+
+      // Add loading state
+      const docContent = document.getElementById('salesDocContent');
+      docContent.innerHTML = `
+        <div style="text-align: center; padding: 60px 20px;">
+          <div style="font-size: 48px; margin-bottom: 20px;">🤖</div>
+          <h3 style="margin-bottom: 10px;">Generating Document...</h3>
+          <p style="color: var(--text-secondary);">AI is creating your ${salesSelectedTemplate} for ${target || 'general use'}</p>
+        </div>
+      `;
+
+      // Send chat message to generate
+      const chatInput = document.getElementById('salesChatInput');
+      chatInput.value = `Generate a ${salesSelectedTemplate} named "${name}"${target ? ` for ${target}` : ''}${notes ? `. Notes: ${notes}` : ''}`;
+      await sendSalesChat();
+
+      // After chat response, show success and update files
+      setTimeout(() => {
+        const newFile = {
+          id: 'file-' + Date.now(),
+          name: name,
+          type: salesSelectedTemplate,
+          folder: getFolderForType(salesSelectedTemplate),
+          content: `Generated ${salesSelectedTemplate} content for ${target || 'general'}`,
+          createdAt: new Date().toISOString()
+        };
+        salesFiles.push(newFile);
+        updateSalesFolderCounts();
+        updateSalesStats();
+
+        // Show success
+        docContent.innerHTML = `
+          <div style="text-align: center; padding: 60px 20px;">
+            <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
+            <h3 style="margin-bottom: 10px;">Document Created!</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">"${name}" has been saved to ${newFile.folder}</p>
+            <button onclick="showTemplateGrid()" style="background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Another</button>
+          </div>
+        `;
+      }, 2000);
+    }
+
+    function getFolderForType(type) {
+      const folderMap = {
+        'pitch-deck': 'pitch-decks',
+        'proposal': 'proposals',
+        'one-pager': 'one-pagers',
+        'email': 'emails',
+        'demo-script': 'demos',
+        'case-study': 'proposals'
+      };
+      return folderMap[type] || 'proposals';
+    }
+
+    async function sendSalesChat() {
+      const input = document.getElementById('salesChatInput');
+      const message = input.value.trim();
+      if (!message) return;
+
+      // Add user message to chat
+      const chatMessages = document.getElementById('salesChatMessages');
+      chatMessages.innerHTML += `
+        <div class="sales-chat-msg user">
+          <div class="sales-msg-avatar">👤</div>
+          <div class="sales-msg-content">${escapeHtml(message)}</div>
+        </div>
+      `;
+      input.value = '';
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Add typing indicator
+      const typingId = 'typing-' + Date.now();
+      chatMessages.innerHTML += `
+        <div class="sales-chat-msg assistant" id="${typingId}">
+          <div class="sales-msg-avatar">🤖</div>
+          <div class="sales-msg-content">
+            <em>Thinking...</em>
+          </div>
+        </div>
+      `;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      try {
+        // Call the chat API
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: 'eli',
+            authorType: 'human',
+            message: `[Sales Engineering Request] ${message}`
+          })
+        });
+
+        // Simulate AI response for now
+        setTimeout(() => {
+          const typing = document.getElementById(typingId);
+          if (typing) {
+            typing.querySelector('.sales-msg-content').innerHTML = `
+              <strong>Sales Assistant</strong>
+              <p>I've processed your request: "${message.substring(0, 50)}${message.length > 50 ? '...' : ''}"</p>
+              <p>The document is being generated. You'll find it in the appropriate folder when ready.</p>
+            `;
+          }
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1500);
+
+      } catch (err) {
+        console.error('Sales chat error:', err);
+        const typing = document.getElementById(typingId);
+        if (typing) {
+          typing.querySelector('.sales-msg-content').innerHTML = `
+            <strong>Sales Assistant</strong>
+            <p style="color: var(--danger);">Sorry, I encountered an error. Please try again.</p>
+          `;
+        }
+      }
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function openSalesFile(fileId) {
+      const file = salesFiles.find(f => f.id === fileId);
+      if (!file) return;
+
+      const docContent = document.getElementById('salesDocContent');
+      docContent.innerHTML = `
+        <div class="file-viewer">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+              <span style="font-size: 24px;">${getFileIcon(file.type)}</span>
+              <h3 style="display: inline; margin-left: 10px;">${file.name}</h3>
+            </div>
+            <button onclick="showTemplateGrid()" style="background: var(--bg-tertiary); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">← Back</button>
+          </div>
+          <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
+            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 10px;">Created: ${new Date(file.createdAt).toLocaleString()}</p>
+            <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${file.content || 'No content yet'}</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function filterSalesFiles(query) {
+      if (!salesCurrentFolder) return;
+      const filesList = document.getElementById('salesFilesList');
+      const files = salesFiles.filter(f =>
+        f.folder === salesCurrentFolder &&
+        f.name.toLowerCase().includes(query.toLowerCase())
+      );
+
+      if (files.length === 0) {
+        filesList.innerHTML = '<div class="sales-file-empty">No matching files</div>';
+        return;
+      }
+
+      filesList.innerHTML = files.map(file => `
+        <div class="sales-file-item" onclick="openSalesFile('${file.id}')">
+          <span class="sales-file-icon">${getFileIcon(file.type)}</span>
+          <span class="sales-file-name">${file.name}</span>
+          <span class="sales-file-date">${formatDate(file.createdAt)}</span>
+        </div>
+      `).join('');
+    }
+
+    function openNewDocModal() {
+      // Show template grid if not already showing
+      showTemplateGrid();
+    }
+
+    function createNewFolder() {
+      const folderName = prompt('Enter folder name:');
+      if (!folderName) return;
+      alert(`Folder "${folderName}" would be created. (Feature coming soon)`);
+    }
+
+    function previewDoc() {
+      alert('Document preview coming soon!');
+    }
+
+    function downloadDoc() {
+      alert('Document download coming soon!');
+    }
+
+    function saveDoc() {
+      alert('Document saved!');
+    }
+
+    // ============================================
+    // END SALES ENGINEERING FUNCTIONALITY
     // ============================================
 
 

@@ -1,0 +1,26 @@
+# Cloud Code Agent Dockerfile
+# Deploy to Railway, Render, or any container platform
+
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm ci --only=production
+
+# Copy source
+COPY dist/ ./dist/
+
+# Environment variables (set in platform)
+ENV NODE_ENV=production
+ENV API_BASE=https://agent-coord-mcp.vercel.app
+ENV AGENT_ID=cloud-agent
+ENV AGENT_NAME=CloudCoder
+ENV POLL_INTERVAL=5000
+# GITHUB_TOKEN - set in platform secrets
+# GITHUB_ORG - set in platform
+# E2B_API_KEY - set in platform secrets (optional)
+
+# Run the agent
+CMD ["node", "dist/cloud-agent.js"]
