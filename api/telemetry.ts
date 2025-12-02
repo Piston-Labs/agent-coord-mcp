@@ -11,8 +11,8 @@ const redis = new Redis({
 // Data pipeline: Teltonika GPS → AWS IoT Core → Lambda → Supabase
 // REST API is ideal for serverless - no persistent connections needed
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
-const hasSupabase = SUPABASE_URL && SUPABASE_ANON_KEY;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const hasSupabase = SUPABASE_URL && SUPABASE_KEY;
 
 // S3 for raw telemetry archives (optional, for historical lookups)
 const hasAWSCredentials = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
@@ -445,8 +445,8 @@ async function querySupabaseTelemetry(imei: string): Promise<Partial<TelemetryDa
     const url = `${SUPABASE_URL}/rest/v1/${TELEMETRY_TABLE}?imei=eq.${imei}&order=timestamp.desc&limit=1`;
     const response = await fetch(url, {
       headers: {
-        'apikey': SUPABASE_ANON_KEY!,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
       }
     });
@@ -533,8 +533,8 @@ async function querySupabaseHistory(imei: string, limit: number = 288): Promise<
     const url = `${SUPABASE_URL}/rest/v1/${TELEMETRY_TABLE}?imei=eq.${imei}&order=timestamp.desc&limit=${limit}&select=timestamp,speed,latitude,longitude,battery_voltage,fuel_level,ignition`;
     const response = await fetch(url, {
       headers: {
-        'apikey': SUPABASE_ANON_KEY!,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_KEY!,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
       }
     });
