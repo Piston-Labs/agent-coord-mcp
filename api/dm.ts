@@ -71,7 +71,7 @@ async function getOrCreateConversation(
   // Check if conversation exists
   const existing = await redis.hget(DM_CONVERSATIONS_KEY, conversationId);
   if (existing) {
-    return typeof existing === 'string' ? JSON.parse(existing) : existing;
+    return (typeof existing === 'string' ? JSON.parse(existing) : existing) as Conversation;
   }
 
   // Create new conversation
