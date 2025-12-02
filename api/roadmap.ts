@@ -555,7 +555,145 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ workload });
       }
 
-      return res.status(400).json({ error: 'Unknown action. Use: batch-status, batch-assign, add-dependency, remove-dependency, add-subtask, archive-done, get-blocked, get-workload' });
+      // ASSIGN TO CYCLE
+      if (action === 'assign-to-cycle') {
+        const { itemIds, cycleId } = req.body;
+        if (!itemIds || !Array.isArray(itemIds) || !cycleId) {
+          return res.status(400).json({ error: 'itemIds (array) and cycleId required' });
+        }
+
+        const cycleRaw = await redis.hget(CYCLES_KEY, cycleId);
+        if (!cycleRaw) return res.status(404).json({ error: 'Cycle not found' });
+        const cycle = typeof cycleRaw === 'string' ? JSON.parse(cycleRaw) : cycleRaw;
+
+        const updated: RoadmapItem[] = [];
+        const now = new Date().toISOString();
+
+        for (const id of itemIds) {
+          const existing = await redis.hget(ROADMAP_KEY, id);
+          if (existing) {
+            const item = typeof existing === 'string' ? JSON.parse(existing) : existing;
+            item.cycleId = cycleId;
+            item.updatedAt = now;
+            await redis.hset(ROADMAP_KEY, { [id]: JSON.stringify(item) });
+            updated.push(item);
+          }
+        }
+
+        // Update cycle's plannedItems count
+        cycle.plannedItems = (cycle.plannedItems || 0) + updated.length;
+        cycle.updatedAt = now;
+        await redis.hset(CYCLES_KEY, { [cycleId]: JSON.stringify(cycle) });
+
+        return res.json({ success: true, updated, cycle });
+      }
+
+      // GET CYCLE VELOCITY (completed items/points in a cycle)
+      if (action === 'cycle-velocity') {
+        const { cycleId } = req.body;
+        if (!cycleId) {
+          return res.status(400).json({ error: 'cycleId required' });
+        }
+
+        const cycleRaw = await redis.hget(CYCLES_KEY, cycleId);
+        if (!cycleRaw) return res.status(404).json({ error: 'Cycle not found' });
+        const cycle = typeof cycleRaw === 'string' ? JSON.parse(cycleRaw) : cycleRaw;
+
+        const items = await redis.hgetall(ROADMAP_KEY);
+        let totalItems = 0;
+        let completedItems = 0;
+        let totalEstimate = 0;
+        let completedEstimate = 0;
+        const itemsByStatus: Record<string, number> = {};
+
+        for (const [, value] of Object.entries(items || {})) {
+          const item = typeof value === 'string' ? JSON.parse(value) : value;
+          if (item.cycleId === cycleId) {
+            totalItems++;
+            itemsByStatus[item.status] = (itemsByStatus[item.status] || 0) + 1;
+            if (item.estimate) totalEstimate += item.estimate;
+            if (item.status === 'done' || item.status === 'archived') {
+              completedItems++;
+              if (item.estimate) completedEstimate += item.estimate;
+            }
+          }
+        }
+
+        // Update cycle with calculated values
+        cycle.completedItems = completedItems;
+        cycle.velocity = completedEstimate;
+        cycle.updatedAt = new Date().toISOString();
+        await redis.hset(CYCLES_KEY, { [cycleId]: JSON.stringify(cycle) });
+
+        return res.json({
+          cycle,
+          metrics: {
+            totalItems,
+            completedItems,
+            completionRate: totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0,
+            totalEstimate,
+            completedEstimate,
+            velocityPoints: completedEstimate,
+            itemsByStatus
+          }
+        });
+      }
+
+      // ROLLOVER INCOMPLETE (move incomplete items to next cycle)
+      if (action === 'cycle-rollover') {
+        const { fromCycleId, toCycleId } = req.body;
+        if (!fromCycleId || !toCycleId) {
+          return res.status(400).json({ error: 'fromCycleId and toCycleId required' });
+        }
+
+        const items = await redis.hgetall(ROADMAP_KEY);
+        const rolledOver: string[] = [];
+        const now = new Date().toISOString();
+
+        for (const [id, value] of Object.entries(items || {})) {
+          const item = typeof value === 'string' ? JSON.parse(value) : value;
+          if (item.cycleId === fromCycleId && item.status !== 'done' && item.status !== 'archived') {
+            item.cycleId = toCycleId;
+            item.updatedAt = now;
+            await redis.hset(ROADMAP_KEY, { [id]: JSON.stringify(item) });
+            rolledOver.push(id);
+          }
+        }
+
+        // Update cycle statuses
+        const fromCycleRaw = await redis.hget(CYCLES_KEY, fromCycleId);
+        if (fromCycleRaw) {
+          const fromCycle = typeof fromCycleRaw === 'string' ? JSON.parse(fromCycleRaw) : fromCycleRaw;
+          fromCycle.status = 'completed';
+          fromCycle.updatedAt = now;
+          await redis.hset(CYCLES_KEY, { [fromCycleId]: JSON.stringify(fromCycle) });
+        }
+
+        const toCycleRaw = await redis.hget(CYCLES_KEY, toCycleId);
+        if (toCycleRaw) {
+          const toCycle = typeof toCycleRaw === 'string' ? JSON.parse(toCycleRaw) : toCycleRaw;
+          toCycle.plannedItems = (toCycle.plannedItems || 0) + rolledOver.length;
+          toCycle.updatedAt = now;
+          await redis.hset(CYCLES_KEY, { [toCycleId]: JSON.stringify(toCycle) });
+        }
+
+        // Notify in chat
+        if (rolledOver.length > 0) {
+          const chatMessage = {
+            id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
+            author: 'system',
+            authorType: 'system',
+            message: `🔄 Cycle rollover: ${rolledOver.length} incomplete items moved to next cycle`,
+            timestamp: now,
+            reactions: []
+          };
+          await redis.lpush('agent-coord:messages', JSON.stringify(chatMessage));
+        }
+
+        return res.json({ success: true, rolledOver, count: rolledOver.length });
+      }
+
+      return res.status(400).json({ error: 'Unknown action. Use: batch-status, batch-assign, add-dependency, remove-dependency, add-subtask, archive-done, get-blocked, get-workload, assign-to-cycle, cycle-velocity, cycle-rollover' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
