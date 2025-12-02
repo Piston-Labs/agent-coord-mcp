@@ -5154,19 +5154,42 @@
       gap: 12px;
       padding: 16px;
       overflow-x: auto;
+      overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
-      min-height: 500px;
+      min-height: 400px;
+      flex: 1;
+      /* Contain the scrollable area */
+      max-width: 100%;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .crm-pipeline::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    .crm-pipeline::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .crm-pipeline::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .crm-pipeline::-webkit-scrollbar-thumb:hover {
+      background: var(--text-secondary);
     }
 
     .pipeline-column {
-      flex: 0 0 280px;
-      min-width: 280px;
+      flex: 0 0 240px;
+      min-width: 240px;
       background: var(--bg-secondary);
       border-radius: 8px;
       border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      max-height: calc(100vh - 280px);
+      max-height: calc(100vh - 260px);
     }
 
     .pipeline-header {
@@ -5271,6 +5294,92 @@
       padding: 24px;
       color: var(--text-secondary);
       font-size: 13px;
+    }
+
+    /* CRM Shop Cards */
+    .crm-shop-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .crm-shop-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .crm-shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .crm-shop-name {
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text-primary);
+      line-height: 1.3;
+      flex: 1;
+      word-break: break-word;
+    }
+
+    .crm-shop-value {
+      font-size: 12px;
+      color: var(--success);
+      font-weight: 600;
+      white-space: nowrap;
+      background: rgba(34, 197, 94, 0.1);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .crm-shop-contact {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .crm-shop-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .crm-shop-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+    }
+
+    .crm-assignee {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .crm-last-contact {
+      color: var(--text-secondary);
+    }
+
+    .crm-empty-column {
+      text-align: center;
+      padding: 24px 12px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-style: italic;
     }
 
     /* CRM List View */
@@ -5755,8 +5864,8 @@
       }
 
       .pipeline-column {
-        flex: 0 0 260px;
-        min-width: 260px;
+        flex: 0 0 220px;
+        min-width: 220px;
       }
 
       .crm-modal {
@@ -7219,7 +7328,7 @@
       </div>
 
       <!-- CRM View -->
-      <div class="tab-content" id="crmView" style="overflow-y: auto;">
+      <div class="tab-content" id="crmView" style="overflow: hidden; display: flex; flex-direction: column;">
         <!-- CRM Header with Stats -->
         <div class="crm-header">
           <div class="crm-stats">
