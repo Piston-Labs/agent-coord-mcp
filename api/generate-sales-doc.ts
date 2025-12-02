@@ -177,10 +177,54 @@ function getFolderForType(type: string): string {
     'one-pager': 'one-pagers',
     'email': 'emails',
     'demo-script': 'demos',
-    'case-study': 'proposals',
+    'case-study': 'case-studies',
     'other': 'other'
   };
   return folderMap[type] || 'other';
+}
+
+// Save to GitHub via sales-context API
+async function saveToGitHub(
+  filename: string,
+  content: string,
+  folder: string,
+  target?: string
+): Promise<{ success: boolean; url?: string; error?: string }> {
+  try {
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'https://agent-coord-mcp.vercel.app';
+
+    // Sanitize filename for GitHub
+    const safeName = filename
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_|_$/g, '');
+
+    const path = `${folder}/${safeName}.md`;
+    const company = target || undefined;
+
+    const res = await fetch(`${baseUrl}/api/sales-context`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path,
+        content,
+        company,
+        message: `Add ${filename} via Sales Engineering`
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return { success: true, url: data.url };
+    } else {
+      const error = await res.text();
+      return { success: false, error };
+    }
+  } catch (err) {
+    return { success: false, error: String(err) };
+  }
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -224,19 +268,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       context
     );
 
-    // Save to Redis
+    const folder = getFolderForType(type);
+
+    // Save to GitHub (primary storage)
+    const githubResult = await saveToGitHub(name, content, folder, target);
+
+    // Also save to Redis (for quick access/caching)
     const file = {
       id: `file-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 5)}`,
       name,
       type,
-      folder: getFolderForType(type),
+      folder,
       content,
       target,
       notes,
       createdBy,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      generatedByAI: true
+      generatedByAI: true,
+      githubUrl: githubResult.url || null
     };
 
     await redis.hset(SALES_FILES_KEY, { [file.id]: JSON.stringify(file) });
@@ -245,7 +295,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       file,
       content,
-      message: 'Document generated successfully with AI'
+      message: 'Document generated and saved to GitHub',
+      github: githubResult
     });
 
   } catch (error) {

@@ -11668,6 +11668,29 @@
       }
 
       try {
+        // Save to GitHub (primary persistent storage)
+        const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+        const githubPath = `${folder}/${safeName}.md`;
+        const target = currentEditingFile?.target || '';
+
+        const githubRes = await fetch('/api/sales-context', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            path: githubPath,
+            content: content,
+            company: target || undefined,
+            message: `Save ${name} via Sales Engineering`
+          })
+        });
+
+        let githubUrl = null;
+        if (githubRes.ok) {
+          const githubData = await githubRes.json();
+          githubUrl = githubData.url;
+        }
+
+        // Also save to Redis (for quick access)
         if (currentEditingFile) {
           // Update existing file
           const res = await fetch('/api/sales-files', {
@@ -11677,7 +11700,8 @@
               id: currentEditingFile.id,
               name,
               content,
-              folder
+              folder,
+              githubUrl
             })
           });
           if (res.ok) {
@@ -11685,7 +11709,6 @@
             const idx = salesFiles.findIndex(f => f.id === currentEditingFile.id);
             if (idx >= 0) salesFiles[idx] = data.file;
             currentEditingFile = data.file;
-            alert('Document saved!');
           }
         } else {
           // Create new file
@@ -11698,18 +11721,26 @@
               type,
               folder,
               content,
-              createdBy: 'eli'
+              createdBy: 'eli',
+              githubUrl
             })
           });
           if (res.ok) {
             const data = await res.json();
             salesFiles.push(data.file);
             currentEditingFile = data.file;
-            alert('Document created!');
           }
         }
+
         updateSalesFolderCounts();
         updateSalesStats();
+
+        // Show success with GitHub link if available
+        if (githubUrl) {
+          alert(`Document saved to GitHub!\n\n${githubUrl}`);
+        } else {
+          alert('Document saved! (GitHub sync pending - check if GITHUB_TOKEN is configured)');
+        }
       } catch (err) {
         console.error('Save error:', err);
         alert('Failed to save document');
