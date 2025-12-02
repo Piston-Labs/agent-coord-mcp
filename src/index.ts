@@ -2026,6 +2026,216 @@ server.tool(
 );
 
 // ============================================================================
+// ORCHESTRATE TOOL - Hierarchical Multi-Agent Coordination
+// ============================================================================
+
+server.tool(
+  'orchestrate',
+  'Coordinate complex tasks by breaking them into subtasks for specialist agents. Create orchestrations, assign subtasks, track progress, and synthesize results.',
+  {
+    action: z.enum(['create', 'get', 'list', 'update-subtask', 'assign-subtask', 'synthesize']).describe('Operation'),
+    orchestrationId: z.string().optional().describe('Orchestration ID (for get/update/synthesize)'),
+    title: z.string().optional().describe('Title for new orchestration'),
+    description: z.string().optional().describe('Description of the overall task'),
+    coordinator: z.string().optional().describe('Your agent ID (coordinator)'),
+    subtasks: z.array(z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      assignee: z.string().optional()
+    })).optional().describe('Array of subtasks to create'),
+    subtaskId: z.string().optional().describe('Subtask ID (for update-subtask/assign-subtask)'),
+    status: z.enum(['pending', 'assigned', 'in-progress', 'completed', 'failed']).optional(),
+    result: z.string().optional().describe('Result/output from completing subtask'),
+    assignee: z.string().optional().describe('Agent to assign subtask to'),
+    synthesis: z.string().optional().describe('Combined result from all subtasks')
+  },
+  async (args) => {
+    const { action } = args;
+
+    try {
+      switch (action) {
+        case 'create': {
+          if (!args.title || !args.coordinator) {
+            return { content: [{ type: 'text', text: 'title and coordinator required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/orchestrate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: args.title,
+              description: args.description,
+              coordinator: args.coordinator,
+              subtasks: args.subtasks || []
+            })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'get': {
+          if (!args.orchestrationId) {
+            return { content: [{ type: 'text', text: 'orchestrationId required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/orchestrate?id=${encodeURIComponent(args.orchestrationId)}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'list': {
+          const params = new URLSearchParams();
+          if (args.coordinator) params.append('coordinator', args.coordinator);
+          const res = await fetch(`${API_BASE}/api/orchestrate?${params.toString()}`);
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'update-subtask': {
+          if (!args.orchestrationId || !args.subtaskId) {
+            return { content: [{ type: 'text', text: 'orchestrationId and subtaskId required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/orchestrate`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: args.orchestrationId,
+              subtaskId: args.subtaskId,
+              status: args.status,
+              result: args.result
+            })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'assign-subtask': {
+          if (!args.orchestrationId || !args.subtaskId || !args.assignee) {
+            return { content: [{ type: 'text', text: 'orchestrationId, subtaskId, and assignee required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/orchestrate`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: args.orchestrationId,
+              subtaskId: args.subtaskId,
+              assignee: args.assignee,
+              status: 'assigned'
+            })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        case 'synthesize': {
+          if (!args.orchestrationId || !args.synthesis) {
+            return { content: [{ type: 'text', text: 'orchestrationId and synthesis required' }] };
+          }
+          const res = await fetch(`${API_BASE}/api/orchestrate`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: args.orchestrationId,
+              synthesis: args.synthesis
+            })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        default:
+          return { content: [{ type: 'text', text: 'Unknown action' }] };
+      }
+    } catch (error) {
+      return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+    }
+  }
+);
+
+// ============================================================================
+// SPAWN-PARALLEL TOOL - Parallel Task Execution
+// ============================================================================
+
+server.tool(
+  'spawn-parallel',
+  'Spawn multiple independent tasks in parallel for concurrent execution by different agents. Returns a batch ID to track all spawned tasks.',
+  {
+    batchTitle: z.string().describe('Title for this batch of parallel tasks'),
+    coordinator: z.string().describe('Your agent ID (who is spawning these tasks)'),
+    tasks: z.array(z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      assignee: z.string().optional(),
+      priority: z.enum(['low', 'medium', 'high', 'urgent']).optional()
+    })).describe('Array of tasks to spawn in parallel'),
+    tags: z.array(z.string()).optional().describe('Tags to apply to all tasks')
+  },
+  async (args) => {
+    const { batchTitle, coordinator, tasks, tags } = args;
+
+    if (!tasks || tasks.length === 0) {
+      return { content: [{ type: 'text', text: 'At least one task required' }] };
+    }
+
+    const batchId = `batch-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+    const createdTasks: any[] = [];
+    const errors: string[] = [];
+
+    // Spawn all tasks in parallel
+    const promises = tasks.map(async (task, idx) => {
+      try {
+        const res = await fetch(`${API_BASE}/api/tasks`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: task.title,
+            description: task.description || `Part of parallel batch: ${batchTitle}`,
+            priority: task.priority || 'high',
+            status: 'todo',
+            createdBy: coordinator,
+            assignee: task.assignee,
+            tags: [...(tags || []), 'parallel-batch', batchId]
+          })
+        });
+        const data = await res.json();
+        return { success: true, task: data.task, index: idx };
+      } catch (err) {
+        return { success: false, error: String(err), index: idx };
+      }
+    });
+
+    const results = await Promise.all(promises);
+
+    for (const r of results) {
+      if (r.success) {
+        createdTasks.push(r.task);
+      } else {
+        errors.push(`Task ${r.index}: ${r.error}`);
+      }
+    }
+
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          batchId,
+          batchTitle,
+          coordinator,
+          spawned: createdTasks.length,
+          failed: errors.length,
+          tasks: createdTasks.map(t => ({
+            id: t?.id,
+            title: t?.title,
+            assignee: t?.assignee,
+            status: t?.status
+          })),
+          errors: errors.length > 0 ? errors : undefined,
+          trackWith: `task({ action: 'list', tags: ['${batchId}'] })`
+        }, null, 2)
+      }]
+    };
+  }
+);
+
+// ============================================================================
 // Start Server
 // ============================================================================
 
@@ -2033,7 +2243,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 24 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts)');
+  console.error('[agent-coord-mcp] Tools: 26 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);
