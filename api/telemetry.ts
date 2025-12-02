@@ -285,7 +285,8 @@ function generateAlerts(telemetry: TelemetryData): TelemetryAlert[] {
   return alerts;
 }
 
-// Generate realistic telemetry for ACTIVE devices, static data for OFFLINE devices
+// Get telemetry for a device - uses REAL stored data, no simulation
+// Data must be POSTed by the actual IoT pipeline to appear here
 function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): TelemetryData {
   const profile = DEVICE_PROFILES[imei] || {
     name: `Device ${imei.slice(-4)}`,
@@ -296,13 +297,14 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
 
   const now = new Date();
 
-  // Handle OFFLINE devices - show static last known data
-  if (!profile.isActive) {
-    const lastSeenDate = profile.lastKnownDate || now.toISOString();
+  // Check if we have recent real data from the IoT pipeline
+  // If lastSeen is more than 30 minutes old, consider device offline
+  const lastSeenTime = stored?.connectivity?.lastSeen ? new Date(stored.connectivity.lastSeen).getTime() : 0;
+  const minutesSinceLastSeen = (now.getTime() - lastSeenTime) / 60000;
+  const hasRecentData = lastSeenTime > 0 && minutesSinceLastSeen < THRESHOLDS.OFFLINE_MINUTES;
 
-    // Use stored data if available, otherwise generate static baseline
-    const storedOdometer = stored?.metrics?.odometer || Math.floor(Math.random() * 50000) + 10000;
-
+  // If we have recent real data, use it
+  if (hasRecentData && stored) {
     const baseTelemetry = {
       imei,
       deviceName: profile.name,
@@ -313,87 +315,43 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
         year: profile.year
       },
       metrics: {
-        batteryVoltage: stored?.metrics?.batteryVoltage || 0,  // Unknown - device offline
-        externalVoltage: stored?.metrics?.externalVoltage || 0,
-        speed: 0,
-        odometer: storedOdometer,
-        fuelLevel: stored?.metrics?.fuelLevel,
-        engineRPM: 0,
-        coolantTemp: stored?.metrics?.coolantTemp
+        batteryVoltage: stored.metrics?.batteryVoltage || 0,
+        externalVoltage: stored.metrics?.externalVoltage || 0,
+        speed: stored.metrics?.speed || 0,
+        odometer: stored.metrics?.odometer || 0,
+        fuelLevel: stored.metrics?.fuelLevel,
+        engineRPM: stored.metrics?.engineRPM || 0,
+        coolantTemp: stored.metrics?.coolantTemp
       },
       position: {
-        lat: stored?.position?.lat || profile.baseLat,
-        lng: stored?.position?.lng || profile.baseLng,
-        altitude: stored?.position?.altitude,
-        heading: stored?.position?.heading,
-        satellites: 0  // No GPS lock when offline
+        lat: stored.position?.lat || profile.baseLat,
+        lng: stored.position?.lng || profile.baseLng,
+        altitude: stored.position?.altitude,
+        heading: stored.position?.heading,
+        satellites: stored.position?.satellites || 0
       },
       status: {
-        ignition: false,
-        movement: false,
-        gpsValid: false,
-        charging: false,
-        offline: true  // Flag this device as offline
+        ignition: stored.status?.ignition || false,
+        movement: stored.status?.movement || false,
+        gpsValid: stored.status?.gpsValid || false,
+        charging: stored.status?.charging || false,
+        offline: false
       },
       connectivity: {
-        signalStrength: 0,  // No signal - offline
-        carrier: stored?.connectivity?.carrier,
-        lastSeen: lastSeenDate
+        signalStrength: stored.connectivity?.signalStrength || 0,
+        carrier: stored.connectivity?.carrier,
+        lastSeen: stored.connectivity?.lastSeen || now.toISOString()
       },
-      timestamp: lastSeenDate  // Last known timestamp, not current
+      timestamp: stored.timestamp || now.toISOString()
     };
 
-    // Offline devices have degraded health score
-    const health = {
-      score: 0,
-      status: 'critical' as const,
-      issues: ['Device offline - no telemetry data']
-    };
-
+    const health = calculateHealth(baseTelemetry);
     return { ...baseTelemetry, health };
   }
 
-  // Handle ACTIVE devices - generate CONSISTENT simulated telemetry
-  // Use deterministic values based on IMEI hash + time to prevent wild jumps
-  const hour = now.getHours();
-  const minute = now.getMinutes();
-  const isRushHour = (hour >= 7 && hour <= 9) || (hour >= 16 && hour <= 18);
-  const isNightTime = hour >= 22 || hour <= 5;
-
-  // Create a deterministic seed from IMEI - same device always has same behavior pattern
-  const imeiSeed = imei.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-
-  // Time-based phase - changes slowly (every 5 minutes roughly)
-  const timePhase = Math.floor(Date.now() / 300000); // 5-minute intervals
-  const devicePhase = (imeiSeed + timePhase) % 100;
-
-  // Ignition state - consistent for ~5 minute periods, varies by device and time of day
-  const ignitionThreshold = isNightTime ? 85 : (isRushHour ? 30 : 50);
-  const isIgnitionOn = devicePhase < (100 - ignitionThreshold);
-
-  // Speed - smooth sinusoidal variation, not random jumps
-  // Base speed varies by time of day, with gentle oscillation
-  const speedOscillation = Math.sin((Date.now() / 120000) + imeiSeed) * 10; // 2-min cycle, ±10 km/h
-  const baseSpeed = isIgnitionOn ? (isRushHour ? 35 : 25) : 0;
-  const speed = isIgnitionOn ? Math.max(0, Math.round(baseSpeed + speedOscillation)) : 0;
-
-  // Battery voltage - very stable, only varies by 0.1-0.2V normally
-  // 13.8-14.4V when charging (ignition on), 12.4-12.8V when parked
-  const batteryOscillation = Math.sin((Date.now() / 60000) + imeiSeed * 2) * 0.1;
-  const batteryBase = isIgnitionOn ? 14.1 : 12.6;
-  const batteryVoltage = Math.round((batteryBase + batteryOscillation) * 10) / 10;
-
-  // External voltage - follows battery closely when charging
-  const externalBase = isIgnitionOn ? 14.2 : 12.6;
-  const externalVoltage = Math.round((externalBase + batteryOscillation) * 10) / 10;
-
-  // Position - very slow drift, consistent movement pattern
-  const positionDrift = Math.sin(Date.now() / 600000) * 0.002; // 10-min cycle, tiny drift
-  const lat = profile.baseLat + positionDrift + (imeiSeed % 100) * 0.0001;
-  const lng = profile.baseLng + positionDrift * 0.8 + (imeiSeed % 50) * 0.0001;
-
-  const storedOdometer = stored?.metrics?.odometer || Math.floor(Math.random() * 50000) + 10000;
-  const odometerIncrement = isIgnitionOn ? Math.random() * 0.5 : 0;
+  // No recent data - device is offline or never reported
+  // Use last known data if available, otherwise show as unknown
+  const lastSeenDate = stored?.connectivity?.lastSeen || profile.lastKnownDate || now.toISOString();
 
   const baseTelemetry = {
     imei,
@@ -405,37 +363,42 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
       year: profile.year
     },
     metrics: {
-      batteryVoltage,
-      externalVoltage,
-      speed,
-      odometer: Math.round((storedOdometer + odometerIncrement) * 10) / 10,
-      fuelLevel: Math.round(50 + Math.sin((Date.now() / 3600000) + imeiSeed) * 15),  // 35-65%, hourly cycle
-      engineRPM: isIgnitionOn ? Math.round(800 + speed * 25) : 0,  // RPM based on speed, no random
-      coolantTemp: isIgnitionOn ? Math.round(88 + Math.sin(Date.now() / 300000) * 4) : Math.round(25 + (imeiSeed % 10))  // 84-92°C when running
+      batteryVoltage: stored?.metrics?.batteryVoltage || 12.2,  // Typical parked voltage
+      externalVoltage: stored?.metrics?.externalVoltage || 12.6,
+      speed: 0,  // Not moving if offline
+      odometer: stored?.metrics?.odometer || 0,
+      fuelLevel: stored?.metrics?.fuelLevel,
+      engineRPM: 0,
+      coolantTemp: stored?.metrics?.coolantTemp || 21  // Ambient temp
     },
     position: {
-      lat: Math.round(lat * 10000) / 10000,
-      lng: Math.round(lng * 10000) / 10000,
-      altitude: Math.round(350 + (imeiSeed % 50)),  // Phoenix area is ~350m elevation
-      heading: Math.round((imeiSeed * 3.6 + (Date.now() / 60000)) % 360),  // Slow rotation
-      satellites: Math.round(10 + Math.sin((Date.now() / 120000) + imeiSeed) * 2)  // 8-12 sats
+      lat: stored?.position?.lat || profile.baseLat,
+      lng: stored?.position?.lng || profile.baseLng,
+      altitude: stored?.position?.altitude,
+      heading: stored?.position?.heading,
+      satellites: 0  // No GPS lock when offline
     },
     status: {
-      ignition: isIgnitionOn,
-      movement: speed > 0,
-      gpsValid: true,
-      charging: isIgnitionOn && batteryVoltage > 13.5,
-      offline: false
+      ignition: false,
+      movement: false,
+      gpsValid: false,
+      charging: false,
+      offline: true  // Flag this device as offline
     },
     connectivity: {
-      signalStrength: Math.round(4 + Math.sin(Date.now() / 600000) * 0.5),  // 4-5 bars, stable
-      carrier: ['Verizon', 'AT&T', 'T-Mobile'][Math.floor(Math.random() * 3)],
-      lastSeen: now.toISOString()
+      signalStrength: 0,  // No signal - offline
+      carrier: stored?.connectivity?.carrier,
+      lastSeen: lastSeenDate
     },
-    timestamp: now.toISOString()
+    timestamp: lastSeenDate  // Last known timestamp, not current
   };
 
-  const health = calculateHealth(baseTelemetry);
+  // Offline devices have degraded health score
+  const health = {
+    score: 0,
+    status: 'critical' as const,
+    issues: ['Device offline - no recent telemetry data']
+  };
 
   return { ...baseTelemetry, health };
 }
