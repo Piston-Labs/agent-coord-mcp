@@ -11340,41 +11340,159 @@
       const docContent = document.getElementById('salesDocContent');
       docContent.innerHTML = `
         <div style="text-align: center; padding: 60px 20px;">
-          <div style="font-size: 48px; margin-bottom: 20px;">🤖</div>
-          <h3 style="margin-bottom: 10px;">Generating Document...</h3>
-          <p style="color: var(--text-secondary);">AI is creating your ${salesSelectedTemplate} for ${target || 'general use'}</p>
+          <div style="font-size: 48px; margin-bottom: 20px; animation: pulse 1.5s ease-in-out infinite;">🤖</div>
+          <h3 style="margin-bottom: 10px;">Generating with Claude AI...</h3>
+          <p style="color: var(--text-secondary);">Creating your ${salesSelectedTemplate.replace(/-/g, ' ')}${target ? ` for ${target}` : ''}</p>
+          <p style="color: var(--text-secondary); font-size: 12px; margin-top: 10px;">Fetching company context and generating intelligent content...</p>
         </div>
+        <style>@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }</style>
       `;
 
-      // Send chat message to generate
-      const chatInput = document.getElementById('salesChatInput');
-      chatInput.value = `Generate a ${salesSelectedTemplate} named "${name}"${target ? ` for ${target}` : ''}${notes ? `. Notes: ${notes}` : ''}`;
-      await sendSalesChat();
+      try {
+        // Call the AI-powered generation API
+        const res = await fetch('/api/generate-sales-doc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: salesSelectedTemplate,
+            name,
+            target,
+            notes,
+            createdBy: 'eli'
+          })
+        });
 
-      // After chat response, show success and update files
-      setTimeout(() => {
-        const newFile = {
-          id: 'file-' + Date.now(),
-          name: name,
-          type: salesSelectedTemplate,
-          folder: getFolderForType(salesSelectedTemplate),
-          content: `Generated ${salesSelectedTemplate} content for ${target || 'general'}`,
-          createdAt: new Date().toISOString()
-        };
-        salesFiles.push(newFile);
-        updateSalesFolderCounts();
-        updateSalesStats();
+        const data = await res.json();
 
-        // Show success
+        if (res.ok && data.success) {
+          // Add to local files array
+          salesFiles.push(data.file);
+          updateSalesFolderCounts();
+          updateSalesStats();
+
+          // Show the generated document in edit mode
+          currentEditingFile = data.file;
+          docContent.innerHTML = `
+            <div class="file-editor">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 24px;">${getFileIcon(data.file.type)}</span>
+                  <input type="text" id="editFileName" value="${escapeHtml(data.file.name)}" style="font-size: 18px; font-weight: 600; background: transparent; border: none; color: var(--text-primary); border-bottom: 1px solid transparent; padding: 4px 0;" onfocus="this.style.borderBottomColor='var(--accent)'" onblur="this.style.borderBottomColor='transparent'" />
+                  <span style="background: var(--success); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600;">AI GENERATED</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <button onclick="saveCurrentDoc()" style="background: var(--success); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Save</button>
+                  <button onclick="previewDoc()" style="background: var(--accent); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">Preview</button>
+                  <button onclick="downloadDoc()" style="background: var(--bg-tertiary); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">Download</button>
+                  <button onclick="showTemplateGrid()" style="background: var(--bg-tertiary); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">New Doc</button>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+                <select id="editFileFolder" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
+                  <option value="proposals" ${data.file.folder === 'proposals' ? 'selected' : ''}>Proposals</option>
+                  <option value="pitch-decks" ${data.file.folder === 'pitch-decks' ? 'selected' : ''}>Pitch Decks</option>
+                  <option value="emails" ${data.file.folder === 'emails' ? 'selected' : ''}>Email Templates</option>
+                  <option value="one-pagers" ${data.file.folder === 'one-pagers' ? 'selected' : ''}>One-Pagers</option>
+                  <option value="demos" ${data.file.folder === 'demos' ? 'selected' : ''}>Demo Scripts</option>
+                  <option value="other" ${data.file.folder === 'other' ? 'selected' : ''}>Other</option>
+                </select>
+                ${target ? `<span style="color: var(--text-secondary); font-size: 12px; align-self: center;">Target: ${escapeHtml(target)}</span>` : ''}
+              </div>
+              <textarea id="editFileContent" style="width: 100%; height: calc(100% - 120px); min-height: 400px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;">${escapeHtml(data.content || data.file.content)}</textarea>
+            </div>
+          `;
+
+          // Also post to chat for team visibility
+          fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              author: 'eli',
+              authorType: 'human',
+              message: `[Sales Engineering] Generated ${salesSelectedTemplate}: "${name}"${target ? ` for ${target}` : ''}`
+            })
+          }).catch(() => {}); // Don't block on chat
+        } else {
+          // Handle error or fallback
+          const errorMsg = data.error || 'Unknown error';
+          if (errorMsg.includes('not configured')) {
+            // Fallback to template-based generation
+            docContent.innerHTML = `
+              <div style="text-align: center; padding: 60px 20px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⚠️</div>
+                <h3 style="margin-bottom: 10px;">AI Generation Unavailable</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">${errorMsg}</p>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">Using template-based generation instead...</p>
+              </div>
+            `;
+            // Fallback to old generate-doc API
+            setTimeout(() => fallbackGenerate(name, target, notes), 1500);
+          } else {
+            docContent.innerHTML = `
+              <div style="text-align: center; padding: 60px 20px;">
+                <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                <h3 style="margin-bottom: 10px;">Generation Failed</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">${escapeHtml(errorMsg)}</p>
+                <button onclick="showTemplateGrid()" style="background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Try Again</button>
+              </div>
+            `;
+          }
+        }
+      } catch (err) {
+        console.error('Generation error:', err);
         docContent.innerHTML = `
           <div style="text-align: center; padding: 60px 20px;">
-            <div style="font-size: 48px; margin-bottom: 20px;">✅</div>
-            <h3 style="margin-bottom: 10px;">Document Created!</h3>
-            <p style="color: var(--text-secondary); margin-bottom: 20px;">"${name}" has been saved to ${newFile.folder}</p>
-            <button onclick="showTemplateGrid()" style="background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Create Another</button>
+            <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+            <h3 style="margin-bottom: 10px;">Network Error</h3>
+            <p style="color: var(--text-secondary); margin-bottom: 20px;">Could not reach the generation API</p>
+            <button onclick="showTemplateGrid()" style="background: var(--accent); color: white; padding: 12px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">Try Again</button>
           </div>
         `;
-      }, 2000);
+      }
+    }
+
+    // Fallback to template-based generation if AI is unavailable
+    async function fallbackGenerate(name, target, notes) {
+      try {
+        const res = await fetch('/api/generate-doc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: salesSelectedTemplate.replace(/-/g, '_'),
+            target: target ? 'shop-owner' : 'general',
+            prompt: `${name}${notes ? ': ' + notes : ''}`,
+            customization: { shopName: target || 'Customer' },
+            requestedBy: 'eli'
+          })
+        });
+        const data = await res.json();
+        if (data.content) {
+          // Save to sales-files
+          const saveRes = await fetch('/api/sales-files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              type: salesSelectedTemplate,
+              folder: getFolderForType(salesSelectedTemplate),
+              content: data.content,
+              target,
+              notes,
+              createdBy: 'eli'
+            })
+          });
+          const saveData = await saveRes.json();
+          if (saveData.file) {
+            salesFiles.push(saveData.file);
+            updateSalesFolderCounts();
+            updateSalesStats();
+            openSalesFile(saveData.file.id);
+          }
+        }
+      } catch (err) {
+        console.error('Fallback generation error:', err);
+        showTemplateGrid();
+      }
     }
 
     function getFolderForType(type) {
