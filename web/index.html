@@ -11496,18 +11496,9 @@
       startDMWith(agentId, type || 'agent');
     }
 
-    function formatTimeAgo(date) {
-      const now = new Date();
-      const diff = now - date;
-      const mins = Math.floor(diff / 60000);
-      const hours = Math.floor(diff / 3600000);
-      const days = Math.floor(diff / 86400000);
-
-      if (mins < 1) return 'now';
-      if (mins < 60) return mins + 'm';
-      if (hours < 24) return hours + 'h';
-      return days + 'd';
-    }
+    // Note: Primary formatTimeAgo is defined earlier - this is a duplicate that should be removed
+    // Keeping for now but making it call the main one for consistency
+    // function formatTimeAgo - REMOVED DUPLICATE
 
     // Handle file attachment
     document.addEventListener('DOMContentLoaded', function() {
