@@ -14,6 +14,11 @@ const CHECKPOINTS_KEY = 'agent-coord:checkpoints';
 const AGENT_STATUS_KEY = 'agent-coord:agents';
 const GROUP_CHAT_KEY = 'agent-coord:group-chat';
 const METRICS_KEY = 'agent-coord:agent-metrics';
+const SESSIONS_KEY = 'agent-coord:sessions';
+const RULES_KEY = 'agent-coord:rules';
+const LOCKS_KEY = 'agent-coord:resource-locks';
+const ZONES_KEY = 'agent-coord:zones';
+const CLAIMS_KEY = 'agent-coord:claims';
 
 // Built-in Piston Labs context (same as piston-context.ts)
 const PISTON_CONTEXT: Record<string, any> = {
@@ -72,6 +77,22 @@ const PISTON_CONTEXT: Record<string, any> = {
   }
 };
 
+interface SubstrateRule {
+  id: string;
+  summary: string;
+  severity: 'block' | 'warn' | 'log';
+}
+
+interface SubstrateSession {
+  agentId: string;
+  role: string;
+  startedAt: string;
+  rulesAcknowledged: boolean;
+  currentLocks: string[];
+  currentZones: string[];
+  currentClaims: string[];
+}
+
 interface HotStartResponse {
   agentId: string;
   timestamp: string;
@@ -96,6 +117,20 @@ interface HotStartResponse {
 
   // Quick tips based on role
   tips: string[];
+
+  // Context Substrate - rules and session
+  substrate?: {
+    session: SubstrateSession;
+    rules: SubstrateRule[];
+    currentState: {
+      myLocks: string[];
+      myZones: string[];
+      myClaims: string[];
+      otherLocks: { path: string; owner: string }[];
+      otherZones: { zoneId: string; owner: string }[];
+    };
+    requiresAcknowledgment: boolean;
+  };
 }
 
 /**
@@ -139,10 +174,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const roleStr = role as string || 'general';
     const repoStr = repo as string;
 
-    // Parse includes (default: all)
+    // Parse includes (default: all, now includes substrate)
     const includes = include
       ? (include as string).split(',').map(s => s.trim())
-      : ['checkpoint', 'team', 'chat', 'context', 'memories', 'repo', 'metrics'];
+      : ['checkpoint', 'team', 'chat', 'context', 'memories', 'repo', 'metrics', 'substrate'];
 
     // Build response in parallel
     const [
@@ -151,7 +186,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       recentChat,
       memories,
       repoContext,
-      metrics
+      metrics,
+      existingSession,
+      rulesData,
+      locksData,
+      zonesData,
+      claimsData
     ] = await Promise.all([
       // Agent's checkpoint
       includes.includes('checkpoint')
@@ -181,6 +221,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Agent metrics
       includes.includes('metrics')
         ? redis.hget(METRICS_KEY, agentIdStr)
+        : null,
+
+      // Substrate: existing session
+      includes.includes('substrate')
+        ? redis.hget(SESSIONS_KEY, agentIdStr)
+        : null,
+
+      // Substrate: rules
+      includes.includes('substrate')
+        ? redis.get(RULES_KEY)
+        : null,
+
+      // Substrate: locks
+      includes.includes('substrate')
+        ? redis.hgetall(LOCKS_KEY)
+        : null,
+
+      // Substrate: zones
+      includes.includes('substrate')
+        ? redis.hgetall(ZONES_KEY)
+        : null,
+
+      // Substrate: claims
+      includes.includes('substrate')
+        ? redis.hgetall(CLAIMS_KEY)
         : null
     ]);
 
@@ -253,6 +318,132 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Generate tips based on role
     const tips = generateTips(roleStr, activeAgents, processedMemories);
 
+    // Process substrate (context substrate for rule enforcement)
+    let substrate: HotStartResponse['substrate'] = undefined;
+    if (includes.includes('substrate')) {
+      // Parse rules
+      const rules = rulesData
+        ? (typeof rulesData === 'string' ? JSON.parse(rulesData) : rulesData)
+        : null;
+
+      // Parse locks, zones, claims
+      const locks = locksData || {};
+      const zones = zonesData || {};
+      const claims = claimsData || {};
+
+      // Find this agent's resources
+      const myLocks = Object.entries(locks)
+        .filter(([_, lock]) => {
+          const l = typeof lock === 'string' ? JSON.parse(lock) : lock;
+          return l.lockedBy === agentIdStr;
+        })
+        .map(([path]) => path);
+
+      const myZones = Object.entries(zones)
+        .filter(([_, zone]) => {
+          const z = typeof zone === 'string' ? JSON.parse(zone) : zone;
+          return z.owner === agentIdStr;
+        })
+        .map(([zoneId]) => zoneId);
+
+      const myClaims = Object.entries(claims)
+        .filter(([_, claim]) => {
+          const c = typeof claim === 'string' ? JSON.parse(claim) : claim;
+          return c.agentId === agentIdStr;
+        })
+        .map(([_, claim]) => {
+          const c = typeof claim === 'string' ? JSON.parse(claim) : claim;
+          return c.what;
+        });
+
+      // Find other agents' resources (for awareness)
+      const otherLocks = Object.entries(locks)
+        .filter(([_, lock]) => {
+          const l = typeof lock === 'string' ? JSON.parse(lock) : lock;
+          return l.lockedBy !== agentIdStr;
+        })
+        .map(([path, lock]) => {
+          const l = typeof lock === 'string' ? JSON.parse(lock) : lock;
+          return { path, owner: l.lockedBy };
+        });
+
+      const otherZones = Object.entries(zones)
+        .filter(([_, zone]) => {
+          const z = typeof zone === 'string' ? JSON.parse(zone) : zone;
+          return z.owner && z.owner !== agentIdStr;
+        })
+        .map(([zoneId, zone]) => {
+          const z = typeof zone === 'string' ? JSON.parse(zone) : zone;
+          return { zoneId, owner: z.owner };
+        });
+
+      // Check for existing session or create new one
+      let session: SubstrateSession;
+      let requiresAcknowledgment = false;
+
+      if (existingSession) {
+        const parsed = typeof existingSession === 'string' ? JSON.parse(existingSession) : existingSession;
+        session = {
+          agentId: agentIdStr,
+          role: parsed.role || roleStr,
+          startedAt: parsed.startedAt,
+          rulesAcknowledged: parsed.rulesAcknowledged || false,
+          currentLocks: myLocks,
+          currentZones: myZones,
+          currentClaims: myClaims,
+        };
+        requiresAcknowledgment = !parsed.rulesAcknowledged;
+      } else {
+        // Create new session
+        session = {
+          agentId: agentIdStr,
+          role: roleStr,
+          startedAt: new Date().toISOString(),
+          rulesAcknowledged: false,
+          currentLocks: myLocks,
+          currentZones: myZones,
+          currentClaims: myClaims,
+        };
+        requiresAcknowledgment = true;
+
+        // Persist new session
+        await redis.hset(SESSIONS_KEY, {
+          [agentIdStr]: JSON.stringify({
+            agentId: agentIdStr,
+            role: roleStr,
+            startedAt: session.startedAt,
+            lastActivity: session.startedAt,
+            rulesVersion: rules?.version || '1.0.0',
+            rulesAcknowledged: false,
+            violationCount: 0,
+          })
+        });
+      }
+
+      // Build rules summary
+      const rulesSummary: SubstrateRule[] = [
+        { id: 'lock-before-edit', summary: 'Lock files before editing to prevent conflicts', severity: 'block' },
+        { id: 'zone-respect', summary: 'Do not edit files in zones owned by other agents', severity: 'block' },
+        { id: 'claim-before-work', summary: 'Claim tasks before starting work', severity: 'warn' },
+        { id: 'max-claims', summary: `Maximum ${rules?.coordination?.maxConcurrentClaimsPerAgent || 3} concurrent claims`, severity: 'block' },
+        { id: 'handoff-protocol', summary: 'Use formal handoff tool when transferring work', severity: 'warn' },
+        { id: 'checkpoint-on-exit', summary: 'Save checkpoint before ending session', severity: 'warn' },
+      ];
+
+      substrate = {
+        session,
+        rules: rulesSummary,
+        currentState: {
+          myLocks,
+          myZones,
+          myClaims,
+          otherLocks,
+          otherZones,
+        },
+        requiresAcknowledgment,
+      };
+    }
+
     const response: HotStartResponse = {
       agentId: agentIdStr,
       timestamp: new Date().toISOString(),
@@ -269,7 +460,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       repoContext: repoContext ? (typeof repoContext === 'string' ? JSON.parse(repoContext) : repoContext) : undefined,
 
-      tips
+      tips,
+
+      substrate,
     };
 
     // Record this as a hot start in metrics
