@@ -479,6 +479,11 @@
       display: flex;
     }
 
+    /* CRM View specific - contain the pipeline */
+    .tab-content.crm-view.active {
+      overflow: hidden;
+    }
+
     /* Roadmap View */
 
     
@@ -7328,7 +7333,7 @@
       </div>
 
       <!-- CRM View -->
-      <div class="tab-content" id="crmView" style="overflow: hidden; display: flex; flex-direction: column;">
+      <div class="tab-content crm-view" id="crmView">
         <!-- CRM Header with Stats -->
         <div class="crm-header">
           <div class="crm-stats">
