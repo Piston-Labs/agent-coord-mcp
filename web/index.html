@@ -3140,6 +3140,48 @@
       outline: none;
     }
 
+    .workload-bar {
+      display: flex;
+      gap: 12px;
+      padding: 8px 16px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .workload-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .workload-item .avatar {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .workload-item .count {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .workload-item.high-load .count {
+      color: var(--error);
+    }
+
     .add-item-btn {
       background: var(--accent);
       color: #fff;
@@ -6952,7 +6994,13 @@
             <option value="medium">Medium</option>
             <option value="low">Low</option>
           </select>
+          <select id="cycleFilter" onchange="fetchRoadmap()">
+            <option value="">All Sprints</option>
+          </select>
           <button class="add-item-btn" onclick="showAddRoadmapItem()">+ Add Item</button>
+        </div>
+        <div class="workload-bar" id="workloadBar">
+          <!-- Populated by JS -->
         </div>
         <div class="roadmap-board" id="roadmapBoard">
           <div class="roadmap-column" data-status="backlog">
@@ -10441,22 +10489,49 @@
         const project = document.getElementById('projectFilter').value;
         const assignee = document.getElementById('assigneeFilter').value;
         const priority = document.getElementById('priorityFilter')?.value || '';
+        const cycleId = document.getElementById('cycleFilter')?.value || '';
 
         let url = API_BASE + '/roadmap?';
         if (project) url += 'project=' + encodeURIComponent(project) + '&';
         if (assignee) url += 'assignee=' + encodeURIComponent(assignee) + '&';
-        if (priority) url += 'priority=' + encodeURIComponent(priority);
+        if (priority) url += 'priority=' + encodeURIComponent(priority) + '&';
+        if (cycleId) url += 'cycleId=' + encodeURIComponent(cycleId);
 
         const res = await fetch(url);
         const data = await res.json();
         roadmapItems = data.items || [];
+        // Filter by cycle client-side
+        if (cycleId) {
+          roadmapItems = roadmapItems.filter(item => item.cycleId === cycleId);
+        }
         renderRoadmap();
         updateRoadmapStats();
+        fetchWorkload();
       } catch (err) {
         console.error('Failed to fetch roadmap:', err);
       }
     }
-    
+
+    // Fetch and populate cycles dropdown
+    async function fetchCycles() {
+      try {
+        const res = await fetch(API_BASE + '/roadmap?type=cycles');
+        const data = await res.json();
+        const cycles = data.cycles || [];
+        const cycleFilter = document.getElementById('cycleFilter');
+        if (cycleFilter && cycles.length > 0) {
+          let options = '<option value="">All Sprints</option>';
+          cycles.forEach(cycle => {
+            const statusIcon = cycle.status === 'active' ? '🔄 ' : cycle.status === 'completed' ? '✅ ' : '📅 ';
+            options += `<option value="${cycle.id}">${statusIcon}${escapeHtml(cycle.name)}</option>`;
+          });
+          cycleFilter.innerHTML = options;
+        }
+      } catch (err) {
+        console.error('Failed to fetch cycles:', err);
+      }
+    }
+
     function updateRoadmapStats() {
       const counts = {
         backlog: 0,
@@ -10489,6 +10564,44 @@
       document.getElementById('progressReview').style.width = reviewPercent + '%';
       document.getElementById('progressInProgress').style.width = inProgressPercent + '%';
       document.getElementById('progressPercent').textContent = Math.round(donePercent) + '%';
+    }
+
+    async function fetchWorkload() {
+      try {
+        const res = await fetch(API_BASE + '/roadmap', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'get-workload' })
+        });
+        const data = await res.json();
+        renderWorkload(data.workload || {});
+      } catch (err) {
+        console.error('Failed to fetch workload:', err);
+      }
+    }
+
+    function renderWorkload(workload) {
+      const container = document.getElementById('workloadBar');
+      if (!container) return;
+
+      const html = Object.entries(workload)
+        .filter(([name]) => name !== 'unassigned')
+        .sort((a, b) => b[1].total - a[1].total)
+        .map(([name, data]) => {
+          const member = teamMembers.find(m => m.id === name || m.name.toLowerCase() === name.toLowerCase());
+          const color = member?.color || 'var(--accent)';
+          const initials = name.substring(0, 2).toUpperCase();
+          const highLoad = data.total > 10 ? 'high-load' : '';
+          return `
+            <div class="workload-item ${highLoad}" onclick="document.getElementById('assigneeFilter').value='${member?.id || name}';fetchRoadmap();" style="cursor:pointer">
+              <div class="avatar" style="background:${color}">${initials}</div>
+              <span>${member?.name || name}</span>
+              <span class="count">${data.total}</span>
+            </div>
+          `;
+        }).join('');
+
+      container.innerHTML = html || '<span style="color:var(--text-muted);font-size:12px">No workload data</span>';
     }
 
     function renderRoadmap() {
