@@ -1,25 +1,50 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
+import { DynamoDBClient, QueryCommand, ScanCommand } from '@aws-sdk/client-dynamodb';
+import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+// AWS clients - only initialized if credentials are available
+const hasAWSCredentials = process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY;
+const dynamodb = hasAWSCredentials ? new DynamoDBClient({
+  region: process.env.AWS_REGION || 'us-west-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  }
+}) : null;
+
+const s3 = hasAWSCredentials ? new S3Client({
+  region: process.env.AWS_REGION || 'us-west-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  }
+}) : null;
+
 const TELEMETRY_KEY = 'piston:telemetry';
 const TELEMETRY_HISTORY_KEY = 'piston:telemetry-history';
 const ALERTS_KEY = 'piston:telemetry-alerts';
+
+// AWS table/bucket names
+const DYNAMODB_TABLE = process.env.DYNAMODB_TELEMETRY_TABLE || 'teltonika-telemetry';
+const S3_BUCKET = process.env.S3_TELEMETRY_BUCKET || 'telemetry-raw-usw1';
 
 /**
  * Device Telemetry API - Real-time vehicle analytics with health monitoring
  *
  * Data source: Teltonika GPS devices via AWS IoT Core pipeline (teltonika-context-system)
- * Only shows verified active devices from production fleet - no test data from gran-autismo
+ * Pulls directly from AWS DynamoDB/S3 when credentials are available
  *
  * GET /api/telemetry - Get telemetry for all devices with health scores
  * GET /api/telemetry?imei=xxx - Get telemetry for specific device
  * GET /api/telemetry?history=true - Include historical data (last 24 readings)
  * GET /api/telemetry?alerts=true - Include active alerts
+ * GET /api/telemetry?source=aws - Force AWS query (if credentials available)
  * POST /api/telemetry - Update telemetry data (from IoT pipeline)
  */
 
@@ -403,6 +428,112 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
   return { ...baseTelemetry, health };
 }
 
+// ============================================================================
+// AWS Direct Query Functions
+// ============================================================================
+
+// Query DynamoDB for recent telemetry data for a device
+async function queryAWSTelemetry(imei: string): Promise<Partial<TelemetryData> | null> {
+  if (!dynamodb) return null;
+
+  try {
+    const command = new QueryCommand({
+      TableName: DYNAMODB_TABLE,
+      KeyConditionExpression: 'imei = :imei',
+      ExpressionAttributeValues: {
+        ':imei': { S: imei }
+      },
+      Limit: 1,
+      ScanIndexForward: false // Get most recent first
+    });
+
+    const response = await dynamodb.send(command);
+
+    if (!response.Items || response.Items.length === 0) {
+      return null;
+    }
+
+    const item = response.Items[0];
+
+    // Parse DynamoDB item into TelemetryData format
+    return {
+      imei,
+      metrics: {
+        batteryVoltage: parseFloat(item.battery_voltage?.N || '0'),
+        externalVoltage: parseFloat(item.external_voltage?.N || '0'),
+        speed: parseFloat(item.speed?.N || '0'),
+        odometer: parseFloat(item.odometer?.N || '0'),
+        fuelLevel: item.fuel_level?.N ? parseFloat(item.fuel_level.N) : undefined,
+        engineRPM: item.engine_rpm?.N ? parseFloat(item.engine_rpm.N) : undefined,
+        coolantTemp: item.coolant_temp?.N ? parseFloat(item.coolant_temp.N) : undefined,
+      },
+      position: {
+        lat: parseFloat(item.latitude?.N || '0'),
+        lng: parseFloat(item.longitude?.N || '0'),
+        altitude: item.altitude?.N ? parseFloat(item.altitude.N) : undefined,
+        heading: item.heading?.N ? parseFloat(item.heading.N) : undefined,
+        satellites: item.satellites?.N ? parseInt(item.satellites.N) : undefined,
+      },
+      status: {
+        ignition: item.ignition?.BOOL || false,
+        movement: item.movement?.BOOL || false,
+        gpsValid: item.gps_valid?.BOOL || true,
+        charging: item.charging?.BOOL || false,
+      },
+      connectivity: {
+        signalStrength: parseInt(item.signal_strength?.N || '0'),
+        carrier: item.carrier?.S,
+        lastSeen: item.timestamp?.S || new Date().toISOString(),
+      },
+      timestamp: item.timestamp?.S || new Date().toISOString(),
+    };
+  } catch (err) {
+    console.error(`[telemetry] AWS query failed for ${imei}:`, err);
+    return null;
+  }
+}
+
+// Query all recent telemetry from DynamoDB
+async function queryAllAWSTelemetry(): Promise<Map<string, Partial<TelemetryData>>> {
+  const results = new Map<string, Partial<TelemetryData>>();
+
+  if (!dynamodb) return results;
+
+  try {
+    // Query for each known device
+    for (const imei of Object.keys(DEVICE_PROFILES)) {
+      const data = await queryAWSTelemetry(imei);
+      if (data) {
+        results.set(imei, data);
+      }
+    }
+  } catch (err) {
+    console.error('[telemetry] AWS scan failed:', err);
+  }
+
+  return results;
+}
+
+// Get recent S3 telemetry files for a device
+async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<string[]> {
+  if (!s3) return [];
+
+  try {
+    const prefix = `devices/${imei}/`;
+    const command = new ListObjectsV2Command({
+      Bucket: S3_BUCKET,
+      Prefix: prefix,
+      MaxKeys: limit,
+    });
+
+    const response = await s3.send(command);
+    return (response.Contents || []).map(obj => obj.Key || '').filter(Boolean);
+  } catch (err) {
+    console.error(`[telemetry] S3 list failed for ${imei}:`, err);
+    return [];
+  }
+}
+
 // Store historical data point
 async function storeHistoryPoint(imei: string, telemetry: TelemetryData) {
   const historyKey = `${TELEMETRY_HISTORY_KEY}:${imei}`;
@@ -440,18 +571,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      const { imei, history, alerts: includeAlerts } = req.query;
+      const { imei, history, alerts: includeAlerts, source } = req.query;
+      const useAWS = hasAWSCredentials && (source === 'aws' || source !== 'redis');
 
       // Get specific device
       if (imei && typeof imei === 'string') {
-        const stored = await redis.hget(TELEMETRY_KEY, imei);
-        const storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
-        const telemetry = generateTelemetry(imei, storedData);
+        // Try AWS first if available
+        let storedData: Partial<TelemetryData> | undefined;
 
-        await redis.hset(TELEMETRY_KEY, { [imei]: JSON.stringify(telemetry) });
+        if (useAWS) {
+          const awsData = await queryAWSTelemetry(imei);
+          if (awsData) {
+            storedData = awsData;
+            // Cache in Redis for faster subsequent access
+            await redis.hset(TELEMETRY_KEY, { [imei]: JSON.stringify(awsData) });
+          }
+        }
+
+        // Fall back to Redis if no AWS data
+        if (!storedData) {
+          const stored = await redis.hget(TELEMETRY_KEY, imei);
+          storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
+        }
+
+        const telemetry = generateTelemetry(imei, storedData);
         await storeHistoryPoint(imei, telemetry);
 
-        const response: any = { telemetry };
+        const response: any = {
+          telemetry,
+          source: useAWS && storedData ? 'aws' : 'redis'
+        };
 
         if (history === 'true') {
           response.history = await getHistory(imei);
@@ -461,17 +610,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Get all devices
+      // Try AWS first for fresh data
+      let awsTelemetry: Map<string, Partial<TelemetryData>> = new Map();
+      if (useAWS) {
+        awsTelemetry = await queryAllAWSTelemetry();
+      }
+
       const storedTelemetry = await redis.hgetall(TELEMETRY_KEY) || {};
       const allTelemetry: TelemetryData[] = [];
       const allAlerts: TelemetryAlert[] = [];
 
       for (const deviceImei of Object.keys(DEVICE_PROFILES)) {
-        const stored = storedTelemetry[deviceImei];
-        const storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
+        // Prefer AWS data, fall back to Redis
+        let storedData: Partial<TelemetryData> | undefined = awsTelemetry.get(deviceImei);
+
+        if (!storedData) {
+          const stored = storedTelemetry[deviceImei];
+          storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
+        } else {
+          // Cache AWS data in Redis
+          await redis.hset(TELEMETRY_KEY, { [deviceImei]: JSON.stringify(storedData) });
+        }
+
         const telemetry = generateTelemetry(deviceImei, storedData);
         allTelemetry.push(telemetry);
 
-        await redis.hset(TELEMETRY_KEY, { [deviceImei]: JSON.stringify(telemetry) });
         await storeHistoryPoint(deviceImei, telemetry);
 
         // Collect alerts
@@ -515,7 +678,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         devices: allTelemetry.sort((a, b) => a.deviceName.localeCompare(b.deviceName)),
         thresholds: THRESHOLDS,
-        source: 'Piston Labs Teltonika Fleet (AWS IoT Core)'
+        source: useAWS && awsTelemetry.size > 0
+          ? 'Piston Labs Teltonika Fleet (AWS DynamoDB - Live)'
+          : 'Piston Labs Teltonika Fleet (Redis Cache)',
+        awsEnabled: hasAWSCredentials
       };
 
       if (includeAlerts === 'true') {
