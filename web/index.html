@@ -9680,12 +9680,12 @@
       listBody.innerHTML = shops.map(shop => `
         <tr onclick="openShopDetail('${shop.id}')" style="cursor: pointer;">
           <td>
-            <div style="font-weight: 500;">${escapeHtml(shop.name)}</div>
-            <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(shop.city)}, ${escapeHtml(shop.state)}</div>
+            <div style="font-weight: 500;">${escapeHtml(shop.name || 'Unnamed')}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(shop.city || '')}, ${escapeHtml(shop.state || '')}</div>
           </td>
-          <td>${escapeHtml(shop.contactName)}</td>
-          <td><span class="crm-stage-badge stage-${shop.stage}">${CRM_STAGE_LABELS[shop.stage]}</span></td>
-          <td>$${shop.estMonthlyValue}/mo</td>
+          <td>${escapeHtml(shop.contactName || '-')}</td>
+          <td><span class="crm-stage-badge stage-${shop.stage}">${CRM_STAGE_LABELS[shop.stage] || shop.stage}</span></td>
+          <td>$${shop.estMonthlyValue || 0}/mo</td>
           <td>${formatTimeAgo(shop.lastContact)}</td>
           <td>${getAssigneeName(shop.assignedTo)}</td>
         </tr>
@@ -9700,13 +9700,13 @@
       return `
         <div class="crm-shop-card" onclick="openShopDetail('${shop.id}')">
           <div class="crm-shop-header">
-            <span class="crm-shop-name">${escapeHtml(shop.name)}</span>
-            <span class="crm-shop-value">$${shop.estMonthlyValue}/mo</span>
+            <span class="crm-shop-name">${escapeHtml(shop.name || 'Unnamed')}</span>
+            <span class="crm-shop-value">$${shop.estMonthlyValue || 0}/mo</span>
           </div>
-          <div class="crm-shop-contact">${escapeHtml(shop.contactName)} · ${escapeHtml(shop.contactRole)}</div>
+          <div class="crm-shop-contact">${escapeHtml(shop.contactName || 'No contact')}${shop.contactRole ? ' · ' + escapeHtml(shop.contactRole) : ''}</div>
           <div class="crm-shop-meta">
-            <span>${shop.bays} bays · ${shop.technicians} techs</span>
-            <span>${shop.devicesNeeded} devices</span>
+            <span>${shop.bays || 0} bays · ${shop.technicians || 0} techs</span>
+            <span>${shop.devicesNeeded || 0} devices</span>
           </div>
           <div class="crm-shop-footer">
             <span class="crm-assignee">${getAssigneeName(shop.assignedTo)}</span>
@@ -10222,7 +10222,10 @@
     }
 
     function formatTimeAgo(dateString) {
+      if (!dateString) return 'N/A';
       const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'N/A';
+
       const now = new Date();
       const diffMs = now - date;
       const diffMins = Math.floor(diffMs / 60000);
