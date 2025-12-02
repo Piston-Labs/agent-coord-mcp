@@ -9,6 +9,63 @@ const redis = new Redis({
 const SHOPS_KEY = 'piston:crm:shops';
 const ACTIVITIES_KEY = 'piston:crm:activities';
 
+// ============================================================================
+// HEALTH SCORE CALCULATION (Industry best practice)
+// ============================================================================
+
+interface ShopWithHealth extends Shop {
+  healthScore?: number;
+  healthLabel?: 'hot' | 'warm' | 'cold' | 'at-risk';
+  daysSinceContact?: number;
+  isOverdue?: boolean;
+}
+
+function calculateHealthScore(shop: Shop, activityCount: number): ShopWithHealth {
+  const now = new Date();
+  const lastContact = new Date(shop.lastContact);
+  const daysSinceContact = Math.floor((now.getTime() - lastContact.getTime()) / (1000 * 60 * 60 * 24));
+
+  let score = 100;
+
+  // Recency penalty (up to -40 points)
+  if (daysSinceContact > 30) score -= 40;
+  else if (daysSinceContact > 14) score -= 25;
+  else if (daysSinceContact > 7) score -= 10;
+
+  // Activity bonus (up to +20 points)
+  if (activityCount >= 5) score += 20;
+  else if (activityCount >= 3) score += 10;
+  else if (activityCount >= 1) score += 5;
+
+  // Stage velocity bonus
+  if (shop.stage === 'demo' || shop.stage === 'proposal') score += 10;
+  if (shop.stage === 'customer') score += 20;
+  if (shop.stage === 'churned') score -= 50;
+
+  // Next action penalty
+  const isOverdue = shop.nextActionDue ? new Date(shop.nextActionDue) < now : false;
+  if (isOverdue) score -= 15;
+  if (!shop.nextAction && shop.stage !== 'customer' && shop.stage !== 'churned') score -= 10;
+
+  // Clamp to 0-100
+  score = Math.max(0, Math.min(100, score));
+
+  // Determine label
+  let healthLabel: 'hot' | 'warm' | 'cold' | 'at-risk';
+  if (score >= 80) healthLabel = 'hot';
+  else if (score >= 60) healthLabel = 'warm';
+  else if (score >= 40) healthLabel = 'cold';
+  else healthLabel = 'at-risk';
+
+  return {
+    ...shop,
+    healthScore: score,
+    healthLabel,
+    daysSinceContact,
+    isOverdue
+  };
+}
+
 /**
  * CRM Shop/Prospect Tracking API for Piston Labs Sales
  *
@@ -48,6 +105,10 @@ interface Shop {
   leadSource?: string;
   assignedTo?: string;
   stage: 'prospect' | 'qualified' | 'demo' | 'proposal' | 'customer' | 'churned';
+  // Next action tracking (NEW - industry best practice)
+  nextAction?: string;
+  nextActionDue?: string;
+  lostReason?: string;
   // Subscription & devices
   subscriptionStatus?: 'trial' | 'active' | 'paused' | 'cancelled' | '';
   monthlyRate?: number;
@@ -85,7 +146,74 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // GET: List shops or activities
     if (req.method === 'GET') {
-      const { stage, assignedTo, id, activities, shopId } = req.query;
+      const { stage, assignedTo, id, activities, shopId, analytics } = req.query;
+
+      // Conversion funnel analytics (NEW - industry best practice)
+      if (analytics === 'funnel') {
+        const shopsRaw = await redis.hgetall(SHOPS_KEY) || {};
+        const shops: Shop[] = Object.values(shopsRaw).map((s: unknown) =>
+          typeof s === 'string' ? JSON.parse(s) : s
+        ) as Shop[];
+
+        const stageOrder = ['prospect', 'qualified', 'demo', 'proposal', 'customer'];
+        const funnel = stageOrder.map(stageName => {
+          const inStage = shops.filter(s => s.stage === stageName);
+          const churned = shops.filter(s => s.stage === 'churned' && s.lostReason);
+          return {
+            stage: stageName,
+            count: inStage.length,
+            value: inStage.reduce((sum, s) => sum + (s.estMonthlyValue || 0), 0)
+          };
+        });
+
+        // Calculate conversion rates between stages
+        const conversions = [];
+        for (let i = 0; i < stageOrder.length - 1; i++) {
+          const from = funnel[i];
+          const to = funnel[i + 1];
+          const totalAfter = funnel.slice(i + 1).reduce((sum, f) => sum + f.count, 0);
+          conversions.push({
+            from: from.stage,
+            to: to.stage,
+            rate: from.count > 0 ? Math.round((totalAfter / from.count) * 100) : 0
+          });
+        }
+
+        // Win/loss analysis
+        const customers = shops.filter(s => s.stage === 'customer');
+        const churned = shops.filter(s => s.stage === 'churned');
+        const winRate = shops.length > 0 ? Math.round((customers.length / shops.length) * 100) : 0;
+
+        // Average deal cycle (from createdAt to becoming customer)
+        const dealCycles = customers.map(s => {
+          const created = new Date(s.createdAt);
+          const lastContact = new Date(s.lastContact);
+          return Math.floor((lastContact.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        });
+        const avgDealCycle = dealCycles.length > 0 ? Math.round(dealCycles.reduce((a, b) => a + b, 0) / dealCycles.length) : 0;
+
+        // Lost reasons breakdown
+        const lostReasons: Record<string, number> = {};
+        churned.forEach(s => {
+          const reason = s.lostReason || 'Not specified';
+          lostReasons[reason] = (lostReasons[reason] || 0) + 1;
+        });
+
+        return res.json({
+          funnel,
+          conversions,
+          summary: {
+            totalProspects: shops.length,
+            totalCustomers: customers.length,
+            totalChurned: churned.length,
+            winRate,
+            avgDealCycle,
+            pipelineValue: shops.filter(s => s.stage !== 'customer' && s.stage !== 'churned').reduce((sum, s) => sum + (s.estMonthlyValue || 0), 0),
+            customerValue: customers.reduce((sum, s) => sum + (s.estMonthlyValue || 0), 0)
+          },
+          lostReasons
+        });
+      }
 
       // Get activities for a shop
       if (activities === 'true') {
@@ -112,7 +240,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(404).json({ error: 'Shop not found' });
         }
         const shop = typeof shopRaw === 'string' ? JSON.parse(shopRaw) : shopRaw;
-        return res.json({ shop });
+
+        // Get activity count for health score
+        const activitiesRaw = await redis.hgetall(ACTIVITIES_KEY) || {};
+        const allActivities: Activity[] = Object.values(activitiesRaw).map((a: unknown) =>
+          typeof a === 'string' ? JSON.parse(a) : a
+        ) as Activity[];
+        const activityCount = allActivities.filter(a => a.shopId === shop.id).length;
+
+        const shopWithHealth = calculateHealthScore(shop, activityCount);
+        return res.json({ shop: shopWithHealth });
       }
 
       // Get all shops
@@ -121,33 +258,66 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         typeof s === 'string' ? JSON.parse(s) : s
       ) as Shop[];
 
+      // Get all activities for health calculation
+      const activitiesRaw = await redis.hgetall(ACTIVITIES_KEY) || {};
+      const allActivities: Activity[] = Object.values(activitiesRaw).map((a: unknown) =>
+        typeof a === 'string' ? JSON.parse(a) : a
+      ) as Activity[];
+
+      // Calculate health scores
+      const shopsWithHealth: ShopWithHealth[] = shops.map(shop => {
+        const activityCount = allActivities.filter(a => a.shopId === shop.id).length;
+        return calculateHealthScore(shop, activityCount);
+      });
+
       // Apply filters
+      let filteredShops = shopsWithHealth;
       if (stage) {
-        shops = shops.filter(s => s.stage === stage);
+        filteredShops = filteredShops.filter(s => s.stage === stage);
       }
       if (assignedTo) {
-        shops = shops.filter(s => s.assignedTo === assignedTo);
+        filteredShops = filteredShops.filter(s => s.assignedTo === assignedTo);
       }
 
-      // Sort by last contact descending
-      shops.sort((a, b) => new Date(b.lastContact).getTime() - new Date(a.lastContact).getTime());
+      // Sort by last contact descending (or by health score if requested)
+      const { sortBy } = req.query;
+      if (sortBy === 'health') {
+        filteredShops.sort((a, b) => (b.healthScore || 0) - (a.healthScore || 0));
+      } else if (sortBy === 'overdue') {
+        filteredShops.sort((a, b) => {
+          if (a.isOverdue && !b.isOverdue) return -1;
+          if (!a.isOverdue && b.isOverdue) return 1;
+          return (b.daysSinceContact || 0) - (a.daysSinceContact || 0);
+        });
+      } else {
+        filteredShops.sort((a, b) => new Date(b.lastContact).getTime() - new Date(a.lastContact).getTime());
+      }
 
-      // Calculate pipeline stats
+      // Enhanced pipeline stats with health breakdown
       const stats = {
-        total: shops.length,
+        total: shopsWithHealth.length,
         byStage: {
-          prospect: shops.filter(s => s.stage === 'prospect').length,
-          qualified: shops.filter(s => s.stage === 'qualified').length,
-          demo: shops.filter(s => s.stage === 'demo').length,
-          proposal: shops.filter(s => s.stage === 'proposal').length,
-          customer: shops.filter(s => s.stage === 'customer').length,
-          churned: shops.filter(s => s.stage === 'churned').length
+          prospect: shopsWithHealth.filter(s => s.stage === 'prospect').length,
+          qualified: shopsWithHealth.filter(s => s.stage === 'qualified').length,
+          demo: shopsWithHealth.filter(s => s.stage === 'demo').length,
+          proposal: shopsWithHealth.filter(s => s.stage === 'proposal').length,
+          customer: shopsWithHealth.filter(s => s.stage === 'customer').length,
+          churned: shopsWithHealth.filter(s => s.stage === 'churned').length
         },
-        totalDevices: shops.reduce((sum, s) => sum + (s.devicesNeeded || 0), 0),
-        totalMonthlyValue: shops.filter(s => s.stage === 'customer').reduce((sum, s) => sum + (s.estMonthlyValue || 0), 0)
+        byHealth: {
+          hot: shopsWithHealth.filter(s => s.healthLabel === 'hot').length,
+          warm: shopsWithHealth.filter(s => s.healthLabel === 'warm').length,
+          cold: shopsWithHealth.filter(s => s.healthLabel === 'cold').length,
+          atRisk: shopsWithHealth.filter(s => s.healthLabel === 'at-risk').length
+        },
+        overdueActions: shopsWithHealth.filter(s => s.isOverdue).length,
+        needsAttention: shopsWithHealth.filter(s => (s.daysSinceContact || 0) > 7 && s.stage !== 'customer' && s.stage !== 'churned').length,
+        totalDevices: shopsWithHealth.reduce((sum, s) => sum + (s.devicesNeeded || 0), 0),
+        totalMonthlyValue: shopsWithHealth.filter(s => s.stage === 'customer').reduce((sum, s) => sum + (s.estMonthlyValue || 0), 0),
+        avgHealthScore: Math.round(shopsWithHealth.reduce((sum, s) => sum + (s.healthScore || 0), 0) / (shopsWithHealth.length || 1))
       };
 
-      return res.json({ shops, stats });
+      return res.json({ shops: filteredShops, stats });
     }
 
     // POST: Add or update shop, or add activity, or seed data
@@ -260,6 +430,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         leadSource,
         assignedTo,
         stage = 'prospect',
+        // Next action tracking
+        nextAction,
+        nextActionDue,
+        lostReason,
         // New subscription fields
         subscriptionStatus,
         monthlyRate,
@@ -305,6 +479,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (leadSource !== undefined) shop.leadSource = leadSource;
         if (assignedTo !== undefined) shop.assignedTo = assignedTo;
         if (stage !== undefined) shop.stage = stage as Shop['stage'];
+        // Next action tracking
+        if (nextAction !== undefined) shop.nextAction = nextAction;
+        if (nextActionDue !== undefined) shop.nextActionDue = nextActionDue;
+        if (lostReason !== undefined) shop.lostReason = lostReason;
         // Subscription fields
         if (subscriptionStatus !== undefined) shop.subscriptionStatus = subscriptionStatus;
         if (monthlyRate !== undefined) shop.monthlyRate = monthlyRate;
@@ -338,6 +516,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           leadSource,
           assignedTo,
           stage: (stage as Shop['stage']) || 'prospect',
+          // Next action tracking
+          nextAction,
+          nextActionDue,
+          lostReason,
           // Subscription fields
           subscriptionStatus: subscriptionStatus || '',
           monthlyRate: monthlyRate || 0,

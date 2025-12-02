@@ -5359,6 +5359,39 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
+    /* Overdue card styling (NEW) */
+    .crm-shop-card.card-overdue {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    /* Next action styling (NEW) */
+    .crm-next-action {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      padding: 4px 8px;
+      border-radius: 4px;
+      margin-bottom: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .crm-next-action.overdue {
+      background: rgba(239, 68, 68, 0.15);
+      color: #ef4444;
+      font-weight: 500;
+    }
+
+    /* Health badge styling */
+    .crm-health-badge {
+      font-size: 10px !important;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
     .crm-shop-header {
       display: flex;
       justify-content: space-between;
@@ -7404,6 +7437,14 @@
             <div class="crm-stat customer">
               <span class="crm-stat-value" id="crmCustomers">0</span>
               <span class="crm-stat-label">Customers</span>
+            </div>
+            <div class="crm-stat health-indicator" id="healthIndicator" style="border-color: #22c55e;">
+              <span class="crm-stat-value" id="crmAvgHealth">--</span>
+              <span class="crm-stat-label">Avg Health</span>
+            </div>
+            <div class="crm-stat overdue-indicator" style="border-color: #ef4444; background: rgba(239, 68, 68, 0.1);">
+              <span class="crm-stat-value" style="color: #ef4444;" id="crmOverdue">0</span>
+              <span class="crm-stat-label">Overdue</span>
             </div>
           </div>
           <div class="crm-controls">
@@ -9826,6 +9867,32 @@
       document.getElementById('crmQualified').textContent = crmShops.filter(s => s.stage === 'qualified').length;
       document.getElementById('crmDemo').textContent = crmShops.filter(s => s.stage === 'demo').length;
       document.getElementById('crmCustomers').textContent = crmShops.filter(s => s.stage === 'customer').length;
+
+      // Update health stats (NEW - from API)
+      const avgHealth = crmShops.length > 0
+        ? Math.round(crmShops.reduce((sum, s) => sum + (s.healthScore || 50), 0) / crmShops.length)
+        : 0;
+      const overdueCount = crmShops.filter(s => s.isOverdue).length;
+      document.getElementById('crmAvgHealth').textContent = avgHealth;
+      document.getElementById('crmOverdue').textContent = overdueCount;
+
+      // Color-code health indicator
+      const healthEl = document.getElementById('healthIndicator');
+      if (healthEl) {
+        if (avgHealth >= 80) {
+          healthEl.style.borderColor = '#22c55e';
+          healthEl.style.background = 'rgba(34, 197, 94, 0.1)';
+          document.getElementById('crmAvgHealth').style.color = '#22c55e';
+        } else if (avgHealth >= 60) {
+          healthEl.style.borderColor = '#f59e0b';
+          healthEl.style.background = 'rgba(245, 158, 11, 0.1)';
+          document.getElementById('crmAvgHealth').style.color = '#f59e0b';
+        } else {
+          healthEl.style.borderColor = '#ef4444';
+          healthEl.style.background = 'rgba(239, 68, 68, 0.1)';
+          document.getElementById('crmAvgHealth').style.color = '#ef4444';
+        }
+      }
     }
 
     // Render list view
@@ -9860,20 +9927,32 @@
       const lastActivity = crmActivities.find(a => a.shopId === shop.id);
       const activityIcon = lastActivity ? getActivityIcon(lastActivity.type) : '';
 
+      // Health score indicator (NEW)
+      const healthColor = shop.healthScore >= 80 ? '#22c55e'
+        : shop.healthScore >= 60 ? '#f59e0b'
+        : shop.healthScore >= 40 ? '#ef4444' : '#991b1b';
+      const healthLabel = shop.healthLabel || (shop.healthScore >= 80 ? 'hot' : shop.healthScore >= 60 ? 'warm' : 'cold');
+
+      // Next action display (NEW)
+      const nextActionHtml = shop.nextAction
+        ? `<div class="crm-next-action ${shop.isOverdue ? 'overdue' : ''}">${shop.isOverdue ? '⚠️ ' : ''}${escapeHtml(shop.nextAction)}</div>`
+        : '';
+
       return `
-        <div class="crm-shop-card" onclick="openShopDetail('${shop.id}')">
+        <div class="crm-shop-card ${shop.isOverdue ? 'card-overdue' : ''}" onclick="openShopDetail('${shop.id}')">
           <div class="crm-shop-header">
             <span class="crm-shop-name">${escapeHtml(shop.name || 'Unnamed')}</span>
-            <span class="crm-shop-value">$${shop.estMonthlyValue || 0}/mo</span>
+            <span class="crm-health-badge" style="background: ${healthColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">${shop.healthScore || '--'}</span>
           </div>
           <div class="crm-shop-contact">${escapeHtml(shop.contactName || 'No contact')}${shop.contactRole ? ' · ' + escapeHtml(shop.contactRole) : ''}</div>
+          ${nextActionHtml}
           <div class="crm-shop-meta">
             <span>${shop.bays || 0} bays · ${shop.technicians || 0} techs</span>
-            <span>${shop.devicesNeeded || 0} devices</span>
+            <span>$${shop.estMonthlyValue || 0}/mo</span>
           </div>
           <div class="crm-shop-footer">
             <span class="crm-assignee">${getAssigneeName(shop.assignedTo)}</span>
-            <span class="crm-last-contact">${activityIcon} ${formatTimeAgo(shop.lastContact)}</span>
+            <span class="crm-last-contact">${activityIcon} ${shop.daysSinceContact !== undefined ? shop.daysSinceContact + 'd ago' : formatTimeAgo(shop.lastContact)}</span>
           </div>
         </div>
       `;
