@@ -8031,6 +8031,16 @@
                   <div class="template-name">Case Study</div>
                   <div class="template-desc">Customer success stories</div>
                 </div>
+                <div class="sales-template-card" onclick="selectTemplate('other')">
+                  <div class="template-icon">📄</div>
+                  <div class="template-name">Other Document</div>
+                  <div class="template-desc">Custom documents & notes</div>
+                </div>
+                <div class="sales-template-card blank" onclick="openBlankEditor()">
+                  <div class="template-icon">✏️</div>
+                  <div class="template-name">Blank Document</div>
+                  <div class="template-desc">Start from scratch</div>
+                </div>
               </div>
             </div>
           </div>
@@ -8066,6 +8076,11 @@
                 <span class="folder-icon">📂</span>
                 <span class="folder-name">Demo Scripts</span>
                 <span class="folder-count" id="folderDemosCount">0</span>
+              </div>
+              <div class="sales-folder" data-folder="other">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">Other</span>
+                <span class="folder-count" id="folderOtherCount">0</span>
               </div>
             </div>
             <div class="sales-files-list" id="salesFilesList">
@@ -11161,7 +11176,8 @@
         'pitch-decks': salesFiles.filter(f => f.folder === 'pitch-decks').length,
         emails: salesFiles.filter(f => f.folder === 'emails').length,
         'one-pagers': salesFiles.filter(f => f.folder === 'one-pagers').length,
-        demos: salesFiles.filter(f => f.folder === 'demos').length
+        demos: salesFiles.filter(f => f.folder === 'demos').length,
+        other: salesFiles.filter(f => f.folder === 'other').length
       };
 
       document.getElementById('folderProposalsCount').textContent = counts.proposals;
@@ -11169,6 +11185,7 @@
       document.getElementById('folderEmailsCount').textContent = counts.emails;
       document.getElementById('folderOnePagersCount').textContent = counts['one-pagers'];
       document.getElementById('folderDemosCount').textContent = counts.demos;
+      document.getElementById('folderOtherCount').textContent = counts.other;
     }
 
     function updateSalesStats() {
@@ -11216,7 +11233,9 @@
         'one-pager': '📃',
         'email': '✉️',
         'demo-script': '🎬',
-        'case-study': '📈'
+        'case-study': '📈',
+        'other': '📄',
+        'blank': '✏️'
       };
       return icons[type] || '📄';
     }
@@ -11259,6 +11278,7 @@
 
     function showTemplateGrid() {
       salesSelectedTemplate = null;
+      currentEditingFile = null;
       const docContent = document.getElementById('salesDocContent');
       docContent.innerHTML = `
         <div class="sales-template-grid">
@@ -11291,6 +11311,16 @@
             <div class="template-icon">📈</div>
             <div class="template-name">Case Study</div>
             <div class="template-desc">Customer success stories</div>
+          </div>
+          <div class="sales-template-card" onclick="selectTemplate('other')">
+            <div class="template-icon">📄</div>
+            <div class="template-name">Other Document</div>
+            <div class="template-desc">Custom documents & notes</div>
+          </div>
+          <div class="sales-template-card blank" onclick="openBlankEditor()">
+            <div class="template-icon">✏️</div>
+            <div class="template-name">Blank Document</div>
+            <div class="template-desc">Start from scratch</div>
           </div>
         </div>
       `;
@@ -11354,9 +11384,11 @@
         'one-pager': 'one-pagers',
         'email': 'emails',
         'demo-script': 'demos',
-        'case-study': 'proposals'
+        'case-study': 'proposals',
+        'other': 'other',
+        'blank': 'other'
       };
-      return folderMap[type] || 'proposals';
+      return folderMap[type] || 'other';
     }
 
     async function sendSalesChat() {
@@ -11430,26 +11462,162 @@
       return div.innerHTML;
     }
 
+    let currentEditingFile = null;
+
     function openSalesFile(fileId) {
       const file = salesFiles.find(f => f.id === fileId);
       if (!file) return;
+      currentEditingFile = file;
 
       const docContent = document.getElementById('salesDocContent');
       docContent.innerHTML = `
-        <div class="file-viewer">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <div>
+        <div class="file-editor">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
               <span style="font-size: 24px;">${getFileIcon(file.type)}</span>
-              <h3 style="display: inline; margin-left: 10px;">${file.name}</h3>
+              <input type="text" id="editFileName" value="${escapeHtml(file.name)}" style="font-size: 18px; font-weight: 600; background: transparent; border: none; color: var(--text-primary); border-bottom: 1px solid transparent; padding: 4px 0;" onfocus="this.style.borderBottomColor='var(--accent)'" onblur="this.style.borderBottomColor='transparent'" />
             </div>
-            <button onclick="showTemplateGrid()" style="background: var(--bg-tertiary); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">← Back</button>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="saveCurrentDoc()" style="background: var(--success); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">💾 Save</button>
+              <button onclick="deleteCurrentDoc()" style="background: var(--danger); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">🗑️</button>
+              <button onclick="showTemplateGrid()" style="background: var(--bg-tertiary); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">← Back</button>
+            </div>
           </div>
-          <div style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; border: 1px solid var(--border);">
-            <p style="color: var(--text-secondary); font-size: 12px; margin-bottom: 10px;">Created: ${new Date(file.createdAt).toLocaleString()}</p>
-            <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6;">${file.content || 'No content yet'}</div>
+          <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+            <select id="editFileFolder" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
+              <option value="proposals" ${file.folder === 'proposals' ? 'selected' : ''}>Proposals</option>
+              <option value="pitch-decks" ${file.folder === 'pitch-decks' ? 'selected' : ''}>Pitch Decks</option>
+              <option value="emails" ${file.folder === 'emails' ? 'selected' : ''}>Email Templates</option>
+              <option value="one-pagers" ${file.folder === 'one-pagers' ? 'selected' : ''}>One-Pagers</option>
+              <option value="demos" ${file.folder === 'demos' ? 'selected' : ''}>Demo Scripts</option>
+              <option value="other" ${file.folder === 'other' ? 'selected' : ''}>Other</option>
+            </select>
+            <span style="color: var(--text-secondary); font-size: 12px; align-self: center;">Created: ${new Date(file.createdAt).toLocaleString()}</span>
           </div>
+          <textarea id="editFileContent" style="width: 100%; height: calc(100% - 120px); min-height: 300px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;">${escapeHtml(file.content || '')}</textarea>
         </div>
       `;
+    }
+
+    function openBlankEditor() {
+      currentEditingFile = null;
+      const docContent = document.getElementById('salesDocContent');
+      docContent.innerHTML = `
+        <div class="file-editor">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span style="font-size: 24px;">✏️</span>
+              <input type="text" id="editFileName" placeholder="Document name..." style="font-size: 18px; font-weight: 600; background: transparent; border: none; color: var(--text-primary); border-bottom: 1px solid var(--accent); padding: 4px 0; width: 300px;" />
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button onclick="saveCurrentDoc()" style="background: var(--success); color: white; padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">💾 Save</button>
+              <button onclick="showTemplateGrid()" style="background: var(--bg-tertiary); padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer;">← Back</button>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; margin-bottom: 16px;">
+            <select id="editFileFolder" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
+              <option value="other" selected>Other</option>
+              <option value="proposals">Proposals</option>
+              <option value="pitch-decks">Pitch Decks</option>
+              <option value="emails">Email Templates</option>
+              <option value="one-pagers">One-Pagers</option>
+              <option value="demos">Demo Scripts</option>
+            </select>
+            <select id="editFileType" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
+              <option value="other" selected>Other Document</option>
+              <option value="proposal">Proposal</option>
+              <option value="pitch-deck">Pitch Deck</option>
+              <option value="email">Email</option>
+              <option value="one-pager">One-Pager</option>
+              <option value="demo-script">Demo Script</option>
+              <option value="case-study">Case Study</option>
+            </select>
+          </div>
+          <textarea id="editFileContent" placeholder="Start typing your document..." style="width: 100%; height: calc(100% - 120px); min-height: 300px; padding: 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; line-height: 1.6; resize: vertical; font-family: inherit;"></textarea>
+        </div>
+      `;
+      document.getElementById('editFileName').focus();
+    }
+
+    async function saveCurrentDoc() {
+      const name = document.getElementById('editFileName')?.value?.trim();
+      const content = document.getElementById('editFileContent')?.value || '';
+      const folder = document.getElementById('editFileFolder')?.value || 'other';
+
+      if (!name) {
+        alert('Please enter a document name');
+        return;
+      }
+
+      try {
+        if (currentEditingFile) {
+          // Update existing file
+          const res = await fetch('/api/sales-files', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: currentEditingFile.id,
+              name,
+              content,
+              folder
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            const idx = salesFiles.findIndex(f => f.id === currentEditingFile.id);
+            if (idx >= 0) salesFiles[idx] = data.file;
+            currentEditingFile = data.file;
+            alert('Document saved!');
+          }
+        } else {
+          // Create new file
+          const type = document.getElementById('editFileType')?.value || 'other';
+          const res = await fetch('/api/sales-files', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              type,
+              folder,
+              content,
+              createdBy: 'eli'
+            })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            salesFiles.push(data.file);
+            currentEditingFile = data.file;
+            alert('Document created!');
+          }
+        }
+        updateSalesFolderCounts();
+        updateSalesStats();
+      } catch (err) {
+        console.error('Save error:', err);
+        alert('Failed to save document');
+      }
+    }
+
+    async function deleteCurrentDoc() {
+      if (!currentEditingFile) return;
+      if (!confirm(`Delete "${currentEditingFile.name}"? This cannot be undone.`)) return;
+
+      try {
+        const res = await fetch(`/api/sales-files?id=${currentEditingFile.id}`, {
+          method: 'DELETE'
+        });
+        if (res.ok) {
+          salesFiles = salesFiles.filter(f => f.id !== currentEditingFile.id);
+          currentEditingFile = null;
+          updateSalesFolderCounts();
+          updateSalesStats();
+          showTemplateGrid();
+          alert('Document deleted');
+        }
+      } catch (err) {
+        console.error('Delete error:', err);
+        alert('Failed to delete document');
+      }
     }
 
     function filterSalesFiles(query) {
@@ -11486,15 +11654,27 @@
     }
 
     function previewDoc() {
-      alert('Document preview coming soon!');
+      if (currentEditingFile) {
+        const content = document.getElementById('editFileContent')?.value || currentEditingFile.content;
+        const win = window.open('', '_blank');
+        win.document.write(`<html><head><title>${currentEditingFile.name}</title><style>body{font-family:system-ui;padding:40px;max-width:800px;margin:0 auto;line-height:1.6;}</style></head><body><pre style="white-space:pre-wrap;">${escapeHtml(content)}</pre></body></html>`);
+      }
     }
 
     function downloadDoc() {
-      alert('Document download coming soon!');
+      if (!currentEditingFile) return;
+      const content = document.getElementById('editFileContent')?.value || currentEditingFile.content;
+      const blob = new Blob([content], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${currentEditingFile.name}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
     }
 
     function saveDoc() {
-      alert('Document saved!');
+      saveCurrentDoc();
     }
 
     // ============================================

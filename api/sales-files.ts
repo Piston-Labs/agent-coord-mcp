@@ -12,7 +12,7 @@ const SALES_FOLDERS_KEY = 'piston:sales:folders';
 interface SalesFile {
   id: string;
   name: string;
-  type: 'pitch-deck' | 'proposal' | 'one-pager' | 'email' | 'demo-script' | 'case-study';
+  type: 'pitch-deck' | 'proposal' | 'one-pager' | 'email' | 'demo-script' | 'case-study' | 'other' | 'blank';
   folder: string;
   content: string;
   target?: string;
@@ -206,9 +206,11 @@ function getFolderForType(type: string): string {
     'one-pager': 'one-pagers',
     'email': 'emails',
     'demo-script': 'demos',
-    'case-study': 'proposals'
+    'case-study': 'proposals',
+    'other': 'other',
+    'blank': 'other'
   };
-  return folderMap[type] || 'proposals';
+  return folderMap[type] || 'other';
 }
 
 function getDefaultFolders(): SalesFolder[] {
@@ -217,6 +219,7 @@ function getDefaultFolders(): SalesFolder[] {
     { id: 'pitch-decks', name: 'Pitch Decks', createdAt: '2024-01-01T00:00:00Z' },
     { id: 'emails', name: 'Email Templates', createdAt: '2024-01-01T00:00:00Z' },
     { id: 'one-pagers', name: 'One-Pagers', createdAt: '2024-01-01T00:00:00Z' },
-    { id: 'demos', name: 'Demo Scripts', createdAt: '2024-01-01T00:00:00Z' }
+    { id: 'demos', name: 'Demo Scripts', createdAt: '2024-01-01T00:00:00Z' },
+    { id: 'other', name: 'Other', createdAt: '2024-01-01T00:00:00Z' }
   ];
 }
