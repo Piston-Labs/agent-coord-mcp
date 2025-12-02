@@ -13,11 +13,121 @@ const ZONES_KEY = 'agent-coord:zones';
 const CLAIMS_KEY = 'agent-coord:claims';
 const SESSIONS_KEY = 'agent-coord:sessions';
 const VIOLATIONS_KEY = 'agent-coord:violations';
+const RATE_LIMIT_KEY = 'agent-coord:rate-limits';
 
 // PERMANENT ENFORCEMENT CONSTANTS - These cannot be overridden
 const LOCK_STALE_MINUTES = 30;      // Locks expire after 30 min of inactivity
 const CLAIM_STALE_MINUTES = 30;     // Claims expire after 30 min of inactivity
 const MAX_VIOLATIONS_LOG = 1000;    // Keep last 1000 violations
+const RATE_LIMIT_WINDOW_MS = 60000; // 1 minute window
+const RATE_LIMIT_MAX_REQUESTS = 100; // Max 100 checks per minute per agent
+const DEAD_AGENT_THRESHOLD_MIN = 20; // Agent considered dead after 20 min no heartbeat
+
+/**
+ * Retry wrapper for Redis operations
+ * Handles transient failures with exponential backoff
+ */
+async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  baseDelayMs: number = 100
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      // Only retry on transient errors (network, timeout)
+      const isTransient =
+        (error as any)?.code === 'ECONNRESET' ||
+        (error as any)?.code === 'ETIMEDOUT' ||
+        (error as any)?.message?.includes('timeout') ||
+        (error as any)?.message?.includes('network');
+
+      if (!isTransient || attempt === maxRetries - 1) {
+        throw error;
+      }
+
+      // Exponential backoff: 100ms, 200ms, 400ms...
+      const delay = baseDelayMs * Math.pow(2, attempt);
+      await new Promise(resolve => setTimeout(resolve, delay));
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Check rate limit for an agent
+ * Returns true if within limits, false if exceeded
+ */
+async function checkRateLimit(agentId: string): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
+  const key = `${RATE_LIMIT_KEY}:${agentId}`;
+  const now = Date.now();
+  const windowStart = now - RATE_LIMIT_WINDOW_MS;
+
+  // Remove old entries and count current
+  await redis.zremrangebyscore(key, 0, windowStart);
+  const count = await redis.zcard(key) || 0;
+
+  if (count >= RATE_LIMIT_MAX_REQUESTS) {
+    // Get oldest entry to calculate reset time
+    const oldest = await redis.zrange(key, 0, 0, { withScores: true });
+    const resetIn = oldest?.[0]?.score ? Math.max(0, (oldest[0].score as number) + RATE_LIMIT_WINDOW_MS - now) : RATE_LIMIT_WINDOW_MS;
+    return { allowed: false, remaining: 0, resetIn: Math.ceil(resetIn / 1000) };
+  }
+
+  // Add this request
+  await redis.zadd(key, { score: now, member: `${now}-${Math.random()}` });
+  await redis.expire(key, 120); // Expire after 2 minutes
+
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - count - 1, resetIn: 0 };
+}
+
+/**
+ * Check if lock owner is a dead agent and auto-release if so
+ */
+async function checkAndReleaseDeadAgentLock(
+  lockOwner: string,
+  resourcePath: string,
+  sessions: Record<string, unknown>
+): Promise<{ released: boolean; reason?: string }> {
+  // Check if we have session data for the lock owner
+  const sessionData = sessions[lockOwner];
+
+  if (!sessionData) {
+    // No session = agent never registered or was cleaned up
+    // Release lock after a grace period check
+    return { released: false, reason: 'No session data - cannot determine agent status' };
+  }
+
+  const session = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
+  const lastHeartbeat = new Date(session.lastHeartbeat || session.lastSeen || session.createdAt || 0).getTime();
+  const now = Date.now();
+  const minutesSinceHeartbeat = (now - lastHeartbeat) / (1000 * 60);
+
+  if (minutesSinceHeartbeat > DEAD_AGENT_THRESHOLD_MIN) {
+    // Agent is dead - release the lock
+    await redis.hdel(LOCKS_KEY, resourcePath);
+
+    // Log the auto-release
+    await redis.lpush(VIOLATIONS_KEY, JSON.stringify({
+      agentId: 'SYSTEM',
+      action: 'auto-release-dead-agent-lock',
+      target: resourcePath,
+      violations: [],
+      releasedFrom: lockOwner,
+      reason: `Agent ${lockOwner} has not heartbeated in ${Math.round(minutesSinceHeartbeat)} minutes`,
+      timestamp: new Date().toISOString()
+    }));
+
+    return { released: true, reason: `Lock auto-released: ${lockOwner} is dead (no heartbeat for ${Math.round(minutesSinceHeartbeat)}min)` };
+  }
+
+  return { released: false };
+}
 
 interface RuleCheck {
   ruleId: string;
@@ -148,13 +258,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ error: 'agentId and action required' });
     }
 
-    // Load rules and current state in parallel
-    const [rulesData, locksData, zonesData, claimsData] = await Promise.all([
-      redis.get(RULES_KEY),
-      redis.hgetall(LOCKS_KEY),
-      redis.hgetall(ZONES_KEY),
-      redis.hgetall(CLAIMS_KEY),
-    ]);
+    // Check rate limit first
+    const rateLimit = await checkRateLimit(agentId);
+    if (!rateLimit.allowed) {
+      return res.status(429).json({
+        error: 'Rate limit exceeded',
+        message: `Too many requests. Limit: ${RATE_LIMIT_MAX_REQUESTS}/minute`,
+        resetIn: rateLimit.resetIn,
+        retryAfter: rateLimit.resetIn
+      });
+    }
+
+    // Load rules and current state in parallel with retry logic
+    const [rulesData, locksData, zonesData, claimsData, sessionsData] = await withRetry(() =>
+      Promise.all([
+        redis.get(RULES_KEY),
+        redis.hgetall(LOCKS_KEY),
+        redis.hgetall(ZONES_KEY),
+        redis.hgetall(CLAIMS_KEY),
+        redis.hgetall(SESSIONS_KEY),
+      ])
+    );
 
     const rules = rulesData
       ? (typeof rulesData === 'string' ? JSON.parse(rulesData) : rulesData)
@@ -163,9 +287,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const locks = locksData || {};
     const zones = zonesData || {};
     const claims = claimsData || {};
+    const sessions = sessionsData || {};
 
     // ALWAYS clean up stale resources first
     const staleCleaned = await cleanupStaleResources(locks, claims);
+    const deadAgentReleases: string[] = [];
 
     const checks: RuleCheck[] = [];
 
@@ -173,7 +299,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // RULE 1: LOCK BEFORE EDIT (MANDATORY - CANNOT BE DISABLED)
     // ═══════════════════════════════════════════════════════════════════════
     if ((action === 'file-edit' || action === 'file-create' || action === 'file-delete') && target) {
-      const lockCheck = hasValidLock(locks, target, agentId);
+      let lockCheck = hasValidLock(locks, target, agentId);
+
+      // If locked by another agent, check if that agent is dead and auto-release
+      if (lockCheck.lockedBy && lockCheck.lockedBy !== agentId) {
+        const deadCheck = await checkAndReleaseDeadAgentLock(lockCheck.lockedBy, target, sessions);
+        if (deadCheck.released) {
+          deadAgentReleases.push(`${target} (was held by ${lockCheck.lockedBy})`);
+          // Re-check lock status after release
+          lockCheck = { valid: false }; // Lock is now available
+        }
+      }
 
       if (lockCheck.valid) {
         checks.push({
@@ -184,7 +320,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           severity: 'log'
         });
       } else if (lockCheck.lockedBy) {
-        // File is locked by someone else
+        // File is locked by someone else (and they're still alive)
         checks.push({
           ruleId: 'lock-before-edit',
           ruleName: 'Lock Before Edit',
@@ -357,7 +493,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const violations = checks.filter(c => !c.passed && c.severity === 'block');
     const warnings = checks.filter(c => !c.passed && c.severity === 'warn');
 
-    const result: CheckResult = {
+    const result = {
       allowed: violations.length === 0,
       agentId,
       action,
@@ -366,6 +502,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       violations,
       warnings,
       staleCleaned,
+      deadAgentReleases,
+      rateLimit: {
+        remaining: rateLimit.remaining,
+        limit: RATE_LIMIT_MAX_REQUESTS,
+        window: '1 minute'
+      },
       timestamp: new Date().toISOString()
     };
 
