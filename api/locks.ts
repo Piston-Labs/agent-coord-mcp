@@ -46,7 +46,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!resourcePath || !lockedBy) {
         return res.status(400).json({ error: 'resourcePath and lockedBy required' });
       }
-      
+
+      // RACE CONDITION PROTECTION: Check existing lock first
+      const existingRaw = await redis.hget(LOCKS_KEY, resourcePath);
+      if (existingRaw) {
+        const existing = typeof existingRaw === 'string' ? JSON.parse(existingRaw) : existingRaw;
+        const now = Date.now();
+
+        // Check if existing lock is still valid (not expired)
+        if (new Date(existing.expiresAt).getTime() > now) {
+          // Lock exists and is valid
+          if (existing.lockedBy === lockedBy) {
+            // Same agent - extend/refresh the lock
+            const refreshedLock: Lock = {
+              resourcePath,
+              lockedBy,
+              reason: reason || existing.reason,
+              lockedAt: existing.lockedAt,
+              expiresAt: new Date(now + LOCK_EXPIRY_MS).toISOString()
+            };
+            await redis.hset(LOCKS_KEY, { [resourcePath]: JSON.stringify(refreshedLock) });
+            return res.json({ success: true, lock: refreshedLock, refreshed: true });
+          } else {
+            // Different agent - BLOCKED
+            return res.status(409).json({
+              success: false,
+              error: 'Resource already locked',
+              lockedBy: existing.lockedBy,
+              expiresAt: existing.expiresAt,
+              message: `Resource "${resourcePath}" is locked by ${existing.lockedBy}. Wait for release or expiry.`
+            });
+          }
+        }
+        // Lock expired - clean it up and proceed
+        await redis.hdel(LOCKS_KEY, resourcePath);
+      }
+
+      // ATOMIC LOCK ACQUISITION: Use hsetnx to prevent race conditions
       const now = new Date();
       const lock: Lock = {
         resourcePath,
@@ -55,7 +91,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         lockedAt: now.toISOString(),
         expiresAt: new Date(now.getTime() + LOCK_EXPIRY_MS).toISOString()
       };
-      await redis.hset(LOCKS_KEY, { [resourcePath]: JSON.stringify(lock) });
+
+      // hsetnx returns 1 if field was set (didn't exist), 0 if it existed
+      const wasSet = await redis.hsetnx(LOCKS_KEY, resourcePath, JSON.stringify(lock));
+
+      if (wasSet === 0) {
+        // Another agent grabbed it between our check and set - race condition caught!
+        const racedLock = await redis.hget(LOCKS_KEY, resourcePath);
+        const raced = typeof racedLock === 'string' ? JSON.parse(racedLock) : racedLock;
+        return res.status(409).json({
+          success: false,
+          error: 'Race condition - resource was locked by another agent',
+          lockedBy: raced?.lockedBy || 'unknown',
+          message: 'Another agent acquired the lock simultaneously. Retry shortly.'
+        });
+      }
+
       return res.json({ success: true, lock });
     }
 
