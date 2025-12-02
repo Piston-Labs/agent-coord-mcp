@@ -1,11 +1,16 @@
 /**
  * Context Tools - Knowledge management and vision
  *
- * Tools: context-load, vision, repo-context, memory
+ * Tools: context-load, context-cluster, vision, repo-context, memory
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import {
+  createDefaultSelector,
+  createPistonContextLoader,
+  getContextForTask
+} from '../context-clusters.js';
 
 const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
 
@@ -58,6 +63,104 @@ export function registerContextTools(server: McpServer) {
           error: 'Context API unavailable',
           hint: 'Try: technical, product, sales, investor, team, coordination'
         }) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
+  // CONTEXT-CLUSTER TOOL - Smart GitHub context loading
+  // ============================================================================
+
+  server.tool(
+    'context-cluster',
+    'Smart context loading from GitHub. Auto-selects relevant clusters based on task type or query. Uses teltonika-context-system repo with caching.',
+    {
+      action: z.enum(['load', 'select', 'list-clusters']).describe('load=fetch context, select=preview clusters, list-clusters=show available'),
+      taskType: z.enum(['feat', 'fix', 'refactor', 'plan', 'docs', 'sales', 'support', 'pitch', 'proposal', 'onepager', 'research']).optional()
+        .describe('Task type for automatic cluster selection'),
+      query: z.string().optional().describe('Natural language query to match clusters'),
+      clusters: z.array(z.string()).optional().describe('Specific clusters to load (overrides auto-selection)'),
+      maxClusters: z.number().optional().describe('Max clusters to load (default 3)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, agentId, maxClusters = 3 } = args;
+
+      try {
+        const selector = createDefaultSelector();
+
+        if (action === 'list-clusters') {
+          return { content: [{ type: 'text', text: JSON.stringify({
+            clusters: {
+              technical: ['api', 'database', 'code', 'deploy', 'teltonika', 'device', 'gps', 'iot', 'lambda', 'aws'],
+              development: ['workflow', 'git', 'ci', 'cd', 'pipeline', 'release', 'sprint'],
+              product: ['roadmap', 'feature', 'requirement', 'vision', 'pricing', 'dashboard'],
+              sales: ['pricing', 'deal', 'proposal', 'competitor', 'objection', 'demo', 'pitch']
+            },
+            taskMappings: {
+              feat: ['technical', 'development'],
+              fix: ['technical'],
+              sales: ['product', 'sales'],
+              pitch: ['sales', 'product'],
+              proposal: ['sales', 'product', 'technical']
+            }
+          }, null, 2) }] };
+        }
+
+        if (action === 'select') {
+          let selection;
+          if (args.taskType) {
+            selection = selector.selectForTaskType(args.taskType);
+          } else if (args.query) {
+            selection = selector.selectForQuery(args.query, maxClusters);
+          } else {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'taskType or query required for select' }) }] };
+          }
+          return { content: [{ type: 'text', text: JSON.stringify(selection, null, 2) }] };
+        }
+
+        if (action === 'load') {
+          // Use provided clusters or auto-select
+          let clustersToLoad = args.clusters;
+
+          if (!clustersToLoad) {
+            if (args.taskType) {
+              const selection = selector.selectForTaskType(args.taskType);
+              clustersToLoad = selection.clusters;
+            } else if (args.query) {
+              const selection = selector.selectForQuery(args.query, maxClusters);
+              clustersToLoad = selection.clusters;
+            } else {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'taskType, query, or clusters required for load' }) }] };
+            }
+          }
+
+          // Load from GitHub
+          const loader = createPistonContextLoader();
+          const clusterPaths = clustersToLoad.map(c => {
+            switch (c) {
+              case 'sales': return 'context/sales';
+              case 'product': return 'context/product';
+              case 'technical': return 'context/technical';
+              case 'development': return 'context/development';
+              default: return `context/${c}`;
+            }
+          });
+
+          const result = await loader.loadMultipleClusters(clusterPaths);
+
+          return { content: [{ type: 'text', text: JSON.stringify({
+            clusters: clustersToLoad,
+            tokenEstimate: result.tokenEstimate,
+            loadTimeMs: result.loadTimeMs,
+            cached: result.cached,
+            content: result.content.substring(0, 10000) + (result.content.length > 10000 ? '\n\n[TRUNCATED - use specific cluster for full content]' : '')
+          }, null, 2) }] };
+        }
+
+        return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
       } catch (error) {
         return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }

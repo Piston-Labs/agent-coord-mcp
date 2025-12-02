@@ -9,14 +9,16 @@
     "agent-coord-http": "./bin/agent-coord-http.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "npx tsc",
     "start": "node dist/index.js",
     "start:http": "node dist/http-server.js",
     "start:bridge": "node dist/message-bridge.js",
     "start:bot": "node dist/agent-bot.js",
     "start:autonomous": "node dist/autonomous-agent.js",
     "start:fleet": "node dist/fleet-bridge.js",
+    "start:cloud": "node dist/cloud-agent.js",
     "dev": "tsx src/index.ts",
+    "dev:cloud": "tsx src/cloud-agent.ts",
     "dev:fleet": "tsx src/fleet-bridge.ts",
     "dev:http": "tsx src/http-server.ts",
     "dev:bridge": "tsx src/message-bridge.ts",
@@ -42,11 +44,13 @@
     "@aws-sdk/client-s3": "^3.940.0",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "@upstash/redis": "^1.35.7",
+    "pg": "^8.16.3",
     "playwright": "^1.57.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.19.1",
+    "@types/pg": "^8.15.6",
     "@vercel/node": "^5.5.13",
     "tsx": "^4.7.0",
     "typescript": "^5.9.3"

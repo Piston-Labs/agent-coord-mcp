@@ -299,7 +299,101 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    const { file, category, search } = req.query;
+    const { file, category, search, task, cluster, clusters: listClusters } = req.query;
+
+    // NEW: Get context for a specific task type
+    // GET /api/sales-context?task=pitch - loads master + sales + product + prospects clusters
+    if (task && typeof task === 'string') {
+      const clusterNames = getClustersForTask(task);
+      const loadedContext: Array<{ cluster: string; files: Array<{ path: string; content: string }> }> = [];
+      let totalTokens = 0;
+
+      for (const clusterName of clusterNames) {
+        const clusterDef = CONTEXT_CLUSTERS[clusterName];
+        if (!clusterDef) continue;
+
+        const clusterFiles: Array<{ path: string; content: string }> = [];
+
+        for (const filePath of clusterDef.files) {
+          const fullPath = filePath.startsWith('context/') ? filePath : `${CONTEXT_BASE}/${filePath}`;
+          const content = await fetchGitHubFile(fullPath);
+          if (content) {
+            clusterFiles.push({ path: fullPath, content });
+            // Rough token estimate: ~4 chars per token
+            totalTokens += Math.ceil(content.length / 4);
+          }
+        }
+
+        if (clusterFiles.length > 0) {
+          loadedContext.push({ cluster: clusterName, files: clusterFiles });
+        }
+      }
+
+      return res.json({
+        task,
+        clustersLoaded: clusterNames,
+        context: loadedContext,
+        totalFiles: loadedContext.reduce((sum, c) => sum + c.files.length, 0),
+        estimatedTokens: totalTokens,
+        efficiency: `${Math.round((1 - totalTokens / 50000) * 100)}% savings vs loading all`
+      });
+    }
+
+    // NEW: Load a specific cluster
+    // GET /api/sales-context?cluster=sales
+    if (cluster && typeof cluster === 'string') {
+      const clusterDef = CONTEXT_CLUSTERS[cluster];
+      if (!clusterDef) {
+        return res.status(400).json({
+          error: 'Invalid cluster',
+          validClusters: Object.keys(CONTEXT_CLUSTERS)
+        });
+      }
+
+      const clusterFiles: Array<{ path: string; content: string }> = [];
+
+      for (const filePath of clusterDef.files) {
+        const fullPath = filePath.startsWith('context/') ? filePath : `${CONTEXT_BASE}/${filePath}`;
+        const content = await fetchGitHubFile(fullPath);
+        if (content) {
+          clusterFiles.push({ path: fullPath, content });
+        }
+      }
+
+      return res.json({
+        cluster: clusterDef.name,
+        description: clusterDef.description,
+        maxTokens: clusterDef.maxTokens,
+        taskTypes: clusterDef.taskTypes,
+        files: clusterFiles,
+        loadedFiles: clusterFiles.length,
+        totalFiles: clusterDef.files.length
+      });
+    }
+
+    // NEW: List available clusters
+    // GET /api/sales-context?clusters=true
+    if (listClusters === 'true') {
+      const clusterList = Object.entries(CONTEXT_CLUSTERS).map(([key, def]) => ({
+        id: key,
+        name: def.name,
+        description: def.description,
+        fileCount: def.files.length,
+        maxTokens: def.maxTokens,
+        taskTypes: def.taskTypes
+      }));
+
+      return res.json({
+        clusters: clusterList,
+        taskTypeMapping: {
+          sales: getClustersForTask('sales'),
+          pitch: getClustersForTask('pitch'),
+          fix: getClustersForTask('fix'),
+          feat: getClustersForTask('feat'),
+          product: getClustersForTask('product')
+        }
+      });
+    }
 
     // Get specific file
     if (file && typeof file === 'string') {

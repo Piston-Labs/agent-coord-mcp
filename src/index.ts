@@ -49,7 +49,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 27 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll)');
+  console.error('[agent-coord-mcp] Tools: 28 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, context-cluster, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);
