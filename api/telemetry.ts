@@ -442,7 +442,9 @@ async function querySupabaseTelemetry(imei: string): Promise<Partial<TelemetryDa
 
   try {
     // Query Supabase REST API for most recent telemetry row
-    const url = `${SUPABASE_URL}/rest/v1/${TELEMETRY_TABLE}?imei=eq.${imei}&order=timestamp.desc&limit=1`;
+    // Supabase table columns: time, imei, latitude, longitude, speed_kmh,
+    //   external_voltage_mv, internal_voltage_mv, ignition, movement, odometer_m, vin
+    const url = `${SUPABASE_URL}/rest/v1/${TELEMETRY_TABLE}?imei=eq.${imei}&order=time.desc&limit=1`;
     const response = await fetch(url, {
       headers: {
         'apikey': SUPABASE_KEY!,
@@ -464,37 +466,59 @@ async function querySupabaseTelemetry(imei: string): Promise<Partial<TelemetryDa
     const row = rows[0];
 
     // Parse Supabase row into TelemetryData format
-    // Column names based on teltonika-context-system Lambda output
+    // Column names from teltonika-context-system Lambda:
+    //   time, imei, latitude, longitude, speed_kmh, external_voltage_mv,
+    //   internal_voltage_mv, ignition, movement, odometer_m, vin
+
+    // Convert millivolts to volts for voltage readings
+    const externalVoltageMv = parseFloat(row.external_voltage_mv || '0');
+    const internalVoltageMv = parseFloat(row.internal_voltage_mv || '0');
+    const externalVoltage = externalVoltageMv / 1000;  // mV to V
+    const internalVoltage = internalVoltageMv / 1000;  // mV to V (battery)
+
+    // Convert speed from km/h (already in correct unit)
+    const speedKmh = parseFloat(row.speed_kmh || '0');
+
+    // Convert odometer from meters to km
+    const odometerM = parseFloat(row.odometer_m || '0');
+    const odometerKm = odometerM / 1000;
+
+    // Timestamp from 'time' column
+    const timestamp = row.time || new Date().toISOString();
+
     return {
       imei,
+      vehicleInfo: {
+        vin: row.vin,
+      },
       metrics: {
-        batteryVoltage: parseFloat(row.battery_voltage || row.external_voltage || '0'),
-        externalVoltage: parseFloat(row.external_voltage || '0'),
-        speed: parseFloat(row.speed || '0'),
-        odometer: parseFloat(row.odometer || row.total_odometer || '0'),
+        batteryVoltage: internalVoltage > 0 ? internalVoltage : externalVoltage,
+        externalVoltage: externalVoltage,
+        speed: speedKmh,
+        odometer: odometerKm,
         fuelLevel: row.fuel_level ? parseFloat(row.fuel_level) : undefined,
         engineRPM: row.engine_rpm ? parseFloat(row.engine_rpm) : undefined,
-        coolantTemp: row.coolant_temp || row.engine_temp ? parseFloat(row.coolant_temp || row.engine_temp) : undefined,
+        coolantTemp: row.coolant_temp ? parseFloat(row.coolant_temp) : undefined,
       },
       position: {
-        lat: parseFloat(row.latitude || row.lat || '0'),
-        lng: parseFloat(row.longitude || row.lng || row.lon || '0'),
+        lat: parseFloat(row.latitude || '0'),
+        lng: parseFloat(row.longitude || '0'),
         altitude: row.altitude ? parseFloat(row.altitude) : undefined,
         heading: row.heading || row.angle ? parseFloat(row.heading || row.angle) : undefined,
         satellites: row.satellites ? parseInt(row.satellites) : undefined,
       },
       status: {
         ignition: row.ignition === true || row.ignition === 1 || row.ignition === 'on',
-        movement: row.movement === true || row.movement === 1 || (parseFloat(row.speed || '0') > 0),
-        gpsValid: row.gps_valid !== false && (row.satellites > 0 || row.satellites === undefined),
-        charging: row.charging === true || (parseFloat(row.external_voltage || '0') > 13.5),
+        movement: row.movement === true || row.movement === 1 || speedKmh > 0,
+        gpsValid: parseFloat(row.latitude || '0') !== 0 && parseFloat(row.longitude || '0') !== 0,
+        charging: externalVoltage > 13.5,
       },
       connectivity: {
-        signalStrength: parseInt(row.gsm_signal || row.signal_strength || '0'),
+        signalStrength: parseInt(row.gsm_signal || row.signal_strength || '3'),
         carrier: row.carrier || row.operator,
-        lastSeen: row.timestamp || row.created_at || new Date().toISOString(),
+        lastSeen: timestamp,
       },
-      timestamp: row.timestamp || row.created_at || new Date().toISOString(),
+      timestamp: timestamp,
     };
   } catch (err) {
     console.error(`[telemetry] Supabase query failed for ${imei}:`, err);
@@ -530,7 +554,8 @@ async function querySupabaseHistory(imei: string, limit: number = 288): Promise<
   if (!hasSupabase) return [];
 
   try {
-    const url = `${SUPABASE_URL}/rest/v1/${TELEMETRY_TABLE}?imei=eq.${imei}&order=timestamp.desc&limit=${limit}&select=timestamp,speed,latitude,longitude,battery_voltage,fuel_level,ignition`;
+    // Use correct column names: time, speed_kmh, latitude, longitude, external_voltage_mv, internal_voltage_mv, ignition
+    const url = `${SUPABASE_URL}/rest/v1/${TELEMETRY_TABLE}?imei=eq.${imei}&order=time.desc&limit=${limit}&select=time,speed_kmh,latitude,longitude,external_voltage_mv,internal_voltage_mv,ignition`;
     const response = await fetch(url, {
       headers: {
         'apikey': SUPABASE_KEY!,
@@ -545,15 +570,19 @@ async function querySupabaseHistory(imei: string, limit: number = 288): Promise<
     }
 
     const rows = await response.json();
-    return rows.map((row: any) => ({
-      timestamp: row.timestamp,
-      speed: parseFloat(row.speed || '0'),
-      lat: parseFloat(row.latitude || '0'),
-      lng: parseFloat(row.longitude || '0'),
-      battery: parseFloat(row.battery_voltage || '0'),
-      fuel: row.fuel_level ? parseFloat(row.fuel_level) : undefined,
-      ignition: row.ignition,
-    }));
+    return rows.map((row: any) => {
+      const internalVoltage = parseFloat(row.internal_voltage_mv || '0') / 1000;
+      const externalVoltage = parseFloat(row.external_voltage_mv || '0') / 1000;
+      return {
+        timestamp: row.time,
+        speed: parseFloat(row.speed_kmh || '0'),
+        lat: parseFloat(row.latitude || '0'),
+        lng: parseFloat(row.longitude || '0'),
+        battery: internalVoltage > 0 ? internalVoltage : externalVoltage,
+        fuel: row.fuel_level ? parseFloat(row.fuel_level) : undefined,
+        ignition: row.ignition,
+      };
+    });
   } catch (err) {
     console.error(`[telemetry] Supabase history query failed for ${imei}:`, err);
     return [];
