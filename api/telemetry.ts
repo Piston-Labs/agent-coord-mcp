@@ -742,7 +742,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         source: hasSupabase && dbTelemetry.size > 0
           ? 'Piston Labs Teltonika Fleet (Supabase - Live)'
           : 'Piston Labs Teltonika Fleet (Redis Cache)',
-        supabaseEnabled: hasSupabase
+        supabaseEnabled: !!hasSupabase,
+        supabaseUrl: SUPABASE_URL ? 'set' : 'missing',
+        supabaseKey: SUPABASE_KEY ? 'set' : 'missing'
       };
 
       if (includeAlerts === 'true') {
