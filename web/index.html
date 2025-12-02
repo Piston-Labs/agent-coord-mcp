@@ -8693,6 +8693,7 @@
       // Fetch roadmap data when switching to roadmap tab
       if (tabName === 'roadmap') {
         fetchTeam();
+        fetchCycles();
         fetchRoadmap();
         // Initialize drag-drop after a brief delay for DOM update
         setTimeout(initDragDrop, 100);
