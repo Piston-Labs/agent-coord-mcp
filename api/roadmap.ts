@@ -114,6 +114,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ cycles: cycleList, count: cycleList.length });
       }
 
+      // Board view - items grouped by status (Kanban-style)
+      const { view, cycleId } = req.query;
+      if (view === 'board') {
+        const items = await redis.hgetall(ROADMAP_KEY);
+        const columns: Record<string, RoadmapItem[]> = {
+          backlog: [],
+          planned: [],
+          'in-progress': [],
+          review: [],
+          done: []
+        };
+
+        for (const [, value] of Object.entries(items || {})) {
+          try {
+            const item = typeof value === 'string' ? JSON.parse(value) : value;
+            if (!item || !item.id || item.status === 'archived') continue;
+
+            // Apply filters
+            if (project && typeof project === 'string' && item.project !== project) continue;
+            if (assignee && typeof assignee === 'string' && item.assignee !== assignee) continue;
+            if (cycleId && typeof cycleId === 'string' && item.cycleId !== cycleId) continue;
+
+            // Skip subtasks in main view (they appear under parent)
+            if (item.parentId) continue;
+
+            const col = columns[item.status];
+            if (col) col.push(item);
+          } catch (e) {
+            // Skip corrupted entries
+          }
+        }
+
+        // Sort each column by priority
+        const priorityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+        for (const col of Object.values(columns)) {
+          col.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+        }
+
+        const totalItems = Object.values(columns).reduce((sum, col) => sum + col.length, 0);
+        return res.json({
+          columns,
+          totalItems,
+          columnOrder: ['backlog', 'planned', 'in-progress', 'review', 'done']
+        });
+      }
+
       // Get team members
       if (type === 'team') {
         let team = await redis.hgetall(TEAM_KEY);
