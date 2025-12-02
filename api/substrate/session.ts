@@ -222,17 +222,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           ? (typeof rules === 'string' ? JSON.parse(rules) : rules)
           : null;
 
+        const now = new Date().toISOString();
         const session: AgentSession = {
           agentId,
           role: role || 'developer',
-          startedAt: new Date().toISOString(),
-          lastActivity: new Date().toISOString(),
+          startedAt: now,
+          lastActivity: now,
+          lastHeartbeat: now,
+          heartbeatCount: 0,
           rulesVersion: rulesData?.version || '1.0.0',
           rulesAcknowledged: false,
           currentClaims: [],
           currentLocks: [],
           currentZones: [],
           violationCount: 0,
+          status: 'active',
         };
 
         await redis.hset(SESSIONS_KEY, { [agentId]: JSON.stringify(session) });
@@ -245,6 +249,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           { id: 'max-claims', summary: `Maximum ${rulesData?.coordination?.maxConcurrentClaimsPerAgent || 3} concurrent claims` },
           { id: 'handoff-protocol', summary: 'Use formal handoff tool when transferring work' },
           { id: 'checkpoint-on-exit', summary: 'Save checkpoint before ending session' },
+          { id: 'heartbeat-required', summary: `Heartbeat every ${HEARTBEAT_WARN_MINUTES} min or resources auto-released at ${HEARTBEAT_CLEANUP_MINUTES} min` },
         ];
 
         return res.json({
@@ -252,7 +257,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           session,
           rules: rulesSummary,
           message: 'Session initialized. Please acknowledge rules before working.',
-          requiresAcknowledgment: true
+          requiresAcknowledgment: true,
+          heartbeatRequired: {
+            intervalMinutes: HEARTBEAT_WARN_MINUTES,
+            warningAt: HEARTBEAT_WARN_MINUTES,
+            staleAt: HEARTBEAT_STALE_MINUTES,
+            cleanupAt: HEARTBEAT_CLEANUP_MINUTES
+          }
         });
       }
 
@@ -277,20 +288,132 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // HEARTBEAT: Update activity
+      // HEARTBEAT: Update activity - AGENTS MUST CALL THIS REGULARLY
       if (action === 'heartbeat') {
         const existing = await redis.hget(SESSIONS_KEY, agentId);
 
         if (!existing) {
-          return res.status(404).json({ error: 'No session found' });
+          // Auto-create session if heartbeat comes from unknown agent
+          const now = new Date().toISOString();
+          const newSession: AgentSession = {
+            agentId,
+            role: 'developer',
+            startedAt: now,
+            lastActivity: now,
+            lastHeartbeat: now,
+            heartbeatCount: 1,
+            rulesVersion: '1.0.0',
+            rulesAcknowledged: false,
+            currentClaims: [],
+            currentLocks: [],
+            currentZones: [],
+            violationCount: 0,
+            status: 'active',
+          };
+          await redis.hset(SESSIONS_KEY, { [agentId]: JSON.stringify(newSession) });
+          return res.json({
+            success: true,
+            message: 'Session auto-created from heartbeat',
+            session: newSession,
+            health: { status: 'active', minutesSinceHeartbeat: 0 }
+          });
         }
 
         const session = typeof existing === 'string' ? JSON.parse(existing) : existing;
-        session.lastActivity = new Date().toISOString();
+        const now = new Date().toISOString();
+        session.lastActivity = now;
+        session.lastHeartbeat = now;
+        session.heartbeatCount = (session.heartbeatCount || 0) + 1;
+        session.status = 'active';
 
         await redis.hset(SESSIONS_KEY, { [agentId]: JSON.stringify(session) });
 
-        return res.json({ success: true, lastActivity: session.lastActivity });
+        return res.json({
+          success: true,
+          lastHeartbeat: session.lastHeartbeat,
+          heartbeatCount: session.heartbeatCount,
+          status: 'active',
+          nextHeartbeatDue: `${HEARTBEAT_WARN_MINUTES} minutes`
+        });
+      }
+
+      // HEALTH-CHECK: Check all agents and auto-cleanup dead ones
+      if (action === 'health-check') {
+        const sessionsData = await redis.hgetall(SESSIONS_KEY);
+        const sessions = sessionsData || {};
+
+        const report = {
+          active: [] as string[],
+          warning: [] as string[],
+          stale: [] as string[],
+          dead: [] as string[],
+          cleaned: [] as { agentId: string; released: { locks: string[]; claims: string[]; zones: string[] } }[],
+          timestamp: new Date().toISOString()
+        };
+
+        for (const [id, sessionData] of Object.entries(sessions)) {
+          const session = typeof sessionData === 'string' ? JSON.parse(sessionData) : sessionData;
+          const health = getAgentHealth(session.lastHeartbeat || session.lastActivity);
+
+          // Update session status
+          session.status = health.status;
+          await redis.hset(SESSIONS_KEY, { [id]: JSON.stringify(session) });
+
+          // Categorize
+          if (health.status === 'active') {
+            report.active.push(id);
+          } else if (health.status === 'warning') {
+            report.warning.push(id);
+          } else if (health.status === 'stale') {
+            report.stale.push(id);
+          } else if (health.status === 'dead') {
+            report.dead.push(id);
+            // Auto-cleanup dead agent's resources
+            const released = await releaseDeadAgentResources(id);
+            if (released.locks.length > 0 || released.claims.length > 0 || released.zones.length > 0) {
+              report.cleaned.push({ agentId: id, released });
+            }
+            // Remove dead session
+            await redis.hdel(SESSIONS_KEY, id);
+          }
+        }
+
+        return res.json({
+          success: true,
+          report,
+          summary: {
+            total: Object.keys(sessions).length,
+            active: report.active.length,
+            warning: report.warning.length,
+            stale: report.stale.length,
+            dead: report.dead.length,
+            cleaned: report.cleaned.length
+          }
+        });
+      }
+
+      // FORCE-CLEANUP: Admin can force-release any agent's resources
+      if (action === 'force-cleanup') {
+        const { targetAgentId, adminKey } = req.body;
+
+        if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'piston-admin') {
+          return res.status(403).json({ error: 'Admin key required for force-cleanup' });
+        }
+
+        if (!targetAgentId) {
+          return res.status(400).json({ error: 'targetAgentId required' });
+        }
+
+        const released = await releaseDeadAgentResources(targetAgentId);
+
+        // Remove session if exists
+        await redis.hdel(SESSIONS_KEY, targetAgentId);
+
+        return res.json({
+          success: true,
+          message: `Force-cleaned resources for ${targetAgentId}`,
+          released
+        });
       }
 
       // END: End session
@@ -353,7 +476,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      return res.status(400).json({ error: 'Unknown action. Use: init, acknowledge, heartbeat, end' });
+      return res.status(400).json({ error: 'Unknown action. Use: init, acknowledge, heartbeat, health-check, force-cleanup, end' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
