@@ -2,7 +2,7 @@
 
 MCP server for multi-agent coordination - enables AI agents to collaborate without conflicts.
 
-**21 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
+**43 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
 
 ## Features
 
@@ -37,7 +37,7 @@ npm run start:http
 PERSIST=true npm run start:http
 ```
 
-## MCP Tools (21)
+## MCP Tools (43)
 
 | Tool | Description |
 |------|-------------|
