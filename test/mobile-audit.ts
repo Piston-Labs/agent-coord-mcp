@@ -19,35 +19,17 @@ interface AuditResult {
 const results: AuditResult[] = [];
 
 async function handleLogin(page: Page): Promise<void> {
-  // Check if login overlay is visible
-  const loginOverlay = page.locator('#loginOverlay');
-  const isVisible = await loginOverlay.evaluate(el => {
-    const style = window.getComputedStyle(el);
-    return style.display !== 'none';
-  }).catch(() => false);
-
-  if (isVisible) {
-    console.log('  Logging in...');
-    // Fill login form with test credentials
-    await page.fill('#loginUsername', 'test');
-    await page.fill('#loginPassword', 'test');
-    await page.click('#loginForm button[type="submit"]');
-    await page.waitForTimeout(1000);
-
-    // If login fails, just hide the overlay via JS
-    const stillVisible = await loginOverlay.evaluate(el => {
-      const style = window.getComputedStyle(el);
-      return style.display !== 'none';
-    }).catch(() => false);
-
-    if (stillVisible) {
-      console.log('  Login failed, hiding overlay...');
-      await page.evaluate(() => {
-        const overlay = document.getElementById('loginOverlay');
-        if (overlay) overlay.style.display = 'none';
-      });
+  // Always try to hide the login overlay via JS - this is the most reliable approach
+  console.log('  Hiding login overlay...');
+  await page.evaluate(() => {
+    const overlay = document.getElementById('loginOverlay');
+    if (overlay) {
+      overlay.style.display = 'none';
+      overlay.style.visibility = 'hidden';
+      overlay.style.pointerEvents = 'none';
     }
-  }
+  });
+  await page.waitForTimeout(500);
 }
 
 async function auditTelemetryCards(page: Page, viewport: string): Promise<void> {
