@@ -4804,18 +4804,19 @@
       #chatView {
         display: flex !important;
         flex-direction: column !important;
-        height: 100% !important;
+        flex: 1 !important;
         overflow: hidden !important;
       }
 
       #chatView .chat-messages {
-        flex: 1 !important;
+        flex: 1 1 auto !important;
         overflow-y: auto !important;
         min-height: 0 !important;
       }
 
       #chatView .chat-input {
-        flex-shrink: 0 !important;
+        flex: 0 0 auto !important;
+        position: relative !important;
       }
 
       /* Header adjustments for mobile */
