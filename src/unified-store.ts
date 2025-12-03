@@ -1,13 +1,22 @@
 /**
- * Unified Store - Switches between in-memory and persistent storage
+ * Unified Store - Switches between storage backends
  *
- * Set PERSIST=true environment variable to enable file persistence.
- * Set DATA_PATH to customize storage location.
+ * Storage options (in priority order):
+ * 1. DO_URL - Use Cloudflare Durable Objects (recommended for production)
+ * 2. PERSIST=true - Use local JSON file persistence
+ * 3. Default - Use in-memory storage (development only)
+ *
+ * Environment variables:
+ * - DO_URL: URL of deployed DO Worker (e.g., https://agent-coord-do.workers.dev)
+ * - PERSIST: Set to 'true' for file persistence
+ * - DATA_PATH: Custom path for JSON file storage
  */
 
 import { store as memoryStore } from './store.js';
 import { getPersistentStore, JsonPersistence } from './persistence.js';
+import { createDOStore } from './do-store.js';
 
+const USE_DO = !!process.env.DO_URL;
 const USE_PERSISTENCE = process.env.PERSIST === 'true' || process.env.PERSIST === '1';
 const DATA_PATH = process.env.DATA_PATH;
 
@@ -69,6 +78,13 @@ export interface UnifiedStore {
 }
 
 function getStore(): UnifiedStore {
+  // Priority 1: Durable Objects (production)
+  if (USE_DO) {
+    console.error(`[unified-store] Using DURABLE OBJECTS storage (${process.env.DO_URL})`);
+    return createDOStore();
+  }
+
+  // Priority 2: File persistence (staging/local)
   if (USE_PERSISTENCE) {
     console.error('[unified-store] Using PERSISTENT storage');
     const persistent = getPersistentStore(DATA_PATH);
@@ -87,10 +103,11 @@ function getStore(): UnifiedStore {
     });
 
     return persistent;
-  } else {
-    console.error('[unified-store] Using IN-MEMORY storage (set PERSIST=true for file persistence)');
-    return memoryStore;
   }
+
+  // Priority 3: In-memory (development)
+  console.error('[unified-store] Using IN-MEMORY storage (set DO_URL or PERSIST=true for persistence)');
+  return memoryStore;
 }
 
 export const unifiedStore = getStore();
