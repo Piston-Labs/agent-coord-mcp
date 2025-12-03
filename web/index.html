@@ -7368,6 +7368,7 @@
           <button class="tab" data-tab="metrics" onclick="switchTab('metrics')">Metrics</button>
           <button class="tab" data-tab="crm" onclick="switchTab('crm')">CRM</button>
           <button class="tab" data-tab="sales" onclick="switchTab('sales')">Sales Eng</button>
+          <button class="tab" data-tab="resources" onclick="switchTab('resources')">Resources</button>
         </div>
         <span id="messageCount">0 messages</span>
       </div>
@@ -8099,6 +8100,57 @@
             </div>
             <div class="sales-files-list" id="salesFilesList">
               <div class="sales-file-empty">Select a folder to view files</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Resources View -->
+      <div class="tab-content" id="resourcesView">
+        <div class="resources-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h3 style="margin: 0; font-size: 16px;">Resource Documentation Hub</h3>
+            <p style="margin: 4px 0 0; font-size: 12px; color: var(--text-secondary);">MCP tools, API endpoints, and integrations</p>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <select id="resourceCategory" onchange="fetchResources()" style="padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 12px;">
+              <option value="">All Categories</option>
+              <option value="core">Core Tools</option>
+              <option value="messaging">Messaging</option>
+              <option value="resources">Resources</option>
+              <option value="context">Context</option>
+              <option value="orchestration">Orchestration</option>
+              <option value="integrations">Integrations</option>
+              <option value="testing">Testing</option>
+              <option value="endpoints">API Endpoints</option>
+              <option value="external">External Services</option>
+            </select>
+            <input type="text" id="resourceSearch" placeholder="Search..." oninput="fetchResources()" style="padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 12px; width: 150px;">
+            <button onclick="fetchResources()" style="padding: 6px 12px; background: var(--accent); border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 12px;">Refresh</button>
+          </div>
+        </div>
+        <div class="resources-stats" style="padding: 12px 16px; display: flex; gap: 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 700; color: var(--accent);" id="resourceToolCount">0</div>
+            <div style="font-size: 10px; color: var(--text-secondary);">MCP Tools</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 700; color: var(--success);" id="resourceEndpointCount">0</div>
+            <div style="font-size: 10px; color: var(--text-secondary);">API Endpoints</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 700; color: var(--warning);" id="resourceIntegrationCount">0</div>
+            <div style="font-size: 10px; color: var(--text-secondary);">Integrations</div>
+          </div>
+          <div style="text-align: center;">
+            <div style="font-size: 20px; font-weight: 700; color: var(--human-color);" id="resourceRepoCount">0</div>
+            <div style="font-size: 10px; color: var(--text-secondary);">Repos</div>
+          </div>
+        </div>
+        <div class="resources-content" style="padding: 16px; overflow-y: auto; height: calc(100% - 140px);">
+          <div id="resourcesList">
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              Loading resources...
             </div>
           </div>
         </div>
@@ -9344,6 +9396,167 @@
       if (tabName === 'sales') {
         initSalesEng();
       }
+
+      // Fetch resources when switching to resources tab
+      if (tabName === 'resources') {
+        fetchResources();
+      }
+    }
+
+    // === RESOURCES FUNCTIONS ===
+    async function fetchResources() {
+      const category = document.getElementById('resourceCategory')?.value || '';
+      const search = document.getElementById('resourceSearch')?.value || '';
+
+      const params = new URLSearchParams();
+      if (category) params.set('category', category);
+      if (search) params.set('search', search);
+
+      try {
+        const res = await fetch(API_BASE + '/resource-registry?' + params);
+        const data = await res.json();
+
+        // Update stats
+        document.getElementById('resourceToolCount').textContent = data.tools?.count || 0;
+        document.getElementById('resourceEndpointCount').textContent = data.endpoints?.count || 0;
+        document.getElementById('resourceIntegrationCount').textContent = data.integrations?.count || 0;
+        document.getElementById('resourceRepoCount').textContent = data.repos?.count || 0;
+
+        renderResources(data);
+      } catch (err) {
+        console.error('Failed to fetch resources:', err);
+        document.getElementById('resourcesList').innerHTML = '<div style="text-align: center; padding: 40px; color: var(--danger);">Failed to load resources</div>';
+      }
+    }
+
+    function renderResources(data) {
+      const container = document.getElementById('resourcesList');
+      let html = '';
+
+      // Render MCP Tools
+      if (data.tools?.items?.length > 0) {
+        const categories = [...new Set(data.tools.items.map(t => t.category))];
+
+        for (const cat of categories) {
+          const tools = data.tools.items.filter(t => t.category === cat);
+          html += `<div style="margin-bottom: 20px;">
+            <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--accent); text-transform: capitalize; display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 16px;">${getCategoryIcon(cat)}</span> ${cat} Tools
+              <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${tools.length})</span>
+            </div>
+            <div style="display: grid; gap: 8px;">`;
+
+          for (const tool of tools) {
+            html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                  <span style="font-weight: 600; color: var(--text-primary);">${tool.name}</span>
+                  <span style="font-size: 10px; padding: 2px 6px; background: var(--bg-tertiary); border-radius: 10px; margin-left: 8px; color: var(--text-secondary);">MCP Tool</span>
+                </div>
+                <span style="font-size: 10px; color: var(--text-secondary);">${tool.file || ''}</span>
+              </div>
+              <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${tool.description}</p>
+            </div>`;
+          }
+          html += '</div></div>';
+        }
+      }
+
+      // Render API Endpoints
+      if (data.endpoints?.items?.length > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--success); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">🔌</span> API Endpoints
+            <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${data.endpoints.items.length})</span>
+          </div>
+          <div style="display: grid; gap: 8px;">`;
+
+        for (const ep of data.endpoints.items) {
+          html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <code style="font-family: monospace; color: var(--accent); font-size: 12px;">${ep.path}</code>
+              <div style="display: flex; gap: 4px;">
+                ${ep.methods.map(m => `<span style="font-size: 9px; padding: 2px 5px; background: ${getMethodColor(m)}; color: white; border-radius: 3px;">${m}</span>`).join('')}
+              </div>
+            </div>
+            <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${ep.description}</p>
+          </div>`;
+        }
+        html += '</div></div>';
+      }
+
+      // Render External Integrations
+      if (data.integrations?.items?.length > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--warning); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">🔗</span> External Integrations
+            <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${data.integrations.items.length})</span>
+          </div>
+          <div style="display: grid; gap: 8px;">`;
+
+        for (const int of data.integrations.items) {
+          const statusColor = int.status === 'configured' || int.status === 'active' ? 'var(--success)' : 'var(--warning)';
+          html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-weight: 600; color: var(--text-primary);">${int.name}</span>
+              <span style="font-size: 10px; padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 10px;">${int.status}</span>
+            </div>
+            <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${int.description}</p>
+            ${int.endpoint ? `<code style="font-size: 10px; color: var(--text-secondary);">${int.endpoint}</code>` : ''}
+          </div>`;
+        }
+        html += '</div></div>';
+      }
+
+      // Render Connected Repos
+      if (data.repos?.items?.length > 0) {
+        html += `<div style="margin-bottom: 20px;">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--human-color); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 16px;">📦</span> Connected Repositories
+            <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${data.repos.items.length})</span>
+          </div>
+          <div style="display: grid; gap: 8px;">`;
+
+        for (const repo of data.repos.items) {
+          html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+            <span style="font-weight: 600; color: var(--text-primary);">${repo.name}</span>
+            ${repo.description ? `<p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${repo.description}</p>` : ''}
+            ${repo.url ? `<a href="${repo.url}" target="_blank" style="font-size: 10px; color: var(--accent);">${repo.url}</a>` : ''}
+          </div>`;
+        }
+        html += '</div></div>';
+      }
+
+      if (!html) {
+        html = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">No resources found</div>';
+      }
+
+      container.innerHTML = html;
+    }
+
+    function getCategoryIcon(category) {
+      const icons = {
+        core: '⚙️',
+        messaging: '💬',
+        resources: '📁',
+        context: '🧠',
+        orchestration: '🎯',
+        integrations: '🔧',
+        testing: '🧪',
+        external: '🔗'
+      };
+      return icons[category] || '📦';
+    }
+
+    function getMethodColor(method) {
+      const colors = {
+        GET: '#3fb950',
+        POST: '#58a6ff',
+        PUT: '#d29922',
+        PATCH: '#a371f7',
+        DELETE: '#f85149'
+      };
+      return colors[method] || '#8b949e';
     }
 
     async function fetchTeam() {
@@ -13136,6 +13349,135 @@
       setTimeout(checkDMUnread, 2000);
       // Poll for new DMs every 30 seconds
       setInterval(checkDMUnread, 30000);
+
+      // ============================================================
+      // Resources Registry Functions
+      // ============================================================
+
+      let cachedResources = null;
+
+      window.fetchResources = async function() {
+        const category = document.getElementById('resourceCategory')?.value || '';
+        const search = document.getElementById('resourceSearch')?.value || '';
+
+        try {
+          const params = new URLSearchParams();
+          if (category) params.set('category', category);
+          if (search) params.set('search', search);
+
+          const res = await fetch(`${API_BASE}/api/resource-registry?${params}`);
+          const data = await res.json();
+
+          cachedResources = data;
+          renderResources(data);
+        } catch (err) {
+          console.error('Failed to fetch resources:', err);
+          document.getElementById('resourcesList').innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              Failed to load resources. Try refreshing.
+            </div>
+          `;
+        }
+      };
+
+      function renderResources(data) {
+        const { tools = [], endpoints = [], integrations = [], repos = [] } = data;
+
+        // Update stats
+        document.getElementById('resourceToolCount').textContent = tools.length;
+        document.getElementById('resourceEndpointCount').textContent = endpoints.length;
+        document.getElementById('resourceIntegrationCount').textContent = integrations.length;
+        document.getElementById('resourceRepoCount').textContent = repos.length;
+
+        const container = document.getElementById('resourcesList');
+
+        if (tools.length === 0 && endpoints.length === 0 && integrations.length === 0) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
+              No resources found matching your criteria.
+            </div>
+          `;
+          return;
+        }
+
+        let html = '';
+
+        // Group tools by category
+        const toolsByCategory = {};
+        tools.forEach(tool => {
+          const cat = tool.category || 'other';
+          if (!toolsByCategory[cat]) toolsByCategory[cat] = [];
+          toolsByCategory[cat].push(tool);
+        });
+
+        for (const [category, catTools] of Object.entries(toolsByCategory)) {
+          html += `
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px; font-size: 13px; color: var(--accent); text-transform: uppercase;">${category} Tools (${catTools.length})</h4>
+              <div style="display: grid; gap: 8px;">
+                ${catTools.map(tool => `
+                  <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                      <code style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${tool.name}</code>
+                      <span style="font-size: 10px; padding: 2px 6px; background: var(--bg-secondary); border-radius: 4px; color: var(--text-secondary);">${tool.file || 'MCP'}</span>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">${tool.description || 'No description'}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        if (endpoints.length > 0) {
+          html += `
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px; font-size: 13px; color: var(--success); text-transform: uppercase;">API Endpoints (${endpoints.length})</h4>
+              <div style="display: grid; gap: 8px;">
+                ${endpoints.map(ep => `
+                  <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                      <span style="font-size: 10px; padding: 2px 6px; background: ${ep.method === 'GET' ? 'var(--success)' : ep.method === 'POST' ? 'var(--accent)' : 'var(--warning)'}; border-radius: 4px; color: white;">${ep.method || 'GET'}</span>
+                      <code style="font-size: 13px; color: var(--text-primary);">${ep.path}</code>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">${ep.description || 'No description'}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        if (integrations.length > 0) {
+          html += `
+            <div style="margin-bottom: 20px;">
+              <h4 style="margin: 0 0 10px; font-size: 13px; color: var(--warning); text-transform: uppercase;">External Integrations (${integrations.length})</h4>
+              <div style="display: grid; gap: 8px;">
+                ${integrations.map(int => `
+                  <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; border: 1px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                      <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${int.name}</span>
+                      <span style="font-size: 10px; padding: 2px 6px; background: ${int.configured ? 'var(--success)' : 'var(--error)'}; border-radius: 4px; color: white;">${int.configured ? 'Configured' : 'Not Configured'}</span>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-secondary);">${int.description || 'No description'}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `;
+        }
+
+        container.innerHTML = html;
+      }
+
+      // Fetch resources when Resources tab is opened
+      const originalSwitchTab = window.switchTab;
+      window.switchTab = function(tabName) {
+        originalSwitchTab(tabName);
+        if (tabName === 'resources' && !cachedResources) {
+          fetchResources();
+        }
+      };
     });
 
   </script>
