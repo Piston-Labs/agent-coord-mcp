@@ -8377,6 +8377,13 @@
           </div>
         </div>
         <div class="context-section">
+          <div class="context-title" style="display: flex; justify-content: space-between; align-items: center;">
+            <span>✅ My Tasks <span id="myTasksCount" style="opacity: 0.6; font-weight: normal;">(0)</span></span>
+            <button onclick="showAddMyTaskModal()" style="padding: 2px 8px; font-size: 10px; background: var(--accent); border: none; border-radius: 4px; color: white; cursor: pointer;">+ Add</button>
+          </div>
+          <div id="myTasksList" style="max-height: 200px; overflow-y: auto;"></div>
+        </div>
+        <div class="context-section">
           <div class="context-title">🔒 Claims <span id="claimsCount" style="opacity: 0.6; font-weight: normal;">(0)</span></div>
           <div id="claimsList"></div>
         </div>
@@ -8503,6 +8510,56 @@
           <button onclick="copyInviteLink()" style="margin-top:8px;padding:6px 12px;background:var(--accent);color:white;border:none;border-radius:4px;cursor:pointer;font-size:12px;">Copy Link</button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- My Task Modal -->
+  <div class="modal-overlay" id="myTaskModal" style="display:none;">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-title" id="myTaskModalTitle">Add Task</div>
+      <form id="myTaskForm" onsubmit="handleMyTaskSubmit(event)">
+        <input type="hidden" id="myTaskId" value="" />
+        <div class="form-group">
+          <label for="myTaskTitle">Title *</label>
+          <input type="text" id="myTaskTitle" required placeholder="What needs to be done?" />
+        </div>
+        <div class="form-group">
+          <label for="myTaskDescription">Description</label>
+          <textarea id="myTaskDescription" placeholder="Additional details..." rows="2"></textarea>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="myTaskPriority">Priority</label>
+            <select id="myTaskPriority" style="width:100%;">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+          <div>
+            <label for="myTaskStatus">Status</label>
+            <select id="myTaskStatus" style="width:100%;">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="done">Done</option>
+              <option value="blocked">Blocked</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="myTaskCategory">Category</label>
+          <input type="text" id="myTaskCategory" placeholder="e.g., work, personal, bug-fix" />
+        </div>
+        <div class="form-group">
+          <label for="myTaskDueDate">Due Date</label>
+          <input type="date" id="myTaskDueDate" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideMyTaskModal()">Cancel</button>
+          <button type="submit" class="btn-submit" id="myTaskSubmitBtn">Add Task</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -8715,7 +8772,8 @@
         await Promise.all([
           fetchAgents().catch(e => console.error('fetchAgents failed:', e)),
           fetchMessages().catch(e => console.error('fetchMessages failed:', e)),
-          fetchContext().catch(e => console.error('fetchContext failed:', e))
+          fetchContext().catch(e => console.error('fetchContext failed:', e)),
+          fetchMyTasks().catch(e => console.error('fetchMyTasks failed:', e))
         ]);
         console.log('Init fetch complete');
       } catch (e) {
@@ -9400,6 +9458,177 @@
       }
     }
 
+    // =========================================================================
+    // MY TASKS (Private User Tasks) Functions
+    // =========================================================================
+    let myTasks = [];
+
+    async function fetchMyTasks() {
+      if (!isAuthenticated || !USERNAME) return;
+
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + encodeURIComponent(USERNAME), {
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          myTasks = data.tasks || [];
+          renderMyTasks();
+        }
+      } catch (e) {
+        console.error('Failed to fetch my tasks:', e);
+      }
+    }
+
+    function renderMyTasks() {
+      const container = document.getElementById('myTasksList');
+      const countEl = document.getElementById('myTasksCount');
+      if (!container) return;
+
+      if (countEl) countEl.textContent = '(' + myTasks.length + ')';
+
+      if (myTasks.length === 0) {
+        container.innerHTML = '<div style="font-size: 11px; color: var(--text-secondary); padding: 8px; text-align: center;">No personal tasks yet</div>';
+        return;
+      }
+
+      const priorityColors = { urgent: 'var(--danger)', high: '#f0883e', medium: 'var(--warning)', low: 'var(--text-secondary)' };
+      const statusIcons = { 'todo': '○', 'in-progress': '◐', 'done': '●', 'blocked': '✕' };
+
+      let html = '';
+      for (const task of myTasks) {
+        const isDone = task.status === 'done';
+        html += `<div class="context-item" style="display: flex; align-items: flex-start; gap: 8px; padding: 8px; margin-bottom: 4px; ${isDone ? 'opacity: 0.6;' : ''}">
+          <button onclick="toggleMyTaskStatus('${task.id}', '${task.status}')" style="background: none; border: none; cursor: pointer; font-size: 14px; color: ${priorityColors[task.priority]}; padding: 0; line-height: 1;" title="Toggle status">
+            ${statusIcons[task.status]}
+          </button>
+          <div style="flex: 1; min-width: 0;">
+            <div style="font-size: 12px; font-weight: 500; ${isDone ? 'text-decoration: line-through;' : ''} overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${task.title}">
+              ${task.title}
+            </div>
+            ${task.category ? `<div style="font-size: 10px; color: var(--text-secondary);">${task.category}</div>` : ''}
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <button onclick="editMyTask('${task.id}')" style="background: none; border: none; cursor: pointer; font-size: 11px; color: var(--accent); padding: 2px;" title="Edit">✎</button>
+            <button onclick="deleteMyTask('${task.id}')" style="background: none; border: none; cursor: pointer; font-size: 11px; color: var(--danger); padding: 2px;" title="Delete">×</button>
+          </div>
+        </div>`;
+      }
+      container.innerHTML = html;
+    }
+
+    function showAddMyTaskModal() {
+      document.getElementById('myTaskModalTitle').textContent = 'Add Task';
+      document.getElementById('myTaskSubmitBtn').textContent = 'Add Task';
+      document.getElementById('myTaskId').value = '';
+      document.getElementById('myTaskTitle').value = '';
+      document.getElementById('myTaskDescription').value = '';
+      document.getElementById('myTaskPriority').value = 'medium';
+      document.getElementById('myTaskStatus').value = 'todo';
+      document.getElementById('myTaskCategory').value = '';
+      document.getElementById('myTaskDueDate').value = '';
+      document.getElementById('myTaskModal').style.display = 'flex';
+    }
+
+    function hideMyTaskModal() {
+      document.getElementById('myTaskModal').style.display = 'none';
+    }
+
+    function editMyTask(taskId) {
+      const task = myTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      document.getElementById('myTaskModalTitle').textContent = 'Edit Task';
+      document.getElementById('myTaskSubmitBtn').textContent = 'Save Changes';
+      document.getElementById('myTaskId').value = task.id;
+      document.getElementById('myTaskTitle').value = task.title || '';
+      document.getElementById('myTaskDescription').value = task.description || '';
+      document.getElementById('myTaskPriority').value = task.priority || 'medium';
+      document.getElementById('myTaskStatus').value = task.status || 'todo';
+      document.getElementById('myTaskCategory').value = task.category || '';
+      document.getElementById('myTaskDueDate').value = task.dueDate ? task.dueDate.split('T')[0] : '';
+      document.getElementById('myTaskModal').style.display = 'flex';
+    }
+
+    async function handleMyTaskSubmit(event) {
+      event.preventDefault();
+
+      const taskId = document.getElementById('myTaskId').value;
+      const isEdit = !!taskId;
+
+      const payload = {
+        title: document.getElementById('myTaskTitle').value,
+        description: document.getElementById('myTaskDescription').value,
+        priority: document.getElementById('myTaskPriority').value,
+        status: document.getElementById('myTaskStatus').value,
+        category: document.getElementById('myTaskCategory').value || undefined,
+        dueDate: document.getElementById('myTaskDueDate').value || undefined
+      };
+
+      if (isEdit) payload.taskId = taskId;
+
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + encodeURIComponent(USERNAME), {
+          method: isEdit ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          hideMyTaskModal();
+          fetchMyTasks();
+        } else {
+          const err = await res.json();
+          alert(err.error || 'Failed to save task');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function toggleMyTaskStatus(taskId, currentStatus) {
+      const nextStatus = {
+        'todo': 'in-progress',
+        'in-progress': 'done',
+        'done': 'todo',
+        'blocked': 'todo'
+      };
+
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + encodeURIComponent(USERNAME), {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ taskId, status: nextStatus[currentStatus] })
+        });
+
+        if (res.ok) {
+          fetchMyTasks();
+        }
+      } catch (e) {
+        console.error('Failed to toggle task status:', e);
+      }
+    }
+
+    async function deleteMyTask(taskId) {
+      if (!confirm('Delete this task?')) return;
+
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + encodeURIComponent(USERNAME) + '&taskId=' + encodeURIComponent(taskId), {
+          method: 'DELETE',
+          credentials: 'include'
+        });
+
+        if (res.ok) {
+          fetchMyTasks();
+        } else {
+          alert('Failed to delete task');
+        }
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
 
     // Activity Feed Functions
     let activityItems = [];
