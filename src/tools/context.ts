@@ -425,4 +425,90 @@ export function registerContextTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // RESOURCE-REGISTRY TOOL - Discover available MCP tools and integrations
+  // ============================================================================
+
+  server.tool(
+    'resource-registry',
+    'Discover all available MCP tools, API endpoints, and external integrations. Use this to understand what capabilities are available in the coordination hub.',
+    {
+      action: z.enum(['list', 'search', 'add-repo', 'remove-repo']).describe('list=all resources, search=find specific, add-repo/remove-repo=manage connected repos'),
+      category: z.enum(['tools', 'integrations', 'endpoints', 'repos', 'core', 'messaging', 'resources', 'context', 'orchestration', 'testing']).optional()
+        .describe('Filter by category'),
+      search: z.string().optional().describe('Search term for finding tools/resources'),
+      format: z.enum(['json', 'markdown']).optional().describe('Output format (json or markdown for human readability)'),
+      // For add-repo
+      repoId: z.string().optional().describe('Repository ID for add/remove'),
+      repoName: z.string().optional().describe('Repository name'),
+      repoUrl: z.string().optional().describe('Repository URL'),
+      repoDescription: z.string().optional().describe('Repository description'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, category, search, format, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'list':
+          case 'search': {
+            const params = new URLSearchParams();
+            if (category) params.set('category', category);
+            if (search) params.set('search', search);
+            if (format) params.set('format', format);
+
+            const res = await fetch(`${API_BASE}/api/resource-registry?${params}`);
+
+            if (format === 'markdown') {
+              const text = await res.text();
+              return { content: [{ type: 'text', text }] };
+            }
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'add-repo': {
+            if (!args.repoId || !args.repoName) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'repoId and repoName required' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/resource-registry`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: 'repo',
+                id: args.repoId,
+                name: args.repoName,
+                url: args.repoUrl,
+                description: args.repoDescription
+              })
+            });
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'remove-repo': {
+            if (!args.repoId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'repoId required' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/resource-registry?id=${encodeURIComponent(args.repoId)}&type=repo`, {
+              method: 'DELETE'
+            });
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
