@@ -206,7 +206,7 @@ function getFolderForType(type: string): string {
     'one-pager': 'one-pagers',
     'email': 'emails',
     'demo-script': 'demos',
-    'case-study': 'proposals',
+    'case-study': 'case-studies',  // Fixed: was 'proposals', now matches generate-sales-doc.ts
     'other': 'other',
     'blank': 'other'
   };
@@ -220,6 +220,7 @@ function getDefaultFolders(): SalesFolder[] {
     { id: 'emails', name: 'Email Templates', createdAt: '2024-01-01T00:00:00Z' },
     { id: 'one-pagers', name: 'One-Pagers', createdAt: '2024-01-01T00:00:00Z' },
     { id: 'demos', name: 'Demo Scripts', createdAt: '2024-01-01T00:00:00Z' },
+    { id: 'case-studies', name: 'Case Studies', createdAt: '2024-01-01T00:00:00Z' },  // Added missing folder
     { id: 'other', name: 'Other', createdAt: '2024-01-01T00:00:00Z' }
   ];
 }

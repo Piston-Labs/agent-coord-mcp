@@ -7,7 +7,13 @@ const redis = new Redis({
 });
 
 const MESSAGES_KEY = 'agent-coord:messages';
+const POLL_TRACKING_KEY = 'agent-coord:poll-tracking';
 const MAX_MESSAGES = 1000;
+
+// Polling advisory configuration (inspired by contextOS)
+const MIN_POLL_INTERVAL_MS = 30000;  // 30 seconds minimum
+const SUGGESTED_POLL_INTERVAL_MS = 60000;  // 60 seconds suggested
+const FAST_POLL_THRESHOLD_MS = 15000;  // Warn if polling faster than 15s
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -20,22 +26,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      const { limit = '50', since } = req.query;
+      const { limit = '50', since, agentId } = req.query;
       const limitNum = parseInt(limit as string, 10);
-      
+
       // Get messages from Redis (stored as JSON strings)
       const messages = await redis.lrange(MESSAGES_KEY, 0, MAX_MESSAGES - 1);
       let result = messages.map((m: any) => typeof m === 'string' ? JSON.parse(m) : m);
-      
+
       if (since && typeof since === 'string') {
         const sinceTime = new Date(since).getTime();
         result = result.filter((m: any) => new Date(m.timestamp).getTime() > sinceTime);
       }
-      
+
       // Return most recent messages (list is newest-first)
       result = result.slice(0, limitNum);
-      
-      return res.json({ messages: result, count: result.length });
+
+      // Polling advisory - track agent poll times and suggest intervals
+      let pollingAdvisory: any = null;
+      if (agentId && typeof agentId === 'string') {
+        const now = Date.now();
+        const lastPollKey = `${POLL_TRACKING_KEY}:${agentId}`;
+        const lastPollTime = await redis.get(lastPollKey);
+
+        if (lastPollTime) {
+          const timeSinceLastPoll = now - parseInt(lastPollTime as string, 10);
+
+          if (timeSinceLastPoll < FAST_POLL_THRESHOLD_MS) {
+            pollingAdvisory = {
+              warning: `⚠️ Polling too fast (${Math.round(timeSinceLastPoll / 1000)}s since last). Slow down to avoid context explosion.`,
+              suggestedIntervalMs: SUGGESTED_POLL_INTERVAL_MS,
+              suggestion: 'Use 30-60s intervals for healthier context management.',
+              yourInterval: timeSinceLastPoll
+            };
+          } else if (timeSinceLastPoll < MIN_POLL_INTERVAL_MS) {
+            pollingAdvisory = {
+              tip: `Consider slowing to ${SUGGESTED_POLL_INTERVAL_MS / 1000}s intervals for healthier context management.`,
+              suggestedIntervalMs: SUGGESTED_POLL_INTERVAL_MS,
+              yourInterval: timeSinceLastPoll
+            };
+          }
+        }
+
+        // Update last poll time
+        await redis.set(lastPollKey, now.toString(), { ex: 3600 }); // Expire after 1 hour
+      }
+
+      const response: any = { messages: result, count: result.length };
+      if (pollingAdvisory) {
+        response.pollingAdvisory = pollingAdvisory;
+      }
+      response.suggestedPollIntervalMs = SUGGESTED_POLL_INTERVAL_MS;
+
+      return res.json(response);
     }
 
     if (req.method === 'POST') {
