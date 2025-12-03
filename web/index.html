@@ -5065,13 +5065,18 @@
       button,
       .tab-btn,
       .agent-card,
-      .device-card,
       .roadmap-item,
       select,
       input[type="text"],
       input[type="password"],
       .nav-btn {
         min-height: 44px;
+      }
+
+      /* Device cards need larger touch targets for comfortable mobile use */
+      .device-card {
+        min-height: 80px;
+        padding: 14px;
       }
       
       /* Better tap feedback */
@@ -5795,9 +5800,10 @@
 
       #chatView .chat-input {
         flex: 0 0 auto !important;
-        position: relative !important;
-        bottom: auto !important;
+        position: sticky !important;
+        bottom: 0 !important;
         z-index: 1001 !important; /* Above mobile nav (z-index: 1000) */
+        background: var(--bg-primary) !important; /* Ensure background when sticky */
       }
 
       /* Header adjustments for mobile */
