@@ -1461,8 +1461,9 @@
       
       .device-card {
         padding: 12px;
+        min-height: 80px; /* Touch-friendly minimum height */
       }
-      
+
       .device-stats {
         grid-template-columns: repeat(2, 1fr);
         gap: 8px;
@@ -1627,8 +1628,12 @@
       
       .chat-input {
         padding: 8px;
+        position: sticky;
+        bottom: 0;
+        background: var(--surface); /* Ensure visibility over content */
+        z-index: 100;
       }
-      
+
       .chat-input button#sendBtn {
         padding: 10px 12px;
         min-width: 50px;
@@ -5191,8 +5196,165 @@
       background: #1f6feb;
     }
 
+    /* Command Palette Styles (Cmd+K) - Linear-style */
+    .command-palette-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(13, 17, 23, 0.8);
+      backdrop-filter: blur(4px);
+      z-index: 10001;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding-top: 15vh;
+      animation: fadeIn 0.15s ease-out;
+    }
 
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
 
+    .command-palette {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 16px 70px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+      animation: slideDown 0.15s ease-out;
+    }
+
+    @keyframes slideDown {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .command-palette-header {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+
+    .command-palette-header input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 16px;
+      outline: none;
+    }
+
+    .command-palette-header input::placeholder {
+      color: var(--text-secondary);
+    }
+
+    .command-palette-header kbd {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .command-palette-results {
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .command-group-label {
+      padding: 8px 16px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .command-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 16px;
+      gap: 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .command-item:hover,
+    .command-item.selected {
+      background: var(--bg-secondary);
+    }
+
+    .command-item-icon {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    .command-item-content {
+      flex: 1;
+    }
+
+    .command-item-title {
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .command-item-description {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .command-item-shortcut {
+      display: flex;
+      gap: 4px;
+    }
+
+    .command-item-shortcut kbd {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .command-palette-footer {
+      display: flex;
+      gap: 16px;
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .command-palette-footer kbd {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 4px;
+      font-size: 10px;
+      margin-right: 4px;
+    }
+
+    .command-palette-empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: var(--text-secondary);
+    }
 
     /* Mobile Bottom Navigation - Professional Mobile Experience */
     .mobile-nav {
@@ -7993,6 +8155,22 @@
     </div>
   </div>
 
+  <!-- Command Palette (Cmd+K) - Linear-style -->
+  <div id="commandPalette" class="command-palette-overlay" style="display: none;">
+    <div class="command-palette">
+      <div class="command-palette-header">
+        <span style="color: var(--text-secondary);">⌘</span>
+        <input type="text" id="commandSearch" placeholder="Type a command or search..." autocomplete="off" />
+        <kbd>ESC</kbd>
+      </div>
+      <div class="command-palette-results" id="commandResults"></div>
+      <div class="command-palette-footer">
+        <span><kbd>↑↓</kbd> Navigate</span>
+        <span><kbd>↵</kbd> Select</span>
+        <span><kbd>ESC</kbd> Close</span>
+      </div>
+    </div>
+  </div>
 
   <header>
     <div class="logo">
@@ -9489,16 +9667,19 @@
 
       // Keyboard shortcuts
       document.addEventListener('keydown', (e) => {
-        // Don't trigger shortcuts when typing in inputs
+        // Command palette - works from anywhere (Cmd+K / Ctrl+K)
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+          e.preventDefault();
+          toggleCommandPalette();
+          return;
+        }
+
+        // Don't trigger other shortcuts when typing in inputs
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
         // Ctrl/Cmd + shortcuts
         if (e.ctrlKey || e.metaKey) {
           switch(e.key) {
-            case 'k': // Focus message input
-              e.preventDefault();
-              document.getElementById('messageInput').focus();
-              break;
             case 't': // Quick create task
               e.preventDefault();
               quickCreateTask();
@@ -9539,8 +9720,174 @@
         }
       });
 
-      console.log('Keyboard shortcuts: Ctrl+K=focus, Ctrl+T=task, Ctrl+L=claim, 1-5=tabs, J/K=nav items, Enter=open, 1-4=status');
+      console.log('Keyboard shortcuts: Cmd+K=palette, Ctrl+T=task, Ctrl+L=claim, 1-5=tabs, J/K=nav items, Enter=open, 1-4=status');
     }
+
+    // ========================================================================
+    // COMMAND PALETTE (Cmd+K) - Linear-style
+    // ========================================================================
+
+    const COMMANDS = [
+      // Navigation
+      { id: 'nav-chat', group: 'Navigation', icon: '💬', title: 'Go to Chat', description: 'Team chat messages', shortcut: '1', action: () => switchTab('chat') },
+      { id: 'nav-roadmap', group: 'Navigation', icon: '📋', title: 'Go to Roadmap', description: 'Sprint planning & items', shortcut: '2', action: () => switchTab('roadmap') },
+      { id: 'nav-telemetry', group: 'Navigation', icon: '📡', title: 'Go to Telemetry', description: 'Device fleet status', shortcut: '3', action: () => switchTab('telemetry') },
+      { id: 'nav-metrics', group: 'Navigation', icon: '📊', title: 'Go to Metrics', description: 'Agent performance metrics', shortcut: '4', action: () => switchTab('metrics') },
+      { id: 'nav-messages', group: 'Navigation', icon: '✉️', title: 'Go to Messages', description: 'Direct messages', shortcut: '5', action: () => switchTab('messages') },
+      { id: 'nav-resources', group: 'Navigation', icon: '🔗', title: 'Go to Resources', description: 'File locks & zones', shortcut: '6', action: () => switchTab('resources') },
+
+      // Actions
+      { id: 'action-task', group: 'Actions', icon: '➕', title: 'Create Task', description: 'Quick create a new task', shortcut: 'Ctrl+T', action: () => quickCreateTask() },
+      { id: 'action-claim', group: 'Actions', icon: '🔒', title: 'Claim File', description: 'Claim a file to work on', shortcut: 'Ctrl+L', action: () => quickClaimFile() },
+      { id: 'action-focus', group: 'Actions', icon: '💭', title: 'Focus Chat Input', description: 'Start typing a message', action: () => document.getElementById('messageInput')?.focus() },
+      { id: 'action-kudos', group: 'Actions', icon: '⭐', title: 'Give Kudos', description: 'Recognize a team member', action: () => showGiveKudosModal() },
+      { id: 'action-help', group: 'Actions', icon: '❓', title: 'Show Help', description: 'Keyboard shortcuts & tips', shortcut: '?', action: () => toggleHelpModal() },
+
+      // Roadmap (when on roadmap tab)
+      { id: 'roadmap-new', group: 'Roadmap', icon: '📝', title: 'New Roadmap Item', description: 'Create a new roadmap entry', action: () => { switchTab('roadmap'); setTimeout(() => document.querySelector('.add-item-btn')?.click(), 100); } },
+    ];
+
+    let commandPaletteOpen = false;
+    let commandSelectedIndex = 0;
+    let filteredCommands = COMMANDS;
+
+    function openCommandPalette() {
+      const overlay = document.getElementById('commandPalette');
+      const input = document.getElementById('commandSearch');
+      const results = document.getElementById('commandResults');
+
+      overlay.style.display = 'flex';
+      commandPaletteOpen = true;
+      commandSelectedIndex = 0;
+      input.value = '';
+      filteredCommands = COMMANDS;
+      renderCommandResults();
+      input.focus();
+    }
+
+    function closeCommandPalette() {
+      const overlay = document.getElementById('commandPalette');
+      overlay.style.display = 'none';
+      commandPaletteOpen = false;
+    }
+
+    function toggleCommandPalette() {
+      if (commandPaletteOpen) {
+        closeCommandPalette();
+      } else {
+        openCommandPalette();
+      }
+    }
+
+    function filterCommands(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        filteredCommands = COMMANDS;
+      } else {
+        filteredCommands = COMMANDS.filter(cmd =>
+          cmd.title.toLowerCase().includes(q) ||
+          cmd.description.toLowerCase().includes(q) ||
+          cmd.group.toLowerCase().includes(q)
+        );
+      }
+      commandSelectedIndex = 0;
+      renderCommandResults();
+    }
+
+    function renderCommandResults() {
+      const results = document.getElementById('commandResults');
+
+      if (filteredCommands.length === 0) {
+        results.innerHTML = '<div class="command-palette-empty">No commands found</div>';
+        return;
+      }
+
+      // Group commands
+      const grouped = {};
+      filteredCommands.forEach(cmd => {
+        if (!grouped[cmd.group]) grouped[cmd.group] = [];
+        grouped[cmd.group].push(cmd);
+      });
+
+      let html = '';
+      let globalIndex = 0;
+      for (const [group, cmds] of Object.entries(grouped)) {
+        html += `<div class="command-group-label">${group}</div>`;
+        cmds.forEach(cmd => {
+          const selected = globalIndex === commandSelectedIndex ? 'selected' : '';
+          html += `
+            <div class="command-item ${selected}" data-index="${globalIndex}" onclick="executeCommand(${globalIndex})">
+              <div class="command-item-icon">${cmd.icon}</div>
+              <div class="command-item-content">
+                <div class="command-item-title">${cmd.title}</div>
+                <div class="command-item-description">${cmd.description}</div>
+              </div>
+              ${cmd.shortcut ? `<div class="command-item-shortcut"><kbd>${cmd.shortcut}</kbd></div>` : ''}
+            </div>
+          `;
+          globalIndex++;
+        });
+      }
+      results.innerHTML = html;
+
+      // Scroll selected into view
+      const selectedEl = results.querySelector('.command-item.selected');
+      if (selectedEl) selectedEl.scrollIntoView({ block: 'nearest' });
+    }
+
+    function executeCommand(index) {
+      const cmd = filteredCommands[index];
+      if (cmd && cmd.action) {
+        closeCommandPalette();
+        cmd.action();
+      }
+    }
+
+    function handleCommandPaletteKeydown(e) {
+      if (!commandPaletteOpen) return;
+
+      switch (e.key) {
+        case 'Escape':
+          e.preventDefault();
+          closeCommandPalette();
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          commandSelectedIndex = Math.min(commandSelectedIndex + 1, filteredCommands.length - 1);
+          renderCommandResults();
+          break;
+        case 'ArrowUp':
+          e.preventDefault();
+          commandSelectedIndex = Math.max(commandSelectedIndex - 1, 0);
+          renderCommandResults();
+          break;
+        case 'Enter':
+          e.preventDefault();
+          executeCommand(commandSelectedIndex);
+          break;
+      }
+    }
+
+    // Initialize command palette listeners
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('commandSearch');
+      const overlay = document.getElementById('commandPalette');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', (e) => filterCommands(e.target.value));
+        searchInput.addEventListener('keydown', handleCommandPaletteKeydown);
+      }
+
+      if (overlay) {
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) closeCommandPalette();
+        });
+      }
+    });
+
+    // ========================================================================
+    // END COMMAND PALETTE
+    // ========================================================================
 
     async function poll() {
       try {
