@@ -4557,12 +4557,20 @@
     .mobile-nav-inner {
       display: flex;
       height: 100%;
-      max-width: 500px;
+      max-width: 600px;
       margin: 0 auto;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+
+    .mobile-nav-inner::-webkit-scrollbar {
+      display: none;
     }
 
     .mobile-nav-item {
       flex: 1;
+      min-width: 60px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -4577,6 +4585,7 @@
       transition: all 0.2s ease;
       padding: 8px 4px;
       position: relative;
+      flex-shrink: 0;
     }
 
     .mobile-nav-item:active {
@@ -12347,10 +12356,10 @@
 
       // Map panel names to indices (for main panels)
       const panelMap = { 'team': 0, 'chat': 1 };
-      
-      // Handle tab-based panels (telemetry, metrics)
-      const tabPanels = ['telemetry', 'metrics'];
-      
+
+      // Handle tab-based panels (telemetry, metrics, crm, sales)
+      const tabPanels = ['telemetry', 'metrics', 'crm', 'sales'];
+
       // Remove active class from all panels and nav items
       panels.forEach(p => p.classList.remove('mobile-active'));
       navItems.forEach(n => n.classList.remove('active'));
@@ -13143,6 +13152,14 @@
         <span class="mobile-nav-icon">💬</span>
         <span>Chat</span>
         <span class="mobile-nav-badge" id="chatBadge" style="display: none;">0</span>
+      </button>
+      <button class="mobile-nav-item" data-panel="crm" onclick="switchMobilePanel('crm')">
+        <span class="mobile-nav-icon">🏪</span>
+        <span>CRM</span>
+      </button>
+      <button class="mobile-nav-item" data-panel="sales" onclick="switchMobilePanel('sales')">
+        <span class="mobile-nav-icon">📋</span>
+        <span>Sales</span>
       </button>
       <button class="mobile-nav-item" data-panel="telemetry" onclick="switchMobilePanel('telemetry')">
         <span class="mobile-nav-icon">🚗</span>
