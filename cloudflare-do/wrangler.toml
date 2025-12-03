@@ -1,0 +1,25 @@
+name = "agent-coord-do"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+# Durable Objects configuration
+[durable_objects]
+bindings = [
+  { name = "COORDINATOR", class_name = "AgentCoordinator" },
+  { name = "AGENT_STATE", class_name = "AgentState" },
+  { name = "RESOURCE_LOCK", class_name = "ResourceLock" }
+]
+
+# SQLite storage backend for all DOs
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentCoordinator", "AgentState", "ResourceLock"]
+
+# Environment variables (set via wrangler secret)
+[vars]
+ENVIRONMENT = "development"
+
+# Development server
+[dev]
+port = 8787
+local_protocol = "http"
