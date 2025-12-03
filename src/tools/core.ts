@@ -457,4 +457,46 @@ export function registerCoreTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // ONBOARD TOOL - New agent orientation
+  // ============================================================================
+
+  server.tool(
+    'onboard',
+    'Get onboarding rules and guidance for new agents. Call this when joining the network to get setup instructions and best practices.',
+    {
+      action: z.enum(['get-rules', 'get-packet']).describe('get-rules=all rules, get-packet=personalized welcome'),
+      agentId: z.string().describe('Your agent ID'),
+      ide: z.string().optional().describe('Your IDE (vscode, cursor, windsurf, etc.)'),
+      os: z.string().optional().describe('Your OS (linux, macos, windows)'),
+      category: z.string().optional().describe('Filter by category: setup, coordination, tools, etiquette')
+    },
+    async (args) => {
+      const { action, agentId, ide, os, category } = args;
+
+      try {
+        const params = new URLSearchParams();
+        if (agentId) params.set('agentId', agentId);
+        if (ide) params.set('ide', ide);
+        if (os) params.set('os', os);
+        if (category) params.set('category', category);
+
+        const res = await fetch(`${API_BASE}/api/onboarding?${params}`);
+        const data = await res.json();
+
+        if (action === 'get-packet' && data.welcomePacket) {
+          // Return just the welcome packet for quick onboarding
+          return { content: [{ type: 'text', text: JSON.stringify({
+            ...data.welcomePacket,
+            topRules: data.rules.slice(0, 5).map((r: any) => ({ title: r.title, content: r.content }))
+          }, null, 2) }] };
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
