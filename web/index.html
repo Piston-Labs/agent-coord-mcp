@@ -8077,6 +8077,11 @@
                 <span class="folder-name">Demo Scripts</span>
                 <span class="folder-count" id="folderDemosCount">0</span>
               </div>
+              <div class="sales-folder" data-folder="case-studies">
+                <span class="folder-icon">📂</span>
+                <span class="folder-name">Case Studies</span>
+                <span class="folder-count" id="folderCaseStudiesCount">0</span>
+              </div>
               <div class="sales-folder" data-folder="other">
                 <span class="folder-icon">📂</span>
                 <span class="folder-name">Other</span>
@@ -11177,6 +11182,7 @@
         emails: salesFiles.filter(f => f.folder === 'emails').length,
         'one-pagers': salesFiles.filter(f => f.folder === 'one-pagers').length,
         demos: salesFiles.filter(f => f.folder === 'demos').length,
+        'case-studies': salesFiles.filter(f => f.folder === 'case-studies').length,
         other: salesFiles.filter(f => f.folder === 'other').length
       };
 
@@ -11185,6 +11191,7 @@
       document.getElementById('folderEmailsCount').textContent = counts.emails;
       document.getElementById('folderOnePagersCount').textContent = counts['one-pagers'];
       document.getElementById('folderDemosCount').textContent = counts.demos;
+      document.getElementById('folderCaseStudiesCount').textContent = counts['case-studies'];
       document.getElementById('folderOtherCount').textContent = counts.other;
     }
 
@@ -11363,6 +11370,7 @@
         });
 
         const data = await res.json();
+        console.log('[Sales Eng] Generation response:', { ok: res.ok, success: data.success, file: data.file?.id });
 
         if (res.ok && data.success) {
           // Add to local files array
@@ -11394,6 +11402,7 @@
                   <option value="emails" ${data.file.folder === 'emails' ? 'selected' : ''}>Email Templates</option>
                   <option value="one-pagers" ${data.file.folder === 'one-pagers' ? 'selected' : ''}>One-Pagers</option>
                   <option value="demos" ${data.file.folder === 'demos' ? 'selected' : ''}>Demo Scripts</option>
+                  <option value="case-studies" ${data.file.folder === 'case-studies' ? 'selected' : ''}>Case Studies</option>
                   <option value="other" ${data.file.folder === 'other' ? 'selected' : ''}>Other</option>
                 </select>
                 ${target ? `<span style="color: var(--text-secondary); font-size: 12px; align-self: center;">Target: ${escapeHtml(target)}</span>` : ''}
@@ -11502,7 +11511,7 @@
         'one-pager': 'one-pagers',
         'email': 'emails',
         'demo-script': 'demos',
-        'case-study': 'proposals',
+        'case-study': 'case-studies',
         'other': 'other',
         'blank': 'other'
       };
@@ -11608,6 +11617,7 @@
               <option value="emails" ${file.folder === 'emails' ? 'selected' : ''}>Email Templates</option>
               <option value="one-pagers" ${file.folder === 'one-pagers' ? 'selected' : ''}>One-Pagers</option>
               <option value="demos" ${file.folder === 'demos' ? 'selected' : ''}>Demo Scripts</option>
+              <option value="case-studies" ${file.folder === 'case-studies' ? 'selected' : ''}>Case Studies</option>
               <option value="other" ${file.folder === 'other' ? 'selected' : ''}>Other</option>
             </select>
             <span style="color: var(--text-secondary); font-size: 12px; align-self: center;">Created: ${new Date(file.createdAt).toLocaleString()}</span>
@@ -11640,6 +11650,7 @@
               <option value="emails">Email Templates</option>
               <option value="one-pagers">One-Pagers</option>
               <option value="demos">Demo Scripts</option>
+              <option value="case-studies">Case Studies</option>
             </select>
             <select id="editFileType" style="padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);">
               <option value="other" selected>Other Document</option>
@@ -11691,6 +11702,7 @@
         }
 
         // Also save to Redis (for quick access)
+        let saveSuccess = false;
         if (currentEditingFile) {
           // Update existing file
           const res = await fetch('/api/sales-files', {
@@ -11709,6 +11721,10 @@
             const idx = salesFiles.findIndex(f => f.id === currentEditingFile.id);
             if (idx >= 0) salesFiles[idx] = data.file;
             currentEditingFile = data.file;
+            saveSuccess = true;
+          } else {
+            const error = await res.text();
+            console.error('PATCH save failed:', res.status, error);
           }
         } else {
           // Create new file
@@ -11729,17 +11745,25 @@
             const data = await res.json();
             salesFiles.push(data.file);
             currentEditingFile = data.file;
+            saveSuccess = true;
+          } else {
+            const error = await res.text();
+            console.error('POST save failed:', res.status, error);
           }
         }
 
         updateSalesFolderCounts();
         updateSalesStats();
 
-        // Show success with GitHub link if available
-        if (githubUrl) {
-          alert(`Document saved to GitHub!\n\n${githubUrl}`);
+        // Show appropriate message based on save result
+        if (saveSuccess) {
+          if (githubUrl) {
+            alert(`Document saved to GitHub!\n\n${githubUrl}`);
+          } else {
+            alert('Document saved! (GitHub sync pending - check if GITHUB_TOKEN is configured)');
+          }
         } else {
-          alert('Document saved! (GitHub sync pending - check if GITHUB_TOKEN is configured)');
+          alert('Failed to save document to database. Please check console for details.');
         }
       } catch (err) {
         console.error('Save error:', err);

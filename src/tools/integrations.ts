@@ -358,6 +358,122 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
+  // SALES-FILE TOOL - Save documents to Sales Engineering folders
+  // ============================================================================
+
+  server.tool(
+    'sales-file',
+    'Save generated documents to Sales Engineering folders. ALWAYS use this after generating any sales doc, email, pitch, or case study.',
+    {
+      action: z.enum(['save', 'list', 'get', 'update']).describe('save=create new file, list=show files, get=retrieve file, update=modify file'),
+      name: z.string().optional().describe('Document name/title (required for save)'),
+      type: z.enum(['pitch-deck', 'proposal', 'one-pager', 'email', 'demo-script', 'case-study', 'other']).optional()
+        .describe('Document type - determines folder'),
+      content: z.string().optional().describe('Document content/markdown (required for save)'),
+      target: z.string().optional().describe('Target company or person'),
+      notes: z.string().optional().describe('Additional notes about the document'),
+      folder: z.string().optional().describe('Override auto-folder assignment'),
+      fileId: z.string().optional().describe('File ID (for get/update)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, name, type, content, target, notes, folder, fileId, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'save': {
+            if (!name || !type || !content) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'name, type, and content required for save',
+                hint: 'After generating a doc, call sales-file with action=save, name, type, and content'
+              }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/sales-files`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                type,
+                content,
+                target,
+                notes,
+                folder,
+                createdBy: agentId
+              })
+            });
+            const data = await res.json();
+
+            // Post to chat that doc was saved
+            await fetch(`${API_BASE}/api/chat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                author: agentId,
+                message: `📁 Saved "${name}" to ${data.file?.folder || type} folder. File ID: ${data.file?.id}`
+              })
+            });
+
+            return { content: [{ type: 'text', text: JSON.stringify({
+              success: true,
+              saved: {
+                id: data.file?.id,
+                name: data.file?.name,
+                folder: data.file?.folder,
+                type: data.file?.type
+              },
+              message: `Document "${name}" saved to ${data.file?.folder} folder`
+            }, null, 2) }] };
+          }
+
+          case 'list': {
+            const params = new URLSearchParams();
+            if (folder) params.set('folder', folder);
+            if (type) params.set('type', type);
+
+            const res = await fetch(`${API_BASE}/api/sales-files?${params}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            if (!fileId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'fileId required for get' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/sales-files?id=${fileId}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'update': {
+            if (!fileId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'fileId required for update' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/sales-files`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: fileId,
+                name,
+                content,
+                target,
+                notes
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // SHOP TOOL - Sales pipeline management
   // ============================================================================
 
