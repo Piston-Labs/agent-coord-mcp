@@ -1,13 +1,39 @@
 /**
- * Testing Tools - UI testing and metrics
+ * Testing Tools - UI testing, metrics, and browser automation
  *
- * Tools: ui-test, metrics
+ * Tools: ui-test, metrics, browser
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import { chromium, Browser, Page } from 'playwright';
 
 const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+// Browser instance management (shared across calls for efficiency)
+let browserInstance: Browser | null = null;
+let pageInstance: Page | null = null;
+
+async function getBrowser(): Promise<Browser> {
+  if (!browserInstance) {
+    browserInstance = await chromium.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+  }
+  return browserInstance;
+}
+
+async function getPage(url?: string): Promise<Page> {
+  const browser = await getBrowser();
+  if (!pageInstance) {
+    pageInstance = await browser.newPage();
+  }
+  if (url) {
+    await pageInstance.goto(url, { waitUntil: 'networkidle' });
+  }
+  return pageInstance;
+}
 
 export function registerTestingTools(server: McpServer) {
   // ============================================================================
@@ -198,6 +224,206 @@ export function registerTestingTools(server: McpServer) {
 
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
+  // BROWSER TOOL - Playwright-powered browser automation for UI testing
+  // ============================================================================
+
+  server.tool(
+    'browser',
+    'Playwright-powered browser automation for UI testing. Navigate, screenshot, click, type, and inspect. Use this for UI improvement tasks.',
+    {
+      action: z.enum([
+        'navigate',      // Go to URL
+        'screenshot',    // Take screenshot
+        'click',         // Click element
+        'type',          // Type text
+        'select',        // Get DOM element info
+        'evaluate',      // Run JS in page
+        'accessibility', // Run accessibility audit
+        'close'          // Close browser
+      ]).describe('Browser action to perform'),
+      url: z.string().optional().describe('URL for navigate action'),
+      selector: z.string().optional().describe('CSS selector for click/type/select'),
+      text: z.string().optional().describe('Text to type'),
+      script: z.string().optional().describe('JavaScript to evaluate in page'),
+      fullPage: z.boolean().optional().describe('Take full page screenshot (default: true)'),
+      waitFor: z.string().optional().describe('Selector to wait for before action')
+    },
+    async (args) => {
+      const { action } = args;
+
+      try {
+        switch (action) {
+          case 'navigate': {
+            if (!args.url) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'url required for navigate' }) }] };
+            }
+            const page = await getPage(args.url);
+            const title = await page.title();
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: true,
+                  url: args.url,
+                  title,
+                  message: `Navigated to ${args.url}`
+                })
+              }]
+            };
+          }
+
+          case 'screenshot': {
+            const page = await getPage(args.url);
+            if (args.waitFor) {
+              await page.waitForSelector(args.waitFor, { timeout: 10000 });
+            }
+            const screenshot = await page.screenshot({
+              fullPage: args.fullPage !== false,
+              type: 'png'
+            });
+            const base64 = screenshot.toString('base64');
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: true,
+                  screenshot: `data:image/png;base64,${base64}`,
+                  dimensions: await page.viewportSize(),
+                  url: page.url()
+                })
+              }]
+            };
+          }
+
+          case 'click': {
+            if (!args.selector) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'selector required for click' }) }] };
+            }
+            const page = await getPage(args.url);
+            await page.click(args.selector, { timeout: 10000 });
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({ success: true, clicked: args.selector })
+              }]
+            };
+          }
+
+          case 'type': {
+            if (!args.selector || !args.text) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'selector and text required for type' }) }] };
+            }
+            const page = await getPage(args.url);
+            await page.fill(args.selector, args.text);
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({ success: true, typed: args.text, into: args.selector })
+              }]
+            };
+          }
+
+          case 'select': {
+            if (!args.selector) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'selector required for select' }) }] };
+            }
+            const page = await getPage(args.url);
+            const element = await page.$(args.selector);
+            if (!element) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Element not found: ${args.selector}` }) }] };
+            }
+            const info = await element.evaluate((el: Element) => ({
+              tagName: el.tagName,
+              id: el.id,
+              className: el.className,
+              innerText: (el as HTMLElement).innerText?.substring(0, 500),
+              attributes: Array.from(el.attributes).map(a => ({ name: a.name, value: a.value })),
+              boundingBox: el.getBoundingClientRect()
+            }));
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({ success: true, element: info })
+              }]
+            };
+          }
+
+          case 'evaluate': {
+            if (!args.script) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'script required for evaluate' }) }] };
+            }
+            const page = await getPage(args.url);
+            const result = await page.evaluate(args.script);
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({ success: true, result })
+              }]
+            };
+          }
+
+          case 'accessibility': {
+            const page = await getPage(args.url);
+            // Check for common accessibility issues via HTML inspection
+            const issues: string[] = [];
+            const html = await page.content();
+
+            if (!html.includes('lang=')) issues.push('Missing lang attribute on html');
+            if (!html.includes('<title>') || html.includes('<title></title>')) issues.push('Missing or empty title');
+
+            const imgCount = (html.match(/<img/g) || []).length;
+            const altCount = (html.match(/alt=/g) || []).length;
+            if (imgCount > altCount) issues.push(`${imgCount - altCount} images missing alt attributes`);
+
+            // Check for form labels
+            const inputCount = (html.match(/<input/g) || []).length;
+            const labelCount = (html.match(/<label/g) || []).length;
+            if (inputCount > labelCount) issues.push(`${inputCount - labelCount} form inputs may be missing labels`);
+
+            // Check for heading structure
+            const h1Count = (html.match(/<h1/g) || []).length;
+            if (h1Count === 0) issues.push('No h1 heading found');
+            if (h1Count > 1) issues.push(`Multiple h1 headings (${h1Count}) found`);
+
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: true,
+                  issues,
+                  summary: issues.length === 0 ? 'No major accessibility issues found' : `Found ${issues.length} issues`
+                })
+              }]
+            };
+          }
+
+          case 'close': {
+            if (pageInstance) {
+              await pageInstance.close();
+              pageInstance = null;
+            }
+            if (browserInstance) {
+              await browserInstance.close();
+              browserInstance = null;
+            }
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({ success: true, message: 'Browser closed' })
+              }]
+            };
           }
 
           default:
