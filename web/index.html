@@ -4072,11 +4072,13 @@
       }
 
       .chat-input {
-        position: relative !important; /* Not sticky - use flex instead */
+        position: sticky !important;
+        bottom: 0 !important;
         flex-shrink: 0 !important;
         background: var(--bg-secondary);
         z-index: 100;
         padding: 12px;
+        padding-bottom: max(12px, env(safe-area-inset-bottom)); /* iOS safe area */
         border-top: 1px solid var(--border);
         display: flex !important;
         align-items: center;
@@ -13857,7 +13859,44 @@
         isPulling = false;
       }, { passive: true });
     }
-    
+
+    // Mobile keyboard handling - keep chat input visible when keyboard opens
+    function initMobileKeyboard() {
+      if (window.innerWidth > 768) return;
+
+      const chatInput = document.querySelector('.chat-input');
+      const chatView = document.getElementById('chatView');
+      const messageInput = document.getElementById('messageInput');
+
+      if (!chatInput || !chatView || !messageInput) return;
+
+      // Use visualViewport API for reliable keyboard detection
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => {
+          const keyboardHeight = window.innerHeight - window.visualViewport.height;
+          if (keyboardHeight > 100) {
+            // Keyboard is open - adjust chat view height
+            chatView.style.height = `${window.visualViewport.height - 50}px`;
+            // Scroll to bottom to show latest messages
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+              chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+          } else {
+            // Keyboard closed - reset height
+            chatView.style.height = '';
+          }
+        });
+      }
+
+      // Fallback: scroll input into view on focus
+      messageInput.addEventListener('focus', () => {
+        setTimeout(() => {
+          messageInput.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 300);
+      });
+    }
+
     // Toast notification for mobile
     function showToast(message, duration = 2000) {
       const existing = document.querySelector('.mobile-toast');
@@ -13932,6 +13971,7 @@
     // Initialize mobile features
     if (window.innerWidth <= 768) {
       initPullToRefresh();
+      initMobileKeyboard();
       addMobileFeedback();
     }
 

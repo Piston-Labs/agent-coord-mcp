@@ -19,17 +19,22 @@ interface AuditResult {
 const results: AuditResult[] = [];
 
 async function handleLogin(page: Page): Promise<void> {
-  // Always try to hide the login overlay via JS - this is the most reliable approach
-  console.log('  Hiding login overlay...');
+  // Aggressively hide/remove login overlay via JS
+  console.log('  Removing login overlay...');
   await page.evaluate(() => {
     const overlay = document.getElementById('loginOverlay');
     if (overlay) {
-      overlay.style.display = 'none';
-      overlay.style.visibility = 'hidden';
-      overlay.style.pointerEvents = 'none';
+      // Remove it from DOM entirely
+      overlay.remove();
     }
+    // Also remove any other modal/overlay elements that might block
+    document.querySelectorAll('.modal, .overlay, [class*="overlay"]').forEach(el => {
+      (el as HTMLElement).style.display = 'none';
+      (el as HTMLElement).style.visibility = 'hidden';
+      (el as HTMLElement).style.pointerEvents = 'none';
+    });
   });
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(300);
 }
 
 async function auditTelemetryCards(page: Page, viewport: string): Promise<void> {
@@ -42,10 +47,10 @@ async function auditTelemetryCards(page: Page, viewport: string): Promise<void> 
   // Handle login if needed
   await handleLogin(page);
 
-  // Click on Telemetry tab
+  // Click on Telemetry tab (force: true to bypass any overlays)
   const telemetryTab = page.locator('button.tab:has-text("Telemetry"), .tab:has-text("Fleet")');
   if (await telemetryTab.count() > 0) {
-    await telemetryTab.first().click();
+    await telemetryTab.first().click({ force: true });
     await page.waitForTimeout(500);
   }
 
@@ -328,7 +333,7 @@ async function takeScreenshots(page: Page, viewport: string): Promise<void> {
   // Screenshot of telemetry (full page to see cards)
   const telemetryTab = page.locator('button.tab:has-text("Telemetry"), .tab:has-text("Fleet")');
   if (await telemetryTab.count() > 0) {
-    await telemetryTab.first().click();
+    await telemetryTab.first().click({ force: true });
     await page.waitForTimeout(500);
 
     // Scroll down to see device cards
@@ -345,7 +350,7 @@ async function takeScreenshots(page: Page, viewport: string): Promise<void> {
   // Screenshot of chat - focus on input area
   const chatTab = page.locator('button.tab:has-text("Chat"), .tab:has-text("Team")');
   if (await chatTab.count() > 0) {
-    await chatTab.first().click();
+    await chatTab.first().click({ force: true });
     await page.waitForTimeout(500);
 
     // Take full page to see chat input
