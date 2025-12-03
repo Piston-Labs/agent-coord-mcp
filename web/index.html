@@ -3465,67 +3465,315 @@
     .roadmap-item {
       background: var(--bg-primary);
       border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px;
+      border-radius: 10px;
+      padding: 16px;
       cursor: pointer;
-      transition: border-color 0.15s;
+      transition: all 0.2s ease;
+      position: relative;
     }
 
     .roadmap-item:hover {
       border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
+
+    .roadmap-item::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      border-radius: 10px 0 0 10px;
+      background: var(--border);
+      transition: background 0.2s;
+    }
+
+    .roadmap-item.priority-critical::before { background: var(--danger); }
+    .roadmap-item.priority-high::before { background: var(--warning); }
+    .roadmap-item.priority-medium::before { background: var(--accent); }
+    .roadmap-item.priority-low::before { background: var(--text-secondary); }
 
     .roadmap-item-title {
       font-weight: 600;
-      font-size: 14px;
-      margin-bottom: 6px;
+      font-size: 15px;
+      margin-bottom: 8px;
+      line-height: 1.4;
+      color: var(--text-primary);
     }
 
     .roadmap-item-meta {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 11px;
+      gap: 10px;
+      font-size: 12px;
       color: var(--text-secondary);
+      flex-wrap: wrap;
     }
 
     .roadmap-item-project {
       background: var(--bg-tertiary);
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 500;
     }
 
     .roadmap-item-priority {
-      padding: 2px 6px;
-      border-radius: 4px;
+      padding: 4px 10px;
+      border-radius: 6px;
       font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .roadmap-item-priority.critical { background: rgba(248, 81, 73, 0.2); color: var(--danger); }
     .roadmap-item-priority.high { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
     .roadmap-item-priority.medium { background: rgba(88, 166, 255, 0.2); color: var(--accent); }
     .roadmap-item-priority.low { background: rgba(139, 148, 158, 0.2); color: var(--text-secondary); }
+    .roadmap-item-priority.urgent { background: rgba(248, 81, 73, 0.3); color: var(--danger); }
 
     .roadmap-item-assignee {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       margin-left: auto;
     }
 
     .assignee-avatar {
-      width: 20px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 600;
+      border: 2px solid var(--bg-primary);
     }
 
     .assignee-avatar.human { background: var(--human-color); }
     .assignee-avatar.bot { background: var(--agent-color); }
+
+    /* Task Detail Modal */
+    .task-detail-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .task-detail-modal.active {
+      display: flex;
+    }
+
+    .task-detail-content {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 85vh;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .task-detail-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .task-detail-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-primary);
+      line-height: 1.3;
+      flex: 1;
+    }
+
+    .task-detail-close {
+      background: var(--bg-tertiary);
+      border: none;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 18px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+
+    .task-detail-close:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .task-detail-body {
+      padding: 24px;
+    }
+
+    .task-detail-section {
+      margin-bottom: 24px;
+    }
+
+    .task-detail-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .task-detail-section-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .task-detail-description {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-primary);
+      background: var(--bg-tertiary);
+      padding: 16px;
+      border-radius: 10px;
+      white-space: pre-wrap;
+    }
+
+    .task-detail-meta {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+    }
+
+    .task-meta-item {
+      background: var(--bg-tertiary);
+      padding: 14px 16px;
+      border-radius: 10px;
+    }
+
+    .task-meta-label {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .task-meta-value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .task-detail-actions {
+      padding: 20px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .task-action-btn {
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+    }
+
+    .task-action-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .task-action-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .task-action-btn.primary:hover {
+      background: #4a9eff;
+    }
+
+    .task-action-btn.success {
+      background: var(--success);
+      border-color: var(--success);
+      color: white;
+    }
+
+    .task-action-btn.danger {
+      background: transparent;
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .task-action-btn.danger:hover {
+      background: var(--danger);
+      color: white;
+    }
+
+    .task-tags-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .task-tag {
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 600px) {
+      .task-detail-content {
+        max-height: 95vh;
+        border-radius: 12px 12px 0 0;
+        margin-top: auto;
+      }
+
+      .task-detail-meta {
+        grid-template-columns: 1fr;
+      }
+
+      .task-detail-actions {
+        flex-direction: column;
+      }
+
+      .task-action-btn {
+        width: 100%;
+        text-align: center;
+      }
+    }
 
     /* Modal */
     .modal-overlay {
@@ -8685,6 +8933,65 @@
     </div>
   </div>
 
+  <!-- Task Detail Modal -->
+  <div class="task-detail-modal" id="taskDetailModal" onclick="if(event.target === this) closeTaskDetailModal()">
+    <div class="task-detail-content">
+      <div class="task-detail-header">
+        <h2 class="task-detail-title" id="taskDetailTitle">Task Title</h2>
+        <button class="task-detail-close" onclick="closeTaskDetailModal()">×</button>
+      </div>
+      <div class="task-detail-body">
+        <div class="task-detail-section" id="taskDetailDescSection">
+          <div class="task-detail-section-title">Description</div>
+          <div class="task-detail-description" id="taskDetailDescription">No description provided</div>
+        </div>
+        <div class="task-detail-section">
+          <div class="task-detail-section-title">Details</div>
+          <div class="task-detail-meta">
+            <div class="task-meta-item">
+              <div class="task-meta-label">Status</div>
+              <div class="task-meta-value" id="taskDetailStatus">To Do</div>
+            </div>
+            <div class="task-meta-item">
+              <div class="task-meta-label">Priority</div>
+              <div class="task-meta-value" id="taskDetailPriority">Medium</div>
+            </div>
+            <div class="task-meta-item">
+              <div class="task-meta-label">Assignee</div>
+              <div class="task-meta-value" id="taskDetailAssignee">Unassigned</div>
+            </div>
+            <div class="task-meta-item">
+              <div class="task-meta-label">Project</div>
+              <div class="task-meta-value" id="taskDetailProject">--</div>
+            </div>
+          </div>
+        </div>
+        <div class="task-detail-section" id="taskDetailTagsSection" style="display:none;">
+          <div class="task-detail-section-title">Tags</div>
+          <div class="task-tags-list" id="taskDetailTags"></div>
+        </div>
+        <div class="task-detail-section" id="taskDetailDatesSection">
+          <div class="task-detail-section-title">Timeline</div>
+          <div class="task-detail-meta">
+            <div class="task-meta-item">
+              <div class="task-meta-label">Created</div>
+              <div class="task-meta-value" id="taskDetailCreated">--</div>
+            </div>
+            <div class="task-meta-item">
+              <div class="task-meta-label">Updated</div>
+              <div class="task-meta-value" id="taskDetailUpdated">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="task-detail-actions" id="taskDetailActions">
+        <button class="task-action-btn" onclick="moveTaskToStatus('backlog')">← Backlog</button>
+        <button class="task-action-btn primary" onclick="moveTaskToStatus('in-progress')">→ Start</button>
+        <button class="task-action-btn success" onclick="moveTaskToStatus('done')">✓ Done</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const API_BASE = window.location.origin + '/api';
     const POLL_INTERVAL = 2000;
@@ -12979,11 +13286,11 @@
           ` : '';
 
           return `
-            <div class="roadmap-item" draggable="true" data-item-id="${item.id}" onclick="showItemDetails('${item.id}')" ondragstart="handleDragStart(event, '${item.id}')" ondragend="handleDragEnd(event)">
+            <div class="roadmap-item priority-${item.priority}" draggable="true" data-item-id="${item.id}" onclick="showItemDetails('${item.id}')" ondragstart="handleDragStart(event, '${item.id}')" ondragend="handleDragEnd(event)">
               <div class="roadmap-item-title">${escapeHtml(item.title)}</div>
               ${item.description ? `<div class="roadmap-item-description">${escapeHtml(item.description)}</div>` : ''}
               <div class="roadmap-item-meta">
-                <span class="roadmap-item-project">${item.project}</span>
+                <span class="roadmap-item-project">${item.project || 'General'}</span>
                 <span class="roadmap-item-priority ${item.priority}">${item.priority}</span>
                 ${assigneeHtml}
               </div>
@@ -13178,18 +13485,145 @@
       }
     }
 
+    let currentTaskId = null;
+
     function showItemDetails(itemId) {
       const item = roadmapItems.find(i => i.id === itemId);
       if (!item) return;
 
-      // For now, just allow quick status change
-      const newStatus = prompt(
-        `Change status for "${item.title}"?\nCurrent: ${item.status}\n\nOptions: backlog, planned, in-progress, review, done`,
-        item.status
-      );
+      currentTaskId = itemId;
 
-      if (newStatus && ['backlog', 'planned', 'in-progress', 'review', 'done'].includes(newStatus)) {
-        updateItemStatus(itemId, newStatus);
+      // Populate modal
+      document.getElementById('taskDetailTitle').textContent = item.title;
+
+      // Description
+      const descSection = document.getElementById('taskDetailDescSection');
+      const descEl = document.getElementById('taskDetailDescription');
+      if (item.description) {
+        descSection.style.display = 'block';
+        descEl.textContent = item.description;
+      } else {
+        descSection.style.display = 'none';
+      }
+
+      // Status with color
+      const statusEl = document.getElementById('taskDetailStatus');
+      const statusColors = {
+        'backlog': 'var(--text-secondary)',
+        'planned': 'var(--text-secondary)',
+        'in-progress': 'var(--accent)',
+        'review': 'var(--warning)',
+        'done': 'var(--success)'
+      };
+      statusEl.textContent = item.status.charAt(0).toUpperCase() + item.status.slice(1).replace('-', ' ');
+      statusEl.style.color = statusColors[item.status] || 'var(--text-primary)';
+
+      // Priority with color
+      const priorityEl = document.getElementById('taskDetailPriority');
+      const priorityColors = {
+        'critical': 'var(--danger)',
+        'urgent': 'var(--danger)',
+        'high': 'var(--warning)',
+        'medium': 'var(--accent)',
+        'low': 'var(--text-secondary)'
+      };
+      priorityEl.textContent = item.priority.charAt(0).toUpperCase() + item.priority.slice(1);
+      priorityEl.style.color = priorityColors[item.priority] || 'var(--text-primary)';
+
+      // Assignee
+      const assigneeEl = document.getElementById('taskDetailAssignee');
+      const member = teamMembers.find(m => m.id === item.assignee);
+      assigneeEl.textContent = member ? member.name : (item.assignee || 'Unassigned');
+
+      // Project
+      document.getElementById('taskDetailProject').textContent = item.project || '--';
+
+      // Tags
+      const tagsSection = document.getElementById('taskDetailTagsSection');
+      const tagsEl = document.getElementById('taskDetailTags');
+      if (item.tags && item.tags.length > 0) {
+        tagsSection.style.display = 'block';
+        tagsEl.innerHTML = item.tags.map(t => `<span class="task-tag">${escapeHtml(t)}</span>`).join('');
+      } else {
+        tagsSection.style.display = 'none';
+      }
+
+      // Dates
+      const createdEl = document.getElementById('taskDetailCreated');
+      const updatedEl = document.getElementById('taskDetailUpdated');
+      createdEl.textContent = item.createdAt ? formatDate(item.createdAt) : '--';
+      updatedEl.textContent = item.updatedAt ? formatDate(item.updatedAt) : '--';
+
+      // Update action buttons based on current status
+      updateTaskDetailActions(item.status);
+
+      // Show modal
+      document.getElementById('taskDetailModal').classList.add('active');
+    }
+
+    function updateTaskDetailActions(currentStatus) {
+      const actionsEl = document.getElementById('taskDetailActions');
+      const statusFlow = {
+        'backlog': [
+          { status: 'in-progress', label: '→ Start Work', class: 'primary' }
+        ],
+        'planned': [
+          { status: 'in-progress', label: '→ Start Work', class: 'primary' }
+        ],
+        'in-progress': [
+          { status: 'backlog', label: '← Back to Backlog', class: '' },
+          { status: 'review', label: '→ Ready for Review', class: 'primary' }
+        ],
+        'review': [
+          { status: 'in-progress', label: '← Needs Changes', class: '' },
+          { status: 'done', label: '✓ Complete', class: 'success' }
+        ],
+        'done': [
+          { status: 'review', label: '← Reopen', class: '' }
+        ]
+      };
+
+      const actions = statusFlow[currentStatus] || [];
+      actionsEl.innerHTML = actions.map(a =>
+        `<button class="task-action-btn ${a.class}" onclick="moveTaskToStatus('${a.status}')">${a.label}</button>`
+      ).join('');
+    }
+
+    function closeTaskDetailModal() {
+      document.getElementById('taskDetailModal').classList.remove('active');
+      currentTaskId = null;
+    }
+
+    async function moveTaskToStatus(newStatus) {
+      if (!currentTaskId) return;
+
+      try {
+        await updateItemStatus(currentTaskId, newStatus);
+        closeTaskDetailModal();
+      } catch (err) {
+        console.error('Failed to update task:', err);
+      }
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+      if (days === 0) {
+        const hours = Math.floor(diff / (1000 * 60 * 60));
+        if (hours === 0) {
+          const mins = Math.floor(diff / (1000 * 60));
+          return mins <= 1 ? 'Just now' : `${mins} mins ago`;
+        }
+        return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+      } else if (days === 1) {
+        return 'Yesterday';
+      } else if (days < 7) {
+        return `${days} days ago`;
+      } else {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined });
       }
     }
 
