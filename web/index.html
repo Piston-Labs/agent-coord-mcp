@@ -14588,8 +14588,18 @@
         const cycles = data.cycles || [];
         const cycleFilter = document.getElementById('cycleFilter');
         if (cycleFilter && cycles.length > 0) {
+          // Deduplicate cycles by name - keep only one per unique name
+          // (prevents showing "Beta Sprint" twice for different projects)
+          const seen = new Set();
+          const uniqueCycles = cycles.filter(cycle => {
+            const key = cycle.name.toLowerCase().trim();
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+          });
+
           let options = '<option value="">All Sprints</option>';
-          cycles.forEach(cycle => {
+          uniqueCycles.forEach(cycle => {
             const statusIcon = cycle.status === 'active' ? '🔄 ' : cycle.status === 'completed' ? '✅ ' : '📅 ';
             options += `<option value="${cycle.id}">${statusIcon}${escapeHtml(cycle.name)}</option>`;
           });
