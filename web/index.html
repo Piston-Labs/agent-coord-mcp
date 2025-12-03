@@ -178,6 +178,134 @@
       text-overflow: ellipsis;
     }
 
+    /* Kudos Leaderboard */
+    .kudos-section {
+      border-top: 1px solid var(--border);
+      padding: 8px;
+      flex-shrink: 0;
+    }
+
+    .kudos-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    .kudos-header:hover {
+      background: var(--bg-secondary);
+    }
+
+    .kudos-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .kudos-header-left svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .kudos-toggle {
+      font-size: 10px;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+
+    .kudos-toggle.expanded {
+      transform: rotate(180deg);
+    }
+
+    .kudos-content {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .kudos-content.expanded {
+      max-height: 300px;
+    }
+
+    .kudos-list {
+      padding: 8px 0;
+    }
+
+    .kudos-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      margin-bottom: 6px;
+    }
+
+    .kudos-rank {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .kudos-rank.gold { background: linear-gradient(135deg, #ffd700, #ffb700); color: #000; }
+    .kudos-rank.silver { background: linear-gradient(135deg, #c0c0c0, #a0a0a0); color: #000; }
+    .kudos-rank.bronze { background: linear-gradient(135deg, #cd7f32, #b87333); color: #fff; }
+
+    .kudos-agent {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .kudos-count {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--warning);
+    }
+
+    .kudos-empty {
+      padding: 16px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .give-kudos-btn {
+      width: 100%;
+      padding: 8px;
+      margin-top: 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .give-kudos-btn:hover {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
     /* Chat Panel */
     .chat-messages {
       flex: 1;
@@ -7900,6 +8028,24 @@
           <p>No agents online</p>
         </div>
       </div>
+      <!-- Kudos Leaderboard Section -->
+      <div class="kudos-section">
+        <div class="kudos-header" onclick="toggleKudos()">
+          <div class="kudos-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+            <span>Kudos Leaderboard</span>
+          </div>
+          <span class="kudos-toggle" id="kudosToggle">&#9660;</span>
+        </div>
+        <div class="kudos-content" id="kudosContent">
+          <div class="kudos-list" id="kudosList">
+            <div class="kudos-empty">Loading...</div>
+          </div>
+          <button class="give-kudos-btn" onclick="showGiveKudosModal()">Give Kudos</button>
+        </div>
+      </div>
     </div>
 
     <!-- Main Panel with Tabs -->
@@ -8886,6 +9032,40 @@
     </div>
   </div>
 
+  <!-- Give Kudos Modal -->
+  <div class="modal-overlay" id="kudosModal" style="display:none;" onclick="if(event.target === this) hideGiveKudosModal()">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-title">Give Kudos</div>
+      <div class="form-group">
+        <label for="kudosRecipient">Recipient *</label>
+        <select id="kudosRecipient" style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);">
+          <option value="">Select recipient...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="kudosReason">Reason</label>
+        <input type="text" id="kudosReason" placeholder="e.g., Great teamwork on the fix!" style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);" />
+      </div>
+      <div class="form-group">
+        <label for="kudosEmoji">Emoji (optional)</label>
+        <select id="kudosEmoji" style="width:100%;padding:10px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);">
+          <option value="">Default</option>
+          <option value="🌟">🌟 Star</option>
+          <option value="🚀">🚀 Rocket</option>
+          <option value="💪">💪 Strength</option>
+          <option value="🎉">🎉 Celebration</option>
+          <option value="🔥">🔥 Fire</option>
+          <option value="👏">👏 Applause</option>
+          <option value="💡">💡 Bright idea</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="hideGiveKudosModal()">Cancel</button>
+        <button type="button" class="btn-submit" onclick="submitKudos()">Give Kudos</button>
+      </div>
+    </div>
+  </div>
+
   <!-- My Task Modal -->
   <div class="modal-overlay" id="myTaskModal" style="display:none;">
     <div class="modal" style="max-width:420px;">
@@ -9371,6 +9551,125 @@
         renderAgents(data.agents || [], data.offlineAgents || [], externalData.agents || []);
       } catch (e) {
         console.error('fetchAgents error:', e);
+      }
+    }
+
+    // Kudos Leaderboard Functions
+    let kudosExpanded = false;
+
+    function toggleKudos() {
+      kudosExpanded = !kudosExpanded;
+      const content = document.getElementById('kudosContent');
+      const toggle = document.getElementById('kudosToggle');
+      if (kudosExpanded) {
+        content.classList.add('expanded');
+        toggle.classList.add('expanded');
+        fetchKudosLeaderboard();
+      } else {
+        content.classList.remove('expanded');
+        toggle.classList.remove('expanded');
+      }
+    }
+
+    async function fetchKudosLeaderboard() {
+      const listEl = document.getElementById('kudosList');
+      try {
+        const res = await fetch(API_BASE + '/kudos?leaderboard=true&limit=5');
+        if (!res.ok) throw new Error('Failed to fetch kudos');
+        const data = await res.json();
+
+        if (!data.leaderboard || data.leaderboard.length === 0) {
+          listEl.innerHTML = '<div class="kudos-empty">No kudos yet. Be the first to give kudos!</div>';
+          return;
+        }
+
+        listEl.innerHTML = data.leaderboard.map((entry, idx) => {
+          const rankClass = idx === 0 ? 'gold' : idx === 1 ? 'silver' : idx === 2 ? 'bronze' : '';
+          return `
+            <div class="kudos-item">
+              <div class="kudos-rank ${rankClass}">${idx + 1}</div>
+              <div class="kudos-agent">${entry.agentId}</div>
+              <div class="kudos-count">
+                <span>${entry.received}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('fetchKudosLeaderboard error:', e);
+        listEl.innerHTML = '<div class="kudos-empty">Failed to load leaderboard</div>';
+      }
+    }
+
+    function showGiveKudosModal() {
+      const modal = document.getElementById('kudosModal');
+      if (modal) {
+        modal.style.display = 'flex';
+        // Populate the recipient dropdown with known agents
+        const select = document.getElementById('kudosRecipient');
+        if (select && Object.keys(agentNameCache).length > 0) {
+          const options = Object.entries(agentNameCache)
+            .map(([id, name]) => `<option value="${id}">${name || id}</option>`)
+            .join('');
+          select.innerHTML = '<option value="">Select recipient...</option>' + options;
+        }
+      }
+    }
+
+    function hideGiveKudosModal() {
+      const modal = document.getElementById('kudosModal');
+      if (modal) {
+        modal.style.display = 'none';
+      }
+    }
+
+    async function submitKudos() {
+      const recipient = document.getElementById('kudosRecipient').value;
+      const reason = document.getElementById('kudosReason').value;
+      const emoji = document.getElementById('kudosEmoji').value || '';
+
+      if (!recipient) {
+        alert('Please select a recipient');
+        return;
+      }
+
+      const from = currentUser || 'anonymous';
+
+      try {
+        const res = await fetch(API_BASE + '/kudos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ from, to: recipient, reason: reason || 'Great work!', emoji })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to give kudos');
+        }
+
+        hideGiveKudosModal();
+        fetchKudosLeaderboard();
+        // Also post a chat message about the kudos
+        if (data.success) {
+          sendMessageToChat(`${emoji || ''} gave kudos to @${recipient}: ${reason || 'Great work!'}`);
+        }
+      } catch (e) {
+        console.error('submitKudos error:', e);
+        alert('Failed to give kudos: ' + e.message);
+      }
+    }
+
+    async function sendMessageToChat(text) {
+      try {
+        await fetch(API_BASE + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ author: currentUser || 'anonymous', message: text })
+        });
+        fetchMessages();
+      } catch (e) {
+        console.error('sendMessageToChat error:', e);
       }
     }
 

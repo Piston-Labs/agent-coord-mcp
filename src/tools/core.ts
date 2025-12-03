@@ -288,6 +288,20 @@ export function registerCoreTools(server: McpServer) {
             return { content: [{ type: 'text', text: 'author and message required' }] };
           }
 
+          // Heartbeat: Register agent as active so they show in web dashboard sidebar
+          try {
+            await fetch(`${API_BASE}/api/agents`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: args.author,
+                status: 'active'
+              })
+            });
+          } catch {
+            // Ignore heartbeat errors
+          }
+
           // Detect @mentions for notifications
           const mentions = store.extractMentions(args.message);
 

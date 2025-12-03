@@ -11,7 +11,7 @@ const MESSAGES_KEY = 'agent-coord:messages';
 const AGENT_STATUS_KEY = 'agent-coord:agent-presence';  // Track online/offline status
 
 // Heartbeat configuration (inspired by contextOS)
-const OFFLINE_THRESHOLD_MS = 7 * 60 * 1000;  // 7 minutes = considered offline
+const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;  // 5 minutes = considered offline
 const ACTIVE_THRESHOLD_MS = 30 * 60 * 1000;  // 30 minutes = stale (for listing)
 
 // Post system message to chat
