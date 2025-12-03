@@ -7,6 +7,25 @@ const redis = new Redis({
 });
 
 const AGENTS_KEY = 'agent-coord:active-agents';
+const MESSAGES_KEY = 'agent-coord:messages';
+const AGENT_STATUS_KEY = 'agent-coord:agent-presence';  // Track online/offline status
+
+// Heartbeat configuration (inspired by contextOS)
+const OFFLINE_THRESHOLD_MS = 7 * 60 * 1000;  // 7 minutes = considered offline
+const ACTIVE_THRESHOLD_MS = 30 * 60 * 1000;  // 30 minutes = stale (for listing)
+
+// Post system message to chat
+async function postSystemMessage(message: string) {
+  const newMessage = {
+    id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
+    author: '🤖 system',
+    authorType: 'system',
+    message,
+    timestamp: new Date().toISOString(),
+    reactions: []
+  };
+  await redis.lpush(MESSAGES_KEY, JSON.stringify(newMessage));
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -25,11 +44,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // GET: List agents (both active and offline)
+    // Also runs heartbeat detection to post offline notifications
     if (req.method === 'GET') {
       // Short cache for agent list (5 seconds)
       res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=3');
       const includeOffline = req.query.includeOffline === 'true';
-      
+
       let agents: Record<string, unknown> = {};
       try {
         agents = await redis.hgetall(AGENTS_KEY) || {};
@@ -40,18 +60,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ agents: [], offlineAgents: [], count: 0, note: 'Cleared corrupt data' });
       }
 
-      const activeThreshold = Date.now() - 30 * 60 * 1000; // 30 minutes = active
+      const now = Date.now();
+      const offlineThreshold = now - OFFLINE_THRESHOLD_MS;  // 7 min for offline detection
+      const activeThreshold = now - ACTIVE_THRESHOLD_MS;    // 30 min for listing
       const activeAgents: any[] = [];
       const offlineAgents: any[] = [];
+
+      // Get presence tracking data
+      let presenceData: Record<string, unknown> = {};
+      try {
+        presenceData = await redis.hgetall(AGENT_STATUS_KEY) || {};
+      } catch {
+        // Ignore errors for presence tracking
+      }
 
       for (const [key, value] of Object.entries(agents)) {
         try {
           const agent = typeof value === 'string' ? JSON.parse(value) : value;
           if (agent && agent.lastSeen) {
             const lastSeen = new Date(agent.lastSeen).getTime();
+            const wasOnline = presenceData[agent.id] === 'online';
+
+            // Check if agent just went offline (was online, now past threshold)
+            if (wasOnline && lastSeen < offlineThreshold) {
+              // Post offline notification
+              await postSystemMessage(`[agent-offline] 👋 **${agent.id}** went offline (last seen: ${agent.lastSeen})`);
+              // Update presence tracking
+              await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
+            }
+
             // Determine status based on lastSeen
             agent.status = lastSeen > activeThreshold ? 'active' : 'offline';
-            
+
             if (lastSeen > activeThreshold) {
               activeAgents.push(agent);
             } else {
@@ -70,23 +110,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       offlineAgents.sort((a, b) => new Date(b.lastSeen).getTime() - new Date(a.lastSeen).getTime());
 
       if (includeOffline) {
-        return res.json({ 
-          agents: activeAgents, 
+        return res.json({
+          agents: activeAgents,
           offlineAgents: offlineAgents,
           count: activeAgents.length,
           offlineCount: offlineAgents.length
         });
       }
-      
+
       return res.json({ agents: activeAgents, count: activeAgents.length });
     }
 
     // POST: Register/update agent status
+    // Also tracks presence and posts join/status notifications
     if (req.method === 'POST') {
       const { id, name, status, currentTask, workingOn, role } = req.body;
 
       if (!id) {
         return res.status(400).json({ error: 'id is required' });
+      }
+
+      // Check previous presence state
+      let previousPresence: string | null = null;
+      try {
+        previousPresence = await redis.hget(AGENT_STATUS_KEY, id) as string | null;
+      } catch {
+        // Ignore errors
       }
 
       const agent = {
@@ -102,7 +151,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Use object form for Upstash: hset(key, { field: value })
       await redis.hset(AGENTS_KEY, { [id]: JSON.stringify(agent) });
 
-      return res.json({ success: true, agent });
+      // Track presence and post notifications
+      const isComingOnline = previousPresence !== 'online';
+      if (isComingOnline) {
+        // Agent just came online (new or returning from offline)
+        await redis.hset(AGENT_STATUS_KEY, { [id]: 'online' });
+
+        if (previousPresence === 'offline') {
+          // Returning from offline
+          await postSystemMessage(`[agent-online] 🔄 **${id}** is back online${currentTask ? ` - working on: ${currentTask}` : ''}`);
+        } else if (!previousPresence) {
+          // First time joining
+          await postSystemMessage(`[agent-joined] 👋 **${id}** joined the network${currentTask ? ` - working on: ${currentTask}` : ''}`);
+        }
+      } else {
+        // Already online, just update presence timestamp
+        await redis.hset(AGENT_STATUS_KEY, { [id]: 'online' });
+      }
+
+      return res.json({ success: true, agent, wasOffline: previousPresence === 'offline' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
