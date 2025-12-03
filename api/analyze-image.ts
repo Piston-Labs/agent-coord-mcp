@@ -61,6 +61,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const mediaType = matches[1] as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
     const base64Data = matches[2];
 
+    // Check for API key
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return res.status(503).json({
+        error: 'Image analysis not configured',
+        details: 'ANTHROPIC_API_KEY environment variable is not set. Please add it to Vercel environment variables.',
+        setup: 'Go to Vercel Dashboard → Settings → Environment Variables → Add ANTHROPIC_API_KEY'
+      });
+    }
 
     // Initialize Anthropic client
     const anthropic = new Anthropic({

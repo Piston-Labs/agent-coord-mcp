@@ -8928,7 +8928,10 @@
       
       let imageHtml = '';
       if (m.imageData) {
-        imageHtml = `<div class="message-image"><img src="${m.imageData}" alt="${m.imageName || 'image'}" style="max-width: 300px; max-height: 200px; border-radius: 8px; cursor: pointer; margin-top: 8px;" onclick="window.open(this.src, '_blank')"/></div>`;
+        imageHtml = `<div class="message-image" style="position: relative; display: inline-block;">
+          <img src="${m.imageData}" alt="${m.imageName || 'image'}" style="max-width: 300px; max-height: 200px; border-radius: 8px; cursor: pointer; margin-top: 8px;" onclick="window.open(this.src, '_blank')"/>
+          <button onclick="analyzeImage('${m.id}')" style="position: absolute; bottom: 8px; right: 8px; background: var(--accent); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; opacity: 0.9;">🔍 Analyze</button>
+        </div>`;
       }
 
       return `
@@ -8942,6 +8945,55 @@
           </div>
         </div>
       `;
+    }
+
+    // Analyze an image from a chat message
+    async function analyzeImage(messageId) {
+      const prompt = window.prompt('Enter analysis prompt (or leave empty for default):', '');
+      if (prompt === null) return; // User cancelled
+
+      // Show loading state
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '⏳ Analyzing...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(API_BASE + '/analyze-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            messageId: messageId,
+            prompt: prompt || undefined
+          })
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Analysis failed');
+        }
+
+        // Post the analysis as a message from the system
+        await fetch(API_BASE + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: 'image-analyzer',
+            authorType: 'agent',
+            message: `🔍 **Image Analysis** (${data.imageName}):\n\n${data.analysis}`
+          })
+        });
+
+        // Refresh chat to show the analysis
+        await fetchMessages();
+
+      } catch (error) {
+        alert('Image analysis failed: ' + error.message);
+      } finally {
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
     }
 
     async function sendMessage() {
