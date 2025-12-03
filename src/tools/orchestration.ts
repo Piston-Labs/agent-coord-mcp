@@ -27,6 +27,22 @@ export function registerOrchestrationTools(server: McpServer) {
       const { agentId, role = 'general', repo, include } = args;
 
       try {
+        // Register agent with API so they show in web dashboard sidebar
+        try {
+          await fetch(`${API_BASE}/api/agents`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: agentId,
+              status: 'active',
+              currentTask: 'Starting up (hot-start)',
+              role: role
+            })
+          });
+        } catch {
+          // Ignore registration errors, continue with hot-start
+        }
+
         const params = new URLSearchParams({ agentId });
         if (role) params.append('role', role);
         if (repo) params.append('repo', repo);
