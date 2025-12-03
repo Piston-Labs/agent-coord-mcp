@@ -5,3 +5,7 @@ dist/
 .env
 .env.local
 data/
+
+# Windows artifacts
+nul
+NUL
