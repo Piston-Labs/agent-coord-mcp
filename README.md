@@ -117,13 +117,34 @@ PATCH /api/workflows        - Update workflow step
 
 ## Environment Variables
 
+See `.env.example` for a complete template with documentation.
+
+### Core (Required for Vercel)
+| Variable | Description |
+|----------|-------------|
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis auth token |
+| `ANTHROPIC_API_KEY` | Claude API key for image analysis |
+
+### External Integrations (Optional)
+| Variable | Description |
+|----------|-------------|
+| `LINEAR_API_KEY` | Linear issue tracking |
+| `SENTRY_AUTH_TOKEN` | Sentry error monitoring |
+| `SENTRY_ORG` | Sentry organization (default: piston-labs) |
+| `NOTION_TOKEN` | Notion knowledge base |
+| `SLACK_TOKEN` | Slack team messaging |
+| `GITHUB_TOKEN` | Context clusters & repo access |
+| `GITHUB_ORG` | GitHub organization |
+
+### Local Development
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | HTTP server port | 3001 |
 | `PERSIST` | Enable file persistence | false |
 | `DATA_PATH` | Custom data file path | ./data/coord-state.json |
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis URL | - |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis token | - |
+
+> **Note:** All external integrations gracefully fall back to mock data if not configured.
 
 ## Simulation
 

@@ -175,14 +175,16 @@ export function registerContextTools(server: McpServer) {
     'vision',
     'Analyze images, screenshots, diagrams, or UI mockups using Claude vision. Useful for debugging UI issues, understanding diagrams, or processing visual content.',
     {
-      action: z.enum(['analyze', 'analyze-url']).describe('analyze=base64 image, analyze-url=fetch from URL'),
+      action: z.enum(['analyze', 'analyze-url', 'analyze-chat']).describe('analyze=base64 image, analyze-url=fetch from URL, analyze-chat=analyze image from chat message'),
       imageData: z.string().optional().describe('Base64 encoded image data (data:image/png;base64,...)'),
       imageUrl: z.string().optional().describe('URL to fetch image from'),
+      messageId: z.string().optional().describe('Chat message ID containing image (for analyze-chat)'),
       prompt: z.string().optional().describe('Custom analysis prompt'),
       agentId: z.string().describe('Your agent ID')
     },
     async (args) => {
       const { action, agentId } = args;
+      const defaultPrompt = 'Analyze this image in detail. Describe what you see, including any text, UI elements, code, diagrams, or other relevant information.';
 
       try {
         if (action === 'analyze') {
@@ -195,7 +197,7 @@ export function registerContextTools(server: McpServer) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               imageData: args.imageData,
-              prompt: args.prompt || 'Analyze this image in detail. Describe what you see, including any text, UI elements, code, diagrams, or other relevant information.'
+              prompt: args.prompt || defaultPrompt
             })
           });
 
@@ -224,12 +226,38 @@ export function registerContextTools(server: McpServer) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               imageData,
-              prompt: args.prompt || 'Analyze this image in detail. Describe what you see, including any text, UI elements, code, diagrams, or other relevant information.'
+              prompt: args.prompt || defaultPrompt
             })
           });
 
           const data = await res.json();
           return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+        }
+
+        if (action === 'analyze-chat') {
+          if (!args.messageId) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'messageId required for analyze-chat action' }) }] };
+          }
+
+          const res = await fetch(`${API_BASE}/api/analyze-image`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messageId: args.messageId, prompt: args.prompt || defaultPrompt })
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: data.error || 'Analysis failed' }) }] };
+          }
+
+          return { content: [{ type: 'text', text: JSON.stringify({
+            success: true,
+            messageId: args.messageId,
+            imageName: data.imageName,
+            analysis: data.analysis,
+            model: data.model,
+            timestamp: data.timestamp
+          }, null, 2) }] };
         }
 
         return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
@@ -506,91 +534,6 @@ export function registerContextTools(server: McpServer) {
           default:
             return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
         }
-      } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
-      }
-    }
-  );
-
-  // ============================================================================
-  // VISION TOOL - Analyze images from chat or direct upload
-  // ============================================================================
-
-  server.tool(
-    'vision',
-    'Analyze images shared in group chat. Use messageId to analyze an image from a chat message, or imageUrl to analyze from URL.',
-    {
-      action: z.enum(['analyze', 'analyze-url']).describe('analyze=analyze image from chat message by ID, analyze-url=analyze image from URL'),
-      messageId: z.string().optional().describe('Chat message ID containing the image to analyze'),
-      imageUrl: z.string().optional().describe('URL of image to analyze (for analyze-url action)'),
-      prompt: z.string().optional().describe('Custom analysis prompt (default: describe what you see)'),
-      agentId: z.string().describe('Your agent ID')
-    },
-    async (args) => {
-      const { action, messageId, imageUrl, prompt, agentId } = args;
-
-      try {
-        if (action === 'analyze') {
-          if (!messageId) {
-            return { content: [{ type: 'text', text: JSON.stringify({ error: 'messageId required for analyze action' }) }] };
-          }
-
-          const res = await fetch(`${API_BASE}/api/analyze-image`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ messageId, prompt })
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            return { content: [{ type: 'text', text: JSON.stringify({ error: data.error || 'Analysis failed' }) }] };
-          }
-
-          return { content: [{ type: 'text', text: JSON.stringify({
-            success: true,
-            messageId,
-            imageName: data.imageName,
-            analysis: data.analysis,
-            model: data.model,
-            timestamp: data.timestamp
-          }, null, 2) }] };
-        }
-
-        if (action === 'analyze-url') {
-          if (!imageUrl) {
-            return { content: [{ type: 'text', text: JSON.stringify({ error: 'imageUrl required for analyze-url action' }) }] };
-          }
-
-          // Fetch image and convert to base64
-          const imgRes = await fetch(imageUrl);
-          const arrayBuffer = await imgRes.arrayBuffer();
-          const base64 = Buffer.from(arrayBuffer).toString('base64');
-          const contentType = imgRes.headers.get('content-type') || 'image/png';
-          const imageData = `data:${contentType};base64,${base64}`;
-
-          const res = await fetch(`${API_BASE}/api/analyze-image`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageData, prompt })
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            return { content: [{ type: 'text', text: JSON.stringify({ error: data.error || 'Analysis failed' }) }] };
-          }
-
-          return { content: [{ type: 'text', text: JSON.stringify({
-            success: true,
-            imageUrl,
-            analysis: data.analysis,
-            model: data.model,
-            timestamp: data.timestamp
-          }, null, 2) }] };
-        }
-
-        return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
       } catch (error) {
         return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }

@@ -240,6 +240,105 @@
       word-wrap: break-word;
     }
 
+    /* Markdown styling for chat messages */
+    .message-text.markdown-body p { margin: 0 0 8px 0; }
+    .message-text.markdown-body p:last-child { margin-bottom: 0; }
+    .message-text.markdown-body strong { font-weight: 600; }
+    .message-text.markdown-body em { font-style: italic; }
+    .message-text.markdown-body code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 13px;
+    }
+    .message-text.markdown-body pre {
+      background: var(--bg-tertiary);
+      padding: 12px;
+      border-radius: 6px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+    .message-text.markdown-body pre code {
+      background: none;
+      padding: 0;
+    }
+    .message-text.markdown-body ul, .message-text.markdown-body ol {
+      margin: 8px 0;
+      padding-left: 20px;
+    }
+    .message-text.markdown-body li { margin: 4px 0; }
+    .message-text.markdown-body h1, .message-text.markdown-body h2, .message-text.markdown-body h3 {
+      margin: 12px 0 8px 0;
+      font-weight: 600;
+    }
+    .message-text.markdown-body h1 { font-size: 18px; }
+    .message-text.markdown-body h2 { font-size: 16px; }
+    .message-text.markdown-body h3 { font-size: 15px; }
+    .message-text.markdown-body blockquote {
+      border-left: 3px solid var(--accent);
+      padding-left: 12px;
+      margin: 8px 0;
+      color: var(--text-secondary);
+    }
+    .message-text.markdown-body a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    .message-text.markdown-body a:hover { text-decoration: underline; }
+    .message-text.markdown-body hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 12px 0;
+    }
+
+    /* Emoji reactions UI */
+    .message-reactions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .reaction-item {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 2px 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .reaction-item:hover {
+      background: var(--bg-secondary);
+      border-color: var(--accent);
+    }
+    .message-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+    .quick-reactions {
+      display: none;
+      gap: 4px;
+    }
+    .message:hover .quick-reactions {
+      display: flex;
+    }
+    .quick-reactions span {
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+      font-size: 14px;
+      opacity: 0.6;
+      transition: all 0.15s ease;
+    }
+    .quick-reactions span:hover {
+      opacity: 1;
+      background: var(--bg-tertiary);
+      transform: scale(1.2);
+    }
+
     .message-time {
       font-size: 11px;
       color: var(--text-secondary);
@@ -7036,6 +7135,8 @@
     }
 
     </style>
+    <!-- Marked.js for markdown rendering in chat -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
   <!-- Loading Screen (shown while JS initializes) -->
@@ -8925,7 +9026,7 @@
       const isOwn = m.author === HUMAN_ID;
       const isHuman = m.authorType === 'human';
       const time = new Date(m.timestamp).toLocaleTimeString();
-      
+
       let imageHtml = '';
       if (m.imageData) {
         imageHtml = `<div class="message-image" style="position: relative; display: inline-block;">
@@ -8934,17 +9035,68 @@
         </div>`;
       }
 
+      // Render existing reactions
+      let reactionsHtml = '';
+      if (m.reactions && m.reactions.length > 0) {
+        const reactionCounts = {};
+        m.reactions.forEach(r => {
+          if (!reactionCounts[r.emoji]) reactionCounts[r.emoji] = { count: 0, users: [] };
+          reactionCounts[r.emoji].count++;
+          reactionCounts[r.emoji].users.push(r.author);
+        });
+        const reactionItems = Object.entries(reactionCounts).map(([emoji, data]) =>
+          `<span class="reaction-item" title="${data.users.join(', ')}" onclick="addReaction('${m.id}', '${emoji}')">${emoji} ${data.count}</span>`
+        ).join('');
+        reactionsHtml = `<div class="message-reactions">${reactionItems}</div>`;
+      }
+
+      // Quick reaction buttons (shown on hover)
+      const quickReactions = `
+        <div class="quick-reactions">
+          <span onclick="addReaction('${m.id}', '👍')" title="Approve">👍</span>
+          <span onclick="addReaction('${m.id}', '✅')" title="Done/Confirm">✅</span>
+          <span onclick="addReaction('${m.id}', '🔄')" title="Revise/Iterate">🔄</span>
+          <span onclick="addReaction('${m.id}', '❌')" title="Reject/Stop">❌</span>
+          <span onclick="addReaction('${m.id}', '👀')" title="Looking into it">👀</span>
+          <span onclick="addReaction('${m.id}', '🚀')" title="Ship it!">🚀</span>
+        </div>
+      `;
+
       return `
         <div class="message ${isOwn ? 'own' : ''}" data-id="${m.id}">
           <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
           <div class="message-content">
             <div class="message-author">${getAgentDisplayName(m.author)}</div>
-            ${m.message ? `<div class="message-text">${escapeHtml(m.message)}</div>` : ''}
+            ${m.message ? `<div class="message-text markdown-body">${renderMarkdown(m.message)}</div>` : ''}
             ${imageHtml}
-            <div class="message-time">${time}</div>
+            ${reactionsHtml}
+            <div class="message-footer">
+              <div class="message-time">${time}</div>
+              ${quickReactions}
+            </div>
           </div>
         </div>
       `;
+    }
+
+    // Add reaction to a message
+    async function addReaction(messageId, emoji) {
+      try {
+        await fetch(API_BASE + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'react',
+            messageId: messageId,
+            emoji: emoji,
+            author: HUMAN_ID
+          })
+        });
+        // Refresh to show updated reactions
+        await fetchMessages();
+      } catch (error) {
+        console.error('Failed to add reaction:', error);
+      }
     }
 
     // Analyze an image from a chat message
@@ -9407,6 +9559,27 @@
       const div = document.createElement('div');
       div.textContent = text;
       return div.innerHTML;
+    }
+
+    // Render markdown for chat messages (with sanitization)
+    function renderMarkdown(text) {
+      if (!text) return '';
+      try {
+        // Configure marked for safe rendering
+        if (typeof marked !== 'undefined') {
+          marked.setOptions({
+            breaks: true,  // Convert \n to <br>
+            gfm: true,     // GitHub Flavored Markdown
+            headerIds: false,
+            mangle: false
+          });
+          return marked.parse(text);
+        }
+      } catch (e) {
+        console.warn('Markdown parsing failed:', e);
+      }
+      // Fallback to escaped HTML if marked.js not loaded
+      return escapeHtml(text);
     }
 
     // === ROADMAP FUNCTIONS ===
