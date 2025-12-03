@@ -10726,6 +10726,11 @@
       if (tabName === 'resources') {
         fetchResources();
       }
+
+      // Update telemetry poll rate based on whether telemetry tab is active
+      if (typeof updateTelemetryPollRate === 'function') {
+        updateTelemetryPollRate();
+      }
     }
 
     // === RESOURCES FUNCTIONS ===
@@ -10978,7 +10983,28 @@
 
     // === TELEMETRY FUNCTIONS ===
 
+    // Smart polling configuration (Samsara-inspired real-time tracking)
+    const TELEMETRY_POLL_FAST = 2000;    // 2 seconds when actively viewing telemetry
+    const TELEMETRY_POLL_SLOW = 30000;   // 30 seconds when backgrounded or on other tabs
     let telemetryRefreshInterval = null;
+    let telemetryPollRate = TELEMETRY_POLL_FAST;
+
+    // Update poll rate based on visibility and active tab
+    function updateTelemetryPollRate() {
+      const isTelemetryActive = document.querySelector('.tab.active')?.dataset?.tab === 'telemetry';
+      const isPageVisible = document.visibilityState === 'visible';
+      const newRate = (isTelemetryActive && isPageVisible) ? TELEMETRY_POLL_FAST : TELEMETRY_POLL_SLOW;
+
+      if (newRate !== telemetryPollRate && telemetryRefreshInterval) {
+        telemetryPollRate = newRate;
+        clearInterval(telemetryRefreshInterval);
+        telemetryRefreshInterval = setInterval(fetchTelemetry, telemetryPollRate);
+        console.log(`[Telemetry] Poll rate: ${newRate === TELEMETRY_POLL_FAST ? '2s (active)' : '30s (background)'}`);
+      }
+    }
+
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', updateTelemetryPollRate);
 
     async function fetchTelemetry() {
       const refreshBtn = document.getElementById('telemetryRefreshBtn');
@@ -11031,9 +11057,9 @@
         const lastUpdatedEl = document.getElementById('telemetryLastUpdated');
         if (lastUpdatedEl) lastUpdatedEl.textContent = timeStr;
 
-        // Start auto-refresh if not already running
+        // Start auto-refresh if not already running (uses smart polling rate)
         if (!telemetryRefreshInterval) {
-          telemetryRefreshInterval = setInterval(fetchTelemetry, 10000);
+          telemetryRefreshInterval = setInterval(fetchTelemetry, telemetryPollRate);
         }
       } catch (err) {
         console.error('Failed to fetch telemetry:', err);

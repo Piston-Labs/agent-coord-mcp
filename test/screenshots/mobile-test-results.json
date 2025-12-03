@@ -1,0 +1,102 @@
+[
+  {
+    "device": "iPhone 12",
+    "viewport": "390x664",
+    "canTypeInInput": true,
+    "canClickSend": true,
+    "messageSent": false,
+    "inputVisible": true,
+    "buttonVisible": true,
+    "inputPosition": {
+      "x": 12,
+      "y": 546,
+      "width": 298,
+      "height": 44
+    },
+    "buttonPosition": {
+      "x": 318,
+      "y": 546,
+      "width": 60,
+      "height": 44
+    },
+    "errors": [],
+    "cssIssues": [
+      "Container position is \"relative\" - should be sticky or fixed for mobile"
+    ]
+  },
+  {
+    "device": "iPhone 13",
+    "viewport": "390x664",
+    "canTypeInInput": true,
+    "canClickSend": true,
+    "messageSent": false,
+    "inputVisible": true,
+    "buttonVisible": true,
+    "inputPosition": {
+      "x": 12,
+      "y": 546,
+      "width": 298,
+      "height": 44
+    },
+    "buttonPosition": {
+      "x": 318,
+      "y": 546,
+      "width": 60,
+      "height": 44
+    },
+    "errors": [],
+    "cssIssues": [
+      "Container position is \"relative\" - should be sticky or fixed for mobile"
+    ]
+  },
+  {
+    "device": "iPhone 14",
+    "viewport": "390x664",
+    "canTypeInInput": true,
+    "canClickSend": true,
+    "messageSent": false,
+    "inputVisible": true,
+    "buttonVisible": true,
+    "inputPosition": {
+      "x": 12,
+      "y": 546,
+      "width": 298,
+      "height": 44
+    },
+    "buttonPosition": {
+      "x": 318,
+      "y": 546,
+      "width": 60,
+      "height": 44
+    },
+    "errors": [],
+    "cssIssues": [
+      "Container position is \"relative\" - should be sticky or fixed for mobile"
+    ]
+  },
+  {
+    "device": "iPhone 14 Pro Max",
+    "viewport": "430x740",
+    "canTypeInInput": true,
+    "canClickSend": true,
+    "messageSent": false,
+    "inputVisible": true,
+    "buttonVisible": true,
+    "inputPosition": {
+      "x": 12,
+      "y": 622,
+      "width": 338,
+      "height": 44
+    },
+    "buttonPosition": {
+      "x": 358,
+      "y": 622,
+      "width": 60,
+      "height": 44
+    },
+    "errors": [],
+    "cssIssues": [
+      "Container position is \"relative\" - should be sticky or fixed for mobile"
+    ]
+  }
+]
