@@ -86,6 +86,7 @@ interface Cycle {
 // Default team members for Piston Labs
 const DEFAULT_TEAM: TeamMember[] = [
   { id: 'tyler', name: 'Tyler Porras', type: 'human', role: 'CEO', color: '#a371f7' },
+  { id: 'david', name: 'David', type: 'human', role: 'Advisor/Investor', color: '#f0883e' },
   { id: 'ryan', name: 'Ryan Morris', type: 'human', role: 'Technical Co-Founder, Dashboard', color: '#58a6ff' },
   { id: 'tom', name: 'Tom', type: 'human', role: 'Hardware & IoT', color: '#3fb950' },
   { id: 'eli', name: 'Eli', type: 'human', role: 'Sales Engineering', color: '#d29922' },
@@ -173,18 +174,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Get team members
       if (type === 'team') {
-        let team = await redis.hgetall(TEAM_KEY);
-        if (!team || Object.keys(team).length === 0) {
-          // Initialize with default team
-          for (const member of DEFAULT_TEAM) {
+        const { sync } = req.query;
+        let team = await redis.hgetall(TEAM_KEY) || {};
+
+        // Force sync: update ALL default team members (use ?sync=true to refresh roles/colors)
+        // Normal: only add missing team members
+        let needsUpdate = false;
+        for (const member of DEFAULT_TEAM) {
+          if (sync === 'true' || !team[member.id]) {
             await redis.hset(TEAM_KEY, { [member.id]: JSON.stringify(member) });
+            team[member.id] = JSON.stringify(member);
+            needsUpdate = true;
           }
-          team = DEFAULT_TEAM.reduce((acc, m) => ({ ...acc, [m.id]: m }), {});
         }
+
         const teamList = Object.values(team).map((t: any) =>
           typeof t === 'string' ? JSON.parse(t) : t
         );
-        return res.json({ team: teamList, count: teamList.length });
+        return res.json({ team: teamList, count: teamList.length, synced: needsUpdate });
       }
 
       // Get roadmap items
