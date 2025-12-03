@@ -188,9 +188,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
         }
 
-        const teamList = Object.values(team).map((t: any) =>
-          typeof t === 'string' ? JSON.parse(t) : t
-        );
+        const teamList: TeamMember[] = [];
+        for (const [key, value] of Object.entries(team)) {
+          try {
+            const member = typeof value === 'string' ? JSON.parse(value) : value;
+            if (member && member.id && member.name) {
+              teamList.push(member);
+            }
+          } catch (e) {
+            // Corrupted entry - delete it and resync from defaults
+            console.error(`[roadmap] Corrupted team entry ${key}, removing:`, e);
+            await redis.hdel(TEAM_KEY, key);
+            // Find matching default member and re-add
+            const defaultMember = DEFAULT_TEAM.find(m => m.id === key);
+            if (defaultMember) {
+              await redis.hset(TEAM_KEY, { [key]: JSON.stringify(defaultMember) });
+              teamList.push(defaultMember);
+            }
+          }
+        }
         return res.json({ team: teamList, count: teamList.length, synced: needsUpdate });
       }
 
