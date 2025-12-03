@@ -11,7 +11,7 @@
  * Scale: For high-scale, could shard by team/workspace
  */
 
-import type { Agent, GroupMessage, Task, WebSocketMessage, Reaction } from './types';
+import type { Agent, GroupMessage, Task, WebSocketMessage, Reaction, Zone, Claim } from './types';
 
 interface CoordinatorState {
   agents: Record<string, Agent>;
@@ -76,11 +76,35 @@ export class AgentCoordinator implements DurableObject {
       )
     `);
 
+    // Zones - directory ownership
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS zones (
+        zone_id TEXT PRIMARY KEY,
+        path TEXT NOT NULL,
+        owner TEXT NOT NULL,
+        description TEXT,
+        claimed_at TEXT NOT NULL
+      )
+    `);
+
+    // Claims - task/work claims
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS claims (
+        what TEXT PRIMARY KEY,
+        by TEXT NOT NULL,
+        description TEXT,
+        since TEXT NOT NULL
+      )
+    `);
+
     // Create indexes for common queries
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp DESC)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_tasks_assignee ON tasks(assignee)`);
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_zones_owner ON zones(owner)`);
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_zones_path ON zones(path)`);
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_claims_by ON claims(by)`);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -101,6 +125,10 @@ export class AgentCoordinator implements DurableObject {
           return this.handleChat(request);
         case '/tasks':
           return this.handleTasks(request);
+        case '/zones':
+          return this.handleZones(request);
+        case '/claims':
+          return this.handleClaims(request);
         case '/work':
           return this.handleWork(request);
         case '/health':
@@ -271,6 +299,106 @@ export class AgentCoordinator implements DurableObject {
       });
 
       return Response.json({ success: true, task });
+    }
+
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  /**
+   * Handle /zones endpoint
+   */
+  private async handleZones(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (request.method === 'GET') {
+      const owner = url.searchParams.get('owner');
+      const path = url.searchParams.get('path');
+
+      if (path) {
+        // Check if a specific path is in a zone
+        const zone = this.checkZone(path);
+        return Response.json({ zone });
+      }
+
+      const zones = this.getZones(owner);
+      return Response.json({ zones });
+    }
+
+    if (request.method === 'POST') {
+      const body = await request.json() as { action: string; zoneId?: string; path?: string; owner?: string; description?: string };
+
+      switch (body.action) {
+        case 'claim': {
+          if (!body.zoneId || !body.path || !body.owner) {
+            return Response.json({ error: 'zoneId, path, and owner required' }, { status: 400 });
+          }
+          const zone = this.claimZone(body.zoneId, body.path, body.owner, body.description);
+          return Response.json({ success: true, zone });
+        }
+        case 'release': {
+          if (!body.zoneId || !body.owner) {
+            return Response.json({ error: 'zoneId and owner required' }, { status: 400 });
+          }
+          const released = this.releaseZone(body.zoneId, body.owner);
+          return Response.json({ success: released });
+        }
+        default:
+          return Response.json({ error: 'Invalid action. Use: claim, release' }, { status: 400 });
+      }
+    }
+
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  /**
+   * Handle /claims endpoint
+   */
+  private async handleClaims(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (request.method === 'GET') {
+      const what = url.searchParams.get('what');
+      const includeStale = url.searchParams.get('includeStale') === 'true';
+
+      if (what) {
+        const claim = this.checkClaim(what);
+        return Response.json({ claim });
+      }
+
+      const claims = this.listClaims(includeStale);
+      return Response.json({ claims });
+    }
+
+    if (request.method === 'POST') {
+      const body = await request.json() as { action: string; what?: string; by?: string; description?: string };
+
+      switch (body.action) {
+        case 'claim': {
+          if (!body.what || !body.by) {
+            return Response.json({ error: 'what and by required' }, { status: 400 });
+          }
+          // Check if already claimed
+          const existing = this.checkClaim(body.what);
+          if (existing && existing.by !== body.by && !existing.stale) {
+            return Response.json({
+              success: false,
+              error: `Already claimed by ${existing.by}`,
+              claim: existing
+            }, { status: 409 });
+          }
+          const claim = this.createClaim(body.what, body.by, body.description);
+          return Response.json({ success: true, claim });
+        }
+        case 'release': {
+          if (!body.what || !body.by) {
+            return Response.json({ error: 'what and by required' }, { status: 400 });
+          }
+          const released = this.releaseClaim(body.what, body.by);
+          return Response.json({ success: released });
+        }
+        default:
+          return Response.json({ error: 'Invalid action. Use: claim, release' }, { status: 400 });
+      }
     }
 
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
@@ -466,5 +594,127 @@ export class AgentCoordinator implements DurableObject {
     );
 
     return task;
+  }
+
+  // ========== Zone Operations ==========
+
+  private getZones(owner?: string | null): Zone[] {
+    let query = 'SELECT * FROM zones';
+    const params: string[] = [];
+
+    if (owner) {
+      query += ' WHERE owner = ?';
+      params.push(owner);
+    }
+
+    query += ' ORDER BY claimed_at DESC';
+
+    const rows = this.sql.exec(query, ...params).toArray();
+
+    return rows.map(row => ({
+      zoneId: row.zone_id as string,
+      path: row.path as string,
+      owner: row.owner as string,
+      description: row.description as string | undefined,
+      claimedAt: row.claimed_at as string
+    }));
+  }
+
+  private checkZone(path: string): Zone | null {
+    // Find if this path is within any claimed zone
+    const zones = this.getZones();
+    for (const zone of zones) {
+      if (path.startsWith(zone.path)) {
+        return zone;
+      }
+    }
+    return null;
+  }
+
+  private claimZone(zoneId: string, path: string, owner: string, description?: string): Zone {
+    const now = new Date().toISOString();
+
+    this.sql.exec(`
+      INSERT INTO zones (zone_id, path, owner, description, claimed_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(zone_id) DO UPDATE SET
+        path = excluded.path,
+        owner = excluded.owner,
+        description = excluded.description,
+        claimed_at = excluded.claimed_at
+    `, zoneId, path, owner, description || null, now);
+
+    return { zoneId, path, owner, description, claimedAt: now };
+  }
+
+  private releaseZone(zoneId: string, owner: string): boolean {
+    const result = this.sql.exec(`
+      DELETE FROM zones WHERE zone_id = ? AND owner = ?
+    `, zoneId, owner);
+
+    return result.rowsWritten > 0;
+  }
+
+  // ========== Claim Operations ==========
+
+  private listClaims(includeStale = false): Claim[] {
+    const rows = this.sql.exec('SELECT * FROM claims ORDER BY since DESC').toArray();
+    const now = Date.now();
+    const staleThreshold = 30 * 60 * 1000; // 30 minutes
+
+    return rows
+      .map(row => {
+        const since = row.since as string;
+        const isStale = now - new Date(since).getTime() > staleThreshold;
+        return {
+          what: row.what as string,
+          by: row.by as string,
+          description: row.description as string | undefined,
+          since,
+          stale: isStale
+        };
+      })
+      .filter(c => includeStale || !c.stale);
+  }
+
+  private checkClaim(what: string): Claim | null {
+    const rows = this.sql.exec('SELECT * FROM claims WHERE what = ?', what).toArray();
+    if (rows.length === 0) return null;
+
+    const row = rows[0];
+    const since = row.since as string;
+    const staleThreshold = 30 * 60 * 1000;
+    const isStale = Date.now() - new Date(since).getTime() > staleThreshold;
+
+    return {
+      what: row.what as string,
+      by: row.by as string,
+      description: row.description as string | undefined,
+      since,
+      stale: isStale
+    };
+  }
+
+  private createClaim(what: string, by: string, description?: string): Claim {
+    const now = new Date().toISOString();
+
+    this.sql.exec(`
+      INSERT INTO claims (what, by, description, since)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(what) DO UPDATE SET
+        by = excluded.by,
+        description = excluded.description,
+        since = excluded.since
+    `, what, by, description || null, now);
+
+    return { what, by, description, since: now, stale: false };
+  }
+
+  private releaseClaim(what: string, by: string): boolean {
+    const result = this.sql.exec(`
+      DELETE FROM claims WHERE what = ? AND by = ?
+    `, what, by);
+
+    return result.rowsWritten > 0;
   }
 }

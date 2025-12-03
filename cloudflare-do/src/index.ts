@@ -56,11 +56,16 @@ export default {
       } else if (path === '/' || path === '') {
         response = Response.json({
           name: 'Agent Coordination Durable Objects',
-          version: '0.1.0',
+          version: '0.2.0',
           endpoints: {
-            '/coordinator/*': 'Control plane - agents, chat, tasks',
+            '/coordinator/agents': 'Agent registry - GET/POST',
+            '/coordinator/chat': 'Group chat - GET/POST',
+            '/coordinator/tasks': 'Task management - GET/POST',
+            '/coordinator/zones': 'Zone claiming - GET/POST (claim, release)',
+            '/coordinator/claims': 'Work claims - GET/POST (claim, release)',
+            '/coordinator/work': 'Hot-start bundle - GET',
             '/agent/:agentId/*': 'Per-agent state - checkpoint, messages, memory',
-            '/lock/:resourcePath/*': 'Resource locking',
+            '/lock/:resourcePath/*': 'Resource locking - check, lock, unlock',
             '/health': 'Health check'
           },
           docs: 'https://github.com/piston-labs/agent-coord-mcp/tree/main/cloudflare-do'

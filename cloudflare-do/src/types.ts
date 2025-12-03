@@ -67,6 +67,22 @@ export interface WebSocketMessage {
   timestamp: string;
 }
 
+export interface Zone {
+  zoneId: string;
+  path: string;
+  owner: string;
+  description?: string;
+  claimedAt: string;
+}
+
+export interface Claim {
+  what: string;
+  by: string;
+  description?: string;
+  since: string;
+  stale: boolean;
+}
+
 export interface Env {
   COORDINATOR: DurableObjectNamespace;
   AGENT_STATE: DurableObjectNamespace;

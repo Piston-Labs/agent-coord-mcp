@@ -64,6 +64,22 @@ export interface LockInfo {
   remainingMs?: number;
 }
 
+export interface Zone {
+  zoneId: string;
+  path: string;
+  owner: string;
+  description?: string;
+  claimedAt: string;
+}
+
+export interface Claim {
+  what: string;
+  by: string;
+  description?: string;
+  since: string;
+  stale: boolean;
+}
+
 export interface WorkBundle {
   agentId: string;
   summary: {
@@ -169,6 +185,99 @@ export class DOClient {
     });
     const data = await res.json();
     return data.task;
+  }
+
+  // ========== Zones ==========
+
+  /**
+   * Get all zones or filter by owner
+   */
+  async getZones(owner?: string): Promise<Zone[]> {
+    const params = new URLSearchParams();
+    if (owner) params.set('owner', owner);
+    const res = await fetch(`${this.baseUrl}/coordinator/zones?${params}`);
+    const data = await res.json();
+    return data.zones;
+  }
+
+  /**
+   * Check if a path is within a claimed zone
+   */
+  async checkZone(path: string): Promise<Zone | null> {
+    const res = await fetch(`${this.baseUrl}/coordinator/zones?path=${encodeURIComponent(path)}`);
+    const data = await res.json();
+    return data.zone || null;
+  }
+
+  /**
+   * Claim a zone (directory ownership)
+   */
+  async claimZone(zoneId: string, path: string, owner: string, description?: string): Promise<Zone> {
+    const res = await fetch(`${this.baseUrl}/coordinator/zones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claim', zoneId, path, owner, description })
+    });
+    const data = await res.json();
+    return data.zone;
+  }
+
+  /**
+   * Release a zone
+   */
+  async releaseZone(zoneId: string, owner: string): Promise<boolean> {
+    const res = await fetch(`${this.baseUrl}/coordinator/zones`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'release', zoneId, owner })
+    });
+    const data = await res.json();
+    return data.success;
+  }
+
+  // ========== Claims ==========
+
+  /**
+   * Get all claims
+   */
+  async getClaims(includeStale = false): Promise<Claim[]> {
+    const res = await fetch(`${this.baseUrl}/coordinator/claims?includeStale=${includeStale}`);
+    const data = await res.json();
+    return data.claims;
+  }
+
+  /**
+   * Check if something is claimed
+   */
+  async checkClaim(what: string): Promise<Claim | null> {
+    const res = await fetch(`${this.baseUrl}/coordinator/claims?what=${encodeURIComponent(what)}`);
+    const data = await res.json();
+    return data.claim || null;
+  }
+
+  /**
+   * Claim something (returns error if already claimed by someone else)
+   */
+  async claim(what: string, by: string, description?: string): Promise<{ success: boolean; claim?: Claim; error?: string }> {
+    const res = await fetch(`${this.baseUrl}/coordinator/claims`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claim', what, by, description })
+    });
+    return res.json();
+  }
+
+  /**
+   * Release a claim
+   */
+  async releaseClaim(what: string, by: string): Promise<boolean> {
+    const res = await fetch(`${this.baseUrl}/coordinator/claims`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'release', what, by })
+    });
+    const data = await res.json();
+    return data.success;
   }
 
   // ========== Agent State (Per-Agent) ==========

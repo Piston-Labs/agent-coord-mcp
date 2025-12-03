@@ -1,0 +1,126 @@
+{
+  "timestamp": "2025-12-03T20:01:27.358Z",
+  "target": "http://localhost:8787",
+  "environment": "local (wrangler dev)",
+  "results": [
+    {
+      "operation": "Health Check",
+      "iterations": 100,
+      "totalMs": 227.13,
+      "avgMs": 2.27,
+      "minMs": 1.37,
+      "maxMs": 5.24,
+      "opsPerSec": 440
+    },
+    {
+      "operation": "Agent Register",
+      "iterations": 100,
+      "totalMs": 467.93,
+      "avgMs": 4.68,
+      "minMs": 3.79,
+      "maxMs": 7.55,
+      "opsPerSec": 214
+    },
+    {
+      "operation": "Get Work",
+      "iterations": 100,
+      "totalMs": 457,
+      "avgMs": 4.57,
+      "minMs": 3.67,
+      "maxMs": 10.47,
+      "opsPerSec": 219
+    },
+    {
+      "operation": "Post Chat",
+      "iterations": 100,
+      "totalMs": 443.88,
+      "avgMs": 4.44,
+      "minMs": 3.81,
+      "maxMs": 7.33,
+      "opsPerSec": 225
+    },
+    {
+      "operation": "Get Chat",
+      "iterations": 100,
+      "totalMs": 331.62,
+      "avgMs": 3.32,
+      "minMs": 2.64,
+      "maxMs": 12.88,
+      "opsPerSec": 302
+    },
+    {
+      "operation": "Create Task",
+      "iterations": 100,
+      "totalMs": 453.28,
+      "avgMs": 4.53,
+      "minMs": 3.82,
+      "maxMs": 7.95,
+      "opsPerSec": 221
+    },
+    {
+      "operation": "List Tasks",
+      "iterations": 100,
+      "totalMs": 376.77,
+      "avgMs": 3.77,
+      "minMs": 2.96,
+      "maxMs": 10.59,
+      "opsPerSec": 265
+    },
+    {
+      "operation": "Lock Check",
+      "iterations": 100,
+      "totalMs": 311.56,
+      "avgMs": 3.12,
+      "minMs": 2.53,
+      "maxMs": 7.55,
+      "opsPerSec": 321
+    },
+    {
+      "operation": "Lock Acquire",
+      "iterations": 50,
+      "totalMs": 664.7,
+      "avgMs": 13.29,
+      "minMs": 10.79,
+      "maxMs": 20.83,
+      "opsPerSec": 75
+    },
+    {
+      "operation": "Save Checkpoint",
+      "iterations": 100,
+      "totalMs": 455.01,
+      "avgMs": 4.55,
+      "minMs": 3.66,
+      "maxMs": 8.49,
+      "opsPerSec": 220
+    },
+    {
+      "operation": "Get Checkpoint",
+      "iterations": 100,
+      "totalMs": 321.72,
+      "avgMs": 3.22,
+      "minMs": 2.44,
+      "maxMs": 16.07,
+      "opsPerSec": 311
+    },
+    {
+      "operation": "Get Agent State",
+      "iterations": 100,
+      "totalMs": 291.6,
+      "avgMs": 2.92,
+      "minMs": 2.48,
+      "maxMs": 7.23,
+      "opsPerSec": 343
+    }
+  ],
+  "summary": {
+    "totalOperations": 1150,
+    "totalTimeMs": 4802,
+    "avgLatencyMs": 4.56,
+    "throughputOpsPerSec": 239
+  },
+  "notes": [
+    "Lock Acquire is slower due to creating new DO instances per resource",
+    "In production, expect slightly higher latency due to network but similar throughput",
+    "WebSocket would eliminate polling overhead for real-time updates"
+  ]
+}
