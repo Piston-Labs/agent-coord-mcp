@@ -350,4 +350,75 @@ export function registerCoreTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // PROFILE TOOL - Agent capability registration and matching
+  // ============================================================================
+
+  server.tool(
+    'profile',
+    'Register your capabilities and find agents who can help. Enables agent discovery by offers/needs matching.',
+    {
+      action: z.enum(['register', 'get', 'list', 'find-match']).describe('register=update profile, get=your profile, list=all profiles, find-match=find helpers'),
+      agentId: z.string().describe('Your agent ID'),
+      offers: z.array(z.string()).optional().describe('What you can help with (e.g., ["code review", "testing", "frontend"])'),
+      needs: z.array(z.string()).optional().describe('What you need help with (e.g., ["database", "deployment"])'),
+      capabilities: z.array(z.string()).optional().describe('Technical capabilities (e.g., ["canSearch", "canBrowse", "canRunCode"])'),
+      lookingFor: z.array(z.string()).optional().describe('For find-match: what you are looking for help with'),
+      ide: z.string().optional().describe('Your IDE (vscode, cursor, windsurf, etc.)'),
+      os: z.string().optional().describe('Your OS (linux, macos, windows)')
+    },
+    async (args) => {
+      const { action, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'register': {
+            const res = await fetch(`${API_BASE}/api/agent-profiles`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                agentId,
+                offers: args.offers,
+                needs: args.needs,
+                capabilities: args.capabilities,
+                ide: args.ide,
+                os: args.os
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            const res = await fetch(`${API_BASE}/api/agent-profiles?agentId=${encodeURIComponent(agentId)}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'list': {
+            const res = await fetch(`${API_BASE}/api/agent-profiles`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'find-match': {
+            if (!args.lookingFor || args.lookingFor.length === 0) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'lookingFor array required' }) }] };
+            }
+            const res = await fetch(
+              `${API_BASE}/api/agent-profiles?findMatch=true&lookingFor=${encodeURIComponent(args.lookingFor.join(','))}`
+            );
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
