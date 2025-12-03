@@ -620,6 +620,176 @@ async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<st
   }
 }
 
+// ============================================================================
+// S3 Direct Telemetry Parsing (AWS IoT Core → S3 raw data)
+// Parses Teltonika codec fields from raw S3 JSON files
+// ============================================================================
+
+// Teltonika AVL ID to field name mapping (from FMC130 protocol docs)
+const TELTONIKA_FIELDS: Record<string, string> = {
+  '66': 'externalVoltage',     // External voltage (mV)
+  '67': 'batteryVoltage',      // Internal battery voltage (mV)
+  '69': 'ignition',            // Ignition on/off
+  '181': 'gpsSignal',          // GNSS PDOP
+  '182': 'gpsHDOP',            // GNSS HDOP
+  '200': 'movement',           // Movement sensor
+  '21': 'gsmSignal',           // GSM signal strength
+  '239': 'ignitionState',      // Ignition state
+  '240': 'movement2',          // Movement (DIN1)
+  '241': 'operatorCode',       // GSM operator code
+  '24': 'speedKmh',            // Speed from GPS
+  '16': 'odometer',            // Total odometer (m)
+};
+
+interface RawTeltonikaRecord {
+  state: {
+    reported: {
+      ts: number;        // Timestamp (epoch ms)
+      pr?: number;       // Priority
+      latlng: string;    // "lat,lng"
+      alt?: number;      // Altitude (m)
+      ang?: number;      // Heading/angle (degrees)
+      sat?: number;      // Satellites
+      sp?: number;       // Speed (km/h)
+      evt?: number;      // Event ID
+      [key: string]: any; // AVL data fields (66, 67, 69, etc.)
+    };
+  };
+  topic?: string;
+}
+
+// Parse raw S3 Teltonika record into TelemetryData format
+function parseS3TeltonikaRecord(raw: RawTeltonikaRecord, imei: string): Partial<TelemetryData> | null {
+  try {
+    const reported = raw.state?.reported;
+    if (!reported) return null;
+
+    // Parse lat/lng from "lat,lng" format
+    const [latStr, lngStr] = (reported.latlng || '0,0').split(',');
+    const lat = parseFloat(latStr) || 0;
+    const lng = parseFloat(lngStr) || 0;
+
+    // Parse voltages from mV to V
+    const externalVoltageMv = reported['66'] || 0;
+    const internalVoltageMv = reported['67'] || reported['66'] || 0; // Fallback to external
+    const externalVoltage = externalVoltageMv / 1000;
+    const batteryVoltage = internalVoltageMv / 1000;
+
+    // Parse ignition (69 = 1 means on)
+    const ignition = reported['69'] === 1 || reported.ignition === 1;
+
+    // Parse movement
+    const movement = reported['200'] === 1 || (reported.sp || 0) > 0;
+
+    // Parse GSM signal strength (0-5 scale typically)
+    const gsmSignal = reported['21'] || 3;
+
+    // Parse odometer from meters to km
+    const odometerM = reported['16'] || 0;
+    const odometerKm = odometerM / 1000;
+
+    // Timestamp
+    const timestamp = reported.ts
+      ? new Date(reported.ts).toISOString()
+      : new Date().toISOString();
+
+    return {
+      imei,
+      metrics: {
+        batteryVoltage: batteryVoltage > 0 ? batteryVoltage : externalVoltage,
+        externalVoltage,
+        speed: reported.sp || 0,
+        odometer: odometerKm,
+      },
+      position: {
+        lat,
+        lng,
+        altitude: reported.alt,
+        heading: reported.ang,
+        satellites: reported.sat || 0,
+      },
+      status: {
+        ignition,
+        movement,
+        gpsValid: lat !== 0 && lng !== 0 && (reported.sat || 0) >= 3,
+        charging: externalVoltage > 13.5,
+      },
+      connectivity: {
+        signalStrength: Math.min(5, Math.max(0, Math.round(gsmSignal / 6))), // Normalize to 0-5
+        lastSeen: timestamp,
+      },
+      timestamp,
+    };
+  } catch (err) {
+    console.error(`[telemetry] Failed to parse S3 record for ${imei}:`, err);
+    return null;
+  }
+}
+
+// Fetch and parse the most recent S3 telemetry for a device
+async function fetchLatestS3Telemetry(imei: string): Promise<Partial<TelemetryData> | null> {
+  if (!s3) {
+    console.log(`[telemetry] S3 not configured, skipping S3 fetch for ${imei}`);
+    return null;
+  }
+
+  try {
+    // Get list of recent files
+    const files = await getS3TelemetryFiles(imei, 1);
+    if (files.length === 0) {
+      console.log(`[telemetry] No S3 files found for ${imei}`);
+      return null;
+    }
+
+    // Fetch the most recent file
+    const latestKey = files[0];
+    const command = new GetObjectCommand({
+      Bucket: S3_BUCKET,
+      Key: latestKey,
+    });
+
+    const response = await s3.send(command);
+    const bodyStr = await response.Body?.transformToString();
+    if (!bodyStr) return null;
+
+    const rawRecord: RawTeltonikaRecord = JSON.parse(bodyStr);
+    const parsed = parseS3TeltonikaRecord(rawRecord, imei);
+
+    if (parsed) {
+      console.log(`[telemetry] Fetched S3 data for ${imei}: lat=${parsed.position?.lat}, lng=${parsed.position?.lng}, speed=${parsed.metrics?.speed}`);
+    }
+
+    return parsed;
+  } catch (err) {
+    console.error(`[telemetry] S3 fetch failed for ${imei}:`, err);
+    return null;
+  }
+}
+
+// Sync all devices from S3 to Redis (for dashboard real-time updates)
+async function syncAllDevicesFromS3(): Promise<Map<string, Partial<TelemetryData>>> {
+  const results = new Map<string, Partial<TelemetryData>>();
+
+  if (!s3) return results;
+
+  console.log('[telemetry] Syncing all devices from S3...');
+
+  // Fetch in parallel for all known devices
+  const syncPromises = Object.keys(DEVICE_PROFILES).map(async (imei) => {
+    const data = await fetchLatestS3Telemetry(imei);
+    if (data) {
+      results.set(imei, data);
+      // Cache to Redis for fast subsequent access
+      await redis.hset(TELEMETRY_KEY, { [imei]: JSON.stringify(data) });
+    }
+  });
+
+  await Promise.all(syncPromises);
+  console.log(`[telemetry] Synced ${results.size} devices from S3`);
+
+  return results;
+}
+
 // Store historical data point
 async function storeHistoryPoint(imei: string, telemetry: TelemetryData) {
   const historyKey = `${TELEMETRY_HISTORY_KEY}:${imei}`;
@@ -661,22 +831,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Get specific device
       if (imei && typeof imei === 'string') {
-        // Try Supabase first for real-time data (REST API - ideal for serverless)
+        // Data source priority: S3 (freshest) > Supabase > Redis (cache)
         let storedData: Partial<TelemetryData> | undefined;
+        let dataSource = 'none';
 
-        if (hasSupabase) {
+        // Try S3 first for real-time AWS IoT data
+        if (s3) {
+          const s3Data = await fetchLatestS3Telemetry(imei);
+          if (s3Data) {
+            storedData = s3Data;
+            dataSource = 's3';
+            // Cache in Redis for faster subsequent access
+            await redis.hset(TELEMETRY_KEY, { [imei]: JSON.stringify(s3Data) });
+          }
+        }
+
+        // Fall back to Supabase if no S3 data
+        if (!storedData && hasSupabase) {
           const supabaseData = await querySupabaseTelemetry(imei);
           if (supabaseData) {
             storedData = supabaseData;
-            // Cache in Redis for faster subsequent access
+            dataSource = 'supabase';
             await redis.hset(TELEMETRY_KEY, { [imei]: JSON.stringify(supabaseData) });
           }
         }
 
-        // Fall back to Redis if no Supabase data
+        // Fall back to Redis cache if no S3/Supabase data
         if (!storedData) {
           const stored = await redis.hget(TELEMETRY_KEY, imei);
           storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
+          if (storedData) dataSource = 'redis';
         }
 
         const telemetry = generateTelemetry(imei, storedData);
@@ -684,7 +868,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const response: any = {
           telemetry,
-          source: hasSupabase && storedData ? 'supabase' : 'redis'
+          source: dataSource,
+          s3Enabled: !!s3,
+          supabaseEnabled: !!hasSupabase
         };
 
         if (history === 'true') {
@@ -700,8 +886,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Get all devices
-      // Try Supabase first for fresh data (REST API - serverless friendly)
+      // Data source priority: S3 (freshest) > Supabase > Redis (cache)
+      let s3Telemetry: Map<string, Partial<TelemetryData>> = new Map();
       let dbTelemetry: Map<string, Partial<TelemetryData>> = new Map();
+
+      // Try S3 first for real-time AWS IoT data (direct from devices)
+      if (s3) {
+        s3Telemetry = await syncAllDevicesFromS3();
+      }
+
+      // Fill gaps with Supabase data
       if (hasSupabase) {
         dbTelemetry = await queryAllSupabaseTelemetry();
       }
@@ -709,17 +903,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const storedTelemetry = await redis.hgetall(TELEMETRY_KEY) || {};
       const allTelemetry: TelemetryData[] = [];
       const allAlerts: TelemetryAlert[] = [];
+      let s3Count = 0, supabaseCount = 0, redisCount = 0;
 
       for (const deviceImei of Object.keys(DEVICE_PROFILES)) {
-        // Prefer Supabase data, fall back to Redis
-        let storedData: Partial<TelemetryData> | undefined = dbTelemetry.get(deviceImei);
+        // Priority: S3 > Supabase > Redis
+        let storedData: Partial<TelemetryData> | undefined = s3Telemetry.get(deviceImei);
 
-        if (!storedData) {
-          const stored = storedTelemetry[deviceImei];
-          storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
+        if (storedData) {
+          s3Count++;
         } else {
-          // Cache Supabase data in Redis
-          await redis.hset(TELEMETRY_KEY, { [deviceImei]: JSON.stringify(storedData) });
+          storedData = dbTelemetry.get(deviceImei);
+          if (storedData) {
+            supabaseCount++;
+            await redis.hset(TELEMETRY_KEY, { [deviceImei]: JSON.stringify(storedData) });
+          } else {
+            const stored = storedTelemetry[deviceImei];
+            storedData = stored ? (typeof stored === 'string' ? JSON.parse(stored) : stored) : undefined;
+            if (storedData) redisCount++;
+          }
         }
 
         const telemetry = generateTelemetry(deviceImei, storedData);
@@ -748,6 +949,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const warningDevices = allTelemetry.filter(t => t.health.status === 'warning').length;
       const criticalDevices = allTelemetry.filter(t => t.health.status === 'critical').length;
 
+      // Determine primary data source for status display
+      const primarySource = s3Count > 0
+        ? 'Piston Labs Teltonika Fleet (AWS S3 - Live)'
+        : (supabaseCount > 0
+          ? 'Piston Labs Teltonika Fleet (Supabase - Live)'
+          : 'Piston Labs Teltonika Fleet (Redis Cache)');
+
       const response: any = {
         timestamp: new Date().toISOString(),
         fleet: {
@@ -768,9 +976,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         },
         devices: allTelemetry.sort((a, b) => a.deviceName.localeCompare(b.deviceName)),
         thresholds: THRESHOLDS,
-        source: hasSupabase && dbTelemetry.size > 0
-          ? 'Piston Labs Teltonika Fleet (Supabase - Live)'
-          : 'Piston Labs Teltonika Fleet (Redis Cache)',
+        source: primarySource,
+        dataSources: {
+          s3: { enabled: !!s3, count: s3Count, bucket: S3_BUCKET },
+          supabase: { enabled: !!hasSupabase, count: supabaseCount },
+          redis: { enabled: true, count: redisCount }
+        },
+        s3Enabled: !!s3,
         supabaseEnabled: !!hasSupabase,
         supabaseUrl: SUPABASE_URL ? 'set' : 'missing',
         supabaseKey: SUPABASE_KEY ? 'set' : 'missing'
