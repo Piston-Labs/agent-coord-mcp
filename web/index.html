@@ -13664,13 +13664,95 @@
     async function handleDrop(e, newStatus) {
       e.preventDefault();
       e.currentTarget.classList.remove('drag-over');
-      
+
       const itemId = e.dataTransfer.getData('text/plain') || draggedItemId;
       if (!itemId) return;
-      
+
       await moveRoadmapItem(itemId, newStatus);
     }
-    
+
+    // Keyboard navigation for roadmap items (Linear-style J/K navigation)
+    let selectedRoadmapItem = null;
+
+    function handleRoadmapKeyNav(e) {
+      const items = Array.from(document.querySelectorAll('.roadmap-item'));
+      if (items.length === 0) return;
+
+      const currentIdx = selectedRoadmapItem ? items.indexOf(selectedRoadmapItem) : -1;
+
+      switch(e.key.toLowerCase()) {
+        case 'j': // Next item
+          e.preventDefault();
+          selectRoadmapItem(items[Math.min(currentIdx + 1, items.length - 1)]);
+          break;
+        case 'k': // Previous item
+          e.preventDefault();
+          if (currentIdx > 0) {
+            selectRoadmapItem(items[currentIdx - 1]);
+          } else if (currentIdx === -1 && items.length > 0) {
+            selectRoadmapItem(items[0]);
+          }
+          break;
+        case 'enter': // Open item details
+          if (selectedRoadmapItem) {
+            e.preventDefault();
+            const itemId = selectedRoadmapItem.dataset.itemId;
+            showItemDetails(itemId);
+          }
+          break;
+        case 'escape': // Deselect
+          e.preventDefault();
+          deselectRoadmapItem();
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          selectRoadmapItem(items[Math.min(currentIdx + 1, items.length - 1)]);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          if (currentIdx > 0) {
+            selectRoadmapItem(items[currentIdx - 1]);
+          } else if (currentIdx === -1 && items.length > 0) {
+            selectRoadmapItem(items[0]);
+          }
+          break;
+      }
+    }
+
+    function selectRoadmapItem(item) {
+      if (!item) return;
+
+      // Deselect previous
+      if (selectedRoadmapItem) {
+        selectedRoadmapItem.classList.remove('selected');
+      }
+
+      // Select new
+      selectedRoadmapItem = item;
+      item.classList.add('selected');
+
+      // Scroll into view
+      item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function deselectRoadmapItem() {
+      if (selectedRoadmapItem) {
+        selectedRoadmapItem.classList.remove('selected');
+        selectedRoadmapItem = null;
+      }
+    }
+
+    // Click to select roadmap items
+    document.addEventListener('click', (e) => {
+      const item = e.target.closest('.roadmap-item');
+      if (item) {
+        selectRoadmapItem(item);
+      } else if (e.target.closest('#roadmapView') && !e.target.closest('.roadmap-item')) {
+        // Clicked in roadmap but not on an item - deselect
+        deselectRoadmapItem();
+      }
+    });
+
     // Initialize drag-drop on columns after DOM ready
     function initDragDrop() {
       const columns = document.querySelectorAll('.roadmap-column');
