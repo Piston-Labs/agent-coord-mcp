@@ -9962,7 +9962,9 @@
           fetchAgents().catch(e => console.error('fetchAgents failed:', e)),
           fetchMessages().catch(e => console.error('fetchMessages failed:', e)),
           fetchContext().catch(e => console.error('fetchContext failed:', e)),
-          fetchMyTasks().catch(e => console.error('fetchMyTasks failed:', e))
+          fetchMyTasks().catch(e => console.error('fetchMyTasks failed:', e)),
+          fetchCycles().catch(e => console.error('fetchCycles failed:', e)),
+          fetchTeam().catch(e => console.error('fetchTeam failed:', e))
         ]);
         console.log('Init fetch complete');
       } catch (e) {
