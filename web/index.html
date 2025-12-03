@@ -3606,6 +3606,16 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 
+    .roadmap-item.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0, 0, 0, 0.15);
+      outline: none;
+    }
+
+    .roadmap-item.selected .roadmap-item-actions {
+      opacity: 1;
+    }
+
     .roadmap-item::before {
       content: '';
       position: absolute;
@@ -5288,6 +5298,7 @@
         display: block !important;
         height: calc(100vh - 53px - 64px - env(safe-area-inset-bottom, 0)) !important;
         overflow: hidden;
+        position: relative !important;
       }
 
       .panel {
@@ -5326,8 +5337,8 @@
 
       #chatView .chat-input {
         flex: 0 0 auto !important;
-        position: sticky !important;
-        bottom: 0 !important;
+        position: relative !important;
+        bottom: auto !important;
       }
 
       /* Header adjustments for mobile */
@@ -9498,15 +9509,36 @@
           }
         }
 
-        // Number keys for tabs (without modifier)
-        if (e.key >= '1' && e.key <= '3' && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          const tabs = ['chat', 'roadmap', 'telemetry', 'metrics', 'messages'];
-          const idx = parseInt(e.key) - 1;
-          if (tabs[idx]) switchTab(tabs[idx]);
+        // Number keys for tabs (without modifier) - only when no roadmap item selected
+        if (e.key >= '1' && e.key <= '5' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          const selectedItem = document.querySelector('.roadmap-item.selected');
+          const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
+
+          // If on roadmap tab with selected item, use numbers for status change
+          if (activeTab === 'roadmap' && selectedItem) {
+            const statuses = ['backlog', 'in-progress', 'review', 'done'];
+            const statusIdx = parseInt(e.key) - 1;
+            if (statusIdx < statuses.length) {
+              e.preventDefault();
+              const itemId = selectedItem.dataset.itemId;
+              moveRoadmapItem(itemId, statuses[statusIdx]);
+            }
+          } else {
+            // Otherwise use for tab switching
+            const tabs = ['chat', 'roadmap', 'telemetry', 'metrics', 'messages'];
+            const idx = parseInt(e.key) - 1;
+            if (tabs[idx]) switchTab(tabs[idx]);
+          }
+        }
+
+        // Roadmap keyboard navigation (J/K/Enter/Escape) - Linear-style
+        const activeTab = document.querySelector('.tab.active')?.dataset?.tab;
+        if (activeTab === 'roadmap' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          handleRoadmapKeyNav(e);
         }
       });
 
-      console.log('Keyboard shortcuts: Ctrl+K=focus, Ctrl+T=task, Ctrl+L=claim, 1-3=tabs');
+      console.log('Keyboard shortcuts: Ctrl+K=focus, Ctrl+T=task, Ctrl+L=claim, 1-5=tabs, J/K=nav items, Enter=open, 1-4=status');
     }
 
     async function poll() {
