@@ -57,8 +57,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       typeof a === 'string' ? JSON.parse(a) : a
     );
 
-    // Online agents (seen in last 10 minutes)
-    const onlineThreshold = Date.now() - 10 * 60 * 1000;
+    // Online agents - use same threshold as api/agents.ts (5 minutes = offline)
+    // Agents active within last 30 minutes are shown in listing, but only last 5 min are truly "online"
+    const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;  // Must match api/agents.ts
+    const onlineThreshold = Date.now() - OFFLINE_THRESHOLD_MS;
     const onlineAgents = agents.filter((a: any) =>
       new Date(a.lastSeen).getTime() > onlineThreshold
     );

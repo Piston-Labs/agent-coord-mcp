@@ -9,10 +9,12 @@ const redis = new Redis({
 const AGENTS_KEY = 'agent-coord:active-agents';
 const MESSAGES_KEY = 'agent-coord:messages';
 const AGENT_STATUS_KEY = 'agent-coord:agent-presence';  // Track online/offline status
+const OFFLINE_NOTIFIED_KEY = 'agent-coord:offline-notified';  // Track offline notifications to prevent duplicates
 
 // Heartbeat configuration (inspired by contextOS)
-const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;  // 5 minutes = considered offline
-const ACTIVE_THRESHOLD_MS = 30 * 60 * 1000;  // 30 minutes = stale (for listing)
+// IMPORTANT: These are the authoritative thresholds. api/digest.ts should use the same values.
+const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;  // 5 minutes = considered offline (triggers notification)
+const ACTIVE_THRESHOLD_MS = 30 * 60 * 1000;  // 30 minutes = stale (removed from active listing)
 
 // Post system message to chat
 async function postSystemMessage(message: string) {
@@ -61,15 +63,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const now = Date.now();
-      const offlineThreshold = now - OFFLINE_THRESHOLD_MS;  // 7 min for offline detection
+      const offlineThreshold = now - OFFLINE_THRESHOLD_MS;  // 5 min for offline detection
       const activeThreshold = now - ACTIVE_THRESHOLD_MS;    // 30 min for listing
       const activeAgents: any[] = [];
       const offlineAgents: any[] = [];
 
-      // Get presence tracking data
+      // Get presence tracking data and offline notification timestamps
       let presenceData: Record<string, unknown> = {};
+      let offlineNotifiedData: Record<string, unknown> = {};
       try {
-        presenceData = await redis.hgetall(AGENT_STATUS_KEY) || {};
+        [presenceData, offlineNotifiedData] = await Promise.all([
+          redis.hgetall(AGENT_STATUS_KEY) || {},
+          redis.hgetall(OFFLINE_NOTIFIED_KEY) || {}
+        ]);
+        presenceData = presenceData || {};
+        offlineNotifiedData = offlineNotifiedData || {};
       } catch {
         // Ignore errors for presence tracking
       }
@@ -80,12 +88,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           if (agent && agent.lastSeen) {
             const lastSeen = new Date(agent.lastSeen).getTime();
             const wasOnline = presenceData[agent.id] === 'online';
+            const lastNotified = offlineNotifiedData[agent.id] ? parseInt(offlineNotifiedData[agent.id] as string) : 0;
 
             // Check if agent just went offline (was online, now past threshold)
-            if (wasOnline && lastSeen < offlineThreshold) {
-              // Post offline notification
+            // Also prevent duplicate notifications by checking if we already notified within the threshold
+            if (wasOnline && lastSeen < offlineThreshold && now - lastNotified > OFFLINE_THRESHOLD_MS) {
+              // Post offline notification and record the timestamp to prevent duplicates
               await postSystemMessage(`[agent-offline] 👋 **${agent.id}** went offline (last seen: ${agent.lastSeen})`);
-              // Update presence tracking
+              await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
+              await redis.hset(OFFLINE_NOTIFIED_KEY, { [agent.id]: now.toString() });
+            } else if (wasOnline && lastSeen < offlineThreshold) {
+              // Just update presence without notification (already notified recently)
               await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
             }
 
