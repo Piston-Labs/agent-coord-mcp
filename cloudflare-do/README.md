@@ -171,10 +171,53 @@ npm run deploy
 | WebSocket | N/A (polling) | Included |
 | Hibernation | N/A | Free when idle |
 
+## TypeScript Client
+
+A fully-typed client is included for easy integration:
+
+```typescript
+import { DOClient } from './src/client';
+
+const client = new DOClient('https://agent-coord-do.workers.dev');
+
+// Hot-start (get everything at once)
+const work = await client.work('my-agent');
+
+// Register agent
+await client.registerAgent('my-agent', {
+  status: 'active',
+  workingOn: 'Building features'
+});
+
+// Send chat message
+await client.sendChat('my-agent', 'Hello team!');
+
+// Resource locking
+await client.acquireLock('src/file.ts', 'my-agent', {
+  reason: 'Implementing feature',
+  ttlMs: 3600000 // 1 hour
+});
+
+// Save checkpoint
+await client.saveCheckpoint('my-agent', {
+  accomplishments: ['Built feature X'],
+  pendingWork: ['Test feature X']
+});
+
+// WebSocket real-time
+await client.connectWebSocket('my-agent');
+client.onMessage('chat', (msg) => console.log('New message:', msg));
+```
+
+See `examples/` for full demos:
+- `basic-usage.ts` - All client methods
+- `websocket-realtime.ts` - Real-time updates
+
 ## Next Steps
 
+- [x] Create MCP tool adapter for DO endpoints
+- [x] Add example usage documentation
 - [ ] Deploy to Cloudflare staging
-- [ ] Create MCP tool adapter for DO endpoints
 - [ ] Benchmark performance vs Redis
 - [ ] Implement zone claiming in DOs
 - [ ] Add handoff support
