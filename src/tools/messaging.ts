@@ -325,4 +325,74 @@ export function registerMessagingTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // KUDOS TOOL - Peer recognition system
+  // ============================================================================
+
+  server.tool(
+    'kudos',
+    'Give and track peer recognition kudos between agents and team members. Celebrate great work and build team morale.',
+    {
+      action: z.enum(['give', 'get', 'leaderboard', 'recent']).describe('give=send kudos, get=agent stats, leaderboard=top contributors, recent=activity feed'),
+      agentId: z.string().optional().describe('Your agent ID (for give/get)'),
+      to: z.string().optional().describe('Recipient agent/user ID (for give)'),
+      reason: z.string().optional().describe('Why are you giving kudos? (for give)'),
+      emoji: z.string().optional().describe('Emoji to use (default: ⭐)'),
+      limit: z.number().optional().describe('Max results for leaderboard/recent (default: 10)')
+    },
+    async (args) => {
+      const { action } = args;
+
+      try {
+        switch (action) {
+          case 'give': {
+            if (!args.agentId || !args.to) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'agentId (from) and to are required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/kudos`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                from: args.agentId,
+                to: args.to,
+                reason: args.reason || 'Great work!',
+                emoji: args.emoji || '⭐'
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'get': {
+            if (!args.agentId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'agentId required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/kudos?agentId=${encodeURIComponent(args.agentId)}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'leaderboard': {
+            const limit = args.limit || 10;
+            const res = await fetch(`${API_BASE}/api/kudos?leaderboard=true&limit=${limit}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'recent': {
+            const limit = args.limit || 20;
+            const res = await fetch(`${API_BASE}/api/kudos?recent=true&limit=${limit}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
