@@ -63,6 +63,7 @@ export default {
             '/coordinator/tasks': 'Task management - GET/POST',
             '/coordinator/zones': 'Zone claiming - GET/POST (claim, release)',
             '/coordinator/claims': 'Work claims - GET/POST (claim, release)',
+            '/coordinator/handoffs': 'Work handoffs - GET/POST (create, claim, complete)',
             '/coordinator/work': 'Hot-start bundle - GET',
             '/agent/:agentId/*': 'Per-agent state - checkpoint, messages, memory',
             '/lock/:resourcePath/*': 'Resource locking - check, lock, unlock',

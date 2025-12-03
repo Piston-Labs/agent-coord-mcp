@@ -80,6 +80,23 @@ export interface Claim {
   stale: boolean;
 }
 
+export interface Handoff {
+  id: string;
+  fromAgent: string;
+  toAgent?: string;
+  title: string;
+  context: string;
+  code?: string;
+  filePath?: string;
+  nextSteps: string[];
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'claimed' | 'completed';
+  claimedBy?: string;
+  createdAt: string;
+  claimedAt?: string;
+  completedAt?: string;
+}
+
 export interface WorkBundle {
   agentId: string;
   summary: {
@@ -278,6 +295,76 @@ export class DOClient {
     });
     const data = await res.json();
     return data.success;
+  }
+
+  // ========== Handoffs ==========
+
+  /**
+   * Get all handoffs with optional filters
+   */
+  async getHandoffs(filters?: { toAgent?: string; fromAgent?: string; status?: string }): Promise<Handoff[]> {
+    const params = new URLSearchParams();
+    if (filters?.toAgent) params.set('toAgent', filters.toAgent);
+    if (filters?.fromAgent) params.set('fromAgent', filters.fromAgent);
+    if (filters?.status) params.set('status', filters.status);
+    const res = await fetch(`${this.baseUrl}/coordinator/handoffs?${params}`);
+    const data = await res.json();
+    return data.handoffs;
+  }
+
+  /**
+   * Get a specific handoff by ID
+   */
+  async getHandoff(id: string): Promise<Handoff | null> {
+    const res = await fetch(`${this.baseUrl}/coordinator/handoffs?id=${encodeURIComponent(id)}`);
+    const data = await res.json();
+    return data.handoff || null;
+  }
+
+  /**
+   * Create a new handoff
+   */
+  async createHandoff(handoff: {
+    fromAgent: string;
+    toAgent?: string;
+    title: string;
+    context: string;
+    code?: string;
+    filePath?: string;
+    nextSteps?: string[];
+    priority?: Handoff['priority'];
+  }): Promise<Handoff> {
+    const res = await fetch(`${this.baseUrl}/coordinator/handoffs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'create', ...handoff })
+    });
+    const data = await res.json();
+    return data.handoff;
+  }
+
+  /**
+   * Claim a handoff
+   */
+  async claimHandoff(handoffId: string, agentId: string): Promise<{ success: boolean; handoff?: Handoff; error?: string }> {
+    const res = await fetch(`${this.baseUrl}/coordinator/handoffs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'claim', handoffId, agentId })
+    });
+    return res.json();
+  }
+
+  /**
+   * Complete a handoff
+   */
+  async completeHandoff(handoffId: string, agentId: string): Promise<{ success: boolean; handoff?: Handoff; error?: string }> {
+    const res = await fetch(`${this.baseUrl}/coordinator/handoffs`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'complete', handoffId, agentId })
+    });
+    return res.json();
   }
 
   // ========== Agent State (Per-Agent) ==========

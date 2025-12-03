@@ -11,7 +11,7 @@
  * Scale: For high-scale, could shard by team/workspace
  */
 
-import type { Agent, GroupMessage, Task, WebSocketMessage, Reaction, Zone, Claim } from './types';
+import type { Agent, GroupMessage, Task, WebSocketMessage, Reaction, Zone, Claim, Handoff } from './types';
 
 interface CoordinatorState {
   agents: Record<string, Agent>;
@@ -97,6 +97,26 @@ export class AgentCoordinator implements DurableObject {
       )
     `);
 
+    // Handoffs - work transfers between agents
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS handoffs (
+        id TEXT PRIMARY KEY,
+        from_agent TEXT NOT NULL,
+        to_agent TEXT,
+        title TEXT NOT NULL,
+        context TEXT NOT NULL,
+        code TEXT,
+        file_path TEXT,
+        next_steps TEXT DEFAULT '[]',
+        priority TEXT DEFAULT 'medium',
+        status TEXT DEFAULT 'pending',
+        claimed_by TEXT,
+        created_at TEXT NOT NULL,
+        claimed_at TEXT,
+        completed_at TEXT
+      )
+    `);
+
     // Create indexes for common queries
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(status)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_messages_timestamp ON messages(timestamp DESC)`);
@@ -105,6 +125,8 @@ export class AgentCoordinator implements DurableObject {
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_zones_owner ON zones(owner)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_zones_path ON zones(path)`);
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_claims_by ON claims(by)`);
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_handoffs_status ON handoffs(status)`);
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_handoffs_to_agent ON handoffs(to_agent)`);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -129,6 +151,8 @@ export class AgentCoordinator implements DurableObject {
           return this.handleZones(request);
         case '/claims':
           return this.handleClaims(request);
+        case '/handoffs':
+          return this.handleHandoffs(request);
         case '/work':
           return this.handleWork(request);
         case '/health':
@@ -716,5 +740,237 @@ export class AgentCoordinator implements DurableObject {
     `, what, by);
 
     return result.rowsWritten > 0;
+  }
+
+  // ========== Handoff Operations ==========
+
+  /**
+   * Handle /handoffs endpoint
+   */
+  private async handleHandoffs(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+
+    if (request.method === 'GET') {
+      const id = url.searchParams.get('id');
+      const toAgent = url.searchParams.get('toAgent');
+      const fromAgent = url.searchParams.get('fromAgent');
+      const status = url.searchParams.get('status');
+
+      if (id) {
+        const handoff = this.getHandoff(id);
+        return Response.json({ handoff });
+      }
+
+      const handoffs = this.listHandoffs({ toAgent, fromAgent, status });
+      return Response.json({ handoffs });
+    }
+
+    if (request.method === 'POST') {
+      const body = await request.json() as {
+        action?: string;
+        fromAgent?: string;
+        toAgent?: string;
+        title?: string;
+        context?: string;
+        code?: string;
+        filePath?: string;
+        nextSteps?: string[];
+        priority?: Handoff['priority'];
+        handoffId?: string;
+        agentId?: string;
+      };
+
+      // If no action, assume create
+      const action = body.action || 'create';
+
+      switch (action) {
+        case 'create': {
+          if (!body.fromAgent || !body.title || !body.context) {
+            return Response.json({ error: 'fromAgent, title, and context required' }, { status: 400 });
+          }
+          const handoff = this.createHandoff({
+            fromAgent: body.fromAgent,
+            toAgent: body.toAgent,
+            title: body.title,
+            context: body.context,
+            code: body.code,
+            filePath: body.filePath,
+            nextSteps: body.nextSteps || [],
+            priority: body.priority || 'medium'
+          });
+
+          // Broadcast handoff creation
+          this.broadcast({
+            type: 'task-update',
+            payload: { action: 'handoff-created', handoff },
+            timestamp: new Date().toISOString()
+          });
+
+          return Response.json({ success: true, handoff });
+        }
+
+        case 'claim': {
+          if (!body.handoffId || !body.agentId) {
+            return Response.json({ error: 'handoffId and agentId required' }, { status: 400 });
+          }
+          const result = this.claimHandoff(body.handoffId, body.agentId);
+          if ('error' in result) {
+            return Response.json({ success: false, error: result.error }, { status: 409 });
+          }
+          return Response.json({ success: true, handoff: result });
+        }
+
+        case 'complete': {
+          if (!body.handoffId || !body.agentId) {
+            return Response.json({ error: 'handoffId and agentId required' }, { status: 400 });
+          }
+          const result = this.completeHandoff(body.handoffId, body.agentId);
+          if ('error' in result) {
+            return Response.json({ success: false, error: result.error }, { status: 400 });
+          }
+          return Response.json({ success: true, handoff: result });
+        }
+
+        default:
+          return Response.json({ error: 'Invalid action. Use: create, claim, complete' }, { status: 400 });
+      }
+    }
+
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  private listHandoffs(filters: { toAgent?: string | null; fromAgent?: string | null; status?: string | null }): Handoff[] {
+    let query = 'SELECT * FROM handoffs WHERE 1=1';
+    const params: (string | null)[] = [];
+
+    if (filters.toAgent) {
+      query += ' AND (to_agent = ? OR to_agent IS NULL)';
+      params.push(filters.toAgent);
+    }
+    if (filters.fromAgent) {
+      query += ' AND from_agent = ?';
+      params.push(filters.fromAgent);
+    }
+    if (filters.status) {
+      query += ' AND status = ?';
+      params.push(filters.status);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const rows = this.sql.exec(query, ...params).toArray();
+
+    return rows.map(row => this.rowToHandoff(row));
+  }
+
+  private getHandoff(id: string): Handoff | null {
+    const rows = this.sql.exec('SELECT * FROM handoffs WHERE id = ?', id).toArray();
+    if (rows.length === 0) return null;
+    return this.rowToHandoff(rows[0]);
+  }
+
+  private createHandoff(data: {
+    fromAgent: string;
+    toAgent?: string;
+    title: string;
+    context: string;
+    code?: string;
+    filePath?: string;
+    nextSteps: string[];
+    priority: Handoff['priority'];
+  }): Handoff {
+    const now = new Date().toISOString();
+    const id = `handoff-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+    this.sql.exec(`
+      INSERT INTO handoffs (id, from_agent, to_agent, title, context, code, file_path, next_steps, priority, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+    `,
+      id, data.fromAgent, data.toAgent || null, data.title, data.context,
+      data.code || null, data.filePath || null, JSON.stringify(data.nextSteps),
+      data.priority, now
+    );
+
+    return {
+      id,
+      fromAgent: data.fromAgent,
+      toAgent: data.toAgent,
+      title: data.title,
+      context: data.context,
+      code: data.code,
+      filePath: data.filePath,
+      nextSteps: data.nextSteps,
+      priority: data.priority,
+      status: 'pending',
+      createdAt: now
+    };
+  }
+
+  private claimHandoff(id: string, agentId: string): Handoff | { error: string } {
+    const handoff = this.getHandoff(id);
+    if (!handoff) {
+      return { error: 'Handoff not found' };
+    }
+    if (handoff.status !== 'pending') {
+      return { error: `Handoff already ${handoff.status}` };
+    }
+    if (handoff.toAgent && handoff.toAgent !== agentId) {
+      return { error: `Handoff is targeted to ${handoff.toAgent}` };
+    }
+
+    const now = new Date().toISOString();
+    this.sql.exec(`
+      UPDATE handoffs SET status = 'claimed', claimed_by = ?, claimed_at = ? WHERE id = ?
+    `, agentId, now, id);
+
+    return {
+      ...handoff,
+      status: 'claimed',
+      claimedBy: agentId,
+      claimedAt: now
+    };
+  }
+
+  private completeHandoff(id: string, agentId: string): Handoff | { error: string } {
+    const handoff = this.getHandoff(id);
+    if (!handoff) {
+      return { error: 'Handoff not found' };
+    }
+    if (handoff.status !== 'claimed') {
+      return { error: `Handoff must be claimed first (current: ${handoff.status})` };
+    }
+    if (handoff.claimedBy !== agentId) {
+      return { error: `Handoff is claimed by ${handoff.claimedBy}` };
+    }
+
+    const now = new Date().toISOString();
+    this.sql.exec(`
+      UPDATE handoffs SET status = 'completed', completed_at = ? WHERE id = ?
+    `, now, id);
+
+    return {
+      ...handoff,
+      status: 'completed',
+      completedAt: now
+    };
+  }
+
+  private rowToHandoff(row: Record<string, unknown>): Handoff {
+    return {
+      id: row.id as string,
+      fromAgent: row.from_agent as string,
+      toAgent: row.to_agent as string | undefined,
+      title: row.title as string,
+      context: row.context as string,
+      code: row.code as string | undefined,
+      filePath: row.file_path as string | undefined,
+      nextSteps: JSON.parse((row.next_steps as string) || '[]'),
+      priority: row.priority as Handoff['priority'],
+      status: row.status as Handoff['status'],
+      claimedBy: row.claimed_by as string | undefined,
+      createdAt: row.created_at as string,
+      claimedAt: row.claimed_at as string | undefined,
+      completedAt: row.completed_at as string | undefined
+    };
   }
 }

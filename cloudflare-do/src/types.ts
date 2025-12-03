@@ -83,6 +83,23 @@ export interface Claim {
   stale: boolean;
 }
 
+export interface Handoff {
+  id: string;
+  fromAgent: string;
+  toAgent?: string;
+  title: string;
+  context: string;
+  code?: string;
+  filePath?: string;
+  nextSteps: string[];
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  status: 'pending' | 'claimed' | 'completed';
+  claimedBy?: string;
+  createdAt: string;
+  claimedAt?: string;
+  completedAt?: string;
+}
+
 export interface Env {
   COORDINATOR: DurableObjectNamespace;
   AGENT_STATE: DurableObjectNamespace;
