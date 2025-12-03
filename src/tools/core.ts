@@ -33,6 +33,21 @@ export function registerCoreTools(server: McpServer) {
       agent.status = 'active';
       store.updateAgent(agent);
 
+      // Register with API so agent shows in web dashboard sidebar
+      try {
+        await fetch(`${API_BASE}/api/agents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: agentId,
+            status: 'active',
+            currentTask: agent.currentTask || ''
+          })
+        });
+      } catch {
+        // Ignore API errors, local store is the fallback
+      }
+
       const inbox = store.getMessagesFor(agentId);
       const tasks = store.listTasks();
       const activeAgents = store.getActiveAgents();
@@ -122,6 +137,23 @@ export function registerCoreTools(server: McpServer) {
             agent.workingOnSince = new Date().toISOString();
           }
           store.updateAgent(agent);
+
+          // Also register with API so agent shows in web dashboard sidebar
+          try {
+            await fetch(`${API_BASE}/api/agents`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: agentId,
+                status: agent.status,
+                currentTask: agent.currentTask,
+                workingOn: agent.workingOn
+              })
+            });
+          } catch {
+            // Ignore API errors, local store is the fallback
+          }
+
           return { content: [{ type: 'text', text: JSON.stringify({ agentId, updated: true }) }] };
         }
 
