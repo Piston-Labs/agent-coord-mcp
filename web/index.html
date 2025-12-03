@@ -10113,10 +10113,12 @@
       // Navigation
       { id: 'nav-chat', group: 'Navigation', icon: '💬', title: 'Go to Chat', description: 'Team chat messages', shortcut: '1', action: () => switchTab('chat') },
       { id: 'nav-roadmap', group: 'Navigation', icon: '📋', title: 'Go to Roadmap', description: 'Sprint planning & items', shortcut: '2', action: () => switchTab('roadmap') },
-      { id: 'nav-telemetry', group: 'Navigation', icon: '📡', title: 'Go to Telemetry', description: 'Device fleet status', shortcut: '3', action: () => switchTab('telemetry') },
+      { id: 'nav-telemetry', group: 'Navigation', icon: '📡', title: 'Go to Telemetry', description: 'Device fleet & geofences', shortcut: '3', action: () => switchTab('telemetry') },
       { id: 'nav-metrics', group: 'Navigation', icon: '📊', title: 'Go to Metrics', description: 'Agent performance metrics', shortcut: '4', action: () => switchTab('metrics') },
       { id: 'nav-messages', group: 'Navigation', icon: '✉️', title: 'Go to Messages', description: 'Direct messages', shortcut: '5', action: () => switchTab('messages') },
       { id: 'nav-resources', group: 'Navigation', icon: '🔗', title: 'Go to Resources', description: 'File locks & zones', shortcut: '6', action: () => switchTab('resources') },
+      { id: 'nav-crm', group: 'Navigation', icon: '🏪', title: 'Go to CRM', description: 'Shop sales pipeline', action: () => switchTab('crm') },
+      { id: 'nav-sales', group: 'Navigation', icon: '💼', title: 'Go to Sales Hub', description: 'Sales documents & tools', action: () => switchTab('sales') },
 
       // Actions
       { id: 'action-task', group: 'Actions', icon: '➕', title: 'Create Task', description: 'Quick create a new task', shortcut: 'Ctrl+T', action: () => quickCreateTask() },
@@ -10124,9 +10126,19 @@
       { id: 'action-focus', group: 'Actions', icon: '💭', title: 'Focus Chat Input', description: 'Start typing a message', action: () => document.getElementById('messageInput')?.focus() },
       { id: 'action-kudos', group: 'Actions', icon: '⭐', title: 'Give Kudos', description: 'Recognize a team member', action: () => showGiveKudosModal() },
       { id: 'action-help', group: 'Actions', icon: '❓', title: 'Show Help', description: 'Keyboard shortcuts & tips', shortcut: '?', action: () => toggleHelpModal() },
+      { id: 'action-refresh', group: 'Actions', icon: '🔄', title: 'Refresh Data', description: 'Reload current view data', action: () => location.reload() },
 
-      // Roadmap (when on roadmap tab)
+      // Roadmap
       { id: 'roadmap-new', group: 'Roadmap', icon: '📝', title: 'New Roadmap Item', description: 'Create a new roadmap entry', action: () => { switchTab('roadmap'); setTimeout(() => document.querySelector('.add-item-btn')?.click(), 100); } },
+
+      // Telemetry & Geofences
+      { id: 'geo-new', group: 'Geofences', icon: '📍', title: 'Create Geofence', description: 'Add a new geofence area', action: () => { switchTab('telemetry'); setTimeout(() => openGeofenceModal(), 100); } },
+      { id: 'geo-view', group: 'Geofences', icon: '🗺️', title: 'View Geofences', description: 'Show geofence list', action: () => { switchTab('telemetry'); setTimeout(() => { const section = document.getElementById('geofenceSection'); if (section?.classList.contains('collapsed')) toggleGeofenceSection(); }, 100); } },
+      { id: 'tel-refresh', group: 'Telemetry', icon: '📡', title: 'Refresh Telemetry', description: 'Update device status', action: () => { switchTab('telemetry'); fetchTelemetry(); } },
+      { id: 'tel-map', group: 'Telemetry', icon: '🗺️', title: 'Toggle Fleet Map', description: 'Show/hide map view', action: () => { switchTab('telemetry'); toggleMapView(); } },
+
+      // CRM
+      { id: 'crm-add', group: 'CRM', icon: '🏪', title: 'Add Shop', description: 'Add a new shop to pipeline', action: () => { switchTab('crm'); setTimeout(() => openAddShopModal?.(), 100); } },
     ];
 
     let commandPaletteOpen = false;
