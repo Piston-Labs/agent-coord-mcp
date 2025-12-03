@@ -12902,6 +12902,10 @@
         console.log('[HUB] Hiding loading screen');
         if (loadingScreen) loadingScreen.style.display = 'none';
         
+        // Always fetch agents for Team view (public data)
+        console.log('[HUB] Fetching agents (always, regardless of auth)...');
+        fetchAgents().catch(e => console.error('Initial fetchAgents failed:', e));
+
         if (authenticated) {
           console.log('[HUB] User authenticated, initializing...');
           isAuthenticated = true;
@@ -12911,6 +12915,10 @@
         } else {
           console.log('[HUB] Not authenticated, showing login');
           showLoginModal();
+          // Start polling for agents even when not logged in
+          setInterval(() => {
+            fetchAgents().catch(e => console.error('Poll fetchAgents failed:', e));
+          }, 30000); // Poll every 30 seconds
         }
       } catch (error) {
         console.error('[HUB] Startup error:', error);
