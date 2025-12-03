@@ -227,4 +227,102 @@ export function registerMessagingTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // THREAD TOOL - Long-running strategic discussions (contextOS pattern)
+  // ============================================================================
+
+  server.tool(
+    'thread',
+    'Create and participate in persistent discussion threads for strategic conversations separate from group chat.',
+    {
+      action: z.enum(['create', 'post', 'get', 'list', 'resolve']).describe('Operation'),
+      threadId: z.string().optional().describe('Thread ID for post/get/resolve'),
+      topic: z.string().optional().describe('Thread topic (for create)'),
+      createdBy: z.string().optional().describe('Your agent ID (for create)'),
+      author: z.string().optional().describe('Your agent ID (for post)'),
+      content: z.string().optional().describe('Message content (for post)'),
+      status: z.enum(['active', 'resolved', 'archived']).optional().describe('Filter by status (for list)')
+    },
+    async (args) => {
+      const { action } = args;
+
+      try {
+        switch (action) {
+          case 'create': {
+            if (!args.topic || !args.createdBy) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'topic and createdBy required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/threads`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'create',
+                topic: args.topic,
+                createdBy: args.createdBy
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'post': {
+            if (!args.threadId || !args.author || !args.content) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'threadId, author, and content required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/threads`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'post',
+                threadId: args.threadId,
+                author: args.author,
+                content: args.content
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'get': {
+            if (!args.threadId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'threadId required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/threads?id=${args.threadId}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'list': {
+            const params = new URLSearchParams();
+            if (args.status) params.set('status', args.status);
+            const res = await fetch(`${API_BASE}/api/threads?${params}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'resolve': {
+            if (!args.threadId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'threadId required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/threads`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: args.threadId,
+                status: 'resolved'
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
