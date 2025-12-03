@@ -8948,6 +8948,36 @@
           </div>
         </div>
 
+        <!-- Geofence Management Section (moved above map for visibility) -->
+        <div class="geofence-section" id="geofenceSection">
+          <div class="geofence-header" onclick="toggleGeofenceSection()">
+            <div class="geofence-title">
+              <span class="geofence-icon">📍</span>
+              <span>Geofences</span>
+              <span class="geofence-count" id="geofenceCount">0</span>
+            </div>
+            <div class="geofence-controls">
+              <span class="geofence-alerts" id="geofenceAlerts" style="display: none;">
+                <span class="alert-badge" id="geofenceAlertCount">0</span> breaches
+              </span>
+              <button class="geofence-add-btn" onclick="event.stopPropagation(); openGeofenceModal()">+ Add Geofence</button>
+              <span class="geofence-toggle" id="geofenceToggle">▼</span>
+            </div>
+          </div>
+          <div class="geofence-content" id="geofenceContent">
+            <div class="geofence-list" id="geofenceList">
+              <div class="geofence-empty">No geofences configured. Create one to get alerts when devices enter or exit specific areas.</div>
+            </div>
+            <div class="geofence-breaches" id="geofenceBreaches" style="display: none;">
+              <div class="breaches-header">
+                <span>Recent Breaches</span>
+                <button class="ack-all-btn" onclick="acknowledgeAllBreaches()">Acknowledge All</button>
+              </div>
+              <div class="breaches-list" id="breachesList"></div>
+            </div>
+          </div>
+        </div>
+
         <div class="fleet-map-container" id="fleetMapContainer">
           <div class="fleet-map" id="fleetMap">
             <div class="map-overlay">
@@ -8996,36 +9026,6 @@
                 <tr><td colspan="8" class="loading-row">Loading devices...</td></tr>
               </tbody>
             </table>
-          </div>
-        </div>
-
-        <!-- Geofence Management Section -->
-        <div class="geofence-section" id="geofenceSection">
-          <div class="geofence-header" onclick="toggleGeofenceSection()">
-            <div class="geofence-title">
-              <span class="geofence-icon">📍</span>
-              <span>Geofences</span>
-              <span class="geofence-count" id="geofenceCount">0</span>
-            </div>
-            <div class="geofence-controls">
-              <span class="geofence-alerts" id="geofenceAlerts" style="display: none;">
-                <span class="alert-badge" id="geofenceAlertCount">0</span> breaches
-              </span>
-              <button class="geofence-add-btn" onclick="event.stopPropagation(); openGeofenceModal()">+ Add Geofence</button>
-              <span class="geofence-toggle" id="geofenceToggle">▼</span>
-            </div>
-          </div>
-          <div class="geofence-content" id="geofenceContent">
-            <div class="geofence-list" id="geofenceList">
-              <div class="geofence-empty">No geofences configured. Create one to get alerts when devices enter or exit specific areas.</div>
-            </div>
-            <div class="geofence-breaches" id="geofenceBreaches" style="display: none;">
-              <div class="breaches-header">
-                <span>Recent Breaches</span>
-                <button class="ack-all-btn" onclick="acknowledgeAllBreaches()">Acknowledge All</button>
-              </div>
-              <div class="breaches-list" id="breachesList"></div>
-            </div>
           </div>
         </div>
 
