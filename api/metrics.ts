@@ -139,7 +139,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redis.lrange('agent-coord:handoffs', 0, -1),
       redis.lrange('agent-coord:workflow-runs', 0, -1),
       redis.hgetall('agent-coord:shared-memory'),
-      redis.hgetall('piston:telemetry'),
+      redis.hgetall('piston:devices'),
     ]);
 
     // Process agents
@@ -218,14 +218,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memoryCategories[category] = (memoryCategories[category] || 0) + 1;
     });
 
-    // Process telemetry
+    // Process telemetry - devices from piston:devices key
     const telemetryDevices = Object.values(telemetryRaw || {}).map(t =>
       typeof t === 'string' ? JSON.parse(t) : t
     );
-    const activeDevices = telemetryDevices.filter(d => d.status?.ignition).length;
-    const avgBattery = telemetryDevices.length > 0
-      ? telemetryDevices.reduce((sum, d) => sum + (d.metrics?.batteryVoltage || 0), 0) / telemetryDevices.length
-      : 0;
+    // Count active devices (status === 'active') - piston-devices uses string status
+    const activeDevices = telemetryDevices.filter(d => d.status === 'active').length;
+    // Note: Battery voltage not stored in piston:devices - would need to fetch from telemetry data
+    const avgBattery = 0; // TODO: Fetch from device telemetry if needed
 
     const metrics: SystemMetrics = {
       timestamp: new Date().toISOString(),
