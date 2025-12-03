@@ -421,4 +421,40 @@ export function registerCoreTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // DIGEST TOOL - Intelligent team activity summary
+  // ============================================================================
+
+  server.tool(
+    'digest',
+    'Get intelligent team activity summary. Shows online agents, needs attention, recent activity, and in-progress work.',
+    {
+      agentId: z.string().describe('Your agent ID (for personalized mentions)'),
+      since: z.string().optional().describe('ISO timestamp to get activity since (default: last hour)'),
+      format: z.enum(['json', 'markdown']).optional().describe('Output format (default: json)')
+    },
+    async (args) => {
+      const { agentId, since, format = 'json' } = args;
+
+      try {
+        const params = new URLSearchParams();
+        params.set('agentId', agentId);
+        if (since) params.set('since', since);
+        if (format) params.set('format', format);
+
+        const res = await fetch(`${API_BASE}/api/digest?${params}`);
+
+        if (format === 'markdown') {
+          const text = await res.text();
+          return { content: [{ type: 'text', text }] };
+        }
+
+        const data = await res.json();
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
