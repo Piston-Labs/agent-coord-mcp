@@ -7576,6 +7576,86 @@
 
     /* ========== END SALES ENGINEERING STYLES ========== */
 
+    /* ========== TRAINING MODULE STYLES ========== */
+    .training-view.active { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+    .training-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; gap: 12px; }
+    .training-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .training-stat { text-align: center; padding: 8px 16px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border); }
+    .training-stat.modules { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+    .training-stat.streak { border-color: #ff6b35; background: rgba(255, 107, 53, 0.1); }
+    .training-stat.badges { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); }
+    .training-stat-value { font-size: 24px; font-weight: 700; color: var(--text-primary); }
+    .training-stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
+    .training-controls { display: flex; gap: 10px; align-items: center; }
+    .training-controls select { background: var(--bg-secondary); border: 1px solid var(--border); padding: 10px 14px; border-radius: 6px; color: var(--text-primary); cursor: pointer; }
+    .training-reset-btn { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); padding: 10px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+    .training-reset-btn:hover { background: var(--error); color: white; border-color: var(--error); }
+    .training-content { display: grid; grid-template-columns: 280px 1fr 280px; gap: 1px; background: var(--border); flex: 1; min-height: 0; overflow: hidden; }
+    .training-modules-panel { background: var(--bg-primary); display: flex; flex-direction: column; overflow: hidden; }
+    .training-modules-header { padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 14px; }
+    .training-modules-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .training-module-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 6px; background: var(--bg-secondary); border: 1px solid var(--border); transition: all 0.15s ease; }
+    .training-module-item:hover { border-color: var(--accent); background: rgba(88, 166, 255, 0.05); }
+    .training-module-item.active { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+    .training-module-item.completed { border-color: var(--success); background: rgba(63, 185, 80, 0.05); }
+    .module-progress-ring { width: 42px; height: 42px; position: relative; flex-shrink: 0; }
+    .module-progress-ring svg { transform: rotate(-90deg); }
+    .module-progress-ring .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+    .module-progress-ring .ring-progress { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.3s ease; }
+    .module-progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; font-weight: 600; color: var(--text-secondary); }
+    .module-info { flex: 1; min-width: 0; }
+    .module-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+    .module-meta { font-size: 11px; color: var(--text-secondary); }
+    .module-badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase; }
+    .module-badge.sales { background: rgba(88, 166, 255, 0.2); color: var(--accent); }
+    .module-badge.dev { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+    .module-badge.investor { background: rgba(255, 215, 0, 0.2); color: #fbbf24; }
+    .module-badge.all { background: rgba(63, 185, 80, 0.2); color: var(--success); }
+    .training-lesson-panel { background: var(--bg-primary); display: flex; flex-direction: column; overflow: hidden; }
+    .training-lesson-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px; }
+    .training-lesson-nav { display: flex; align-items: center; gap: 12px; }
+    .training-lesson-nav button { background: var(--bg-secondary); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; font-size: 12px; color: var(--text-primary); cursor: pointer; }
+    .training-lesson-nav button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .training-lesson-nav button:not(:disabled):hover { background: var(--accent); color: white; border-color: var(--accent); }
+    #lessonProgress { font-size: 12px; color: var(--text-secondary); }
+    .training-lesson-content { flex: 1; overflow-y: auto; padding: 20px; }
+    .training-welcome { text-align: center; max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+    .training-welcome h2 { margin-bottom: 16px; font-size: 24px; }
+    .training-welcome p { color: var(--text-secondary); line-height: 1.6; }
+    .training-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 32px; }
+    .feature-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+    .feature-icon { font-size: 32px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 14px; margin-bottom: 6px; }
+    .feature-card p { font-size: 12px; margin: 0; }
+    .quiz-container { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-top: 24px; }
+    .quiz-question { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .quiz-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg-primary); border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.15s ease; }
+    .quiz-option:hover { border-color: var(--accent); }
+    .quiz-option.selected { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+    .quiz-option.correct { border-color: var(--success); background: rgba(63, 185, 80, 0.1); }
+    .quiz-option.incorrect { border-color: var(--error); background: rgba(248, 81, 73, 0.1); }
+    .quiz-submit-btn { margin-top: 20px; background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
+    .quiz-feedback { margin-top: 16px; padding: 16px; border-radius: 8px; font-size: 14px; }
+    .quiz-feedback.correct { background: rgba(63, 185, 80, 0.1); border: 1px solid var(--success); color: var(--success); }
+    .quiz-feedback.incorrect { background: rgba(248, 81, 73, 0.1); border: 1px solid var(--error); color: var(--error); }
+    .training-coach-panel { background: var(--bg-primary); display: flex; flex-direction: column; overflow: hidden; }
+    .training-coach-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px; }
+    .training-coach-status { font-size: 12px; color: var(--success); }
+    .training-coach-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+    .coach-message { display: flex; gap: 10px; }
+    .coach-message.user { flex-direction: row-reverse; }
+    .coach-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+    .coach-content { background: var(--bg-secondary); padding: 10px 14px; border-radius: 12px; max-width: 85%; font-size: 13px; line-height: 1.5; }
+    .coach-content strong { display: block; margin-bottom: 4px; font-size: 12px; color: var(--text-secondary); }
+    .coach-content p { margin: 6px 0; }
+    .coach-message.user .coach-content { background: var(--accent); color: white; }
+    .training-coach-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+    .training-coach-input input { flex: 1; background: var(--bg-secondary); border: 1px solid var(--border); padding: 10px 14px; border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+    .training-coach-input button { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    @media (max-width: 1024px) { .training-content { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; } .training-modules-panel { max-height: 200px; } .training-coach-panel { max-height: 250px; } .training-features { grid-template-columns: 1fr; } }
+    /* ========== END TRAINING MODULE STYLES ========== */
+
     /* Direct Messaging Styles */
     .dm-badge {
       position: relative;
@@ -11693,9 +11773,9 @@
         fetchResources();
       }
 
-      // Load training modules when switching to training tab
+      // Initialize training when switching to training tab
       if (tabName === 'training') {
-        loadTrainingModules();
+        initTraining();
       }
 
       // Update telemetry poll rate based on whether telemetry tab is active
@@ -11706,8 +11786,264 @@
 
     // === TRAINING FUNCTIONS ===
     let currentTrainingModule = null;
-    let currentTrainingLesson = null;
+    let currentTrainingLesson = 0;
+    let trainingModulesData = [];
     let userTrainingProgress = {};
+
+    // Initialize training module click handlers
+    function initTrainingModuleClicks() {
+      document.querySelectorAll('.training-module-item').forEach(item => {
+        item.addEventListener('click', () => {
+          const moduleId = item.dataset.module;
+          selectTrainingModule(moduleId);
+        });
+      });
+    }
+
+    function selectTrainingModule(moduleId) {
+      // Remove active class from all
+      document.querySelectorAll('.training-module-item').forEach(el => el.classList.remove('active'));
+      // Add active to selected
+      const selected = document.querySelector(`.training-module-item[data-module="${moduleId}"]`);
+      if (selected) selected.classList.add('active');
+
+      // Load module content
+      loadModuleContent(moduleId);
+    }
+
+    function loadModuleContent(moduleId) {
+      const contentArea = document.getElementById('trainingLessonContent');
+      if (!contentArea) return;
+
+      // Sample module content (in production, fetch from API)
+      const modules = {
+        'sales-101': {
+          title: 'Sales 101 - Foundations',
+          lessons: [
+            { title: 'Understanding Our ICP', content: `<h2>Ideal Customer Profile</h2><p>Our primary targets are:</p><ul><li><strong>Manufacturing:</strong> Plants with equipment uptime concerns</li><li><strong>Food Processing:</strong> Cold storage and compliance requirements</li><li><strong>HVAC Companies:</strong> Fleet and service optimization</li><li><strong>Property Managers:</strong> Multi-site asset tracking</li></ul><p>Key question to ask yourself: <em>"What pain point does this customer have that our solution addresses?"</em></p>` },
+            { title: 'The Piston Pitch', content: `<h2>Core Value Proposition</h2><p><strong>Opening Hook:</strong> "Stop equipment failures before they stop your business."</p><p>The pitch structure:</p><ol><li>Identify their current pain (reactive maintenance, surprise breakdowns)</li><li>Paint the cost picture (downtime, emergency repairs, lost revenue)</li><li>Present the solution (predictive monitoring, real-time alerts)</li><li>Show the proof (case studies, ROI calculations)</li></ol>` },
+            { title: 'Handling Objections', content: `<h2>Common Objections & Responses</h2><p><strong>"It's too expensive"</strong><br>Response: Compare to cost of ONE breakdown. Our average customer saves 3-5x the subscription cost in prevented downtime.</p><p><strong>"We have maintenance staff"</strong><br>Response: Great! We make them more effective by telling them WHERE to look BEFORE problems happen.</p><p><strong>"Security concerns"</strong><br>Response: All data is encrypted, we're SOC 2 compliant, and you own your data.</p>` },
+            { title: 'Quiz: Sales Foundations', type: 'quiz', questions: [
+              { q: 'What is our opening hook?', options: ['Track your equipment', 'Stop equipment failures before they stop your business', 'Monitor everything'], correct: 1 },
+              { q: 'How should you respond to "too expensive"?', options: ['Offer a discount', 'Compare to cost of one breakdown', 'Ignore and continue'], correct: 1 }
+            ]}
+          ]
+        },
+        'product-deep-dive': {
+          title: 'Product Deep Dive',
+          lessons: [
+            { title: 'System Architecture', content: `<h2>How Piston Works</h2><p>Our system has three main components:</p><ol><li><strong>Teltonika Devices:</strong> GPS + OBD-II readers installed in vehicles</li><li><strong>AWS IoT Pipeline:</strong> Real-time data ingestion and processing</li><li><strong>Dashboard:</strong> Customer-facing UI for monitoring and alerts</li></ol><p>Data flows from device → AWS IoT Core → Lambda processing → DynamoDB → Dashboard</p>` },
+            { title: 'Feature Overview', content: `<h2>Core Features</h2><ul><li><strong>Real-time Tracking:</strong> GPS location updated every 10 seconds</li><li><strong>Geofencing:</strong> Alerts when vehicles enter/exit defined areas</li><li><strong>Telemetry:</strong> Speed, mileage, battery voltage monitoring</li><li><strong>Service History:</strong> Track maintenance and repairs per vehicle</li><li><strong>CRM Integration:</strong> Customer management for shops</li></ul>` }
+          ]
+        },
+        'objection-handling': {
+          title: 'Advanced Objection Handling',
+          lessons: [
+            { title: 'Price Objections', content: `<h2>Overcoming Price Concerns</h2><p>Remember: Price objections are often value objections in disguise.</p><p><strong>The ROI Calculator:</strong></p><ul><li>Average cost of unplanned breakdown: $5,000-$15,000</li><li>Lost revenue during downtime: varies by customer</li><li>Emergency service premium: 2-3x normal rates</li></ul><p>Ask: "How much did your last unplanned breakdown cost you?"</p>` }
+          ]
+        },
+        'tech-architecture': {
+          title: 'Technical Architecture',
+          lessons: [
+            { title: 'AWS Infrastructure', content: `<h2>AWS Services We Use</h2><ul><li><strong>IoT Core:</strong> MQTT message broker for device communication</li><li><strong>Lambda:</strong> Serverless data processing</li><li><strong>DynamoDB:</strong> NoSQL database for device data</li><li><strong>S3:</strong> Document and image storage</li><li><strong>CloudWatch:</strong> Monitoring and alerting</li></ul>` }
+          ]
+        },
+        'investor-pitch': {
+          title: 'Investor Pitch Deck',
+          lessons: [
+            { title: 'The Opportunity', content: `<h2>Market Opportunity</h2><p>Fleet management is a $30B+ market growing 15% annually.</p><p><strong>Our Differentiator:</strong> We focus on the underserved SMB market - local shops and small fleets that can't afford enterprise solutions like Samsara.</p>` }
+          ]
+        }
+      };
+
+      const mod = modules[moduleId];
+      if (!mod) {
+        contentArea.innerHTML = '<div class="training-welcome"><h2>Module Not Found</h2><p>Select a module from the left to begin.</p></div>';
+        return;
+      }
+
+      currentTrainingModule = mod;
+      currentTrainingLesson = 0;
+      renderCurrentLesson();
+    }
+
+    function renderCurrentLesson() {
+      const contentArea = document.getElementById('trainingLessonContent');
+      const titleEl = document.getElementById('trainingLessonTitle');
+      const progressEl = document.getElementById('lessonProgress');
+      const prevBtn = document.getElementById('prevLessonBtn');
+      const nextBtn = document.getElementById('nextLessonBtn');
+
+      if (!currentTrainingModule || !contentArea) return;
+
+      const lessons = currentTrainingModule.lessons;
+      const lesson = lessons[currentTrainingLesson];
+
+      // Update header
+      if (titleEl) titleEl.textContent = '📖 ' + lesson.title;
+      if (progressEl) progressEl.textContent = `Lesson ${currentTrainingLesson + 1}/${lessons.length}`;
+
+      // Update nav buttons
+      if (prevBtn) prevBtn.disabled = currentTrainingLesson === 0;
+      if (nextBtn) nextBtn.disabled = currentTrainingLesson >= lessons.length - 1;
+
+      // Render content
+      if (lesson.type === 'quiz' && lesson.questions) {
+        contentArea.innerHTML = renderQuiz(lesson);
+      } else {
+        contentArea.innerHTML = `<div class="lesson-content-area">${lesson.content}</div>`;
+      }
+    }
+
+    function renderQuiz(lesson) {
+      return `
+        <div class="quiz-container">
+          <h3 class="quiz-question">${lesson.title}</h3>
+          ${lesson.questions.map((q, qIdx) => `
+            <div style="margin-bottom: 20px;">
+              <p style="font-weight: 500; margin-bottom: 10px;">${qIdx + 1}. ${q.q}</p>
+              <div class="quiz-options">
+                ${q.options.map((opt, optIdx) => `
+                  <div class="quiz-option" data-question="${qIdx}" data-option="${optIdx}" data-correct="${q.correct === optIdx}" onclick="selectQuizOption(this)">
+                    <span style="width: 20px; height: 20px; border: 2px solid var(--border); border-radius: 50%; display: inline-block;"></span>
+                    <span>${opt}</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          `).join('')}
+          <button class="quiz-submit-btn" onclick="submitQuiz()">Submit Quiz</button>
+          <div id="quizFeedback"></div>
+        </div>
+      `;
+    }
+
+    function selectQuizOption(el) {
+      const question = el.dataset.question;
+      // Deselect others in same question
+      document.querySelectorAll(`.quiz-option[data-question="${question}"]`).forEach(opt => {
+        opt.classList.remove('selected');
+      });
+      el.classList.add('selected');
+    }
+
+    function submitQuiz() {
+      const feedbackEl = document.getElementById('quizFeedback');
+      let correct = 0;
+      let total = 0;
+
+      document.querySelectorAll('.quiz-option.selected').forEach(opt => {
+        total++;
+        if (opt.dataset.correct === 'true') {
+          opt.classList.add('correct');
+          correct++;
+        } else {
+          opt.classList.add('incorrect');
+          // Highlight correct answer
+          const question = opt.dataset.question;
+          document.querySelector(`.quiz-option[data-question="${question}"][data-correct="true"]`).classList.add('correct');
+        }
+      });
+
+      if (feedbackEl) {
+        const percentage = Math.round((correct / total) * 100);
+        feedbackEl.innerHTML = `<div class="quiz-feedback ${percentage >= 70 ? 'correct' : 'incorrect'}">
+          You got ${correct}/${total} correct (${percentage}%)
+          ${percentage >= 70 ? ' - Great job!' : ' - Review the material and try again.'}
+        </div>`;
+      }
+    }
+
+    function prevLesson() {
+      if (currentTrainingLesson > 0) {
+        currentTrainingLesson--;
+        renderCurrentLesson();
+      }
+    }
+
+    function nextLesson() {
+      if (currentTrainingModule && currentTrainingLesson < currentTrainingModule.lessons.length - 1) {
+        currentTrainingLesson++;
+        renderCurrentLesson();
+      }
+    }
+
+    function filterTrainingModules() {
+      const role = document.getElementById('trainingRole')?.value || 'all';
+      document.querySelectorAll('.training-module-item').forEach(item => {
+        const itemRoles = item.dataset.role?.split(',') || [];
+        if (role === 'all' || itemRoles.includes(role)) {
+          item.style.display = 'flex';
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    function resetTrainingProgress() {
+      if (!confirm('Are you sure you want to reset all training progress?')) return;
+      userTrainingProgress = {};
+      // Reset UI
+      document.querySelectorAll('.training-module-item').forEach(item => {
+        item.classList.remove('completed', 'active');
+        const progressRing = item.querySelector('.ring-progress');
+        if (progressRing) progressRing.setAttribute('stroke-dasharray', '0, 100');
+        const progressText = item.querySelector('.module-progress-text');
+        if (progressText) progressText.textContent = '0%';
+      });
+      // Reset content area
+      document.getElementById('trainingLessonContent').innerHTML = document.querySelector('.training-welcome')?.outerHTML || '';
+    }
+
+    function sendCoachMessage() {
+      const input = document.getElementById('trainingCoachInput');
+      const messagesEl = document.getElementById('trainingCoachMessages');
+      if (!input || !messagesEl) return;
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      // Add user message
+      messagesEl.innerHTML += `
+        <div class="coach-message user">
+          <div class="coach-avatar">👤</div>
+          <div class="coach-content">
+            <strong>You</strong>
+            <p>${text}</p>
+          </div>
+        </div>
+      `;
+
+      input.value = '';
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      // Simulate coach response (in production, call AI API)
+      setTimeout(() => {
+        const responses = [
+          "That's a great question! Let me ask you this - what do you think the customer's underlying concern might be?",
+          "Interesting perspective. How might you apply that concept in a real customer conversation?",
+          "Good thinking! Can you give me a specific example of when you'd use that approach?",
+          "I see where you're coming from. What would happen if you tried the opposite approach?"
+        ];
+        const response = responses[Math.floor(Math.random() * responses.length)];
+
+        messagesEl.innerHTML += `
+          <div class="coach-message assistant">
+            <div class="coach-avatar">🎓</div>
+            <div class="coach-content">
+              <strong>Training Coach</strong>
+              <p>${response}</p>
+            </div>
+          </div>
+        `;
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, 1000);
+    }
+
+    function initTraining() {
+      initTrainingModuleClicks();
+      filterTrainingModules();
+    }
 
     async function loadTrainingModules() {
       const roleFilter = document.getElementById('trainingRoleFilter')?.value || '';

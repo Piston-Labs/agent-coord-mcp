@@ -217,6 +217,223 @@ const INTERVIEW_SCENARIOS = {
 };
 
 /**
+ * Get opening line for interview scenario
+ */
+function getOpeningLine(scenario: string): string {
+  const openings: Record<string, string> = {
+    'cold-call': "Hello? ... Yes, who is this? I'm in the middle of something.",
+    'discovery': "Hi, thanks for calling. I have about 25 minutes before my next meeting. What did you want to discuss?",
+    'objection-handling': "Look, I like what you're showing me, but I have some serious concerns we need to address before I can move forward.",
+    'demo': "Okay, I'm ready to see the demo. Just so you know, I've seen a lot of these platforms and most of them overpromise.",
+    'closing': "So, I've seen the demo and talked to my team. We're interested, but I'm not sure we're ready to sign anything today."
+  };
+  return openings[scenario] || "Hello, how can I help you?";
+}
+
+/**
+ * Generate prospect response based on conversation context
+ * In production, this would use Claude API for realistic responses
+ */
+function generateProspectResponse(
+  simulation: InterviewSimulation,
+  _scenarioData: { systemPrompt: string; objectives: string[] }
+): { message: string; feedback: string } {
+  const lastUserMessage = simulation.messages
+    .filter(m => m.role === 'user')
+    .pop()?.content || '';
+
+  const messageCount = simulation.messages.filter(m => m.role === 'user').length;
+
+  // Simple response generation based on keywords and conversation stage
+  // In production, this would call Claude API with the systemPrompt as context
+
+  let message = '';
+  let feedback = '';
+
+  const lowerMessage = lastUserMessage.toLowerCase();
+
+  // Check for good behaviors and provide feedback
+  if (lowerMessage.includes('?')) {
+    feedback = 'Good - asking questions shows curiosity and helps with discovery.';
+  }
+
+  if (lowerMessage.includes('understand') || lowerMessage.includes('tell me more')) {
+    feedback = 'Excellent - showing genuine interest in their situation builds rapport.';
+  }
+
+  if (lowerMessage.includes('cost') || lowerMessage.includes('save') || lowerMessage.includes('roi')) {
+    feedback = 'Good - connecting to business value. Make sure to quantify when possible.';
+  }
+
+  // Generate contextual responses based on scenario and stage
+  if (simulation.scenario === 'cold-call') {
+    if (messageCount <= 2) {
+      message = "I really don't have time for sales calls. What company did you say you're with?";
+      if (!feedback) feedback = 'Tip: Acknowledge their time is valuable before pitching.';
+    } else if (messageCount <= 4) {
+      message = "Okay, you have 30 seconds. What do you do?";
+      if (!feedback) feedback = 'Now deliver a concise value proposition focused on their problems.';
+    } else {
+      message = "That's interesting. We do have issues with our compressors going down unexpectedly. But how is your solution different from just hiring more maintenance staff?";
+      if (!feedback) feedback = 'They showed interest! Now differentiate your solution.';
+    }
+  } else if (simulation.scenario === 'discovery') {
+    if (messageCount <= 2) {
+      message = "Our biggest issue right now is unexpected equipment failures. Last month we had a refrigeration unit go down and lost $40,000 in product.";
+      if (!feedback) feedback = 'They shared a pain point with specific numbers - use this!';
+    } else if (messageCount <= 4) {
+      message = "We have 5 maintenance techs. They're reactive mostly - fixing things when they break. We tried to implement a PM schedule but it's hard to stick to.";
+      if (!feedback) feedback = 'Understanding their current process helps you position your solution.';
+    } else {
+      message = "Budget? We spend about $200K a year on maintenance and repairs. But getting new budget approved is tough right now.";
+      if (!feedback) feedback = 'Good discovery! Now tie your solution to their existing budget pain.';
+    }
+  } else if (simulation.scenario === 'objection-handling') {
+    if (messageCount <= 2) {
+      message = "My IT team is already stretched thin. They're worried about security and having another system to manage.";
+      if (!feedback) feedback = 'Address their IT concerns with specific security features and ease of management.';
+    } else if (messageCount <= 4) {
+      message = "Even if I wanted to, we're in a budget freeze until Q2. My hands are tied.";
+      if (!feedback) feedback = 'Budget freeze objection - explore pilot programs or ROI-based approaches.';
+    } else {
+      message = "I'll be honest - my boss doesn't believe in this 'predictive AI' stuff. He thinks it's hype.";
+      if (!feedback) feedback = 'Final objection. Use case studies and concrete examples to address skepticism.';
+    }
+  } else if (simulation.scenario === 'demo') {
+    if (messageCount <= 2) {
+      message = "How long does installation take? We can't afford a lot of downtime.";
+      if (!feedback) feedback = 'Technical question - be specific about installation process and timeline.';
+    } else if (messageCount <= 4) {
+      message = "What happens if a sensor fails? Do we lose data?";
+      if (!feedback) feedback = 'Good question about reliability - explain redundancy and support.';
+    } else {
+      message = "This looks good on screen, but how do my technicians actually use it day-to-day? They're not very tech-savvy.";
+      if (!feedback) feedback = 'User adoption concern - show ease of use and training support.';
+    }
+  } else if (simulation.scenario === 'closing') {
+    if (messageCount <= 2) {
+      message = "I need to run this by my boss. She makes all the final decisions on vendors.";
+      if (!feedback) feedback = 'Identify the decision maker and offer to present to them directly.';
+    } else if (messageCount <= 4) {
+      message = "The proposal is for 50 sensors but I was thinking we should start smaller. Maybe 10 units on our most critical equipment.";
+      if (!feedback) feedback = 'They want to start small - this is a buying signal. Accommodate while protecting value.';
+    } else {
+      message = "Look, I'm being honest - you're not the only vendor we're looking at. What makes you different?";
+      if (!feedback) feedback = 'Competitive situation - focus on unique differentiators, not price.';
+    }
+  } else {
+    message = "Tell me more about that.";
+    if (!feedback) feedback = 'Keep the conversation going with more specific questions.';
+  }
+
+  return { message, feedback };
+}
+
+/**
+ * Score a completed interview simulation
+ */
+function scoreSimulation(simulation: InterviewSimulation): {
+  scores: InterviewSimulation['scores'];
+  overallScore: number;
+  feedback: string;
+} {
+  const userMessages = simulation.messages.filter(m => m.role === 'user');
+  const messageCount = userMessages.length;
+
+  // Score based on various factors
+  let rapport = 50;
+  let discovery = 50;
+  let valueProposition = 50;
+  let objectionHandling = 50;
+  let closing = 50;
+
+  const allUserText = userMessages.map(m => m.content.toLowerCase()).join(' ');
+
+  // Rapport - built through questions and acknowledgment
+  const questionCount = (allUserText.match(/\?/g) || []).length;
+  rapport += Math.min(questionCount * 5, 30);
+  if (allUserText.includes('understand') || allUserText.includes('appreciate')) rapport += 10;
+  if (allUserText.includes('thank')) rapport += 5;
+
+  // Discovery - asking about their situation
+  if (allUserText.includes('tell me') || allUserText.includes('how do you')) discovery += 15;
+  if (allUserText.includes('challenge') || allUserText.includes('problem')) discovery += 10;
+  if (allUserText.includes('budget') || allUserText.includes('timeline')) discovery += 10;
+  if (allUserText.includes('decision') || allUserText.includes('process')) discovery += 10;
+
+  // Value Proposition - clear explanation of benefits
+  if (allUserText.includes('reduce') || allUserText.includes('save')) valueProposition += 15;
+  if (allUserText.includes('roi') || allUserText.includes('return')) valueProposition += 10;
+  if (allUserText.includes('predict') || allUserText.includes('prevent')) valueProposition += 10;
+  if (allUserText.includes('customer') || allUserText.includes('client')) valueProposition += 5;
+
+  // Objection Handling - addressing concerns
+  if (allUserText.includes('security') || allUserText.includes('secure')) objectionHandling += 10;
+  if (allUserText.includes('support') || allUserText.includes('help')) objectionHandling += 10;
+  if (allUserText.includes('pilot') || allUserText.includes('trial')) objectionHandling += 15;
+  if (allUserText.includes('case study') || allUserText.includes('example')) objectionHandling += 10;
+
+  // Closing - asking for commitment
+  if (allUserText.includes('next step') || allUserText.includes('move forward')) closing += 20;
+  if (allUserText.includes('schedule') || allUserText.includes('meeting')) closing += 10;
+  if (allUserText.includes('sign') || allUserText.includes('start')) closing += 10;
+
+  // Penalty for too few messages (didn't engage enough)
+  if (messageCount < 3) {
+    rapport -= 20;
+    discovery -= 20;
+  }
+
+  // Cap scores at 100
+  rapport = Math.min(100, Math.max(0, rapport));
+  discovery = Math.min(100, Math.max(0, discovery));
+  valueProposition = Math.min(100, Math.max(0, valueProposition));
+  objectionHandling = Math.min(100, Math.max(0, objectionHandling));
+  closing = Math.min(100, Math.max(0, closing));
+
+  const overallScore = Math.round((rapport + discovery + valueProposition + objectionHandling + closing) / 5);
+
+  // Generate feedback
+  let feedback = '';
+  const scores = { rapport, discovery, valueProposition, objectionHandling, closing };
+  const lowestScore = Math.min(...Object.values(scores));
+  const lowestArea = Object.entries(scores).find(([, v]) => v === lowestScore)?.[0];
+
+  if (overallScore >= 80) {
+    feedback = `Excellent performance! You demonstrated strong sales skills across all areas. `;
+  } else if (overallScore >= 60) {
+    feedback = `Good effort! You showed competence in several areas. `;
+  } else {
+    feedback = `This was a learning experience. Don't be discouraged - sales skills improve with practice. `;
+  }
+
+  // Add specific improvement suggestion
+  switch (lowestArea) {
+    case 'rapport':
+      feedback += 'Focus on building more rapport by asking about their situation and acknowledging their challenges before pitching.';
+      break;
+    case 'discovery':
+      feedback += 'Work on asking more discovery questions to understand their pain points, budget, and decision process.';
+      break;
+    case 'valueProposition':
+      feedback += 'Practice articulating the ROI and specific benefits more clearly. Use numbers and case studies.';
+      break;
+    case 'objectionHandling':
+      feedback += 'Prepare for common objections with specific responses. Address concerns directly rather than deflecting.';
+      break;
+    case 'closing':
+      feedback += 'Don\'t be afraid to ask for the next step. Practice clear calls-to-action and commitment requests.';
+      break;
+  }
+
+  return {
+    scores: { rapport, discovery, valueProposition, objectionHandling, closing },
+    overallScore,
+    feedback
+  };
+}
+
+/**
  * Default training modules based on researcher's findings
  */
 function getDefaultModules(): TrainingModule[] {
@@ -688,177 +905,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // POST - Mark progress
-    if (req.method === 'POST') {
-      const { user, moduleId, lessonId, completed, quizAnswers } = req.body;
-
-      if (!user || !moduleId || !lessonId) {
-        return res.status(400).json({ error: 'user, moduleId, and lessonId required' });
-      }
-
-      // Validate module and lesson exist
-      const modules = getDefaultModules();
-      const mod = modules.find(m => m.id === moduleId);
-      if (!mod) {
-        return res.status(404).json({ error: 'Module not found' });
-      }
-      const lesson = mod.lessons.find(l => l.id === lessonId);
-      if (!lesson) {
-        return res.status(404).json({ error: 'Lesson not found' });
-      }
-
-      const progressKey = `${TRAINING_PROGRESS_KEY}:${user}`;
-      const progressId = `${moduleId}:${lessonId}`;
-
-      // Handle quiz submission
-      let score: number | undefined;
-      let quizResults: any[] | undefined;
-      let adaptiveUpdate: Partial<AdaptiveLearningState> | undefined;
-
-      if (lesson.type === 'quiz' && quizAnswers && lesson.quiz) {
-        quizResults = lesson.quiz.map((q, i) => ({
-          question: q.question,
-          correct: quizAnswers[i] === q.correctIndex,
-          yourAnswer: q.options[quizAnswers[i]],
-          correctAnswer: q.options[q.correctIndex],
-          explanation: q.explanation
-        }));
-        const correctCount = quizResults.filter(r => r.correct).length;
-        score = Math.round((correctCount / lesson.quiz.length) * 100);
-
-        // Update adaptive learning state
-        const adaptiveKey = `${TRAINING_ADAPTIVE_KEY}:${user}`;
-        const existingState = await redis.get(adaptiveKey);
-        let adaptiveState: AdaptiveLearningState = existingState
-          ? (typeof existingState === 'string' ? JSON.parse(existingState) : existingState)
-          : {
-              userId: user as string,
-              overallScore: 0,
-              totalQuizzes: 0,
-              totalCorrect: 0,
-              totalQuestions: 0,
-              difficultyLevel: 'beginner' as const,
-              lessonReviews: {},
-              learningPatterns: {
-                preferredContentType: 'reading' as const,
-                avgTimePerLesson: 0,
-                peakLearningHour: new Date().getHours(),
-                streakDays: 0
-              },
-              updatedAt: new Date().toISOString()
-            };
-
-        // Update performance metrics
-        adaptiveState.totalQuizzes++;
-        adaptiveState.totalCorrect += correctCount;
-        adaptiveState.totalQuestions += lesson.quiz.length;
-        adaptiveState.overallScore = Math.round(
-          (adaptiveState.totalCorrect / adaptiveState.totalQuestions) * 100
-        );
-
-        // Update difficulty level
-        adaptiveState.difficultyLevel = calculateDifficultyLevel(
-          adaptiveState.overallScore,
-          adaptiveState.totalQuizzes
-        );
-
-        // Calculate spaced repetition for this lesson
-        const quality = scoreToQuality(score);
-        const existingReview = adaptiveState.lessonReviews[lessonId] || {
-          easeFactor: 2.5,
-          interval: 1,
-          repetitions: 0,
-          nextReviewDate: new Date().toISOString(),
-          lastScore: 0
-        };
-
-        const newReview = calculateSpacedRepetition(
-          existingReview.easeFactor,
-          existingReview.interval,
-          existingReview.repetitions,
-          quality
-        );
-
-        const nextReviewDate = new Date();
-        nextReviewDate.setDate(nextReviewDate.getDate() + newReview.interval);
-
-        adaptiveState.lessonReviews[lessonId] = {
-          easeFactor: newReview.easeFactor,
-          interval: newReview.interval,
-          repetitions: newReview.repetitions,
-          nextReviewDate: nextReviewDate.toISOString(),
-          lastScore: score
-        };
-
-        // Track learning patterns (peak hour)
-        const currentHour = new Date().getHours();
-        adaptiveState.learningPatterns.peakLearningHour = currentHour;
-
-        adaptiveState.updatedAt = new Date().toISOString();
-        await redis.set(adaptiveKey, JSON.stringify(adaptiveState));
-
-        adaptiveUpdate = {
-          difficultyLevel: adaptiveState.difficultyLevel,
-          overallScore: adaptiveState.overallScore,
-          nextReviewDate: nextReviewDate.toISOString()
-        };
-      }
-
-      // Get existing progress
-      const existing = await redis.hget(progressKey, progressId);
-      const prev = existing ? (typeof existing === 'string' ? JSON.parse(existing) : existing) : null;
-
-      const progress: UserProgress = {
-        oderId: user,
-        moduleId,
-        lessonId,
-        completed: completed ?? true,
-        score,
-        completedAt: new Date().toISOString(),
-        attempts: (prev?.attempts || 0) + 1
-      };
-
-      await redis.hset(progressKey, { [progressId]: JSON.stringify(progress) });
-
-      // Check if module is now complete
-      const allProgress = await redis.hgetall(progressKey) || {};
-      const moduleProgress = Object.entries(allProgress)
-        .filter(([key]) => key.startsWith(moduleId))
-        .map(([, v]) => typeof v === 'string' ? JSON.parse(v) : v);
-
-      const moduleComplete = mod.lessons.every(
-        l => moduleProgress.some(p => p.lessonId === l.id && p.completed)
-      );
-
-      // Post to chat if module completed
-      if (moduleComplete) {
-        const chatMessage = {
-          id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
-          author: 'system',
-          authorType: 'system',
-          message: `🎓 **${user}** completed training module: **${mod.title}**!`,
-          timestamp: new Date().toISOString(),
-          reactions: []
-        };
-        await redis.lpush('agent-coord:messages', JSON.stringify(chatMessage));
-      }
-
-      return res.json({
-        success: true,
-        progress,
-        quizResults,
-        moduleComplete,
-        adaptiveUpdate,
-        message: moduleComplete
-          ? `Congratulations! You completed "${mod.title}"!`
-          : `Progress saved for "${lesson.title}"`
-      });
-    }
-
-    // POST - Start/continue interview simulation
+    // POST - Handle various training actions
     if (req.method === 'POST') {
       const { action } = req.query;
 
+      // Handle interview simulation actions first
       if (action === 'simulate') {
         const { user, scenario, message: userMessage, simulationId } = req.body;
 
@@ -888,7 +939,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             timestamp: new Date().toISOString()
           });
 
-          // Generate prospect response (placeholder - would use AI in production)
+          // Generate prospect response
           const scenarioData = INTERVIEW_SCENARIOS[simulation.scenario];
           const prospectResponse = generateProspectResponse(simulation, scenarioData);
 
@@ -997,6 +1048,171 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           message: `Simulation completed with score: ${simulation.overallScore}%`
         });
       }
+
+      // Default: Mark lesson progress
+      const { user, moduleId, lessonId, completed, quizAnswers } = req.body;
+
+      if (!user || !moduleId || !lessonId) {
+        return res.status(400).json({ error: 'user, moduleId, and lessonId required' });
+      }
+
+      // Validate module and lesson exist
+      const modules = getDefaultModules();
+      const mod = modules.find(m => m.id === moduleId);
+      if (!mod) {
+        return res.status(404).json({ error: 'Module not found' });
+      }
+      const lesson = mod.lessons.find(l => l.id === lessonId);
+      if (!lesson) {
+        return res.status(404).json({ error: 'Lesson not found' });
+      }
+
+      const progressKey = `${TRAINING_PROGRESS_KEY}:${user}`;
+      const progressId = `${moduleId}:${lessonId}`;
+
+      // Handle quiz submission
+      let score: number | undefined;
+      let quizResults: any[] | undefined;
+      let adaptiveUpdate: { difficultyLevel: string; overallScore: number; nextReviewDate: string } | undefined;
+
+      if (lesson.type === 'quiz' && quizAnswers && lesson.quiz) {
+        quizResults = lesson.quiz.map((q, i) => ({
+          question: q.question,
+          correct: quizAnswers[i] === q.correctIndex,
+          yourAnswer: q.options[quizAnswers[i]],
+          correctAnswer: q.options[q.correctIndex],
+          explanation: q.explanation
+        }));
+        const correctCount = quizResults.filter(r => r.correct).length;
+        score = Math.round((correctCount / lesson.quiz.length) * 100);
+
+        // Update adaptive learning state
+        const adaptiveKey = `${TRAINING_ADAPTIVE_KEY}:${user}`;
+        const existingState = await redis.get(adaptiveKey);
+        let adaptiveState: AdaptiveLearningState = existingState
+          ? (typeof existingState === 'string' ? JSON.parse(existingState) : existingState)
+          : {
+              userId: user as string,
+              overallScore: 0,
+              totalQuizzes: 0,
+              totalCorrect: 0,
+              totalQuestions: 0,
+              difficultyLevel: 'beginner' as const,
+              lessonReviews: {},
+              learningPatterns: {
+                preferredContentType: 'reading' as const,
+                avgTimePerLesson: 0,
+                peakLearningHour: new Date().getHours(),
+                streakDays: 0
+              },
+              updatedAt: new Date().toISOString()
+            };
+
+        // Update performance metrics
+        adaptiveState.totalQuizzes++;
+        adaptiveState.totalCorrect += correctCount;
+        adaptiveState.totalQuestions += lesson.quiz.length;
+        adaptiveState.overallScore = Math.round(
+          (adaptiveState.totalCorrect / adaptiveState.totalQuestions) * 100
+        );
+
+        // Update difficulty level
+        adaptiveState.difficultyLevel = calculateDifficultyLevel(
+          adaptiveState.overallScore,
+          adaptiveState.totalQuizzes
+        );
+
+        // Calculate spaced repetition for this lesson
+        const quality = scoreToQuality(score);
+        const existingReview = adaptiveState.lessonReviews[lessonId] || {
+          easeFactor: 2.5,
+          interval: 1,
+          repetitions: 0,
+          nextReviewDate: new Date().toISOString(),
+          lastScore: 0
+        };
+
+        const newReview = calculateSpacedRepetition(
+          existingReview.easeFactor,
+          existingReview.interval,
+          existingReview.repetitions,
+          quality
+        );
+
+        const nextReviewDate = new Date();
+        nextReviewDate.setDate(nextReviewDate.getDate() + newReview.interval);
+
+        adaptiveState.lessonReviews[lessonId] = {
+          easeFactor: newReview.easeFactor,
+          interval: newReview.interval,
+          repetitions: newReview.repetitions,
+          nextReviewDate: nextReviewDate.toISOString(),
+          lastScore: score
+        };
+
+        // Track learning patterns (peak hour)
+        const currentHour = new Date().getHours();
+        adaptiveState.learningPatterns.peakLearningHour = currentHour;
+
+        adaptiveState.updatedAt = new Date().toISOString();
+        await redis.set(adaptiveKey, JSON.stringify(adaptiveState));
+
+        adaptiveUpdate = {
+          difficultyLevel: adaptiveState.difficultyLevel,
+          overallScore: adaptiveState.overallScore,
+          nextReviewDate: nextReviewDate.toISOString()
+        };
+      }
+
+      // Get existing progress
+      const existing = await redis.hget(progressKey, progressId);
+      const prev = existing ? (typeof existing === 'string' ? JSON.parse(existing) : existing) : null;
+
+      const progress: UserProgress = {
+        userId: user,
+        moduleId,
+        lessonId,
+        completed: completed ?? true,
+        score,
+        completedAt: new Date().toISOString(),
+        attempts: (prev?.attempts || 0) + 1
+      };
+
+      await redis.hset(progressKey, { [progressId]: JSON.stringify(progress) });
+
+      // Check if module is now complete
+      const allProgress = await redis.hgetall(progressKey) || {};
+      const moduleProgress = Object.entries(allProgress)
+        .filter(([key]) => key.startsWith(moduleId))
+        .map(([, v]) => typeof v === 'string' ? JSON.parse(v) : v);
+
+      const moduleComplete = mod.lessons.every(
+        l => moduleProgress.some(p => p.lessonId === l.id && p.completed)
+      );
+
+      // Post to chat if module completed
+      if (moduleComplete) {
+        const chatMessage = {
+          id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
+          author: 'system',
+          authorType: 'system',
+          message: `🎓 **${user}** completed training module: **${mod.title}**!`,
+          timestamp: new Date().toISOString(),
+          reactions: []
+        };
+        await redis.lpush('agent-coord:messages', JSON.stringify(chatMessage));
+      }
+
+      return res.json({
+        success: true,
+        progress,
+        quizResults,
+        moduleComplete,
+        adaptiveUpdate,
+        message: moduleComplete
+          ? `Congratulations! You completed "${mod.title}"!`
+          : `Progress saved for "${lesson.title}"`
+      });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
