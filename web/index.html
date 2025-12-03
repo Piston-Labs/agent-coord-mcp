@@ -3682,11 +3682,16 @@
     /* Mobile Chat Fix - Ensure send button is always accessible */
     @media (max-width: 768px) {
       /* CRITICAL: Chat view must be flex column to keep input at bottom */
+      /* Only show when active - respect tab switching */
       #chatView {
-        display: flex !important;
+        display: none !important;
         flex-direction: column !important;
         height: 100% !important;
         overflow: hidden !important; /* Prevent double scrolling */
+      }
+
+      #chatView.active {
+        display: flex !important;
       }
 
       .chat-messages {
@@ -4801,11 +4806,16 @@
       }
 
       /* CRITICAL: Ensure chat view uses flexbox properly to keep input visible */
+      /* Only show when active - respect tab switching */
       #chatView {
-        display: flex !important;
+        display: none !important;
         flex-direction: column !important;
         flex: 1 !important;
         overflow: hidden !important;
+      }
+
+      #chatView.active {
+        display: flex !important;
       }
 
       #chatView .chat-messages {
