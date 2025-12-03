@@ -160,6 +160,17 @@ const INTEGRATIONS = [
     setupInstructions: 'Create Redis database, copy REST URL and Token.',
     endpoint: 'Redis'
   },
+  {
+    id: 'google-drive',
+    name: 'Google Drive',
+    category: 'external',
+    description: 'Document storage and sharing for sales materials',
+    status: process.env.GOOGLE_DRIVE_CLIENT_ID ? 'live' : 'needs-setup',
+    envVar: 'GOOGLE_DRIVE_CLIENT_ID',
+    setupUrl: 'https://console.cloud.google.com/apis/credentials',
+    setupInstructions: 'Create OAuth 2.0 Client ID in Google Cloud Console. Set GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, and optionally GOOGLE_DRIVE_FOLDER_ID.',
+    endpoint: '/api/google-drive'
+  },
 ];
 
 // API endpoints
@@ -175,6 +186,7 @@ const API_ENDPOINTS = [
   { id: 'onboarding', path: '/api/onboarding', methods: ['GET'], description: 'Agent onboarding rules' },
   { id: 'hot-start', path: '/api/hot-start', methods: ['GET'], description: 'Quick agent initialization' },
   { id: 'health', path: '/api/health', methods: ['GET'], description: 'System health check' },
+  { id: 'google-drive', path: '/api/google-drive', methods: ['GET', 'POST', 'DELETE'], description: 'Google Drive document storage and sharing' },
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
