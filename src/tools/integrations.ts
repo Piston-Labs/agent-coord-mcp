@@ -474,6 +474,256 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
+  // GOOGLE-DRIVE TOOL - Store sales documents in company Google Drive
+  // ============================================================================
+
+  server.tool(
+    'google-drive',
+    'Store and manage sales documents in Piston Labs Google Drive. Upload generated docs, list files, create folders.',
+    {
+      action: z.enum(['status', 'auth-url', 'list', 'get', 'upload', 'create-folder', 'delete', 'search'])
+        .describe('status=check connection, auth-url=get OAuth URL, list=list files, get=get file, upload=upload file, create-folder=create folder, delete=delete file, search=search files'),
+      name: z.string().optional().describe('File or folder name (for upload/create-folder)'),
+      content: z.string().optional().describe('File content to upload (for upload)'),
+      mimeType: z.string().optional().describe('MIME type (auto-detected from extension if not provided)'),
+      folderId: z.string().optional().describe('Google Drive folder ID (uses GOOGLE_DRIVE_FOLDER_ID env var if not specified)'),
+      fileId: z.string().optional().describe('Google Drive file ID (for get/delete)'),
+      query: z.string().optional().describe('Search query (for search/list)'),
+      description: z.string().optional().describe('File description'),
+      localFileId: z.string().optional().describe('Link to local sales-file ID'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, name, content, mimeType, folderId, fileId, query, description, localFileId, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'status': {
+            const res = await fetch(`${API_BASE}/api/google-drive?action=status`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'auth-url': {
+            const res = await fetch(`${API_BASE}/api/google-drive?action=auth-url`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify({
+              ...data,
+              instructions: 'Open this URL in a browser to authorize Google Drive. Once authorized, files can be uploaded.'
+            }, null, 2) }] };
+          }
+
+          case 'list': {
+            const params = new URLSearchParams({ action: 'list' });
+            if (folderId) params.set('folderId', folderId);
+            if (query) params.set('query', query);
+
+            const res = await fetch(`${API_BASE}/api/google-drive?${params}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            if (!fileId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'fileId required for get' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/google-drive?action=get&fileId=${fileId}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'upload': {
+            if (!name || !content) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'name and content required for upload',
+                hint: 'Use action=upload with name (filename) and content (file content)'
+              }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-drive?action=upload`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name,
+                content,
+                mimeType,
+                folderId,
+                description,
+                localFileId,
+                uploadedBy: agentId
+              })
+            });
+            const data = await res.json();
+
+            // Post to chat that file was uploaded
+            if (data.success) {
+              await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  author: agentId,
+                  message: `📁 Uploaded "${name}" to Google Drive. [View file](${data.file?.webViewLink})`
+                })
+              });
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'create-folder': {
+            if (!name) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'name required for create-folder' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-drive?action=create-folder`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ name, parentId: folderId })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'delete': {
+            if (!fileId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'fileId required for delete' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-drive?action=delete&fileId=${fileId}`, {
+              method: 'DELETE'
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'search': {
+            if (!query) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'query required for search' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-drive?action=search&query=${encodeURIComponent(query)}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
+  // USER-TASKS TOOL - Private task list for individual users
+  // ============================================================================
+
+  server.tool(
+    'user-tasks',
+    'Manage private task list for a specific user. Tasks are scoped to the user and not visible to others.',
+    {
+      action: z.enum(['list', 'create', 'update', 'delete', 'get'])
+        .describe('list=show tasks, create=new task, update=modify task, delete=remove task, get=single task'),
+      user: z.string().describe('Username to manage tasks for (e.g., tyler3)'),
+      taskId: z.string().optional().describe('Task ID (for get/update/delete)'),
+      title: z.string().optional().describe('Task title (for create/update)'),
+      description: z.string().optional().describe('Task description'),
+      status: z.enum(['todo', 'in-progress', 'done', 'blocked']).optional().describe('Task status'),
+      priority: z.enum(['low', 'medium', 'high', 'urgent']).optional().describe('Task priority'),
+      category: z.string().optional().describe('Task category for organization'),
+      dueDate: z.string().optional().describe('Due date (ISO string)'),
+      notes: z.string().optional().describe('Additional notes'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, user, taskId, title, description, status, priority, category, dueDate, notes, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'list': {
+            const params = new URLSearchParams({ user });
+            if (status) params.set('status', status);
+            if (priority) params.set('priority', priority);
+            if (category) params.set('category', category);
+
+            const res = await fetch(`${API_BASE}/api/user-tasks?${params}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            if (!taskId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'taskId required for get' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/user-tasks?user=${user}&taskId=${taskId}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'create': {
+            if (!title) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'title required for create' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/user-tasks?user=${user}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ title, description, priority, category, dueDate, notes })
+            });
+            const data = await res.json();
+
+            // Notify in chat
+            if (data.success) {
+              await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  author: agentId,
+                  message: `📋 Added task for @${user}: "${title}" [${priority || 'medium'}]`
+                })
+              });
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'update': {
+            if (!taskId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'taskId required for update' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/user-tasks?user=${user}`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ taskId, title, description, status, priority, category, dueDate, notes })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'delete': {
+            if (!taskId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'taskId required for delete' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/user-tasks?user=${user}&taskId=${taskId}`, {
+              method: 'DELETE'
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // SHOP TOOL - Sales pipeline management
   // ============================================================================
 

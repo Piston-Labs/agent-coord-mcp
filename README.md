@@ -2,7 +2,7 @@
 
 MCP server for multi-agent coordination - enables AI agents to collaborate without conflicts.
 
-**43 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
+**45 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
 
 ## Features
 
@@ -37,7 +37,7 @@ npm run start:http
 PERSIST=true npm run start:http
 ```
 
-## MCP Tools (43)
+## MCP Tools (45)
 
 | Tool | Description |
 |------|-------------|
@@ -60,6 +60,9 @@ PERSIST=true npm run start:http
 | `hot-start` | Zero cold start context loading |
 | `workflow` | Collaboration workflow templates |
 | `generate-doc` | Sales document generation |
+| `sales-file` | Save docs to Sales Engineering folders |
+| `google-drive` | Upload docs to company Google Drive |
+| `user-tasks` | Private task list per user |
 | `shop` | Sales pipeline management |
 | `aws-status` | AWS infrastructure status |
 
@@ -115,6 +118,26 @@ POST /api/workflows?action=start - Start workflow run
 PATCH /api/workflows        - Update workflow step
 ```
 
+### Google Drive
+```
+GET  /api/google-drive?action=status     - Check connection status
+GET  /api/google-drive?action=auth-url   - Get OAuth authorization URL
+GET  /api/google-drive?action=list       - List files in folder
+GET  /api/google-drive?action=get        - Get file metadata
+POST /api/google-drive?action=upload     - Upload file to Drive
+POST /api/google-drive?action=create-folder - Create folder
+DELETE /api/google-drive?action=delete   - Delete file
+```
+
+### User Tasks (Private)
+```
+GET  /api/user-tasks?user=X             - List user's private tasks
+GET  /api/user-tasks?user=X&taskId=Y    - Get single task
+POST /api/user-tasks?user=X             - Create task
+PATCH /api/user-tasks?user=X            - Update task
+DELETE /api/user-tasks?user=X&taskId=Y  - Delete task
+```
+
 ## Environment Variables
 
 See `.env.example` for a complete template with documentation.
@@ -136,6 +159,14 @@ See `.env.example` for a complete template with documentation.
 | `SLACK_TOKEN` | Slack team messaging |
 | `GITHUB_TOKEN` | Context clusters & repo access |
 | `GITHUB_ORG` | GitHub organization |
+
+### Google Drive Integration
+| Variable | Description |
+|----------|-------------|
+| `GOOGLE_DRIVE_CLIENT_ID` | Google OAuth client ID |
+| `GOOGLE_DRIVE_CLIENT_SECRET` | Google OAuth client secret |
+| `GOOGLE_DRIVE_REDIRECT_URI` | OAuth callback URL (optional, auto-detected) |
+| `GOOGLE_DRIVE_FOLDER_ID` | Default folder ID for uploads (optional) |
 
 ### Local Development
 | Variable | Description | Default |
