@@ -24,6 +24,8 @@ import { registerContextTools } from './tools/context.js';
 import { registerTestingTools } from './tools/testing.js';
 import { registerIntegrationTools } from './tools/integrations.js';
 import { registerOrchestrationTools } from './tools/orchestration.js';
+import { registerSpawnTools } from './tools/spawn.js';
+import { registerExternalTools } from './tools/external.js';
 
 const server = new McpServer({
   name: 'agent-coord-mcp',
@@ -40,6 +42,8 @@ registerContextTools(server);       // context-load, vision, repo-context, memor
 registerTestingTools(server);       // ui-test, metrics
 registerIntegrationTools(server);   // device, aws-status, fleet-analytics, provision-device, alerts, generate-doc, shop
 registerOrchestrationTools(server); // orchestrate, spawn-parallel, workflow, hot-start, auto-poll
+registerSpawnTools(server);         // spawn-agent, spawn-batch, spawn-status
+registerExternalTools(server);      // linear, sentry, notion, github, slack
 
 // ============================================================================
 // Start Server
@@ -49,7 +53,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 29 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, context-cluster, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, sales-file, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll)');
+  console.error('[agent-coord-mcp] Tools: 34 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, context-cluster, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, sales-file, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll, linear, sentry, notion, github, slack)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);

@@ -528,4 +528,195 @@ export function registerIntegrationTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // LINEAR TOOL - Issue tracking integration
+  // ============================================================================
+
+  server.tool(
+    'linear',
+    'Linear issue tracking integration. Create, update, and query issues for project management.',
+    {
+      action: z.enum(['list', 'get', 'create', 'update', 'teams', 'projects']).describe('Operation to perform'),
+      issueId: z.string().optional().describe('Issue ID for get/update actions'),
+      teamId: z.string().optional().describe('Team ID for creating issues'),
+      teamKey: z.string().optional().describe('Team key (e.g., ENG) for filtering'),
+      projectId: z.string().optional().describe('Project ID for filtering or assignment'),
+      title: z.string().optional().describe('Issue title (required for create)'),
+      description: z.string().optional().describe('Issue description/body'),
+      priority: z.number().optional().describe('Priority 0-4 (0=none, 1=urgent, 4=low)'),
+      status: z.string().optional().describe('Filter by status (e.g., "In Progress", "Done")'),
+      stateId: z.string().optional().describe('State ID for updating status'),
+      assigneeId: z.string().optional().describe('Assignee user ID'),
+      limit: z.number().optional().describe('Max issues to return (default 25)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, agentId, ...params } = args;
+
+      try {
+        switch (action) {
+          case 'list': {
+            const queryParams = new URLSearchParams();
+            if (params.teamKey) queryParams.set('teamKey', params.teamKey);
+            if (params.projectId) queryParams.set('projectId', params.projectId);
+            if (params.status) queryParams.set('status', params.status);
+            if (params.limit) queryParams.set('limit', String(params.limit));
+
+            const res = await fetch(`${API_BASE}/api/linear?${queryParams}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            if (!params.issueId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'issueId required for get action' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/linear?issueId=${params.issueId}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'teams': {
+            const res = await fetch(`${API_BASE}/api/linear?action=teams`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'projects': {
+            const res = await fetch(`${API_BASE}/api/linear?action=projects`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'create': {
+            if (!params.teamId || !params.title) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'teamId and title required for create',
+                hint: 'Use action=teams to list available teams and get their IDs'
+              }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/linear`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                teamId: params.teamId,
+                title: params.title,
+                description: params.description,
+                priority: params.priority,
+                projectId: params.projectId,
+                assigneeId: params.assigneeId
+              })
+            });
+            const data = await res.json();
+
+            // Announce in chat
+            if (data.success) {
+              await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  author: agentId,
+                  message: `📋 Created Linear issue: [${data.issue?.identifier}] ${params.title}`
+                })
+              });
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'update': {
+            if (!params.issueId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'issueId required for update' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/linear`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                action: 'update',
+                issueId: params.issueId,
+                title: params.title,
+                description: params.description,
+                priority: params.priority,
+                stateId: params.stateId,
+                projectId: params.projectId,
+                assigneeId: params.assigneeId
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
+  // SENTRY TOOL - Error tracking integration
+  // ============================================================================
+
+  server.tool(
+    'sentry',
+    'Sentry error tracking integration. Query issues, get error stats, monitor application health.',
+    {
+      action: z.enum(['overview', 'issues', 'issue', 'stats', 'events']).describe('overview=summary, issues=list issues, issue=get details, stats=project stats, events=issue events'),
+      issueId: z.string().optional().describe('Issue ID (required for issue/events actions)'),
+      query: z.string().optional().describe('Search query for filtering issues'),
+      status: z.enum(['resolved', 'unresolved', 'ignored']).optional().describe('Filter by issue status'),
+      level: z.enum(['fatal', 'error', 'warning', 'info', 'debug']).optional().describe('Filter by severity level'),
+      limit: z.number().optional().describe('Max results to return (default 25, max 100)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, issueId, query, status, level, limit, agentId } = args;
+
+      try {
+        const params = new URLSearchParams();
+        if (issueId) params.set('issueId', issueId);
+        if (query) params.set('query', query);
+        if (status) params.set('status', status);
+        if (level) params.set('level', level);
+        if (limit) params.set('limit', String(limit));
+        params.set('action', action);
+
+        const res = await fetch(`${API_BASE}/api/sentry?${params}`);
+        const data = await res.json();
+
+        // Format overview nicely
+        if (action === 'overview' && data.summary) {
+          const summary = [
+            `## Sentry Overview`,
+            ``,
+            `**Unresolved Issues:** ${data.summary.unresolvedIssues}`,
+            `**Critical Issues:** ${data.summary.criticalIssues}`,
+            `**Project:** ${data.summary.project}`,
+            ``,
+            `### Recent Issues:`
+          ];
+
+          if (data.recentIssues?.length > 0) {
+            for (const issue of data.recentIssues) {
+              summary.push(`- **${issue.shortId}** [${issue.level}]: ${issue.title}`);
+              summary.push(`  Count: ${issue.count} | Last seen: ${issue.lastSeen}`);
+            }
+          } else {
+            summary.push('No recent issues!');
+          }
+
+          return { content: [{ type: 'text', text: summary.join('\n') }] };
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }

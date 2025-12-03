@@ -12,3 +12,4 @@ export { registerContextTools } from './context.js';
 export { registerTestingTools } from './testing.js';
 export { registerIntegrationTools } from './integrations.js';
 export { registerOrchestrationTools } from './orchestration.js';
+export { registerSpawnTools } from './spawn.js';
