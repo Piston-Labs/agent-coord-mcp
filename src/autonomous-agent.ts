@@ -311,10 +311,10 @@ async function executeTools(toolName: string, toolInput: Record<string, unknown>
       const { agentId, role, task } = toolInput as { agentId: string; role: string; task: string };
       try {
         // Register the new agent
-        await fetch(`${CONFIG.API_BASE}/api/agents/${agentId}/status`, {
+        await fetch(`${CONFIG.API_BASE}/api/agents`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'active', currentTask: task, roles: [role], spawnedBy: CONFIG.AGENT_ID })
+          body: JSON.stringify({ id: agentId, status: 'active', currentTask: task, role: role })
         });
         
         // Post announcement

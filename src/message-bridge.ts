@@ -36,14 +36,15 @@ let lastProcessedTimestamp: string | null = null;
 
 async function updateAgentStatus(task: string): Promise<void> {
   try {
-    await fetch(`${API_BASE}/api/agents/${AGENT_ID}/status`, {
+    await fetch(`${API_BASE}/api/agents`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
+        id: AGENT_ID,
         status: 'active',
         currentTask: task,
         workingOn: 'group-chat-bridge',
-        roles: ['coder', 'message-bridge']
+        role: 'message-bridge'
       })
     });
   } catch (err) {
