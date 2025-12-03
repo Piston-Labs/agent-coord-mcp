@@ -9728,6 +9728,34 @@
       const container = document.getElementById('resourcesList');
       let html = '';
 
+      // Check for integrations that need setup
+      const needsSetup = (data.integrations?.items || []).filter(i => i.status === 'needs-setup');
+
+      if (needsSetup.length > 0) {
+        html += `<div style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, rgba(248,81,73,0.1), rgba(248,81,73,0.05)); border: 1px solid var(--danger); border-radius: 8px;">
+          <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--danger); display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 18px;">⚠️</span> Setup Required
+            <span style="font-size: 11px; font-weight: normal; padding: 2px 8px; background: var(--danger); color: white; border-radius: 10px;">${needsSetup.length} item${needsSetup.length > 1 ? 's' : ''}</span>
+          </div>
+          <p style="margin: 0 0 12px; font-size: 12px; color: var(--text-secondary);">These integrations need environment variables configured to work:</p>
+          <div style="display: grid; gap: 10px;">`;
+
+        for (const int of needsSetup) {
+          html += `<div style="padding: 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+              <span style="font-weight: 600; color: var(--text-primary);">${int.name}</span>
+              <code style="font-size: 10px; padding: 2px 6px; background: var(--bg-tertiary); border-radius: 4px; color: var(--warning);">${int.envVar || ''}</code>
+            </div>
+            <p style="margin: 0 0 8px; font-size: 12px; color: var(--text-secondary);">${int.setupInstructions || int.description}</p>
+            ${int.setupUrl ? `<a href="${int.setupUrl}" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--accent); text-decoration: none;">
+              <span>Get credentials</span>
+              <span style="font-size: 10px;">↗</span>
+            </a>` : ''}
+          </div>`;
+        }
+        html += '</div></div>';
+      }
+
       // Render MCP Tools
       if (data.tools?.items?.length > 0) {
         const categories = [...new Set(data.tools.items.map(t => t.category))];
@@ -9790,14 +9818,19 @@
           <div style="display: grid; gap: 8px;">`;
 
         for (const int of data.integrations.items) {
-          const statusColor = int.status === 'configured' || int.status === 'active' ? 'var(--success)' : 'var(--warning)';
+          const statusConfig = getIntegrationStatusConfig(int.status);
           html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span style="font-weight: 600; color: var(--text-primary);">${int.name}</span>
-              <span style="font-size: 10px; padding: 2px 8px; background: ${statusColor}22; color: ${statusColor}; border-radius: 10px;">${int.status}</span>
+              <span style="font-size: 10px; padding: 2px 8px; background: ${statusConfig.bg}; color: ${statusConfig.color}; border-radius: 10px; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 8px;">${statusConfig.icon}</span>${statusConfig.label}
+              </span>
             </div>
             <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${int.description}</p>
-            ${int.endpoint ? `<code style="font-size: 10px; color: var(--text-secondary);">${int.endpoint}</code>` : ''}
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+              ${int.endpoint ? `<code style="font-size: 10px; color: var(--text-secondary);">${int.endpoint}</code>` : '<span></span>'}
+              ${int.envVar ? `<code style="font-size: 9px; padding: 1px 4px; background: var(--bg-tertiary); border-radius: 3px; color: var(--text-secondary);">${int.envVar}</code>` : ''}
+            </div>
           </div>`;
         }
         html += '</div></div>';
@@ -9852,6 +9885,42 @@
         DELETE: '#f85149'
       };
       return colors[method] || '#8b949e';
+    }
+
+    function getIntegrationStatusConfig(status) {
+      const configs = {
+        'live': {
+          color: 'var(--success)',
+          bg: 'rgba(63, 185, 80, 0.15)',
+          icon: '●',
+          label: 'Live'
+        },
+        'configured': {
+          color: 'var(--success)',
+          bg: 'rgba(63, 185, 80, 0.15)',
+          icon: '●',
+          label: 'Live'
+        },
+        'active': {
+          color: 'var(--success)',
+          bg: 'rgba(63, 185, 80, 0.15)',
+          icon: '●',
+          label: 'Live'
+        },
+        'needs-setup': {
+          color: 'var(--danger)',
+          bg: 'rgba(248, 81, 73, 0.15)',
+          icon: '○',
+          label: 'Needs Setup'
+        },
+        'optional': {
+          color: 'var(--text-secondary)',
+          bg: 'rgba(139, 148, 158, 0.15)',
+          icon: '◐',
+          label: 'Optional'
+        }
+      };
+      return configs[status] || configs['needs-setup'];
     }
 
     async function fetchTeam() {

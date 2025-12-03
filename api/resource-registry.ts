@@ -70,13 +70,96 @@ const MCP_TOOLS = [
   { id: 'spawn-status', name: 'spawn-status', category: 'orchestration', description: 'Check if spawn service is running.', file: 'src/tools/spawn.ts' },
 ];
 
-// External integrations
+// External integrations with detailed status
 const INTEGRATIONS = [
-  { id: 'sentry', name: 'Sentry', category: 'external', description: 'Error tracking and monitoring', status: process.env.SENTRY_AUTH_TOKEN ? 'configured' : 'mock', endpoint: '/api/sentry' },
-  { id: 'linear', name: 'Linear', category: 'external', description: 'Issue tracking and project management', status: process.env.LINEAR_API_KEY ? 'configured' : 'mock', endpoint: '/api/linear' },
-  { id: 'notion', name: 'Notion', category: 'external', description: 'Knowledge base and documentation', status: process.env.NOTION_TOKEN ? 'configured' : 'mock', endpoint: '/api/notion' },
-  { id: 'github', name: 'GitHub', category: 'external', description: 'Code repository and webhook integration', status: 'active', endpoint: '/api/github-webhook' },
-  { id: 'aws', name: 'AWS', category: 'external', description: 'Lambda, IoT Core, S3 infrastructure', status: 'active', endpoint: '/api/aws-status' },
+  {
+    id: 'sentry',
+    name: 'Sentry',
+    category: 'external',
+    description: 'Error tracking and monitoring',
+    status: process.env.SENTRY_AUTH_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'SENTRY_AUTH_TOKEN',
+    setupUrl: 'https://sentry.io/settings/auth-tokens/',
+    setupInstructions: 'Create auth token with project:read, event:read scopes. Also set SENTRY_ORG.',
+    endpoint: '/api/sentry'
+  },
+  {
+    id: 'linear',
+    name: 'Linear',
+    category: 'external',
+    description: 'Issue tracking and project management',
+    status: process.env.LINEAR_API_KEY ? 'live' : 'needs-setup',
+    envVar: 'LINEAR_API_KEY',
+    setupUrl: 'https://linear.app/settings/api',
+    setupInstructions: 'Create a Personal API Key from Linear Settings → API.',
+    endpoint: '/api/linear'
+  },
+  {
+    id: 'notion',
+    name: 'Notion',
+    category: 'external',
+    description: 'Knowledge base and documentation',
+    status: process.env.NOTION_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'NOTION_TOKEN',
+    setupUrl: 'https://www.notion.so/my-integrations',
+    setupInstructions: 'Create internal integration, share pages with it.',
+    endpoint: '/api/notion'
+  },
+  {
+    id: 'github',
+    name: 'GitHub',
+    category: 'external',
+    description: 'Enhanced GitHub operations (PRs, issues, workflows)',
+    status: process.env.GITHUB_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'GITHUB_TOKEN',
+    setupUrl: 'https://github.com/settings/tokens',
+    setupInstructions: 'Create Personal Access Token with repo and workflow scopes.',
+    endpoint: '/api/github'
+  },
+  {
+    id: 'slack',
+    name: 'Slack',
+    category: 'external',
+    description: 'Team messaging integration',
+    status: process.env.SLACK_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'SLACK_TOKEN',
+    setupUrl: 'https://api.slack.com/apps',
+    setupInstructions: 'Create app, add Bot Token Scopes (chat:write, channels:read, users:read), install to workspace.',
+    endpoint: '/api/slack'
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic (Vision)',
+    category: 'external',
+    description: 'Image analysis for chat and screenshots',
+    status: process.env.ANTHROPIC_API_KEY ? 'live' : 'needs-setup',
+    envVar: 'ANTHROPIC_API_KEY',
+    setupUrl: 'https://console.anthropic.com/settings/keys',
+    setupInstructions: 'Create API key from Anthropic Console.',
+    endpoint: '/api/analyze-image'
+  },
+  {
+    id: 'cloudflare',
+    name: 'Cloudflare (DO)',
+    category: 'external',
+    description: 'Durable Objects storage backend (optional)',
+    status: process.env.DO_URL ? 'live' : 'optional',
+    envVar: 'DO_URL',
+    setupUrl: 'https://dash.cloudflare.com/',
+    setupInstructions: 'Run wrangler login, then wrangler deploy in cloudflare-do/.',
+    endpoint: '/coordinator/*'
+  },
+  {
+    id: 'upstash',
+    name: 'Upstash Redis',
+    category: 'external',
+    description: 'Primary data persistence',
+    status: process.env.UPSTASH_REDIS_REST_URL ? 'live' : 'needs-setup',
+    envVar: 'UPSTASH_REDIS_REST_URL',
+    setupUrl: 'https://console.upstash.com/',
+    setupInstructions: 'Create Redis database, copy REST URL and Token.',
+    endpoint: 'Redis'
+  },
 ];
 
 // API endpoints
