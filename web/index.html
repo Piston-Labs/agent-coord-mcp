@@ -7654,6 +7654,19 @@
     .training-coach-input input { flex: 1; background: var(--bg-secondary); border: 1px solid var(--border); padding: 10px 14px; border-radius: 6px; color: var(--text-primary); font-size: 13px; }
     .training-coach-input button { background: var(--accent); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; }
     @media (max-width: 1024px) { .training-content { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; } .training-modules-panel { max-height: 200px; } .training-coach-panel { max-height: 250px; } .training-features { grid-template-columns: 1fr; } }
+    /* Mobile touch targets */
+    @media (pointer: coarse) {
+      .training-module-item { min-height: 72px; padding: 16px; }
+      .quiz-option { min-height: 56px; padding: 16px; }
+      .training-lesson-nav button { min-height: 44px; min-width: 80px; }
+      .training-coach-input button { min-height: 44px; min-width: 60px; }
+    }
+    /* Focus states for accessibility */
+    .training-module-item:focus-visible, .quiz-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .training-lesson-nav button:focus-visible, .quiz-submit-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    /* Smooth transitions */
+    .training-module-item, .quiz-option { transition: all 0.15s ease; }
+    .module-progress-ring .ring-progress { transition: stroke-dasharray 0.5s ease; }
     /* ========== END TRAINING MODULE STYLES ========== */
 
     /* Direct Messaging Styles */
@@ -9454,38 +9467,6 @@
         </div>
       </div>
 
-      <!-- Training View -->
-      <div class="tab-content" id="trainingView">
-        <div class="training-container" style="display: flex; height: 100%; overflow: hidden;">
-          <!-- Training Sidebar -->
-          <div class="training-sidebar" style="width: 280px; flex-shrink: 0; border-right: 1px solid var(--border); overflow-y: auto; background: var(--bg-secondary);">
-            <div style="padding: 16px; border-bottom: 1px solid var(--border);">
-              <h3 style="margin: 0 0 12px; font-size: 16px;">Training Hub</h3>
-              <select id="trainingRoleFilter" onchange="loadTrainingModules()" style="width: 100%; padding: 8px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 13px;">
-                <option value="">All Roles</option>
-                <option value="sales">Sales Engineers</option>
-                <option value="developer">Developers</option>
-                <option value="investor">Investors</option>
-              </select>
-            </div>
-            <div id="trainingModuleList" style="padding: 8px;">
-              <div style="padding: 20px; text-align: center; color: var(--text-secondary);">Loading modules...</div>
-            </div>
-          </div>
-
-          <!-- Training Content -->
-          <div class="training-content" style="flex: 1; overflow-y: auto; padding: 24px;">
-            <div id="trainingContentArea">
-              <div style="text-align: center; padding: 60px 20px; color: var(--text-secondary);">
-                <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
-                <h2 style="margin: 0 0 8px; color: var(--text-primary);">Welcome to Training Hub</h2>
-                <p style="margin: 0;">Select a module from the sidebar to begin learning.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Resources View -->
       <div class="tab-content" id="resourcesView">
         <div class="resources-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
@@ -9577,9 +9558,9 @@
             <div class="training-modules-header">
               <span>📚 Training Modules</span>
             </div>
-            <div class="training-modules-list" id="trainingModulesList">
+            <div class="training-modules-list" id="trainingModulesList" role="listbox" aria-label="Training modules">
               <!-- Populated by JS -->
-              <div class="training-module-item" data-module="sales-101" data-role="sales">
+              <div class="training-module-item" data-module="sales-101" data-role="sales" role="option" tabindex="0" aria-label="Sales 101 module, 4 lessons, 30 minutes">
                 <div class="module-progress-ring">
                   <svg viewBox="0 0 36 36">
                     <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
@@ -12043,11 +12024,81 @@
     function initTraining() {
       initTrainingModuleClicks();
       filterTrainingModules();
+      initTrainingKeyboardNav();
+      loadTrainingProgress();
+    }
+
+    // Keyboard navigation for training (J/K for lessons, 1-5 for modules, Enter for quiz)
+    function initTrainingKeyboardNav() {
+      document.addEventListener('keydown', (e) => {
+        const trainingView = document.getElementById('trainingView');
+        if (!trainingView?.classList.contains('active')) return;
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+        switch(e.key.toLowerCase()) {
+          case 'j': if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); nextLesson(); } break;
+          case 'k': if (!e.metaKey && !e.ctrlKey) { e.preventDefault(); prevLesson(); } break;
+          case 'enter':
+            if (document.querySelector('.quiz-container') && !e.target.closest('.quiz-option')) {
+              e.preventDefault(); submitQuiz();
+            }
+            break;
+          case '1': case '2': case '3': case '4': case '5':
+            if (!e.metaKey && !e.ctrlKey) {
+              const modules = document.querySelectorAll('.training-module-item:not([style*="display: none"])');
+              const idx = parseInt(e.key) - 1;
+              if (modules[idx]) { e.preventDefault(); modules[idx].click(); }
+            }
+            break;
+        }
+      });
+    }
+
+    // localStorage progress persistence
+    function loadTrainingProgress() {
+      try {
+        const saved = localStorage.getItem('piston-training-progress');
+        if (saved) { userTrainingProgress = JSON.parse(saved); updateProgressUI(); }
+      } catch (e) { console.warn('Failed to load training progress:', e); }
+    }
+
+    function saveTrainingProgress() {
+      try { localStorage.setItem('piston-training-progress', JSON.stringify(userTrainingProgress)); }
+      catch (e) { console.warn('Failed to save training progress:', e); }
+    }
+
+    function updateProgressUI() {
+      let totalProgress = 0, moduleCount = 0, completedModules = 0;
+      document.querySelectorAll('.training-module-item').forEach(item => {
+        const moduleId = item.dataset.module;
+        const progress = userTrainingProgress[moduleId] || 0;
+        moduleCount++;
+        if (progress >= 100) completedModules++;
+        totalProgress += progress;
+        const ring = item.querySelector('.ring-progress');
+        const text = item.querySelector('.module-progress-text');
+        if (ring) ring.setAttribute('stroke-dasharray', `${progress}, 100`);
+        if (text) text.textContent = `${Math.round(progress)}%`;
+        if (progress >= 100) item.classList.add('completed');
+      });
+      const avgProgress = moduleCount > 0 ? Math.round(totalProgress / moduleCount) : 0;
+      const progressEl = document.getElementById('trainingProgress');
+      const modulesEl = document.getElementById('trainingModulesComplete');
+      if (progressEl) progressEl.textContent = `${avgProgress}%`;
+      if (modulesEl) modulesEl.textContent = `${completedModules}/${moduleCount}`;
+    }
+
+    function markLessonComplete(moduleId, lessonIndex, totalLessons) {
+      if (!userTrainingProgress[moduleId]) userTrainingProgress[moduleId] = 0;
+      const progressPerLesson = 100 / totalLessons;
+      userTrainingProgress[moduleId] = Math.min(100, Math.round((lessonIndex + 1) * progressPerLesson));
+      saveTrainingProgress();
+      updateProgressUI();
     }
 
     async function loadTrainingModules() {
-      const roleFilter = document.getElementById('trainingRoleFilter')?.value || '';
-      const moduleList = document.getElementById('trainingModuleList');
+      const roleFilter = document.getElementById('trainingRole')?.value || '';
+      const moduleList = document.getElementById('trainingModulesList');
       if (!moduleList) return;
 
       try {
