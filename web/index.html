@@ -3681,20 +3681,33 @@
 
     /* Mobile Chat Fix - Ensure send button is always accessible */
     @media (max-width: 768px) {
+      /* CRITICAL: Chat view must be flex column to keep input at bottom */
+      #chatView {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        overflow: hidden !important; /* Prevent double scrolling */
+      }
+
+      .chat-messages {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        min-height: 0; /* Allow flex shrinking */
+      }
+
       .chat-input {
-        position: sticky;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        position: relative !important; /* Not sticky - use flex instead */
+        flex-shrink: 0 !important;
         background: var(--bg-secondary);
         z-index: 100;
         padding: 12px;
         border-top: 1px solid var(--border);
-        display: flex;
+        display: flex !important;
         align-items: center;
         gap: 8px;
       }
-      
+
       .chat-input input[type="text"] {
         flex: 1;
         min-width: 0;
@@ -3702,7 +3715,7 @@
         -webkit-appearance: none;
         appearance: none;
       }
-      
+
       .chat-input button#sendBtn {
         flex-shrink: 0;
         padding: 12px 16px;
@@ -3712,18 +3725,24 @@
         -webkit-tap-highlight-color: transparent;
         cursor: pointer;
       }
-      
-      /* Ensure chat panel fills available space */
-      .chat-panel {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
+
+      /* Hide extra buttons on very narrow screens to give more input space */
+      #usernameBtn, #imageBtn {
+        display: none !important;
       }
-      
-      .chat-messages {
-        flex: 1;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Extra narrow screens - hide even more to maximize input width */
+    @media (max-width: 360px) {
+      .chat-input {
+        padding: 8px !important;
+        gap: 6px !important;
+      }
+
+      .chat-input button#sendBtn {
+        padding: 10px 12px !important;
+        min-width: 50px !important;
+        font-size: 13px !important;
       }
     }
 
@@ -3861,6 +3880,22 @@
         padding: 14px;
         width: 100%;
         box-sizing: border-box;
+        min-height: 180px; /* Ensure cards aren't squashed */
+      }
+
+      /* Make device card content visible on mobile */
+      .device-card .device-metrics,
+      .device-card .device-metrics-row2,
+      .device-card .device-location,
+      .device-card .device-health,
+      .device-card .device-mini-chart,
+      .device-card .device-live-indicator {
+        display: grid !important;
+      }
+
+      .device-card .device-mini-chart {
+        display: flex !important;
+        height: 30px;
       }
 
       .device-header {
