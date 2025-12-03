@@ -4797,6 +4797,25 @@
 
       .panel.mobile-active {
         display: flex !important;
+        flex-direction: column !important;
+      }
+
+      /* CRITICAL: Ensure chat view uses flexbox properly to keep input visible */
+      #chatView {
+        display: flex !important;
+        flex-direction: column !important;
+        height: 100% !important;
+        overflow: hidden !important;
+      }
+
+      #chatView .chat-messages {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        min-height: 0 !important;
+      }
+
+      #chatView .chat-input {
+        flex-shrink: 0 !important;
       }
 
       /* Header adjustments for mobile */
