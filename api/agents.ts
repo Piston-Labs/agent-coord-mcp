@@ -91,15 +91,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const lastNotified = offlineNotifiedData[agent.id] ? parseInt(offlineNotifiedData[agent.id] as string) : 0;
 
             // Check if agent just went offline (was online, now past threshold)
-            // Also prevent duplicate notifications by checking if we already notified within the threshold
-            if (wasOnline && lastSeen < offlineThreshold && now - lastNotified > OFFLINE_THRESHOLD_MS) {
-              // Post offline notification and record the timestamp to prevent duplicates
-              await postSystemMessage(`[agent-offline] 👋 **${agent.id}** went offline (last seen: ${agent.lastSeen})`);
-              await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
-              await redis.hset(OFFLINE_NOTIFIED_KEY, { [agent.id]: now.toString() });
-            } else if (wasOnline && lastSeen < offlineThreshold) {
-              // Just update presence without notification (already notified recently)
-              await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
+            // Use atomic SETNX-style check to prevent race conditions from concurrent requests
+            if (wasOnline && lastSeen < offlineThreshold) {
+              // Try to atomically claim the notification using HSETNX (only sets if field doesn't exist)
+              // We use a lock key with expiry logic to prevent duplicate notifications
+              const lockKey = `agent-coord:offline-lock:${agent.id}`;
+              const lockAcquired = await redis.setnx(lockKey, now.toString());
+
+              if (lockAcquired) {
+                // We got the lock - set expiry and post notification
+                await redis.expire(lockKey, 300); // 5 minute expiry
+                await postSystemMessage(`[agent-offline] 👋 **${agent.id}** went offline (last seen: ${agent.lastSeen})`);
+                await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
+                await redis.hset(OFFLINE_NOTIFIED_KEY, { [agent.id]: now.toString() });
+              } else {
+                // Lock exists - check if it's stale (older than threshold)
+                const lockTime = await redis.get(lockKey);
+                if (lockTime && now - parseInt(lockTime as string) > OFFLINE_THRESHOLD_MS) {
+                  // Lock is stale, try to update it atomically and post notification
+                  const updated = await redis.set(lockKey, now.toString(), { xx: true });
+                  if (updated) {
+                    await redis.expire(lockKey, 300);
+                    await postSystemMessage(`[agent-offline] 👋 **${agent.id}** went offline (last seen: ${agent.lastSeen})`);
+                    await redis.hset(OFFLINE_NOTIFIED_KEY, { [agent.id]: now.toString() });
+                  }
+                }
+                // Just update presence without notification
+                await redis.hset(AGENT_STATUS_KEY, { [agent.id]: 'offline' });
+              }
             }
 
             // Determine status based on lastSeen
