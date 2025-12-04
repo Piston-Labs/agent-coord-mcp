@@ -106,6 +106,30 @@ function getDefaultRules(): OnboardingRule[] {
       category: 'tools',
       priority: 8,
       createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'rule-task-completion',
+      title: 'Announce Task Completion',
+      content: 'When you complete a task: 1) Release your claim with `agent-status action=release`, 2) Announce in group-chat what you accomplished, 3) If linked to Linear, update the issue status with `linear action=update`. The whole hub should know when work is done.',
+      category: 'coordination',
+      priority: 3,
+      createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'rule-use-linear',
+      title: 'Sync with Linear',
+      content: 'Use `linear` tool to track issues. Create issues for new work, update status when in-progress/done, add comments for context. Linear is the source of truth for project tracking.',
+      category: 'tools',
+      priority: 9,
+      createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'rule-use-errors',
+      title: 'Report Errors',
+      content: 'Use `errors action=capture` to log errors you encounter. This helps track bugs across the system. Check `errors action=overview` to see current issues.',
+      category: 'tools',
+      priority: 10,
+      createdAt: '2024-01-01T00:00:00Z'
     }
   ];
 }
