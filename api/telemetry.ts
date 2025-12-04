@@ -844,8 +844,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method === 'GET') {
       const { imei, history, alerts: includeAlerts, debug } = req.query;
 
-      // Debug mode - show S3 diagnostics
-      if (debug === 'true') {
+      // Debug mode - show S3 diagnostics (gated by DEBUG_MODE env var)
+      if (debug === 'true' && process.env.DEBUG_MODE === 'true') {
         const now = new Date();
         const testImei = '862464068558217'; // Beta Tester Pug
         const dates = [
