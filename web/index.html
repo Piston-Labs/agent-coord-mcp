@@ -16316,7 +16316,7 @@
 
     async function checkGoogleDriveStatus() {
       try {
-        const res = await fetch(`${API_BASE}/api/google-drive?action=status`);
+        const res = await fetch(`${API_BASE}/google-drive?action=status`);
         const data = await res.json();
         gdriveConnected = data.connected && !data.expired;
         return gdriveConnected;
@@ -16363,7 +16363,7 @@
 
     async function connectGoogleDrive() {
       try {
-        const res = await fetch(`${API_BASE}/api/google-drive?action=auth-url`);
+        const res = await fetch(`${API_BASE}/google-drive?action=auth-url`);
         const data = await res.json();
         if (data.authUrl) {
           window.open(data.authUrl, '_blank');
@@ -16389,7 +16389,7 @@
       fileList.innerHTML = '<div class="gdrive-loading">Loading files...</div>';
 
       try {
-        const res = await fetch(`${API_BASE}/api/google-drive?action=list`);
+        const res = await fetch(`${API_BASE}/google-drive?action=list`);
         const data = await res.json();
         gdriveFiles = data.files || [];
 
@@ -16465,7 +16465,7 @@
       if (editorContent && docName && editorContent.value && docName.value) {
         // Upload current document
         try {
-          const res = await fetch(`${API_BASE}/api/google-drive?action=upload`, {
+          const res = await fetch(`${API_BASE}/google-drive?action=upload`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -16497,7 +16497,7 @@
           const reader = new FileReader();
           reader.onload = async (event) => {
             try {
-              const res = await fetch(`${API_BASE}/api/google-drive?action=upload`, {
+              const res = await fetch(`${API_BASE}/google-drive?action=upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -16529,7 +16529,7 @@
       if (!folderName) return;
 
       try {
-        const res = await fetch(`${API_BASE}/api/google-drive?action=create-folder`, {
+        const res = await fetch(`${API_BASE}/google-drive?action=create-folder`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: folderName })
@@ -16551,7 +16551,7 @@
       if (!confirm(`Delete "${fileName}" from Google Drive?`)) return;
 
       try {
-        const res = await fetch(`${API_BASE}/api/google-drive?action=delete&fileId=${fileId}`, {
+        const res = await fetch(`${API_BASE}/google-drive?action=delete&fileId=${fileId}`, {
           method: 'DELETE'
         });
         const data = await res.json();
