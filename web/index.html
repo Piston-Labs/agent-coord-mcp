@@ -7762,6 +7762,12 @@
     .ceo-idea-card.high { border-left: 4px solid #f85149; }
     .ceo-idea-card.medium { border-left: 4px solid #d29922; }
     .ceo-idea-card.low { border-left: 4px solid #8b949e; }
+    .ceo-task-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; transition: all 0.15s; cursor: pointer; margin-bottom: 8px; }
+    .ceo-task-card:hover { border-color: var(--accent); transform: translateX(4px); }
+    .ceo-task-card.done { opacity: 0.7; }
+    .ceo-task-card .task-header { display: flex; align-items: center; gap: 10px; }
+    .ceo-task-card .task-status-icon { font-size: 16px; }
+    .ceo-task-card .task-title { flex: 1; font-weight: 600; font-size: 14px; }
     .idea-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
     .idea-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
     .idea-category { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: var(--bg-tertiary); color: var(--text-secondary); }
@@ -9778,6 +9784,7 @@
               <span style="font-size: 12px; color: var(--text-secondary);">Private workspace for strategic planning</span>
             </div>
             <div class="ceo-stats" id="ceoStats">
+              <div class="ceo-stat"><span class="ceo-stat-value" id="ceoTaskCount">0</span><span class="ceo-stat-label">Tasks</span></div>
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoContactCount">0</span><span class="ceo-stat-label">Contacts</span></div>
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoFollowUpCount">0</span><span class="ceo-stat-label">Follow-ups</span></div>
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoIdeaCount">0</span><span class="ceo-stat-label">Ideas</span></div>
@@ -9785,12 +9792,24 @@
             </div>
           </div>
           <div class="ceo-tabs">
-            <button class="ceo-tab active" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
+            <button class="ceo-tab active" data-ceotab="tasks" onclick="switchCeoTab('tasks')">Tasks</button>
+            <button class="ceo-tab" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
             <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
             <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
           </div>
           <div class="ceo-content">
-            <div class="ceo-panel active" id="ceoContactsPanel">
+            <div class="ceo-panel active" id="ceoTasksPanel">
+              <div class="ceo-panel-header">
+                <div class="ceo-filters">
+                  <select id="taskStatusFilter" onchange="filterCeoTasks()"><option value="">All Status</option><option value="todo">To Do</option><option value="in-progress">In Progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select>
+                  <select id="taskPriorityFilter" onchange="filterCeoTasks()"><option value="">All Priorities</option><option value="urgent">Urgent</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+                  <input type="text" id="taskSearchFilter" placeholder="Search tasks..." oninput="filterCeoTasks()" style="flex: 1;">
+                </div>
+                <button class="ceo-add-btn" onclick="showAddCeoTaskModal()">+ Add Task</button>
+              </div>
+              <div class="ceo-list" id="ceoTasksList"><div class="ceo-empty">Loading tasks...</div></div>
+            </div>
+            <div class="ceo-panel" id="ceoContactsPanel">
               <div class="ceo-panel-header">
                 <div class="ceo-filters">
                   <select id="contactCategoryFilter" onchange="filterContacts()"><option value="">All Categories</option><option value="investor">Investors</option><option value="partner">Partners</option><option value="customer">Customers</option><option value="advisor">Advisors</option><option value="press">Press</option><option value="other">Other</option></select>
@@ -10168,6 +10187,62 @@
           <button type="button" class="btn-cancel" onclick="hideIdeaModal()">Cancel</button>
           <button type="button" class="btn-danger" id="deleteIdeaBtn" style="display:none;" onclick="deleteIdea()">Delete</button>
           <button type="submit" class="btn-submit">Save Idea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CEO Task Modal -->
+  <div class="modal-overlay" id="ceoTaskModal" style="display:none;" onclick="if(event.target === this) hideCeoTaskModal()">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-title" id="ceoTaskModalTitle">Add Task</div>
+      <form id="ceoTaskForm" onsubmit="saveCeoTask(event)">
+        <div class="form-group">
+          <label for="ceoTaskTitle">Title *</label>
+          <input type="text" id="ceoTaskTitle" required placeholder="Task title" />
+        </div>
+        <div class="form-group">
+          <label for="ceoTaskDescription">Description</label>
+          <textarea id="ceoTaskDescription" placeholder="Task details..." rows="3"></textarea>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="ceoTaskStatus">Status</label>
+            <select id="ceoTaskStatus" style="width:100%;">
+              <option value="todo">To Do</option>
+              <option value="in-progress">In Progress</option>
+              <option value="blocked">Blocked</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div>
+            <label for="ceoTaskPriority">Priority</label>
+            <select id="ceoTaskPriority" style="width:100%;">
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="ceoTaskCategory">Category</label>
+            <input type="text" id="ceoTaskCategory" placeholder="e.g., Engineering, Sales" />
+          </div>
+          <div>
+            <label for="ceoTaskDueDate">Due Date</label>
+            <input type="date" id="ceoTaskDueDate" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ceoTaskNotes">Notes</label>
+          <textarea id="ceoTaskNotes" placeholder="Additional notes..." rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideCeoTaskModal()">Cancel</button>
+          <button type="button" class="btn-danger" id="deleteCeoTaskBtn" style="display:none;" onclick="deleteCeoTask()">Delete</button>
+          <button type="submit" class="btn-submit">Save Task</button>
         </div>
       </form>
     </div>
@@ -12154,13 +12229,15 @@
     let ceoContacts = [];
     let ceoIdeas = [];
     let ceoNotes = [];
+    let ceoTasks = [];
     let editingContactId = null;
     let editingIdeaId = null;
     let editingNoteId = null;
+    let editingCeoTaskId = null;
 
     async function initCeoPortal() {
       if (!IS_SUPERADMIN) return;
-      await Promise.all([fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
+      await Promise.all([fetchCeoTasks(), fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
     }
 
     function switchCeoTab(tabName) {
@@ -12179,6 +12256,114 @@
           document.getElementById('ceoNoteCount').textContent = data.stats.pinnedNotes;
         }
       } catch (e) { console.error('Failed to fetch CEO stats:', e); }
+    }
+
+    // === CEO TASKS (mapped to user-tasks API) ===
+    async function fetchCeoTasks() {
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + currentUsername, { credentials: 'include' });
+        const data = await res.json();
+        ceoTasks = data.tasks || [];
+        renderCeoTasks();
+        // Update task count in header
+        const activeTasks = ceoTasks.filter(t => t.status !== 'done').length;
+        document.getElementById('ceoTaskCount').textContent = activeTasks;
+      } catch (e) { console.error('Failed to fetch tasks:', e); document.getElementById('ceoTasksList').innerHTML = '<div class="ceo-empty">Failed to load tasks</div>'; }
+    }
+
+    function filterCeoTasks() { renderCeoTasks(); }
+
+    function renderCeoTasks() {
+      const status = document.getElementById('taskStatusFilter').value;
+      const priority = document.getElementById('taskPriorityFilter').value;
+      const search = document.getElementById('taskSearchFilter').value.toLowerCase();
+      let filtered = ceoTasks.filter(t => {
+        if (status && t.status !== status) return false;
+        if (priority && t.priority !== priority) return false;
+        if (search && !t.title.toLowerCase().includes(search) && !(t.description || '').toLowerCase().includes(search)) return false;
+        return true;
+      });
+      const container = document.getElementById('ceoTasksList');
+      if (filtered.length === 0) { container.innerHTML = '<div class="ceo-empty">No tasks found. Click "+ Add Task" to create one.</div>'; return; }
+      const statusIcons = { 'todo': '⬜', 'in-progress': '🔄', 'blocked': '🚫', 'done': '✅' };
+      const priorityColors = { 'urgent': '#ef4444', 'high': '#f97316', 'medium': '#eab308', 'low': '#22c55e' };
+      container.innerHTML = filtered.map(t => {
+        const dueDate = t.dueDate ? new Date(t.dueDate) : null;
+        const isOverdue = dueDate && dueDate < new Date() && t.status !== 'done';
+        const dueText = dueDate ? (isOverdue ? 'Overdue: ' : 'Due: ') + dueDate.toLocaleDateString() : '';
+        return `<div class="ceo-task-card ${t.status}" onclick="showCeoTaskDetail('${t.id}')" style="border-left: 4px solid ${priorityColors[t.priority]}">
+          <div class="task-header">
+            <span class="task-status-icon">${statusIcons[t.status]}</span>
+            <span class="task-title" style="${t.status === 'done' ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${escapeHtml(t.title)}</span>
+            <span class="task-priority" style="background: ${priorityColors[t.priority]}20; color: ${priorityColors[t.priority]}; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${t.priority}</span>
+          </div>
+          ${t.description ? `<div class="task-description" style="font-size: 12px; color: var(--text-secondary); margin: 4px 0 4px 24px;">${escapeHtml(t.description.substring(0, 100))}${t.description.length > 100 ? '...' : ''}</div>` : ''}
+          <div class="task-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--text-secondary);">
+            <span>${t.category ? '<span class="task-category">' + escapeHtml(t.category) + '</span>' : ''}</span>
+            <span class="${isOverdue ? 'overdue' : ''}" style="${isOverdue ? 'color: #ef4444;' : ''}">${dueText}</span>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function showAddCeoTaskModal() {
+      editingCeoTaskId = null;
+      document.getElementById('ceoTaskModalTitle').textContent = 'Add Task';
+      document.getElementById('ceoTaskForm').reset();
+      document.getElementById('deleteCeoTaskBtn').style.display = 'none';
+      document.getElementById('ceoTaskModal').style.display = 'flex';
+    }
+
+    function showCeoTaskDetail(id) {
+      const t = ceoTasks.find(x => x.id === id);
+      if (!t) return;
+      editingCeoTaskId = id;
+      document.getElementById('ceoTaskModalTitle').textContent = 'Edit Task';
+      document.getElementById('ceoTaskTitle').value = t.title || '';
+      document.getElementById('ceoTaskDescription').value = t.description || '';
+      document.getElementById('ceoTaskStatus').value = t.status || 'todo';
+      document.getElementById('ceoTaskPriority').value = t.priority || 'medium';
+      document.getElementById('ceoTaskCategory').value = t.category || '';
+      document.getElementById('ceoTaskDueDate').value = t.dueDate ? t.dueDate.split('T')[0] : '';
+      document.getElementById('ceoTaskNotes').value = t.notes || '';
+      document.getElementById('deleteCeoTaskBtn').style.display = 'inline-block';
+      document.getElementById('ceoTaskModal').style.display = 'flex';
+    }
+
+    function hideCeoTaskModal() { document.getElementById('ceoTaskModal').style.display = 'none'; editingCeoTaskId = null; }
+
+    async function saveCeoTask(e) {
+      e.preventDefault();
+      const data = {
+        title: document.getElementById('ceoTaskTitle').value,
+        description: document.getElementById('ceoTaskDescription').value,
+        status: document.getElementById('ceoTaskStatus').value,
+        priority: document.getElementById('ceoTaskPriority').value,
+        category: document.getElementById('ceoTaskCategory').value || null,
+        dueDate: document.getElementById('ceoTaskDueDate').value || null,
+        notes: document.getElementById('ceoTaskNotes').value || null
+      };
+      if (editingCeoTaskId) data.taskId = editingCeoTaskId;
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + currentUsername, {
+          method: editingCeoTaskId ? 'PATCH' : 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.success) { hideCeoTaskModal(); await fetchCeoTasks(); }
+        else { alert('Error: ' + (result.error || 'Failed to save')); }
+      } catch (e) { alert('Failed to save task: ' + e.message); }
+    }
+
+    async function deleteCeoTask() {
+      if (!editingCeoTaskId || !confirm('Delete this task?')) return;
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + currentUsername + '&taskId=' + editingCeoTaskId, { method: 'DELETE', credentials: 'include' });
+        const result = await res.json();
+        if (result.success) { hideCeoTaskModal(); await fetchCeoTasks(); }
+      } catch (e) { alert('Failed to delete: ' + e.message); }
     }
 
     async function fetchCeoContacts() {

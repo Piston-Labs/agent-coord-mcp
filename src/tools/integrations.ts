@@ -899,4 +899,132 @@ export function registerIntegrationTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // VERCEL-ENV TOOL - Manage Vercel environment variables
+  // ============================================================================
+
+  server.tool(
+    'vercel-env',
+    'Manage Vercel environment variables. List, get, set, or delete env vars. Only authorized agents (tyler3, tyler, admin) can modify. All actions are audit logged.',
+    {
+      action: z.enum(['list', 'get', 'set', 'delete', 'audit']).describe('list=show all vars, get=specific var, set=create/update, delete=remove, audit=view change log'),
+      key: z.string().optional().describe('Environment variable name (required for get/set/delete)'),
+      value: z.string().optional().describe('Value to set (required for set action)'),
+      target: z.array(z.enum(['production', 'preview', 'development'])).optional()
+        .describe('Deployment targets (default: all three)'),
+      agentId: z.string().describe('Your agent ID - must be authorized for set/delete')
+    },
+    async (args) => {
+      const { action, key, value, target, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'list': {
+            const res = await fetch(`${API_BASE}/api/vercel-env?action=list&agentId=${agentId}`);
+            const data = await res.json();
+
+            if (data.error) {
+              return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+            }
+
+            // Format nicely
+            const lines = [
+              `## Vercel Environment Variables`,
+              `Project: ${data.projectId}`,
+              `Count: ${data.count}`,
+              ``
+            ];
+
+            for (const env of data.envVars || []) {
+              const targets = env.target?.join(', ') || 'all';
+              lines.push(`- **${env.key}**: ${env.value} (${targets})`);
+            }
+
+            return { content: [{ type: 'text', text: lines.join('\n') }] };
+          }
+
+          case 'get': {
+            if (!key) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'key is required for get action' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/vercel-env?action=get&key=${encodeURIComponent(key)}&agentId=${agentId}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'set': {
+            if (!key || value === undefined) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'key and value are required for set action',
+                example: 'vercel-env action=set key=ANTHROPIC_API_KEY value=sk-ant-xxx'
+              }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/vercel-env`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                key,
+                value,
+                target: target || ['production', 'preview', 'development'],
+                agentId
+              })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              // Announce in chat
+              await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  author: agentId,
+                  message: `🔐 ${data.action === 'created' ? 'Added' : 'Updated'} env var: ${key} (targets: ${(target || ['production', 'preview', 'development']).join(', ')})`
+                })
+              });
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'delete': {
+            if (!key) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'key is required for delete action' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/vercel-env?key=${encodeURIComponent(key)}&agentId=${agentId}`, {
+              method: 'DELETE'
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              // Announce in chat
+              await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  author: agentId,
+                  message: `🗑️ Deleted env var: ${key}`
+                })
+              });
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'audit': {
+            const res = await fetch(`${API_BASE}/api/vercel-env?action=audit`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
