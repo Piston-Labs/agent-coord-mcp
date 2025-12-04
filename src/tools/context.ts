@@ -539,4 +539,146 @@ export function registerContextTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // DICTATION TOOL - Voice dictation storage, analysis, and CRM integration
+  // ============================================================================
+
+  server.tool(
+    'dictation',
+    'Store and analyze voice dictations, meeting notes, and call transcripts. Extracts context, updates CRM profiles, and links to shop activities. Uses AWS DynamoDB/S3 for storage.',
+    {
+      action: z.enum(['upload', 'list', 'get', 'analyze', 'delete', 'search']).describe('upload=new dictation, list=all dictations, get=specific, analyze=extract context, delete=remove, search=find by keyword'),
+      id: z.string().optional().describe('Dictation ID (for get/analyze/delete)'),
+      content: z.string().optional().describe('Dictation text content (for upload)'),
+      title: z.string().optional().describe('Title for the dictation'),
+      type: z.enum(['dictation', 'meeting', 'call', 'note', 'research']).optional().describe('Type of recording'),
+      shopId: z.string().optional().describe('Link to CRM shop ID'),
+      contactName: z.string().optional().describe('Contact person name'),
+      tags: z.array(z.string()).optional().describe('Tags for organization'),
+      analyze: z.boolean().optional().describe('Run AI analysis on upload (default: false)'),
+      applyCrm: z.boolean().optional().describe('Apply extracted CRM updates automatically (default: false)'),
+      search: z.string().optional().describe('Search query (for search action)'),
+      limit: z.number().optional().describe('Max results (default: 50)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'upload': {
+            if (!args.content) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'content is required for upload' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/dictation`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: args.content,
+                title: args.title,
+                type: args.type || 'dictation',
+                shopId: args.shopId,
+                contactName: args.contactName,
+                tags: args.tags || [],
+                createdBy: agentId,
+                analyze: args.analyze || false,
+                applyCrm: args.applyCrm || false
+              })
+            });
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'list': {
+            const params = new URLSearchParams();
+            if (args.type) params.set('type', args.type);
+            if (args.shopId) params.set('shopId', args.shopId);
+            if (args.limit) params.set('limit', String(args.limit));
+
+            const res = await fetch(`${API_BASE}/api/dictation?${params}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            if (!args.id) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'id is required for get' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/dictation?id=${encodeURIComponent(args.id)}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'analyze': {
+            if (!args.id) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'id is required for analyze' }) }] };
+            }
+
+            // Get the dictation first
+            const getRes = await fetch(`${API_BASE}/api/dictation?id=${encodeURIComponent(args.id)}`);
+            const dictation = await getRes.json();
+
+            if (!dictation.dictation) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'Dictation not found' }) }] };
+            }
+
+            // Re-upload with analysis enabled
+            const analyzeRes = await fetch(`${API_BASE}/api/dictation`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                content: dictation.dictation.content,
+                title: dictation.dictation.title,
+                type: dictation.dictation.type,
+                shopId: args.shopId || dictation.dictation.shopId,
+                tags: dictation.dictation.tags,
+                createdBy: agentId,
+                analyze: true,
+                applyCrm: args.applyCrm || false
+              })
+            });
+
+            const data = await analyzeRes.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'delete': {
+            if (!args.id) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'id is required for delete' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/dictation?id=${encodeURIComponent(args.id)}`, {
+              method: 'DELETE'
+            });
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          }
+
+          case 'search': {
+            if (!args.search) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'search query is required' }) }] };
+            }
+
+            const params = new URLSearchParams({ search: args.search });
+            if (args.type) params.set('type', args.type);
+            if (args.limit) params.set('limit', String(args.limit));
+
+            const res = await fetch(`${API_BASE}/api/dictation?${params}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
