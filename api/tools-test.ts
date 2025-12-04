@@ -297,6 +297,318 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'shops', status: 'fail', message: 'Failed to access shops', error: String(e) };
     }
+  },
+
+  // Additional tools added by phil
+  'profile': async () => {
+    const start = Date.now();
+    const testId = `profile-test-${Date.now()}`;
+    try {
+      // Test profile registration
+      const profile = {
+        agentId: testId,
+        offers: ['testing', 'validation'],
+        needs: [],
+        capabilities: ['canSearch'],
+        ide: 'test',
+        os: 'test',
+        registeredAt: new Date().toISOString()
+      };
+      await redis.hset('agent-coord:profiles', { [testId]: JSON.stringify(profile) });
+
+      // Retrieve it
+      const retrieved = await redis.hget('agent-coord:profiles', testId);
+
+      // Clean up
+      await redis.hdel('agent-coord:profiles', testId);
+
+      return {
+        tool: 'profile',
+        status: retrieved ? 'pass' : 'fail',
+        message: retrieved ? 'Profile register/retrieve cycle successful' : 'Profile not found after storing',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'profile', status: 'fail', message: 'Failed profile cycle', error: String(e) };
+    }
+  },
+
+  'digest': async () => {
+    const start = Date.now();
+    try {
+      // Digest aggregates data from multiple sources - test key access
+      const [agents, tasks, chat] = await Promise.all([
+        redis.hlen('agent-coord:agents'),
+        redis.hlen('agent-coord:tasks'),
+        redis.llen('agent-coord:group-chat')
+      ]);
+      return {
+        tool: 'digest',
+        status: 'pass',
+        message: `Digest sources accessible (${agents} agents, ${tasks} tasks, ${chat} messages)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'digest', status: 'fail', message: 'Failed to access digest sources', error: String(e) };
+    }
+  },
+
+  'fleet-analytics': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:devices');
+      return {
+        tool: 'fleet-analytics',
+        status: 'pass',
+        message: `Fleet data accessible (${count} devices)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'fleet-analytics', status: 'fail', message: 'Failed to access fleet data', error: String(e) };
+    }
+  },
+
+  'dm': async () => {
+    const start = Date.now();
+    const testId = `dm-test-${Date.now()}`;
+    try {
+      // Test direct message storage
+      const dm = {
+        id: testId,
+        from: 'test-sender',
+        to: 'test-receiver',
+        type: 'note',
+        message: 'Test DM for validation',
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+      await redis.lpush('agent-coord:inbox:test-receiver', JSON.stringify(dm));
+
+      // Verify it exists
+      const inbox = await redis.lrange('agent-coord:inbox:test-receiver', 0, 0);
+      const found = inbox.some((m: string | object) => {
+        const parsed = typeof m === 'string' ? JSON.parse(m) : m;
+        return parsed.id === testId;
+      });
+
+      // Clean up
+      await redis.lpop('agent-coord:inbox:test-receiver');
+
+      return {
+        tool: 'dm',
+        status: found ? 'pass' : 'fail',
+        message: found ? 'DM send/receive cycle successful' : 'DM not found after sending',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'dm', status: 'fail', message: 'Failed DM cycle', error: String(e) };
+    }
+  },
+
+  'threads': async () => {
+    const start = Date.now();
+    const testId = `thread-test-${Date.now()}`;
+    try {
+      // Test thread creation
+      const thread = {
+        id: testId,
+        topic: 'Test thread for validation',
+        createdBy: 'tools-tester',
+        createdAt: new Date().toISOString(),
+        status: 'active',
+        posts: []
+      };
+      await redis.hset('agent-coord:threads', { [testId]: JSON.stringify(thread) });
+
+      // Retrieve it
+      const retrieved = await redis.hget('agent-coord:threads', testId);
+
+      // Clean up
+      await redis.hdel('agent-coord:threads', testId);
+
+      return {
+        tool: 'threads',
+        status: retrieved ? 'pass' : 'fail',
+        message: retrieved ? 'Thread create/retrieve cycle successful' : 'Thread not found after creating',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'threads', status: 'fail', message: 'Failed thread cycle', error: String(e) };
+    }
+  },
+
+  'kudos': async () => {
+    const start = Date.now();
+    const testId = `kudos-test-${Date.now()}`;
+    try {
+      // Test kudos storage
+      const kudos = {
+        id: testId,
+        from: 'test-giver',
+        to: 'test-receiver',
+        reason: 'Great testing work!',
+        emoji: '⭐',
+        timestamp: new Date().toISOString()
+      };
+      await redis.lpush('agent-coord:kudos', JSON.stringify(kudos));
+
+      // Verify it exists
+      const recent = await redis.lrange('agent-coord:kudos', 0, 0);
+      const found = recent.some((k: string | object) => {
+        const parsed = typeof k === 'string' ? JSON.parse(k) : k;
+        return parsed.id === testId;
+      });
+
+      // Clean up
+      await redis.lpop('agent-coord:kudos');
+
+      return {
+        tool: 'kudos',
+        status: found ? 'pass' : 'fail',
+        message: found ? 'Kudos give/retrieve cycle successful' : 'Kudos not found after giving',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'kudos', status: 'fail', message: 'Failed kudos cycle', error: String(e) };
+    }
+  },
+
+  'onboarding': async () => {
+    const start = Date.now();
+    try {
+      // Test onboarding rules access
+      const count = await redis.hlen('agent-coord:onboarding-rules');
+      return {
+        tool: 'onboarding',
+        status: 'pass',
+        message: `Onboarding rules accessible (${count} custom rules + defaults)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'onboarding', status: 'fail', message: 'Failed to access onboarding rules', error: String(e) };
+    }
+  },
+
+  'orchestrations': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:orchestrations');
+      return {
+        tool: 'orchestrations',
+        status: 'pass',
+        message: `Orchestrations accessible (${count} orchestrations)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'orchestrations', status: 'fail', message: 'Failed to access orchestrations', error: String(e) };
+    }
+  },
+
+  // CEO Portal tests - added by jeeves
+  'ceo-contacts': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:ceo:contacts');
+      return {
+        tool: 'ceo-contacts',
+        status: 'pass',
+        message: `CEO contacts accessible (${count} contacts)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'ceo-contacts', status: 'fail', message: 'Failed to access CEO contacts', error: String(e) };
+    }
+  },
+
+  'ceo-ideas': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:ceo:ideas');
+      return {
+        tool: 'ceo-ideas',
+        status: 'pass',
+        message: `CEO ideas accessible (${count} ideas)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'ceo-ideas', status: 'fail', message: 'Failed to access CEO ideas', error: String(e) };
+    }
+  },
+
+  'ceo-notes': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:ceo:notes');
+      return {
+        tool: 'ceo-notes',
+        status: 'pass',
+        message: `CEO notes accessible (${count} notes)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'ceo-notes', status: 'fail', message: 'Failed to access CEO notes', error: String(e) };
+    }
+  },
+
+  'user-tasks': async () => {
+    const start = Date.now();
+    try {
+      // User tasks are stored per-user, check tyler3's tasks exist
+      const count = await redis.hlen('agent-coord:user-tasks:tyler3');
+      return {
+        tool: 'user-tasks',
+        status: 'pass',
+        message: `User tasks accessible (tyler3 has ${count} tasks)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'user-tasks', status: 'fail', message: 'Failed to access user tasks', error: String(e) };
+    }
+  },
+
+  'metrics': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.llen('agent-coord:metrics');
+      return {
+        tool: 'metrics',
+        status: 'pass',
+        message: `Metrics accessible (${count} events logged)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'metrics', status: 'fail', message: 'Failed to access metrics', error: String(e) };
+    }
+  },
+
+  'ui-tests': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:ui-tests');
+      return {
+        tool: 'ui-tests',
+        status: 'pass',
+        message: `UI tests accessible (${count} tests defined)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'ui-tests', status: 'fail', message: 'Failed to access UI tests', error: String(e) };
+    }
+  },
+
+  'repo-context': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:repo-context');
+      return {
+        tool: 'repo-context',
+        status: 'pass',
+        message: `Repo context accessible (${count} entries)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'repo-context', status: 'fail', message: 'Failed to access repo context', error: String(e) };
+    }
   }
 };
 
