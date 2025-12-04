@@ -1,0 +1,49 @@
+# Railway Claude CLI Agent Dockerfile
+# Spawns Claude Code agents with injected credentials and soul
+#
+# Usage:
+#   Railway env vars required:
+#   - ANTHROPIC_API_KEY: Claude API key
+#   - GITHUB_TOKEN: For repo cloning
+#   - AGENT_ID: Unique agent identifier (e.g., "phoenix", "echo")
+#   - AGENT_SOUL: Soul name from Redis (optional, defaults to AGENT_ID)
+#   - TARGET_REPO: GitHub repo to clone (e.g., "Piston-Labs/agent-coord-mcp")
+#   - MCP_HUB_URL: Coordination hub URL (default: https://agent-coord-mcp.vercel.app)
+
+FROM node:20-bookworm
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Claude CLI globally
+RUN npm install -g @anthropic-ai/claude-code
+
+# Create non-root user for security
+RUN useradd -m -s /bin/bash agent
+USER agent
+WORKDIR /home/agent
+
+# Create workspace directory
+RUN mkdir -p /home/agent/workspace
+
+# Copy entrypoint script
+COPY --chown=agent:agent scripts/railway-entrypoint.sh /home/agent/entrypoint.sh
+RUN chmod +x /home/agent/entrypoint.sh
+
+# Default environment
+ENV NODE_ENV=production
+ENV MCP_HUB_URL=https://agent-coord-mcp.vercel.app
+ENV WORKSPACE=/home/agent/workspace
+
+# Health check - verify Claude CLI works
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD claude --version || exit 1
+
+# Run entrypoint which:
+# 1. Clones target repo
+# 2. Loads soul from MCP hub
+# 3. Starts Claude with task
+ENTRYPOINT ["/home/agent/entrypoint.sh"]
