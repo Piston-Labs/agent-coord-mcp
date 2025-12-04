@@ -610,7 +610,7 @@ async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<st
       const command = new ListObjectsV2Command({
         Bucket: S3_BUCKET,
         Prefix: prefix,
-        MaxKeys: limit,
+        MaxKeys: 1000, // Get more files to find the newest ones
       });
 
       const response = await s3.send(command);
@@ -618,7 +618,8 @@ async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<st
         .map(obj => obj.Key || '')
         .filter(Boolean)
         .sort()
-        .reverse(); // Most recent first
+        .reverse() // Most recent first (highest timestamp)
+        .slice(0, limit); // Now limit to requested count
 
       if (files.length > 0) {
         console.log(`[telemetry] Found ${files.length} S3 files for ${imei} in ${prefix}`);
@@ -868,11 +869,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               const command = new ListObjectsV2Command({
                 Bucket: S3_BUCKET,
                 Prefix: prefix,
-                MaxKeys: 5,
+                MaxKeys: 1000,
               });
               const response = await s3.send(command);
-              files = (response.Contents || []).map(obj => obj.Key || '').filter(Boolean);
-              fileCount = files.length;
+              const allFiles = (response.Contents || []).map(obj => obj.Key || '').filter(Boolean);
+              files = allFiles.sort().reverse().slice(0, 5); // Get newest 5
+              fileCount = allFiles.length;
             } catch (err) {
               error = String(err);
             }
