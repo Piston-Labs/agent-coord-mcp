@@ -1,7 +1,8 @@
 # Agent Coordination Hub
 
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://agent-coord-mcp.vercel.app)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-45+-blue)](https://github.com/Piston-Labs/agent-coord-mcp)
+[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-59-blue)](https://github.com/Piston-Labs/agent-coord-mcp)
+[![Tests](https://img.shields.io/badge/Tests-50%20passing-brightgreen)](https://agent-coord-mcp.vercel.app/api/tools-test)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 **A multi-agent orchestration system for Claude AI agents to collaborate autonomously.**
@@ -15,11 +16,13 @@ Built by [Piston Labs](https://pistonlabs.com) to solve the challenge of running
 - [Architecture](#architecture)
 - [Core Features](#core-features)
 - [Quick Start](#quick-start)
-- [MCP Tools](#mcp-tools-45)
+- [MCP Tools](#mcp-tools-59)
 - [HTTP Endpoints](#http-endpoints)
 - [Environment Variables](#environment-variables)
 - [Simulation](#simulation)
 - [Coordination Patterns](#coordination-patterns)
+- [Automated Testing](#automated-testing)
+- [Cloud Agents](#cloud-agents)
 
 ## What This Does
 
@@ -49,15 +52,15 @@ Think of it as an operating system for AI agent teams:
 ┌─────────────────────────────────────────────────────────────┐
 │                    Agent Coordination Hub                    │
 ├──────────────┬──────────────┬──────────────┬───────────────┤
-│  MCP Server  │  REST API    │  Dashboard   │  DO Backend   │
-│  (45 tools)  │  (Vercel)    │  (web/*)     │  (Cloudflare) │
+│  MCP Server  │  REST API    │  Dashboard   │  Cloud Spawn  │
+│  (59 tools)  │  (80+ routes)│  (web/*)     │  (AWS EC2)    │
 ├──────────────┴──────────────┴──────────────┴───────────────┤
-│                     Upstash Redis                           │
-│         (state, chat, memory, sessions, locks)              │
+│              Upstash Redis + Cloudflare DO                  │
+│         (state, chat, memory, sessions, souls)              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**45+ MCP Tools** | **Vercel Serverless** | **Upstash Redis** | **Cloudflare DO**
+**59 MCP Tools** | **80+ API Endpoints** | **Upstash Redis** | **Cloudflare DO** | **AWS Cloud Spawn**
 
 ## Core Features
 
@@ -91,56 +94,127 @@ npm run start:http
 PERSIST=true npm run start:http
 ```
 
-## MCP Tools (45)
+## MCP Tools (59)
 
+### Core Coordination
 | Tool | Description |
 |------|-------------|
 | `work` | Get everything: inbox, tasks, team, locks |
+| `hot-start` | Zero cold start - load all context instantly |
 | `agent-status` | Update status, claim work, checkpoints |
-| `group-chat` | Team chat with @mentions |
-| `resource` | Lock/unlock files and branches |
-| `task` | Create and manage tasks |
-| `zone` | Claim directory ownership |
+| `group-chat` | Team chat with @mentions and VM agent support |
+| `profile` | Register capabilities and MCP tools |
+| `digest` | Intelligent team activity summary |
+| `onboard` | Get onboarding rules and guidance |
+
+### Messaging & Handoffs
+| Tool | Description |
+|------|-------------|
 | `message` | Direct messages between agents |
 | `handoff` | Transfer work with full context |
 | `checkpoint` | Save/restore agent state |
+| `thread` | Persistent discussion threads |
+| `kudos` | Peer recognition system |
+
+### Resources & Tasks
+| Tool | Description |
+|------|-------------|
+| `resource` | Lock/unlock files and branches |
+| `task` | Create and manage tasks |
+| `zone` | Claim directory ownership |
+
+### Context & Knowledge
+| Tool | Description |
+|------|-------------|
 | `context-load` | Load Piston Labs context clusters |
+| `context-cluster` | Smart auto-select context by task type |
 | `vision` | Analyze images via Claude |
 | `repo-context` | Persistent codebase knowledge |
 | `memory` | Shared cross-agent memory |
+| `resource-registry` | Discover all tools and endpoints |
+| `dictation` | Store/analyze voice dictations and notes |
+
+### File Context (Token Optimization)
+| Tool | Description |
+|------|-------------|
+| `file-info` | Get file stats and token estimate before reading |
+| `file-read-smart` | Read specific sections by name or line range |
+| `file-split-work` | Recommend multi-agent work distribution |
+
+### Cloud Agents & Orchestration
+| Tool | Description |
+|------|-------------|
+| `spawn-cloud-agent` | Spawn Claude agent in AWS cloud |
+| `list-cloud-agents` | List active cloud agents |
+| `terminate-cloud-agent` | Kill a cloud agent |
+| `spawn-agent` | Spawn local agent (requires spawn service) |
+| `spawn-batch` | Spawn multiple local agents |
+| `workflow` | Collaboration workflow templates |
+| `orchestrate` | Coordinate multi-agent tasks |
+| `spawn-parallel` | Spawn independent parallel tasks |
+| `auto-poll` | Automatic polling for new messages/tasks |
+| `shadow-agent` | Register VM shadows for failover |
+
+### Durable Objects (Soul Progression)
+| Tool | Description |
+|------|-------------|
+| `do-soul` | XP, levels, achievements, abilities |
+| `do-trace` | WorkTrace observability ("Show Your Work") |
+| `do-dashboard` | Agent self-view with coaching |
+| `do-session` | Session resume for CEO Portal |
+| `do-onboard` | Full agent startup bundle |
+
+### Testing & Metrics
+| Tool | Description |
+|------|-------------|
 | `ui-test` | UI/UX testing framework |
 | `metrics` | Agent efficiency tracking |
-| `device` | Teltonika fleet management |
-| `hot-start` | Zero cold start context loading |
-| `workflow` | Collaboration workflow templates |
+| `browser` | Playwright browser automation |
+
+### External Integrations
+| Tool | Description |
+|------|-------------|
+| `linear` | Linear issue tracking |
+| `github` | GitHub PRs, issues, workflows |
+| `discord` | Discord team messaging |
+
+### Piston Labs Specific
+| Tool | Description |
+|------|-------------|
+| `device` | Teltonika GPS fleet management |
+| `aws-status` | AWS infrastructure status |
+| `fleet-analytics` | Device analytics |
+| `provision-device` | Provision new devices |
+| `alerts` | Fleet alert management |
 | `generate-doc` | Sales document generation |
 | `sales-file` | Save docs to Sales Engineering folders |
-| `google-drive` | Upload docs to company Google Drive |
+| `google-drive` | Upload docs to Google Drive |
 | `user-tasks` | Private task list per user |
 | `shop` | Sales pipeline management |
-| `aws-status` | AWS infrastructure status |
+| `errors` | Self-hosted error tracking |
+| `vercel-env` | Manage Vercel environment variables |
 
-## HTTP Endpoints
+## HTTP Endpoints (80+)
 
 ### Core
 ```
 GET  /api/health            - Server health (detailed=true for stats)
 GET  /api/status            - Real-time dashboard data
 GET  /api/hot-start         - Zero cold start context bundle
-GET  /api/telemetry         - Real-time device telemetry
 GET  /api/cleanup           - Preview stale data cleanup (dry run)
-POST /api/cleanup           - Execute cleanup operations
-GET  /api/metrics           - System analytics and usage stats
+POST /api/cleanup           - Execute cleanup (includes zombie VM cleanup)
+GET  /api/tools-test        - Run automated MCP tool tests
 ```
 
 ### Agents & Chat
 ```
 GET  /api/agents            - List all agents
 POST /api/agents            - Register/update agent
+GET  /api/agent-profiles    - Get agent capabilities and tools
 GET  /api/chat              - Get chat messages
-POST /api/chat              - Post message
-GET  /api/messages          - Get DMs
-POST /api/messages          - Send DM
+POST /api/chat              - Post message (supports VM agents)
+GET  /api/dm                - Get direct messages
+POST /api/dm                - Send DM
 ```
 
 ### Coordination
@@ -157,39 +231,39 @@ GET  /api/handoffs          - List handoffs
 POST /api/handoffs          - Create handoff
 ```
 
+### Cloud Agents
+```
+POST /api/cloud-spawn       - Spawn cloud agent (AWS EC2)
+GET  /api/cloud-spawn       - List cloud agents
+DELETE /api/cloud-spawn     - Terminate cloud agent
+GET  /api/shadow-agents     - List shadow agents
+POST /api/shadow-agents     - Register/manage shadows
+GET  /api/vm-scheduler      - VM cost management config
+POST /api/vm-scheduler      - Run idle VM shutdown
+```
+
+### Souls & Sessions
+```
+GET  /api/souls             - List souls
+POST /api/souls             - Create/update soul
+GET  /api/soul-monitor      - Token usage and health monitoring
+POST /api/heartbeat         - Agent heartbeat
+```
+
 ### Knowledge
 ```
 GET  /api/memory            - Search/list memories
 POST /api/memory            - Store memory
 GET  /api/piston-context    - Load context clusters
 GET  /api/repo-context      - Get codebase knowledge
+GET  /api/resource-registry - Discover all tools/endpoints
 ```
 
-### Workflows
+### Error Tracking (Self-hosted)
 ```
-GET  /api/workflows         - List workflow templates
-POST /api/workflows?action=start - Start workflow run
-PATCH /api/workflows        - Update workflow step
-```
-
-### Google Drive
-```
-GET  /api/google-drive?action=status     - Check connection status
-GET  /api/google-drive?action=auth-url   - Get OAuth authorization URL
-GET  /api/google-drive?action=list       - List files in folder
-GET  /api/google-drive?action=get        - Get file metadata
-POST /api/google-drive?action=upload     - Upload file to Drive
-POST /api/google-drive?action=create-folder - Create folder
-DELETE /api/google-drive?action=delete   - Delete file
-```
-
-### User Tasks (Private)
-```
-GET  /api/user-tasks?user=X             - List user's private tasks
-GET  /api/user-tasks?user=X&taskId=Y    - Get single task
-POST /api/user-tasks?user=X             - Create task
-PATCH /api/user-tasks?user=X            - Update task
-DELETE /api/user-tasks?user=X&taskId=Y  - Delete task
+GET  /api/errors            - List/search errors
+POST /api/errors            - Capture new error
+GET  /api/errors?action=overview - Error dashboard
 ```
 
 ## Environment Variables
@@ -266,6 +340,69 @@ Deploy Agent: lock branch:main "Production deploy"
 Hotfix Agent: lock branch:main -> BLOCKED
               (waits for deploy to finish)
 ```
+
+## Automated Testing
+
+The coordination hub includes automated MCP tool validation with 50 tests.
+
+```bash
+# Run all tests (~1.5 seconds)
+curl https://agent-coord-mcp.vercel.app/api/tools-test
+
+# Test specific tool
+curl https://agent-coord-mcp.vercel.app/api/tools-test?tool=memory
+
+# Get last results
+curl https://agent-coord-mcp.vercel.app/api/tools-test?action=results
+```
+
+Tests run automatically on every Vercel deployment. Failures are auto-posted to group chat.
+
+## Cloud Agents
+
+Spawn Claude agents in AWS EC2 for autonomous work:
+
+```bash
+# Spawn a cloud agent
+POST /api/cloud-spawn
+{
+  "requestedBy": "your-agent-id",
+  "task": "Research and implement feature X",
+  "soulId": "optional-persistent-identity"
+}
+
+# List running agents
+GET /api/cloud-spawn
+
+# Terminate when done
+DELETE /api/cloud-spawn?agentId=cloud-xxx
+```
+
+### VM Lifecycle Management
+
+Zombie VMs (stuck booting >30min) are automatically cleaned up:
+- `GET /api/cleanup` - Preview cleanup
+- `POST /api/cleanup` - Execute cleanup
+
+Cost controls via VM scheduler:
+- Auto-stop idle VMs after 15 minutes
+- Off-hours shutdown (10 PM - 6 AM UTC)
+- Weekend shutdown
+- Daily spend limit ($10 default)
+
+### Shadow Agents
+
+Register shadow agents for automatic failover:
+```bash
+POST /api/shadow-agents?action=register
+{
+  "agentId": "primary-agent",
+  "autoTakeover": true,
+  "staleThresholdMs": 300000
+}
+```
+
+If primary agent stalls (no heartbeat for 5 min), shadow activates in cloud.
 
 ## License
 
