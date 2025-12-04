@@ -403,6 +403,22 @@
     .agent-hover-card-meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text-secondary); display: flex; gap: 12px; }
     .agent-hover-card-loading { text-align: center; padding: 20px; color: var(--text-secondary); }
 
+    /* Team Capabilities Panel */
+    .capabilities-section { border-top: 1px solid var(--border); margin-top: 8px; }
+    .capabilities-header { display: flex; justify-content: space-between; align-items: center; padding: 12px; cursor: pointer; }
+    .capabilities-header:hover { background: var(--bg-tertiary); }
+    .capabilities-header-left { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 13px; }
+    .capabilities-toggle { font-size: 10px; color: var(--text-secondary); transition: transform 0.2s; }
+    .capabilities-content { max-height: 300px; overflow-y: auto; padding: 0 12px 12px; display: none; }
+    .capabilities-content.expanded { display: block; }
+    .capabilities-grid { display: flex; flex-direction: column; gap: 6px; }
+    .capability-row { display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: var(--bg-tertiary); border-radius: 6px; }
+    .capability-tool { font-size: 11px; font-weight: 600; color: var(--text); min-width: 80px; }
+    .capability-agents { display: flex; flex-wrap: wrap; gap: 4px; }
+    .capability-agent { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+    .capability-agent.vm { background: rgba(147, 51, 234, 0.2); color: #a78bfa; }
+    .capability-missing { font-size: 11px; color: var(--text-secondary); font-style: italic; padding: 8px; text-align: center; }
+
     .message-text {
       font-size: 14px;
       line-height: 1.5;
@@ -8983,6 +8999,23 @@
           <p>No agents online</p>
         </div>
       </div>
+      <!-- Team Capabilities Section -->
+      <div class="capabilities-section">
+        <div class="capabilities-header" onclick="toggleCapabilities()">
+          <div class="capabilities-header-left">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+            <span>Team Tools</span>
+          </div>
+          <span class="capabilities-toggle" id="capabilitiesToggle">&#9660;</span>
+        </div>
+        <div class="capabilities-content" id="capabilitiesContent">
+          <div class="capabilities-grid" id="capabilitiesGrid">
+            <div class="capability-missing">Loading...</div>
+          </div>
+        </div>
+      </div>
       <!-- Kudos Leaderboard Section -->
       <div class="kudos-section">
         <div class="kudos-header" onclick="toggleKudos()">
@@ -11449,6 +11482,84 @@
         renderAgents(data.agents || [], data.offlineAgents || [], externalData.agents || []);
       } catch (e) {
         console.error('fetchAgents error:', e);
+      }
+    }
+
+    // Team Capabilities Panel Functions
+    let capabilitiesExpanded = false;
+    const toolCapabilitiesCache = {};
+
+    function toggleCapabilities() {
+      capabilitiesExpanded = !capabilitiesExpanded;
+      const content = document.getElementById('capabilitiesContent');
+      const toggle = document.getElementById('capabilitiesToggle');
+      if (capabilitiesExpanded) {
+        content.classList.add('expanded');
+        toggle.style.transform = 'rotate(180deg)';
+        fetchTeamCapabilities();
+      } else {
+        content.classList.remove('expanded');
+        toggle.style.transform = 'rotate(0deg)';
+      }
+    }
+
+    async function fetchTeamCapabilities() {
+      const gridEl = document.getElementById('capabilitiesGrid');
+      try {
+        const res = await fetch(API_BASE + '/agent-profiles');
+        if (!res.ok) throw new Error('Failed to fetch profiles');
+        const data = await res.json();
+
+        // Build tool -> agents map
+        const toolMap = {};
+        const importantTools = ['browser', 'github', 'vision', 'spawn-agent', 'linear', 'discord', 'webSearch', 'do-soul', 'errors'];
+
+        (data.profiles || []).forEach(profile => {
+          if (profile.mcpTools && profile.mcpTools.length > 0) {
+            profile.mcpTools.forEach(tool => {
+              if (!toolMap[tool]) toolMap[tool] = [];
+              toolMap[tool].push({
+                id: profile.agentId,
+                isVm: profile.isCloudAgent
+              });
+            });
+          }
+        });
+
+        // Sort tools by importance (important first) then by agent count
+        const sortedTools = Object.keys(toolMap).sort((a, b) => {
+          const aImportant = importantTools.includes(a) ? 1 : 0;
+          const bImportant = importantTools.includes(b) ? 1 : 0;
+          if (aImportant !== bImportant) return bImportant - aImportant;
+          return toolMap[b].length - toolMap[a].length;
+        });
+
+        // Only show top 12 tools to keep it concise
+        const topTools = sortedTools.slice(0, 12);
+
+        if (topTools.length === 0) {
+          gridEl.innerHTML = '<div class="capability-missing">No tool profiles registered yet</div>';
+          return;
+        }
+
+        // Find missing important tools
+        const missingTools = importantTools.filter(t => !toolMap[t] || toolMap[t].length === 0);
+
+        let html = topTools.map(tool => {
+          const agents = toolMap[tool];
+          const agentBadges = agents.map(a =>
+            '<span class="capability-agent' + (a.isVm ? ' vm' : '') + '">' + a.id + '</span>'
+          ).join('');
+          return '<div class="capability-row"><span class="capability-tool">' + tool + '</span><div class="capability-agents">' + agentBadges + '</div></div>';
+        }).join('');
+
+        if (missingTools.length > 0) {
+          html += '<div class="capability-missing">No one has: ' + missingTools.join(', ') + '</div>';
+        }
+
+        gridEl.innerHTML = html;
+      } catch (err) {
+        gridEl.innerHTML = '<div class="capability-missing">Failed to load capabilities</div>';
       }
     }
 
