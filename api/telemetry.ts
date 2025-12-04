@@ -161,7 +161,7 @@ const DEVICE_PROFILES: Record<string, DeviceProfile> = {
     year: 2008,
     baseLat: 33.4484,
     baseLng: -112.0740,
-    isActive: true  // Live - transmitting now
+    isActive: true  // Live - transmitting (verified Dec 4 2025)
   },
   '862464068525638': {
     name: 'Lexus NX',
@@ -171,7 +171,7 @@ const DEVICE_PROFILES: Record<string, DeviceProfile> = {
     year: 2015,
     baseLat: 33.4484,
     baseLng: -112.0740,
-    isActive: true  // Live - transmitting now
+    isActive: true  // Live - transmitting (verified Dec 4 2025)
   },
   '862464068597504': {
     name: 'OBD2 Emulator',
@@ -179,16 +179,15 @@ const DEVICE_PROFILES: Record<string, DeviceProfile> = {
     owner: 'Tom (Hardware & IoT)',
     baseLat: 33.4484,
     baseLng: -112.0740,
-    isActive: false,
-    lastKnownDate: '2025-11-26T00:00:00Z'  // Offline since Nov 26
+    isActive: true,  // Live - transmitting (verified Dec 4 2025)
   },
   '862464068558217': {
     name: 'Beta Tester (Pug)',
     description: 'Beta testing - real-world driving data collection',
     owner: 'Pug',
-    baseLat: 33.4484,
-    baseLng: -112.0740,
-    isActive: true  // Live - transmitting now
+    baseLat: 38.567,  // Updated to actual location (Sacramento)
+    baseLng: -121.495,
+    isActive: true  // Live - transmitting (verified Dec 4 2025)
   }
 };
 
@@ -595,25 +594,40 @@ async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<st
   if (!s3) return [];
 
   try {
-    // Get today's date for the path
+    // Try today first, then yesterday if no files found (timezone handling)
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
+    const dates = [
+      now,
+      new Date(now.getTime() - 24 * 60 * 60 * 1000) // Yesterday
+    ];
 
-    const prefix = `${imei}/${year}/${month}/${day}/`;
-    const command = new ListObjectsV2Command({
-      Bucket: S3_BUCKET,
-      Prefix: prefix,
-      MaxKeys: limit,
-    });
+    for (const date of dates) {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
 
-    const response = await s3.send(command);
-    return (response.Contents || [])
-      .map(obj => obj.Key || '')
-      .filter(Boolean)
-      .sort()
-      .reverse(); // Most recent first
+      const prefix = `${imei}/${year}/${month}/${day}/`;
+      const command = new ListObjectsV2Command({
+        Bucket: S3_BUCKET,
+        Prefix: prefix,
+        MaxKeys: limit,
+      });
+
+      const response = await s3.send(command);
+      const files = (response.Contents || [])
+        .map(obj => obj.Key || '')
+        .filter(Boolean)
+        .sort()
+        .reverse(); // Most recent first
+
+      if (files.length > 0) {
+        console.log(`[telemetry] Found ${files.length} S3 files for ${imei} in ${prefix}`);
+        return files;
+      }
+    }
+
+    console.log(`[telemetry] No S3 files found for ${imei} in last 2 days`);
+    return [];
   } catch (err) {
     console.error(`[telemetry] S3 list failed for ${imei}:`, err);
     return [];
