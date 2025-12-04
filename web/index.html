@@ -7713,6 +7713,81 @@
     }
     /* ========== END CONVERSATIONAL TRAINING STYLES ========== */
 
+    /* ========== CEO PORTAL STYLES ========== */
+    .ceo-portal { display: flex; flex-direction: column; height: 100%; background: var(--bg-primary); }
+    .ceo-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
+    .ceo-header-left { display: flex; flex-direction: column; gap: 4px; }
+    .ceo-stats { display: flex; gap: 24px; }
+    .ceo-stat { display: flex; flex-direction: column; align-items: center; }
+    .ceo-stat-value { font-size: 24px; font-weight: 700; color: var(--accent); }
+    .ceo-stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .ceo-tabs { display: flex; gap: 4px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
+    .ceo-tab { background: transparent; border: none; padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-radius: 6px; transition: all 0.15s; }
+    .ceo-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+    .ceo-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .ceo-content { flex: 1; overflow: hidden; }
+    .ceo-panel { display: none; flex-direction: column; height: 100%; }
+    .ceo-panel.active { display: flex; }
+    .ceo-panel-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-bottom: 1px solid var(--border); gap: 16px; }
+    .ceo-filters { display: flex; gap: 12px; flex: 1; align-items: center; }
+    .ceo-filters select, .ceo-filters input { padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+    .ceo-filters input { min-width: 200px; }
+    .ceo-add-btn { padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; color: white; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+    .ceo-add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
+    .ceo-list { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+    .ceo-empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 14px; }
+    .ceo-contact-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; gap: 16px; transition: all 0.15s; cursor: pointer; }
+    .ceo-contact-card:hover { border-color: var(--accent); transform: translateX(4px); }
+    .contact-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; flex-shrink: 0; }
+    .contact-info { flex: 1; min-width: 0; }
+    .contact-name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+    .contact-company { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+    .contact-meta { display: flex; gap: 12px; flex-wrap: wrap; }
+    .contact-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+    .contact-badge.investor { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+    .contact-badge.partner { background: rgba(163, 113, 247, 0.15); color: #a371f7; }
+    .contact-badge.customer { background: rgba(63, 185, 80, 0.15); color: #3fb950; }
+    .contact-badge.advisor { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+    .contact-badge.press { background: rgba(248, 81, 73, 0.15); color: #f85149; }
+    .contact-badge.other { background: var(--bg-tertiary); color: var(--text-secondary); }
+    .contact-badge.active { background: rgba(63, 185, 80, 0.15); color: #3fb950; }
+    .contact-badge.nurturing { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+    .contact-badge.cold { background: rgba(139, 148, 158, 0.15); color: #8b949e; }
+    .contact-badge.closed { background: rgba(248, 81, 73, 0.15); color: #f85149; }
+    .contact-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+    .contact-follow-up { font-size: 11px; color: var(--warning); }
+    .contact-follow-up.overdue { color: var(--danger); }
+    .ceo-idea-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; transition: all 0.15s; cursor: pointer; }
+    .ceo-idea-card:hover { border-color: var(--accent); }
+    .ceo-idea-card.high { border-left: 4px solid #f85149; }
+    .ceo-idea-card.medium { border-left: 4px solid #d29922; }
+    .ceo-idea-card.low { border-left: 4px solid #8b949e; }
+    .idea-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .idea-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
+    .idea-category { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: var(--bg-tertiary); color: var(--text-secondary); }
+    .idea-description { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .idea-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+    .idea-status { font-size: 12px; color: var(--text-secondary); }
+    .idea-date { font-size: 11px; color: var(--text-secondary); }
+    .ceo-note-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; transition: all 0.15s; cursor: pointer; }
+    .ceo-note-card:hover { border-color: var(--accent); }
+    .ceo-note-card.pinned { border-color: var(--warning); background: rgba(210, 153, 34, 0.05); }
+    .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .note-title { font-size: 15px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+    .note-pin { color: var(--warning); }
+    .note-category { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: var(--bg-tertiary); color: var(--text-secondary); }
+    .note-content { font-size: 13px; color: var(--text-secondary); line-height: 1.6; white-space: pre-wrap; max-height: 100px; overflow: hidden; }
+    .note-footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+    .note-date { font-size: 11px; color: var(--text-secondary); }
+    .ceo-modal { max-width: 500px; }
+    .ceo-form-group { margin-bottom: 16px; }
+    .ceo-form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+    .ceo-form-group input, .ceo-form-group select, .ceo-form-group textarea { width: 100%; padding: 10px 14px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; color: var(--text-primary); font-size: 14px; box-sizing: border-box; }
+    .ceo-form-group textarea { min-height: 100px; resize: vertical; font-family: inherit; }
+    .ceo-form-group input:focus, .ceo-form-group select:focus, .ceo-form-group textarea:focus { outline: none; border-color: var(--accent); }
+    .ceo-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    /* ========== END CEO PORTAL STYLES ========== */
+
     /* Direct Messaging Styles */
     .dm-badge {
       position: relative;
@@ -9966,6 +10041,173 @@
         <button type="button" class="btn-cancel" onclick="hideGiveKudosModal()">Cancel</button>
         <button type="button" class="btn-submit" onclick="submitKudos()">Give Kudos</button>
       </div>
+    </div>
+  </div>
+
+  <!-- CEO Contact Modal -->
+  <div class="modal-overlay" id="contactModal" style="display:none;" onclick="if(event.target === this) hideContactModal()">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-title" id="contactModalTitle">Add Contact</div>
+      <form id="contactForm" onsubmit="saveContact(event)">
+        <div class="form-group">
+          <label for="contactName">Name *</label>
+          <input type="text" id="contactName" required placeholder="Contact name" />
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="contactCompany">Company</label>
+            <input type="text" id="contactCompany" placeholder="Company name" />
+          </div>
+          <div>
+            <label for="contactRole">Role</label>
+            <input type="text" id="contactRole" placeholder="Their role" />
+          </div>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="contactEmail">Email</label>
+            <input type="email" id="contactEmail" placeholder="email@example.com" />
+          </div>
+          <div>
+            <label for="contactPhone">Phone</label>
+            <input type="text" id="contactPhone" placeholder="Phone number" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="contactLinkedIn">LinkedIn</label>
+          <input type="text" id="contactLinkedIn" placeholder="LinkedIn profile URL" />
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="contactCategory">Category</label>
+            <select id="contactCategory" style="width:100%;">
+              <option value="investor">Investor</option>
+              <option value="partner">Partner</option>
+              <option value="customer">Customer</option>
+              <option value="advisor">Advisor</option>
+              <option value="press">Press</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="contactStatus">Status</label>
+            <select id="contactStatus" style="width:100%;">
+              <option value="active">Active</option>
+              <option value="nurturing">Nurturing</option>
+              <option value="cold">Cold</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="contactNextFollowUp">Next Follow-up</label>
+          <input type="date" id="contactNextFollowUp" />
+        </div>
+        <div class="form-group">
+          <label for="contactNotes">Notes</label>
+          <textarea id="contactNotes" placeholder="Notes about this contact..." rows="3"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideContactModal()">Cancel</button>
+          <button type="button" class="btn-danger" id="deleteContactBtn" style="display:none;" onclick="deleteContact()">Delete</button>
+          <button type="submit" class="btn-submit">Save Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CEO Idea Modal -->
+  <div class="modal-overlay" id="ideaModal" style="display:none;" onclick="if(event.target === this) hideIdeaModal()">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-title" id="ideaModalTitle">Add Idea</div>
+      <form id="ideaForm" onsubmit="saveIdea(event)">
+        <div class="form-group">
+          <label for="ideaTitle">Title *</label>
+          <input type="text" id="ideaTitle" required placeholder="Idea title" />
+        </div>
+        <div class="form-group">
+          <label for="ideaDescription">Description</label>
+          <textarea id="ideaDescription" placeholder="Describe the idea..." rows="3"></textarea>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="ideaCategory">Category</label>
+            <select id="ideaCategory" style="width:100%;">
+              <option value="product">Product</option>
+              <option value="marketing">Marketing</option>
+              <option value="strategy">Strategy</option>
+              <option value="name">Name/Branding</option>
+              <option value="feature">Feature</option>
+              <option value="partnership">Partnership</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div>
+            <label for="ideaPriority">Priority</label>
+            <select id="ideaPriority" style="width:100%;">
+              <option value="high">High</option>
+              <option value="medium" selected>Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="ideaStatus">Status</label>
+          <select id="ideaStatus" style="width:100%;">
+            <option value="new">New</option>
+            <option value="exploring">Exploring</option>
+            <option value="decided">Decided</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="ideaNotes">Additional Notes</label>
+          <textarea id="ideaNotes" placeholder="Extra thoughts..." rows="2"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideIdeaModal()">Cancel</button>
+          <button type="button" class="btn-danger" id="deleteIdeaBtn" style="display:none;" onclick="deleteIdea()">Delete</button>
+          <button type="submit" class="btn-submit">Save Idea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CEO Note Modal -->
+  <div class="modal-overlay" id="noteModal" style="display:none;" onclick="if(event.target === this) hideNoteModal()">
+    <div class="modal" style="max-width:500px;">
+      <div class="modal-title" id="noteModalTitle">Add Note</div>
+      <form id="noteForm" onsubmit="saveNote(event)">
+        <div class="form-group">
+          <label for="noteTitle">Title *</label>
+          <input type="text" id="noteTitle" required placeholder="Note title" />
+        </div>
+        <div class="form-group">
+          <label for="noteContent">Content</label>
+          <textarea id="noteContent" placeholder="Note content..." rows="6"></textarea>
+        </div>
+        <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <label for="noteCategory">Category</label>
+            <select id="noteCategory" style="width:100%;">
+              <option value="meeting">Meeting</option>
+              <option value="strategy">Strategy</option>
+              <option value="personal">Personal</option>
+              <option value="todo">To-Do</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div style="display: flex; align-items: center; padding-top: 24px;">
+            <input type="checkbox" id="notePinned" style="margin-right: 8px;" />
+            <label for="notePinned" style="margin: 0;">Pin this note</label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-cancel" onclick="hideNoteModal()">Cancel</button>
+          <button type="button" class="btn-danger" id="deleteNoteBtn" style="display:none;" onclick="deleteNote()">Delete</button>
+          <button type="submit" class="btn-submit">Save Note</button>
+        </div>
+      </form>
     </div>
   </div>
 
