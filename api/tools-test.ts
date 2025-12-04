@@ -1007,6 +1007,41 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'vercel-env', status: 'fail', message: 'Failed to access vercel env audit', error: String(e) };
     }
+  },
+
+  // External agents test - added by phil
+  'external-agents': async () => {
+    const start = Date.now();
+    try {
+      const [agents, invites] = await Promise.all([
+        redis.hlen('agent-coord:external-agents'),
+        redis.hlen('agent-coord:agent-invites')
+      ]);
+      return {
+        tool: 'external-agents',
+        status: 'pass',
+        message: `External agents accessible (${agents} agents, ${invites} invites)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'external-agents', status: 'fail', message: 'Failed to access external agents', error: String(e) };
+    }
+  },
+
+  // Planned features test - added by phil
+  'planned-features': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:planned-features');
+      return {
+        tool: 'planned-features',
+        status: 'pass',
+        message: `Planned features accessible (${count} features tracked)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'planned-features', status: 'fail', message: 'Failed to access planned features', error: String(e) };
+    }
   }
 };
 
