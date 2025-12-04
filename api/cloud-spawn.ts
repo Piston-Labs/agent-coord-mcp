@@ -36,7 +36,14 @@ const SOULS_KEY = 'agent-coord:souls';
 
 const AWS_REGION = process.env.AWS_REGION || 'us-west-1';
 const GOLDEN_AMI = process.env.AWS_GOLDEN_AMI_ID;
-const WINDOWS_AMI = GOLDEN_AMI || 'ami-0159172a5a821bafd';
+
+// Windows Server 2022 AMIs by region (updated Dec 2025)
+const WINDOWS_AMIS: Record<string, string> = {
+  'us-east-1': 'ami-0159172a5a821bafd',
+  'us-west-1': 'ami-07d1169edc703a15b',
+  'us-west-2': 'ami-0f5daaa3a7fb3378b',
+};
+const WINDOWS_AMI = GOLDEN_AMI || WINDOWS_AMIS[AWS_REGION] || WINDOWS_AMIS['us-west-1'];
 
 interface CloudAgent {
   agentId: string;
