@@ -1,8 +1,25 @@
 # Agent Coordination Hub
 
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://agent-coord-mcp.vercel.app)
+[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-45+-blue)](https://github.com/Piston-Labs/agent-coord-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
 **A multi-agent orchestration system for Claude AI agents to collaborate autonomously.**
 
 Built by [Piston Labs](https://pistonlabs.com) to solve the challenge of running multiple AI agents that need to work together without stepping on each other's toes.
+
+## Table of Contents
+
+- [What This Does](#what-this-does)
+- [Key Concepts](#key-concepts)
+- [Architecture](#architecture)
+- [Core Features](#core-features)
+- [Quick Start](#quick-start)
+- [MCP Tools](#mcp-tools-45)
+- [HTTP Endpoints](#http-endpoints)
+- [Environment Variables](#environment-variables)
+- [Simulation](#simulation)
+- [Coordination Patterns](#coordination-patterns)
 
 ## What This Does
 
