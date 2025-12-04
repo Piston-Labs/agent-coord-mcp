@@ -1,13 +1,14 @@
 /**
  * External Integration Tools - Third-party service integrations
  *
- * Tools: linear, sentry, github-enhanced, slack
+ * Tools: linear, sentry, github-enhanced, slack, discord
  *
  * These tools integrate with external services to enhance agent coordination:
  * - Linear: Issue tracking and project management
  * - Sentry: Error tracking and monitoring
  * - GitHub: Enhanced PR, issue, and CI/CD workflows
  * - Slack: Team communication integration
+ * - Discord: Discord server communication integration
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -636,6 +637,229 @@ export function registerExternalTools(server: McpServer) {
             }
             const data = await slackFetch('users.info', { user: params.userId });
             return { content: [{ type: 'text', text: JSON.stringify(data.user, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
+  // DISCORD TOOL - Discord server communication integration
+  // ============================================================================
+
+  server.tool(
+    'discord',
+    'Integrate with Discord for team communications. Send messages, list channels, manage threads. Requires DISCORD_BOT_TOKEN env var.',
+    {
+      action: z.enum(['send', 'list-channels', 'get-channel', 'get-messages', 'list-guilds', 'create-thread', 'reply-thread', 'add-reaction', 'get-user'])
+        .describe('send=post message, list-channels=guild channels, get-channel=channel info, get-messages=channel history, list-guilds=bot servers, create-thread=start thread, reply-thread=reply in thread, add-reaction=react to message, get-user=user info'),
+      guildId: z.string().optional().describe('Discord server (guild) ID'),
+      channelId: z.string().optional().describe('Channel ID'),
+      messageId: z.string().optional().describe('Message ID for reactions/threads'),
+      message: z.string().optional().describe('Message content to send'),
+      threadName: z.string().optional().describe('Thread name for create-thread'),
+      emoji: z.string().optional().describe('Emoji for add-reaction (unicode or custom emoji ID)'),
+      userId: z.string().optional().describe('User ID for get-user'),
+      limit: z.number().optional().default(20).describe('Max results'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, agentId, ...params } = args;
+
+      const token = process.env.DISCORD_BOT_TOKEN;
+      if (!token) {
+        return { content: [{ type: 'text', text: JSON.stringify({
+          error: 'DISCORD_BOT_TOKEN not configured',
+          setup: 'Set DISCORD_BOT_TOKEN environment variable with your Discord Bot Token',
+          steps: [
+            '1. Go to https://discord.com/developers/applications',
+            '2. Create a new application or select existing',
+            '3. Go to Bot section, create bot if needed',
+            '4. Copy the bot token',
+            '5. Enable MESSAGE CONTENT INTENT in Bot settings',
+            '6. Invite bot to server with permissions: Send Messages, Read Message History, Create Public Threads, Add Reactions'
+          ],
+          inviteUrl: 'https://discord.com/api/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=277025467456&scope=bot'
+        }, null, 2) }] };
+      }
+
+      const discordFetch = async (endpoint: string, options: RequestInit = {}) => {
+        const res = await fetch(`https://discord.com/api/v10${endpoint}`, {
+          ...options,
+          headers: {
+            'Authorization': `Bot ${token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+          }
+        });
+        if (!res.ok) {
+          const error = await res.json().catch(() => ({ message: res.statusText }));
+          throw new Error(`Discord API error: ${error.message || res.statusText}`);
+        }
+        return res.json();
+      };
+
+      try {
+        switch (action) {
+          case 'send': {
+            if (!params.channelId || !params.message) {
+              return { content: [{ type: 'text', text: 'channelId and message required' }] };
+            }
+            const data = await discordFetch(`/channels/${params.channelId}/messages`, {
+              method: 'POST',
+              body: JSON.stringify({ content: params.message })
+            });
+            return { content: [{ type: 'text', text: JSON.stringify({
+              success: true,
+              messageId: data.id,
+              channelId: data.channel_id,
+              content: data.content,
+              timestamp: data.timestamp
+            }, null, 2) }] };
+          }
+
+          case 'list-guilds': {
+            const data = await discordFetch('/users/@me/guilds');
+            const guilds = data.map((g: any) => ({
+              id: g.id,
+              name: g.name,
+              icon: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : null,
+              owner: g.owner,
+              permissions: g.permissions
+            }));
+            return { content: [{ type: 'text', text: JSON.stringify({ guilds }, null, 2) }] };
+          }
+
+          case 'list-channels': {
+            if (!params.guildId) {
+              return { content: [{ type: 'text', text: 'guildId required' }] };
+            }
+            const data = await discordFetch(`/guilds/${params.guildId}/channels`);
+            const channels = data
+              .filter((c: any) => c.type === 0 || c.type === 5 || c.type === 15) // text, announcement, forum
+              .map((c: any) => ({
+                id: c.id,
+                name: c.name,
+                type: c.type === 0 ? 'text' : c.type === 5 ? 'announcement' : 'forum',
+                topic: c.topic,
+                parentId: c.parent_id,
+                position: c.position
+              }))
+              .sort((a: any, b: any) => a.position - b.position);
+            return { content: [{ type: 'text', text: JSON.stringify({ channels }, null, 2) }] };
+          }
+
+          case 'get-channel': {
+            if (!params.channelId) {
+              return { content: [{ type: 'text', text: 'channelId required' }] };
+            }
+            const data = await discordFetch(`/channels/${params.channelId}`);
+            return { content: [{ type: 'text', text: JSON.stringify({
+              id: data.id,
+              name: data.name,
+              type: data.type,
+              topic: data.topic,
+              guildId: data.guild_id,
+              parentId: data.parent_id,
+              lastMessageId: data.last_message_id
+            }, null, 2) }] };
+          }
+
+          case 'get-messages': {
+            if (!params.channelId) {
+              return { content: [{ type: 'text', text: 'channelId required' }] };
+            }
+            const data = await discordFetch(`/channels/${params.channelId}/messages?limit=${params.limit}`);
+            const messages = data.map((m: any) => ({
+              id: m.id,
+              content: m.content,
+              author: { id: m.author.id, username: m.author.username, bot: m.author.bot },
+              timestamp: m.timestamp,
+              reactions: m.reactions?.map((r: any) => ({ emoji: r.emoji.name, count: r.count })),
+              threadId: m.thread?.id
+            }));
+            return { content: [{ type: 'text', text: JSON.stringify({ messages }, null, 2) }] };
+          }
+
+          case 'create-thread': {
+            if (!params.channelId || !params.threadName) {
+              return { content: [{ type: 'text', text: 'channelId and threadName required' }] };
+            }
+            // Create thread from a message if messageId provided, otherwise create without starter
+            const endpoint = params.messageId
+              ? `/channels/${params.channelId}/messages/${params.messageId}/threads`
+              : `/channels/${params.channelId}/threads`;
+
+            const body: Record<string, any> = { name: params.threadName };
+            if (!params.messageId) {
+              body.type = 11; // PUBLIC_THREAD
+              body.auto_archive_duration = 1440; // 24 hours
+            }
+
+            const data = await discordFetch(endpoint, {
+              method: 'POST',
+              body: JSON.stringify(body)
+            });
+            return { content: [{ type: 'text', text: JSON.stringify({
+              success: true,
+              threadId: data.id,
+              name: data.name,
+              parentId: data.parent_id
+            }, null, 2) }] };
+          }
+
+          case 'reply-thread': {
+            if (!params.channelId || !params.message) {
+              return { content: [{ type: 'text', text: 'channelId (thread ID) and message required' }] };
+            }
+            // Threads are channels, so we just send to the thread's channel ID
+            const data = await discordFetch(`/channels/${params.channelId}/messages`, {
+              method: 'POST',
+              body: JSON.stringify({ content: params.message })
+            });
+            return { content: [{ type: 'text', text: JSON.stringify({
+              success: true,
+              messageId: data.id,
+              threadId: data.channel_id,
+              content: data.content
+            }, null, 2) }] };
+          }
+
+          case 'add-reaction': {
+            if (!params.channelId || !params.messageId || !params.emoji) {
+              return { content: [{ type: 'text', text: 'channelId, messageId, and emoji required' }] };
+            }
+            // URL encode the emoji for the endpoint
+            const encodedEmoji = encodeURIComponent(params.emoji);
+            await discordFetch(`/channels/${params.channelId}/messages/${params.messageId}/reactions/${encodedEmoji}/@me`, {
+              method: 'PUT'
+            }).catch(() => ({ success: true })); // Discord returns 204 No Content on success
+            return { content: [{ type: 'text', text: JSON.stringify({
+              success: true,
+              channelId: params.channelId,
+              messageId: params.messageId,
+              emoji: params.emoji
+            }, null, 2) }] };
+          }
+
+          case 'get-user': {
+            if (!params.userId) {
+              return { content: [{ type: 'text', text: 'userId required' }] };
+            }
+            const data = await discordFetch(`/users/${params.userId}`);
+            return { content: [{ type: 'text', text: JSON.stringify({
+              id: data.id,
+              username: data.username,
+              globalName: data.global_name,
+              avatar: data.avatar ? `https://cdn.discordapp.com/avatars/${data.id}/${data.avatar}.png` : null,
+              bot: data.bot,
+              banner: data.banner
+            }, null, 2) }] };
           }
 
           default:

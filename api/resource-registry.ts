@@ -67,7 +67,6 @@ const MCP_TOOLS = [
   { id: 'user-tasks', name: 'user-tasks', category: 'integrations', description: 'Manage user tasks and assignments.', file: 'src/tools/integrations.ts' },
   { id: 'shop', name: 'shop', category: 'integrations', description: 'Manage Piston Labs sales pipeline.', file: 'src/tools/integrations.ts' },
   { id: 'errors', name: 'errors', category: 'integrations', description: 'Self-hosted error tracking (free Sentry alternative).', file: 'src/tools/integrations.ts' },
-  { id: 'notion', name: 'notion', category: 'integrations', description: 'Notion knowledge base and documentation integration.', file: 'src/tools/integrations.ts' },
 
   // Testing Tools (src/tools/testing.ts)
   { id: 'ui-test', name: 'ui-test', category: 'testing', description: 'UI/UX testing framework. Create, run, and track visual, accessibility, and interaction tests.', file: 'src/tools/testing.ts' },
@@ -83,6 +82,7 @@ const MCP_TOOLS = [
   { id: 'linear', name: 'linear', category: 'external', description: 'Linear issue tracking integration. Search, create, update issues.', file: 'src/tools/external.ts' },
   { id: 'github', name: 'github', category: 'external', description: 'Enhanced GitHub operations. Manage PRs, issues, workflows, reviews.', file: 'src/tools/external.ts' },
   { id: 'slack', name: 'slack', category: 'external', description: 'Slack team communication integration. Send messages, list channels, search.', file: 'src/tools/external.ts' },
+  { id: 'discord', name: 'discord', category: 'external', description: 'Discord server communication integration. Send messages, list channels, threads, reactions.', file: 'src/tools/external.ts' },
 
   // Soul Transfer & AWS Infrastructure (api/)
   { id: 'souls', name: 'souls', category: 'orchestration', description: 'Soul registry - persistent agent identities with token tracking.', file: 'api/souls.ts' },
@@ -117,17 +117,6 @@ const INTEGRATIONS = [
     endpoint: '/api/linear'
   },
   {
-    id: 'notion',
-    name: 'Notion',
-    category: 'external',
-    description: 'Knowledge base and documentation',
-    status: process.env.NOTION_TOKEN ? 'live' : 'needs-setup',
-    envVar: 'NOTION_TOKEN',
-    setupUrl: 'https://www.notion.so/my-integrations',
-    setupInstructions: 'Create internal integration, share pages with it.',
-    endpoint: '/api/notion'
-  },
-  {
     id: 'github',
     name: 'GitHub',
     category: 'external',
@@ -148,6 +137,17 @@ const INTEGRATIONS = [
     setupUrl: 'https://api.slack.com/apps',
     setupInstructions: 'Create app, add Bot Token Scopes (chat:write, channels:read, users:read), install to workspace.',
     endpoint: '/api/slack'
+  },
+  {
+    id: 'discord',
+    name: 'Discord',
+    category: 'external',
+    description: 'Discord server communication integration',
+    status: process.env.DISCORD_BOT_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'DISCORD_BOT_TOKEN',
+    setupUrl: 'https://discord.com/developers/applications',
+    setupInstructions: 'Create app at Discord Developer Portal, add Bot, copy token, enable MESSAGE CONTENT INTENT, invite to server with Send Messages + Read Message History permissions.',
+    endpoint: '/api/discord'
   },
   {
     id: 'anthropic',

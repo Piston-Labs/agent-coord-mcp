@@ -153,7 +153,6 @@ See `.env.example` for a complete template with documentation.
 | Variable | Description |
 |----------|-------------|
 | `LINEAR_API_KEY` | Linear issue tracking |
-| `NOTION_TOKEN` | Notion knowledge base |
 | `SLACK_TOKEN` | Slack team messaging |
 | `GITHUB_TOKEN` | Context clusters & repo access |
 | `GITHUB_ORG` | GitHub organization |

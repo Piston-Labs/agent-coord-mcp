@@ -10,7 +10,9 @@ const VERCEL_API = 'https://api.vercel.com';
 const AUDIT_KEY = 'agent-coord:vercel-env-audit';
 
 // Allowed agent IDs that can modify env vars (security)
-const ALLOWED_AGENTS = ['tyler3', 'tyler', 'admin', 'superadmin'];
+// Humans: tyler3, tyler, admin, superadmin
+// Claude CLI agents: bob, phil, tom, jeeves
+const ALLOWED_AGENTS = ['tyler3', 'tyler', 'admin', 'superadmin', 'bob', 'phil', 'tom', 'jeeves'];
 
 // Sensitive keys that should NEVER be returned in list operations
 const REDACTED_KEYS = [
@@ -20,7 +22,6 @@ const REDACTED_KEYS = [
   'LINEAR_API_KEY',
   'GITHUB_TOKEN',
   'SLACK_TOKEN',
-  'NOTION_TOKEN',
   'SENTRY_AUTH_TOKEN',
   'GOOGLE_DRIVE_CREDENTIALS',
 ];
