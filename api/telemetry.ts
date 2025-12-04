@@ -841,7 +841,58 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      const { imei, history, alerts: includeAlerts } = req.query;
+      const { imei, history, alerts: includeAlerts, debug } = req.query;
+
+      // Debug mode - show S3 diagnostics
+      if (debug === 'true') {
+        const now = new Date();
+        const testImei = '862464068558217'; // Beta Tester Pug
+        const dates = [
+          { date: now, label: 'today' },
+          { date: new Date(now.getTime() - 24 * 60 * 60 * 1000), label: 'yesterday' }
+        ];
+
+        const s3Paths: any[] = [];
+        for (const { date, label } of dates) {
+          const year = date.getUTCFullYear();
+          const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+          const day = String(date.getUTCDate()).padStart(2, '0');
+          const prefix = `${testImei}/${year}/${month}/${day}/`;
+
+          let fileCount = 0;
+          let files: string[] = [];
+          let error: string | null = null;
+
+          if (s3) {
+            try {
+              const command = new ListObjectsV2Command({
+                Bucket: S3_BUCKET,
+                Prefix: prefix,
+                MaxKeys: 5,
+              });
+              const response = await s3.send(command);
+              files = (response.Contents || []).map(obj => obj.Key || '').filter(Boolean);
+              fileCount = files.length;
+            } catch (err) {
+              error = String(err);
+            }
+          }
+
+          s3Paths.push({ label, prefix, bucket: S3_BUCKET, fileCount, files, error });
+        }
+
+        return res.json({
+          debug: true,
+          timestamp: now.toISOString(),
+          utcDate: `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`,
+          s3Configured: !!s3,
+          awsRegion: process.env.AWS_REGION || 'not set',
+          s3Bucket: S3_BUCKET,
+          testImei,
+          s3Paths,
+          hasAWSCredentials: !!process.env.AWS_ACCESS_KEY_ID && !!process.env.AWS_SECRET_ACCESS_KEY
+        });
+      }
 
       // Get specific device
       if (imei && typeof imei === 'string') {
