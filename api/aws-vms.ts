@@ -33,9 +33,9 @@ const CHAT_KEY = 'agent-coord:chat';
 // AWS Configuration
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
-// Windows Server 2022 AMIs by region
+// Windows Server 2022 AMIs by region (updated Dec 2025)
 const WINDOWS_AMIS: Record<string, string> = {
-  'us-east-1': 'ami-0be0e902919675894',
+  'us-east-1': 'ami-0159172a5a821bafd',  // Windows_Server-2022-English-Full-Base-2025.11.12
   'us-east-2': 'ami-0c1704bac156af62c',
   'us-west-1': 'ami-0e5d865c678e78624',
   'us-west-2': 'ami-0f5daaa3a7fb3378b',
