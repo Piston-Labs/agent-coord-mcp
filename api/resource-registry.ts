@@ -213,6 +213,7 @@ const API_ENDPOINTS = [
   { id: 'soul-monitor', path: '/api/soul-monitor', methods: ['GET', 'POST'], description: 'Soul health monitoring and alerts' },
   { id: 'aws-vms', path: '/api/aws-vms', methods: ['GET', 'POST', 'DELETE'], description: 'AWS VM lifecycle: provision, start/stop, terminate, spawn-agent, transfer-soul' },
   { id: 'vm-scheduler', path: '/api/vm-scheduler', methods: ['GET', 'POST', 'PUT'], description: 'VM auto-shutdown scheduler (Vercel cron)' },
+  { id: 'cloud-spawn', path: '/api/cloud-spawn', methods: ['GET', 'POST', 'DELETE'], description: 'Cloud agent spawning - spawn Claude agents in AWS when local unavailable' },
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
