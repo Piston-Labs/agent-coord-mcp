@@ -95,8 +95,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await redis.hset(SESSIONS_KEY, { [sessionId]: JSON.stringify(session) });
     await redis.expire(SESSIONS_KEY, SESSION_TTL);
 
-    // Set cookie
-    res.setHeader('Set-Cookie', `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL}`);
+    // Set cookie - use Secure in production for HTTPS
+    const isProduction = process.env.VERCEL_ENV === 'production' || req.headers.host?.includes('vercel.app');
+    const securePart = isProduction ? '; Secure' : '';
+    res.setHeader('Set-Cookie', `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax${securePart}; Max-Age=${SESSION_TTL}`);
 
     return res.json({
       success: true,

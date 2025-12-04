@@ -40,8 +40,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await redis.hdel(SESSIONS_KEY, sessionId);
     }
 
-    // Clear cookie
-    res.setHeader('Set-Cookie', 'session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+    // Clear cookie - use Secure in production for HTTPS
+    const isProduction = process.env.VERCEL_ENV === 'production' || req.headers.host?.includes('vercel.app');
+    const securePart = isProduction ? '; Secure' : '';
+    res.setHeader('Set-Cookie', `session=; Path=/; HttpOnly; SameSite=Lax${securePart}; Max-Age=0`);
 
     return res.json({ success: true, message: 'Logged out' });
   } catch (error) {
