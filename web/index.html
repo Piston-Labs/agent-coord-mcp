@@ -10109,6 +10109,27 @@
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoNoteCount">0</span><span class="ceo-stat-label">Notes</span></div>
             </div>
           </div>
+          <!-- Executive Summary Panel -->
+          <div id="ceoExecSummary" style="margin: 16px 0; padding: 16px 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.2);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 13px; font-weight: 600; color: var(--text-primary);">Executive Summary</span>
+              <span id="execSummaryTime" style="font-size: 10px; color: var(--text-secondary);">--</span>
+            </div>
+            <div id="execSummaryContent" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+              <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 4px;">TEAM STATUS</div>
+                <div id="execTeamStatus" style="font-size: 12px; color: var(--text-primary);">Loading...</div>
+              </div>
+              <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 4px;">URGENT ITEMS</div>
+                <div id="execUrgentItems" style="font-size: 12px; color: var(--text-primary);">Loading...</div>
+              </div>
+              <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 10px; color: var(--text-secondary); margin-bottom: 4px;">RECENT WINS</div>
+                <div id="execRecentWins" style="font-size: 12px; color: var(--text-primary);">Loading...</div>
+              </div>
+            </div>
+          </div>
           <div class="ceo-tabs">
             <button class="ceo-tab active" data-ceotab="progress" onclick="switchCeoTab('progress')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">📊 Work Progress</button>
             <button class="ceo-tab" data-ceotab="blockers" onclick="switchCeoTab('blockers')">🚨 Blockers</button>
@@ -12587,7 +12608,55 @@
 
     async function initCeoPortal() {
       if (!IS_SUPERADMIN) return;
+      // Load core data first, then exec summary which depends on blockers/tasks
       await Promise.all([loadWorkProgress(), fetchCeoBlockers(), fetchCeoTasks(), fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
+      await loadExecSummary();
+    }
+
+    async function loadExecSummary() {
+      try {
+        // Fetch digest for team status
+        const digestRes = await fetch(API_BASE + '/digest?agentId=' + USERNAME, { credentials: 'include' });
+        const digest = digestRes.ok ? await digestRes.json() : null;
+
+        // Update timestamp
+        document.getElementById('execSummaryTime').textContent = new Date().toLocaleTimeString();
+
+        // Team Status
+        const teamEl = document.getElementById('execTeamStatus');
+        if (digest && digest.onlineAgents) {
+          const agents = digest.onlineAgents;
+          teamEl.innerHTML = `<span style="color: #10b981; font-weight: 600;">${agents.length} agent${agents.length !== 1 ? 's' : ''} online</span>` +
+            (agents.length > 0 ? `<div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">${agents.slice(0,3).map(a => a.agentId || a.id).join(', ')}${agents.length > 3 ? '...' : ''}</div>` : '');
+        } else {
+          teamEl.textContent = 'Unable to load';
+        }
+
+        // Urgent Items - check blockers
+        const urgentEl = document.getElementById('execUrgentItems');
+        const urgentBlockers = ceoBlockers.filter(b => b.priority === 'urgent' || b.priority === 'high');
+        const urgentTasks = ceoTasks.filter(t => t.status !== 'done' && (t.priority === 'urgent' || t.priority === 'high'));
+        const totalUrgent = urgentBlockers.length + urgentTasks.length;
+        if (totalUrgent > 0) {
+          urgentEl.innerHTML = `<span style="color: #f97316; font-weight: 600;">${totalUrgent} urgent</span>` +
+            `<div style="font-size: 10px; color: var(--text-secondary); margin-top: 4px;">${urgentBlockers.length} blocker${urgentBlockers.length !== 1 ? 's' : ''}, ${urgentTasks.length} task${urgentTasks.length !== 1 ? 's' : ''}</div>`;
+        } else {
+          urgentEl.innerHTML = '<span style="color: #10b981;">All clear</span>';
+        }
+
+        // Recent Wins - from work progress features shipped
+        const winsEl = document.getElementById('execRecentWins');
+        if (workProgressData && workProgressData.featuresShipped && workProgressData.featuresShipped.length > 0) {
+          const wins = workProgressData.featuresShipped.slice(0, 2);
+          winsEl.innerHTML = wins.map(w => `<div style="font-size: 11px; margin-bottom: 2px;">• ${w.slice(0, 40)}${w.length > 40 ? '...' : ''}</div>`).join('');
+        } else if (digest && digest.recentActivity && digest.recentActivity.completions > 0) {
+          winsEl.innerHTML = `<span style="color: #10b981;">${digest.recentActivity.completions} task${digest.recentActivity.completions !== 1 ? 's' : ''} completed</span>`;
+        } else {
+          winsEl.textContent = 'No recent wins';
+        }
+      } catch (e) {
+        console.error('Failed to load exec summary:', e);
+      }
     }
 
     function switchCeoTab(tabName) {
