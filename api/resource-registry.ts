@@ -66,7 +66,7 @@ const MCP_TOOLS = [
   { id: 'google-drive', name: 'google-drive', category: 'integrations', description: 'Document storage and sharing via Google Drive.', file: 'src/tools/integrations.ts' },
   { id: 'user-tasks', name: 'user-tasks', category: 'integrations', description: 'Manage user tasks and assignments.', file: 'src/tools/integrations.ts' },
   { id: 'shop', name: 'shop', category: 'integrations', description: 'Manage Piston Labs sales pipeline.', file: 'src/tools/integrations.ts' },
-  { id: 'sentry', name: 'sentry', category: 'integrations', description: 'Sentry error tracking integration.', file: 'src/tools/integrations.ts' },
+  { id: 'errors', name: 'errors', category: 'integrations', description: 'Self-hosted error tracking (free Sentry alternative).', file: 'src/tools/integrations.ts' },
   { id: 'notion', name: 'notion', category: 'integrations', description: 'Notion knowledge base and documentation integration.', file: 'src/tools/integrations.ts' },
 
   // Testing Tools (src/tools/testing.ts)

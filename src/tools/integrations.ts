@@ -112,29 +112,36 @@ export function registerIntegrationTools(server: McpServer) {
         timeRange,
         timestamp: new Date().toISOString(),
         infrastructure: {
+          soracom: {
+            description: 'LTE SIM infrastructure for Teltonika FMM00A devices',
+            routing: 'Soracom Beam -> AWS IoT Core',
+            status: 'operational'
+          },
           lambda: {
             name: 'parse-teltonika-data',
+            runtime: 'python3.13',
             status: 'operational',
             avgLatency: '<100ms',
             errorRate: '0%',
-            note: 'Use AWS CLI for real-time metrics'
+            note: 'Parses Teltonika FMM00A protocol data'
           },
           iot: {
             endpoint: 'AWS IoT Core us-west-1',
             protocol: 'MQTT over TLS',
-            devices: 4,
+            devices: 3,
             activeDevices: 3,
-            status: 'operational'
+            deviceModel: 'Teltonika FMM00A',
+            status: 'operational',
+            pipeline: 'Soracom -> IoT Core -> Lambda -> S3/TimescaleDB/Supabase'
           },
           s3: {
             bucket: 'telemetry-raw-usw1',
             status: 'operational',
-            note: 'Archives all telemetry data'
+            note: 'Archives all raw telemetry data'
           },
           databases: {
-            timescale: 'operational (real-time)',
-            redshift: 'operational (analytics)',
-            supabase: 'operational (app data)'
+            timescale: 'operational (real-time telemetry queries)',
+            supabase: 'operational (user accounts, vehicles, service history)'
           }
         },
         hint: 'For real-time AWS metrics, use AWS CLI: aws cloudwatch get-metric-statistics'
@@ -780,12 +787,12 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
-  // SENTRY TOOL - Error tracking integration (supports both Sentry and self-hosted)
+  // ERRORS TOOL - Self-hosted error tracking (free Sentry alternative)
   // ============================================================================
 
   server.tool(
-    'sentry',
-    'Error tracking integration. Query issues, get error stats, capture errors. Uses self-hosted Redis backend (free) or Sentry if configured.',
+    'errors',
+    'Self-hosted error tracking (free Sentry alternative). Query issues, get error stats, capture errors. Uses Redis backend.',
     {
       action: z.enum(['overview', 'issues', 'issue', 'stats', 'events', 'capture', 'resolve', 'ignore']).describe('overview=summary, issues=list issues, issue=get details, stats=project stats, events=issue events, capture=log new error, resolve/ignore=update issue status'),
       issueId: z.string().optional().describe('Issue ID (required for issue/events/resolve/ignore actions)'),

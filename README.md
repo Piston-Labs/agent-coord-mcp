@@ -153,12 +153,12 @@ See `.env.example` for a complete template with documentation.
 | Variable | Description |
 |----------|-------------|
 | `LINEAR_API_KEY` | Linear issue tracking |
-| `SENTRY_AUTH_TOKEN` | Sentry error monitoring |
-| `SENTRY_ORG` | Sentry organization (default: piston-labs) |
 | `NOTION_TOKEN` | Notion knowledge base |
 | `SLACK_TOKEN` | Slack team messaging |
 | `GITHUB_TOKEN` | Context clusters & repo access |
 | `GITHUB_ORG` | GitHub organization |
+
+> **Note:** Error tracking uses a self-hosted Redis backend (`/api/errors`) - no external Sentry needed!
 
 ### Google Drive Integration
 | Variable | Description |

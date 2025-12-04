@@ -1,9 +1,9 @@
 /**
  * Integration APIs Tests
  *
- * Tests the Errors (self-hosted), Sentry (legacy), Notion, and Linear API endpoints.
+ * Tests the Errors (self-hosted), Notion, and Linear API endpoints.
  * These APIs return mock data when tokens are not configured.
- * The Errors API is the free Sentry alternative using Redis backend.
+ * The Errors API is the free error tracking solution using Redis backend.
  * Run with: npx tsx test/integrations.test.ts
  */
 
@@ -40,70 +40,6 @@ function assert(condition: boolean, message: string) {
 async function main() {
   console.log('=== Integration APIs Tests ===');
   console.log(`API: ${API_BASE}\n`);
-
-  // ============================================================================
-  // SENTRY API TESTS
-  // ============================================================================
-  console.log('--- Sentry API ---');
-
-  await test('Sentry overview returns data', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=overview`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(data.summary !== undefined, 'Expected summary in response');
-    assert(typeof data.summary.unresolvedIssues === 'number', 'Expected unresolvedIssues number');
-  });
-
-  await test('Sentry issues list returns array', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=issues`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(Array.isArray(data.issues), 'Expected issues array');
-    assert(typeof data.count === 'number', 'Expected count number');
-  });
-
-  await test('Sentry issue detail works with mock ID', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=issue&issueId=mock-1`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(data.id !== undefined, 'Expected id in response');
-    assert(data.title !== undefined, 'Expected title in response');
-  });
-
-  await test('Sentry issue detail requires issueId', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=issue`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.error === 'issueId required', 'Expected issueId required error');
-  });
-
-  await test('Sentry stats returns data', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=stats`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(data.stats !== undefined, 'Expected stats in response');
-  });
-
-  await test('Sentry events requires issueId', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=events`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.error === 'issueId required for events', 'Expected error message');
-  });
-
-  await test('Sentry events returns data with issueId', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=events&issueId=mock-1`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(Array.isArray(data.events), 'Expected events array');
-  });
-
-  await test('Sentry rejects invalid action', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry?action=invalid`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.validActions !== undefined, 'Expected validActions in error');
-  });
 
   // ============================================================================
   // NOTION API TESTS
@@ -252,7 +188,7 @@ async function main() {
   });
 
   // ============================================================================
-  // ERRORS API TESTS (Self-hosted Sentry alternative)
+  // ERRORS API TESTS (Self-hosted error tracking)
   // ============================================================================
   console.log('\n--- Errors API (Self-hosted) ---');
 
@@ -363,7 +299,7 @@ async function main() {
   });
 
   await test('CORS headers are set', async () => {
-    const res = await fetch(`${API_BASE}/api/sentry`, { method: 'OPTIONS' });
+    const res = await fetch(`${API_BASE}/api/errors`, { method: 'OPTIONS' });
     assert(res.ok, 'OPTIONS should succeed');
     const allowOrigin = res.headers.get('access-control-allow-origin');
     assert(allowOrigin === '*', 'Expected Access-Control-Allow-Origin: *');
