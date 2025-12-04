@@ -161,29 +161,27 @@ Resources:
       LogGroupName: !Sub '/agent-hub/${Environment}/agents'
       RetentionInDays: 7  # Keep costs low
 
-  # Budget Alert (cost control)
-  AgentBudget:
-    Type: AWS::Budgets::Budget
-    Properties:
-      Budget:
-        BudgetName: !Sub 'agent-hub-budget-${Environment}'
-        BudgetLimit:
-          Amount: 50
-          Unit: USD
-        TimeUnit: MONTHLY
-        BudgetType: COST
-        CostFilters:
-          TagKeyValue:
-            - !Sub 'user:ManagedBy$agent-coord-mcp'
-      NotificationsWithSubscribers:
-        - Notification:
-            NotificationType: ACTUAL
-            ComparisonOperator: GREATER_THAN
-            Threshold: 80
-            ThresholdType: PERCENTAGE
-          Subscribers:
-            - SubscriptionType: EMAIL
-              Address: tyler@pistonlabs.com
+  # Budget Alert (cost control) - Optional, requires budgets:ModifyBudget permission
+  # Uncomment if you have Budgets permissions:
+  # AgentBudget:
+  #   Type: AWS::Budgets::Budget
+  #   Properties:
+  #     Budget:
+  #       BudgetName: !Sub 'agent-hub-budget-${Environment}'
+  #       BudgetLimit:
+  #         Amount: 50
+  #         Unit: USD
+  #       TimeUnit: MONTHLY
+  #       BudgetType: COST
+  #     NotificationsWithSubscribers:
+  #       - Notification:
+  #           NotificationType: ACTUAL
+  #           ComparisonOperator: GREATER_THAN
+  #           Threshold: 80
+  #           ThresholdType: PERCENTAGE
+  #         Subscribers:
+  #           - SubscriptionType: EMAIL
+  #             Address: tyler@pistonlabs.com
 
 Outputs:
   VPCId:
