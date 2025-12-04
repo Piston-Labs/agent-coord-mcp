@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Agent Hub - us-west-1 Network Infrastructure (uses existing IAM from us-east-1)'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: 'prod'
+    AllowedValues: ['dev', 'prod']
+    Description: 'Environment name'
+
+  VPCCidr:
+    Type: String
+    Default: '10.1.0.0/16'
+    Description: 'VPC CIDR block (different from us-east-1)'
+
+  PublicSubnetCidr:
+    Type: String
+    Default: '10.1.1.0/24'
+    Description: 'Public subnet CIDR'
+
+Resources:
+  # VPC for agent hosts
+  AgentVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VPCCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: !Sub 'agent-hub-vpc-${Environment}-usw1'
+
+  # Internet Gateway
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub 'agent-hub-igw-${Environment}-usw1'
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref AgentVPC
+      InternetGatewayId: !Ref InternetGateway
+
+  # Public Subnet
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref AgentVPC
+      CidrBlock: !Ref PublicSubnetCidr
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub 'agent-hub-public-${Environment}-usw1'
+
+  # Route Table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref AgentVPC
+      Tags:
+        - Key: Name
+          Value: !Sub 'agent-hub-rt-${Environment}-usw1'
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref InternetGateway
+
+  SubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet
+      RouteTableId: !Ref PublicRouteTable
+
+  # Security Group - minimal access
+  AgentSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub 'agent-hub-sg-${Environment}-usw1'
+      GroupDescription: 'Security group for Claude agent hosts in us-west-1'
+      VpcId: !Ref AgentVPC
+      # Outbound only - no inbound needed (SSM uses outbound)
+      SecurityGroupEgress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTPS for API calls and SSM'
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: 'HTTP for package downloads'
+      Tags:
+        - Key: Name
+          Value: !Sub 'agent-hub-sg-${Environment}-usw1'
+
+  # CloudWatch Log Group
+  AgentLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/agent-hub/${Environment}/agents-usw1'
+      RetentionInDays: 7
+
+Outputs:
+  VPCId:
+    Description: 'VPC ID'
+    Value: !Ref AgentVPC
+    Export:
+      Name: !Sub 'agent-hub-vpc-${Environment}-usw1'
+
+  SubnetId:
+    Description: 'Public Subnet ID'
+    Value: !Ref PublicSubnet
+    Export:
+      Name: !Sub 'agent-hub-subnet-${Environment}-usw1'
+
+  SecurityGroupId:
+    Description: 'Security Group ID'
+    Value: !Ref AgentSecurityGroup
+    Export:
+      Name: !Sub 'agent-hub-sg-${Environment}-usw1'
+
+  # Reference existing IAM from us-east-1
+  InstanceProfileName:
+    Description: 'Instance Profile Name (from us-east-1 stack)'
+    Value: 'agent-hub-profile-prod'
