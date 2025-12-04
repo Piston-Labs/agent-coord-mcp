@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Redis } from '@upstash/redis';
+import Anthropic from '@anthropic-ai/sdk';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -232,131 +233,158 @@ function getOpeningLine(scenario: string): string {
 }
 
 /**
- * Generate prospect response based on conversation context
- * In production, this would use Claude API for realistic responses
+ * Generate prospect response using Claude API for realistic, contextual roleplay
+ * This provides high-quality sales training through AI-powered conversation
  */
-function generateProspectResponse(
+async function generateProspectResponse(
   simulation: InterviewSimulation,
-  _scenarioData: { systemPrompt: string; objectives: string[] }
+  scenarioData: { systemPrompt: string; objectives: string[] }
+): Promise<{ message: string; feedback: string }> {
+  const lastUserMessage = simulation.messages
+    .filter(m => m.role === 'user')
+    .pop()?.content || '';
+
+  // Check if Anthropic API key is available
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    // Fallback to simple response if no API key
+    return generateFallbackResponse(simulation);
+  }
+
+  try {
+    const anthropic = new Anthropic({ apiKey });
+
+    // Build conversation history for Claude
+    const conversationHistory = simulation.messages
+      .filter(m => m.role !== 'system')
+      .map(m => ({
+        role: m.role === 'prospect' ? 'assistant' as const : 'user' as const,
+        content: m.content
+      }));
+
+    // Generate prospect response
+    const prospectResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 300,
+      system: `You are roleplaying as an auto shop owner in a sales training simulation. Stay in character and respond naturally.
+
+${scenarioData.systemPrompt}
+
+IMPORTANT RULES:
+- Stay in character as the shop owner at all times
+- Respond naturally based on what the salesperson says
+- Show realistic objections, concerns, and buying signals
+- Keep responses conversational and concise (2-4 sentences)
+- Progress the conversation realistically based on how well they handle your concerns
+- If they do something well, warm up slightly. If they push too hard or miss the point, become more skeptical.`,
+      messages: conversationHistory
+    });
+
+    const prospectMessage = prospectResponse.content[0].type === 'text'
+      ? prospectResponse.content[0].text
+      : 'Tell me more about that.';
+
+    // Generate coaching feedback on the user's response
+    const feedbackResponse = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 200,
+      system: `You are a sales coach evaluating a salesperson's response in a training simulation.
+The scenario is: ${INTERVIEW_SCENARIOS[simulation.scenario].title}
+The objectives are: ${scenarioData.objectives.join(', ')}
+
+Provide brief, actionable feedback (1-2 sentences) on what they did well or could improve.
+Be encouraging but specific. Focus on sales technique, not just content.`,
+      messages: [
+        {
+          role: 'user',
+          content: `The prospect said: "${simulation.messages.filter(m => m.role === 'prospect').pop()?.content || 'Opening line'}"
+
+The salesperson responded: "${lastUserMessage}"
+
+Provide coaching feedback on this response.`
+        }
+      ]
+    });
+
+    const feedback = feedbackResponse.content[0].type === 'text'
+      ? feedbackResponse.content[0].text
+      : 'Keep the conversation going with more specific questions.';
+
+    return { message: prospectMessage, feedback };
+  } catch (error) {
+    console.error('Claude API error in training:', error);
+    // Fallback to simple response on error
+    return generateFallbackResponse(simulation);
+  }
+}
+
+/**
+ * Fallback response generation when Claude API is unavailable
+ * Uses simple keyword matching as a degraded experience
+ */
+function generateFallbackResponse(
+  simulation: InterviewSimulation
 ): { message: string; feedback: string } {
   const lastUserMessage = simulation.messages
     .filter(m => m.role === 'user')
     .pop()?.content || '';
 
   const messageCount = simulation.messages.filter(m => m.role === 'user').length;
-
-  // Simple response generation based on keywords and conversation stage
-  // In production, this would call Claude API with the systemPrompt as context
-
-  let message = '';
-  let feedback = '';
-
   const lowerMessage = lastUserMessage.toLowerCase();
 
-  // Check for good behaviors and provide feedback
+  let message = '';
+  let feedback = '⚠️ AI coaching unavailable - using basic responses. Contact support if this persists.';
+
+  // Basic keyword detection for feedback
   if (lowerMessage.includes('?')) {
     feedback = 'Good - asking questions shows curiosity and helps with discovery.';
   }
-
   if (lowerMessage.includes('understand') || lowerMessage.includes('tell me more')) {
     feedback = 'Excellent - showing genuine interest in their situation builds rapport.';
   }
 
-  if (lowerMessage.includes('cost') || lowerMessage.includes('save') || lowerMessage.includes('roi')) {
-    feedback = 'Good - connecting to business value. Make sure to quantify when possible.';
-  }
+  // Simple progression responses
+  const responses: Record<string, string[]> = {
+    'cold-call': [
+      "Look, I get calls like this all the time. We're a small shop - we don't need another software subscription.",
+      "Customer retention? I mean yeah, that's always an issue. People get their oil change and then you never see them again.",
+      "We send postcards sometimes but who knows if they work. It's expensive and feels like throwing money away.",
+      "Wait, so the customer has a device in their car and you can tell when they need service? How does that work exactly?",
+      "Huh, that's actually pretty interesting. Send me some info - I'll look at it when things slow down."
+    ],
+    'discovery': [
+      "Yeah exactly. We do good work but customers just disappear. The chains like Jiffy Lube have those reminder systems - how do I compete with that?",
+      "Right now I keep a spreadsheet with customer info but honestly I never have time to call people or send reminders.",
+      "So the system automatically knows when someone needs an oil change based on their actual mileage? Not just guessing at 3 months?",
+      "What do you mean the customer buys the device? I don't want to be selling hardware to my customers.",
+      "Okay that makes more sense. So I just get the dashboard and any customer who has the device can connect with my shop?"
+    ],
+    'objection-handling': [
+      "My first question - how do my customers even get these devices? I'm not going to sell gadgets. That's not my business.",
+      "Okay but what if my customers don't want some device tracking them? People are private about that stuff.",
+      "I already have a customer database in my shop management software. Why do I need another system?",
+      "What if none of my current customers have the device? Then I'm paying for nothing.",
+      "Alright, those are fair points. What does the dashboard actually cost per month?"
+    ],
+    'demo': [
+      "So this is the dashboard? Show me how I see which of my customers need service soon.",
+      "Okay I see the list. But how do the reminders actually go out? Do I have to send them manually?",
+      "Can I send promotions too? Like a winter special for tire checks or something?",
+      "What does the customer see on their end? Do they get an app notification or what?",
+      "This is pretty slick. What's the monthly cost and is there a contract?"
+    ],
+    'closing': [
+      "Yeah so my wife and I talked about it. We like the automated reminders but we're worried - what if we sign up and none of our customers have the device?",
+      "Is there a free trial? I don't want to pay if I'm not sure it'll work for our shop.",
+      "How long until we'd actually see customers coming back because of the reminders?",
+      "Okay, and if we want to cancel after the trial we can just stop? No penalties?",
+      "Alright, let's try the trial. What do I need to do to get started?"
+    ]
+  };
 
-  // Generate contextual responses based on scenario and stage
-  // messageCount = 1 means first response, 2 means second, etc.
-  if (simulation.scenario === 'cold-call') {
-    if (messageCount === 1) {
-      message = "Look, I get calls like this all the time. We're a small shop - we don't need another software subscription.";
-      if (!feedback) feedback = 'Tip: Acknowledge they are busy. Ask about their biggest challenge with repeat customers.';
-    } else if (messageCount === 2) {
-      message = "Customer retention? I mean yeah, that's always an issue. People get their oil change and then you never see them again.";
-      if (!feedback) feedback = 'They acknowledged the pain point! Dig deeper - ask how they currently try to bring customers back.';
-    } else if (messageCount === 3) {
-      message = "We send postcards sometimes but who knows if they work. It's expensive and feels like throwing money away.";
-      if (!feedback) feedback = 'Great discovery! Contrast postcards with automated, data-driven reminders.';
-    } else if (messageCount === 4) {
-      message = "Wait, so the customer has a device in their car and you can tell when they need service? How does that work exactly?";
-      if (!feedback) feedback = 'They are curious! Explain the consumer device + shop dashboard model simply.';
-    } else {
-      message = "Huh, that's actually pretty interesting. Send me some info - I'll look at it when things slow down.";
-      if (!feedback) feedback = 'Good progress! Push for a specific follow-up time instead of just sending info.';
-    }
-  } else if (simulation.scenario === 'discovery') {
-    if (messageCount === 1) {
-      message = "Yeah exactly. We do good work but customers just disappear. The chains like Jiffy Lube have those reminder systems - how do I compete with that?";
-      if (!feedback) feedback = 'Key pain point! Empathize and position Piston as the solution for independent shops.';
-    } else if (messageCount === 2) {
-      message = "Right now I keep a spreadsheet with customer info but honestly I never have time to call people or send reminders.";
-      if (!feedback) feedback = 'Manual process with no follow-through - this is exactly what automation solves.';
-    } else if (messageCount === 3) {
-      message = "So the system automatically knows when someone needs an oil change based on their actual mileage? Not just guessing at 3 months?";
-      if (!feedback) feedback = 'They understand the value of real data! Confirm and explain how telemetry beats guesswork.';
-    } else if (messageCount === 4) {
-      message = "What do you mean the customer buys the device? I don't want to be selling hardware to my customers.";
-      if (!feedback) feedback = 'Important clarification! Explain consumers buy devices independently - shops just subscribe to dashboard.';
-    } else {
-      message = "Okay that makes more sense. So I just get the dashboard and any customer who has the device can connect with my shop?";
-      if (!feedback) feedback = 'They get it! Confirm the model and move toward a trial conversation.';
-    }
-  } else if (simulation.scenario === 'objection-handling') {
-    if (messageCount === 1) {
-      message = "My first question - how do my customers even get these devices? I'm not going to sell gadgets. That's not my business.";
-      if (!feedback) feedback = 'Address the business model concern - shops don\'t sell devices, consumers buy them directly.';
-    } else if (messageCount === 2) {
-      message = "Okay but what if my customers don't want some device tracking them? People are private about that stuff.";
-      if (!feedback) feedback = 'Data privacy objection - emphasize consumer control and opt-in connection with shops.';
-    } else if (messageCount === 3) {
-      message = "I already have a customer database in my shop management software. Why do I need another system?";
-      if (!feedback) feedback = 'Differentiate from basic database - Piston has real-time mileage data and automated outreach.';
-    } else if (messageCount === 4) {
-      message = "What if none of my current customers have the device? Then I'm paying for nothing.";
-      if (!feedback) feedback = 'Chicken-and-egg concern - explain network growth and how to seed with existing customers.';
-    } else {
-      message = "Alright, those are fair points. What does the dashboard actually cost per month?";
-      if (!feedback) feedback = 'Buying signal! They want pricing - present tiers clearly with ROI framing.';
-    }
-  } else if (simulation.scenario === 'demo') {
-    if (messageCount === 1) {
-      message = "So this is the dashboard? Show me how I see which of my customers need service soon.";
-      if (!feedback) feedback = 'Show the customer list sorted by upcoming service needs based on mileage.';
-    } else if (messageCount === 2) {
-      message = "Okay I see the list. But how do the reminders actually go out? Do I have to send them manually?";
-      if (!feedback) feedback = 'Show the automated reminder setup - set rules once, system sends automatically.';
-    } else if (messageCount === 3) {
-      message = "Can I send promotions too? Like a winter special for tire checks or something?";
-      if (!feedback) feedback = 'Great question! Show marketing campaign feature and targeting options.';
-    } else if (messageCount === 4) {
-      message = "What does the customer see on their end? Do they get an app notification or what?";
-      if (!feedback) feedback = 'Show the consumer experience - app notification, service history, appointment booking.';
-    } else {
-      message = "This is pretty slick. What's the monthly cost and is there a contract?";
-      if (!feedback) feedback = 'Buying signal! Present pricing (monthly, no contract) and push for trial.';
-    }
-  } else if (simulation.scenario === 'closing') {
-    if (messageCount === 1) {
-      message = "Yeah so my wife and I talked about it. We like the automated reminders but we're worried - what if we sign up and none of our customers have the device?";
-      if (!feedback) feedback = 'Valid concern - explain how to seed network: offer devices to loyal customers or promote to new ones.';
-    } else if (messageCount === 2) {
-      message = "Is there a free trial? I don't want to pay if I'm not sure it'll work for our shop.";
-      if (!feedback) feedback = 'Trial request - offer pilot period and explain what success looks like.';
-    } else if (messageCount === 3) {
-      message = "How long until we'd actually see customers coming back because of the reminders?";
-      if (!feedback) feedback = 'Set realistic expectations - first reminders go out within weeks of customers connecting.';
-    } else if (messageCount === 4) {
-      message = "Okay, and if we want to cancel after the trial we can just stop? No penalties?";
-      if (!feedback) feedback = 'Confirm no-contract, month-to-month terms. Remove all risk.';
-    } else {
-      message = "Alright, let's try the trial. What do I need to do to get started?";
-      if (!feedback) feedback = 'They said yes! Walk through onboarding: account setup, connect first customers, set reminder rules.';
-    }
-  } else {
-    message = "Tell me more about that.";
-    if (!feedback) feedback = 'Keep the conversation going with more specific questions.';
-  }
+  const scenarioResponses = responses[simulation.scenario] || ["Tell me more about that."];
+  const responseIndex = Math.min(messageCount - 1, scenarioResponses.length - 1);
+  message = scenarioResponses[responseIndex] || "Tell me more about that.";
 
   return { message, feedback };
 }
@@ -997,9 +1025,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             timestamp: new Date().toISOString()
           });
 
-          // Generate prospect response
+          // Generate prospect response using Claude API
           const scenarioData = INTERVIEW_SCENARIOS[simulation.scenario];
-          const prospectResponse = generateProspectResponse(simulation, scenarioData);
+          const prospectResponse = await generateProspectResponse(simulation, scenarioData);
 
           simulation.messages.push({
             role: 'prospect',
