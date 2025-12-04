@@ -69,23 +69,23 @@ function getSessionFromCookie(req: VercelRequest): string | null {
   return sessionMatch ? sessionMatch[1] : null;
 }
 
-async function requireSuperAdmin(req: VercelRequest): Promise<Session | null> {
+async function requireSuperAdmin(req: VercelRequest): Promise<{ session: Session } | { error: string }> {
   const sessionId = getSessionFromCookie(req);
-  if (!sessionId) return null;
+  if (!sessionId) return { error: 'No session cookie found' };
 
   const raw = await redis.hget(SESSIONS_KEY, sessionId);
-  if (!raw) return null;
+  if (!raw) return { error: 'Session not found in database' };
 
   const session: Session = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
   // Check expiry
-  if (new Date(session.expiresAt) < new Date()) return null;
+  if (new Date(session.expiresAt) < new Date()) return { error: `Session expired at ${session.expiresAt}` };
 
   // Check if user is a superadmin
   const username = session.username.toLowerCase();
-  if (!SUPERADMIN_USERS.includes(username)) return null;
+  if (!SUPERADMIN_USERS.includes(username)) return { error: `User '${username}' is not a superadmin` };
 
-  return session;
+  return { session };
 }
 
 function generateId(): string {
@@ -105,10 +105,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   // Require superadmin for all operations
-  const session = await requireSuperAdmin(req);
-  if (!session) {
-    return res.status(403).json({ error: 'Superadmin access required' });
+  const authResult = await requireSuperAdmin(req);
+  if ('error' in authResult) {
+    return res.status(403).json({ error: 'Superadmin access required', details: authResult.error });
   }
+  const session = authResult.session;
 
   const { resource, action } = req.query;
 
