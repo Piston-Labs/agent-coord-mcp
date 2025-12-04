@@ -185,6 +185,50 @@ do-onboard agentId=phoenix
 - `/web/` - Dashboard frontend
 - `/docs/` - Documentation
 
+## Automated Tool Testing
+
+The coordination hub includes automated MCP tool validation.
+
+### Test API Endpoint
+
+**URL:** `https://agent-coord-mcp.vercel.app/api/tools-test`
+
+**Usage:**
+```bash
+# Run all tests (~1.5 seconds)
+GET /api/tools-test
+
+# Test specific tool
+GET /api/tools-test?tool=memory
+
+# Get last results
+GET /api/tools-test?action=results
+
+# List testable tools
+GET /api/tools-test?action=list
+```
+
+**Response format:**
+```json
+{
+  "summary": "15/15 tests passing",
+  "timestamp": "2025-12-04T19:01:22.536Z",
+  "duration": 1559,
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {"tool": "hot-start", "status": "pass", "latency": 254},
+    ...
+  ]
+}
+```
+
+**Tested tools:** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations
+
+**Auto-triggers:** Tests run automatically on every Vercel production deployment via GitHub webhook.
+
+**Failures:** Auto-posted to group chat for immediate team visibility.
+
 ## Soul Transfer System
 
 If you receive a soul injection at conversation start:

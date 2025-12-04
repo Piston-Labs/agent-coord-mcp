@@ -277,7 +277,8 @@ export function registerCoreTools(server: McpServer) {
       limit: z.number().optional().describe('Max messages to return (for get)'),
       since: z.string().optional().describe('ISO timestamp (for get-since)'),
       messageId: z.string().optional().describe('Message ID (for react)'),
-      emoji: z.string().optional().describe('Emoji to react with (for react)')
+      emoji: z.string().optional().describe('Emoji to react with (for react)'),
+      isCloudAgent: z.boolean().optional().describe('Set true if you are a VM/cloud-spawned agent')
     },
     async (args) => {
       const { action } = args;
@@ -312,8 +313,9 @@ export function registerCoreTools(server: McpServer) {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 author: args.author,
-                authorType: 'agent',
-                message: args.message
+                authorType: args.isCloudAgent ? 'vm-agent' : 'agent',
+                message: args.message,
+                isCloudAgent: args.isCloudAgent || false
               })
             });
             const data = await res.json();
@@ -405,12 +407,16 @@ export function registerCoreTools(server: McpServer) {
     'profile',
     'Register your capabilities and find agents who can help. Enables agent discovery by offers/needs matching.',
     {
-      action: z.enum(['register', 'get', 'list', 'find-match']).describe('register=update profile, get=your profile, list=all profiles, find-match=find helpers'),
+      action: z.enum(['register', 'get', 'list', 'find-match', 'check-tools']).describe('register=update profile, get=your profile, list=all profiles, find-match=find helpers, check-tools=find agents with specific tools'),
       agentId: z.string().describe('Your agent ID'),
       offers: z.array(z.string()).optional().describe('What you can help with (e.g., ["code review", "testing", "frontend"])'),
       needs: z.array(z.string()).optional().describe('What you need help with (e.g., ["database", "deployment"])'),
       capabilities: z.array(z.string()).optional().describe('Technical capabilities (e.g., ["canSearch", "canBrowse", "canRunCode"])'),
+      mcpTools: z.array(z.string()).optional().describe('List of MCP tools you have access to (e.g., ["browser", "vision", "github"])'),
+      isCloudAgent: z.boolean().optional().describe('Set true if you are a VM/cloud-spawned agent'),
+      toolsVersion: z.string().optional().describe('Version identifier for your tools (e.g., "2025-12-04")'),
       lookingFor: z.array(z.string()).optional().describe('For find-match: what you are looking for help with'),
+      requiredTools: z.array(z.string()).optional().describe('For check-tools: find agents with these specific MCP tools'),
       ide: z.string().optional().describe('Your IDE (vscode, cursor, windsurf, etc.)'),
       os: z.string().optional().describe('Your OS (linux, macos, windows)')
     },
@@ -428,6 +434,9 @@ export function registerCoreTools(server: McpServer) {
                 offers: args.offers,
                 needs: args.needs,
                 capabilities: args.capabilities,
+                mcpTools: args.mcpTools,
+                isCloudAgent: args.isCloudAgent,
+                toolsVersion: args.toolsVersion,
                 ide: args.ide,
                 os: args.os
               })
@@ -457,6 +466,51 @@ export function registerCoreTools(server: McpServer) {
             );
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'check-tools': {
+            // Find agents that have specific MCP tools
+            if (!args.requiredTools || args.requiredTools.length === 0) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'requiredTools array required' }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/agent-profiles`);
+            const data = await res.json();
+            const profiles = data.profiles || [];
+
+            // Filter agents who have the required tools
+            const matches = profiles
+              .filter((p: any) => p.mcpTools && p.mcpTools.length > 0)
+              .map((p: any) => {
+                const hasTools = args.requiredTools!.filter((tool: string) =>
+                  p.mcpTools.some((t: string) => t.toLowerCase().includes(tool.toLowerCase()))
+                );
+                const missingTools = args.requiredTools!.filter((tool: string) =>
+                  !p.mcpTools.some((t: string) => t.toLowerCase().includes(tool.toLowerCase()))
+                );
+                return {
+                  agentId: p.agentId,
+                  hasTools,
+                  missingTools,
+                  matchScore: hasTools.length / args.requiredTools!.length,
+                  allTools: p.mcpTools,
+                  isCloudAgent: p.isCloudAgent || false,
+                  toolsVersion: p.metadata?.toolsVersion
+                };
+              })
+              .filter((m: any) => m.matchScore > 0)
+              .sort((a: any, b: any) => b.matchScore - a.matchScore);
+
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  query: args.requiredTools,
+                  matches,
+                  agentsWithoutToolsRegistered: profiles.filter((p: any) => !p.mcpTools || p.mcpTools.length === 0).map((p: any) => p.agentId),
+                  totalAgents: profiles.length
+                }, null, 2)
+              }]
+            };
           }
 
           default:

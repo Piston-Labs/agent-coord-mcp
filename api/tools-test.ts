@@ -672,6 +672,90 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'stall-check', status: 'fail', message: 'Failed to access stall check data', error: String(e) };
     }
+  },
+
+  // Profile mcpTools feature test - added by phil
+  'profile-mcptools': async () => {
+    const start = Date.now();
+    const testId = `profile-mcptools-test-${Date.now()}`;
+    try {
+      // Test profile with mcpTools field
+      const profile = {
+        agentId: testId,
+        offers: ['testing'],
+        needs: [],
+        capabilities: ['canSearch'],
+        mcpTools: ['browser', 'vision', 'github', 'linear'],
+        isCloudAgent: false,
+        metadata: {
+          ide: 'test',
+          os: 'test',
+          toolsVersion: '2025-12-04',
+          lastUpdated: new Date().toISOString()
+        }
+      };
+      await redis.hset('agent-coord:profiles', { [testId]: JSON.stringify(profile) });
+
+      // Retrieve and verify mcpTools
+      const retrieved = await redis.hget('agent-coord:profiles', testId);
+      const parsed = typeof retrieved === 'string' ? JSON.parse(retrieved) : retrieved;
+      const hasMcpTools = parsed?.mcpTools?.length === 4;
+
+      // Clean up
+      await redis.hdel('agent-coord:profiles', testId);
+
+      return {
+        tool: 'profile-mcptools',
+        status: hasMcpTools ? 'pass' : 'fail',
+        message: hasMcpTools ? 'Profile mcpTools store/retrieve successful' : 'mcpTools field not preserved',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'profile-mcptools', status: 'fail', message: 'Failed profile mcpTools test', error: String(e) };
+    }
+  },
+
+  // VM agent chat identification test - added by phil
+  'vm-agent-chat': async () => {
+    const start = Date.now();
+    const testId = `vm-chat-test-${Date.now()}`;
+    try {
+      // Post a message as a VM agent
+      const message = {
+        id: testId,
+        author: 'test-vm-agent',
+        authorType: 'vm-agent',
+        message: '[test] VM agent identification test',
+        timestamp: new Date().toISOString(),
+        isCloudAgent: true
+      };
+      await redis.lpush('agent-coord:messages', JSON.stringify(message));
+
+      // Retrieve and verify isCloudAgent flag
+      const recent = await redis.lrange('agent-coord:messages', 0, 0);
+      let found = false;
+      let hasFlag = false;
+      for (const m of recent) {
+        const parsed = typeof m === 'string' ? JSON.parse(m) : m;
+        if (parsed.id === testId) {
+          found = true;
+          hasFlag = parsed.isCloudAgent === true && parsed.authorType === 'vm-agent';
+          break;
+        }
+      }
+
+      // Clean up
+      await redis.lpop('agent-coord:messages');
+
+      return {
+        tool: 'vm-agent-chat',
+        status: found && hasFlag ? 'pass' : 'fail',
+        message: found && hasFlag ? 'VM agent chat identification working' : 'VM agent flags not preserved',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'vm-agent-chat', status: 'fail', message: 'Failed VM agent chat test', error: String(e) };
+    }
   }
 };
 

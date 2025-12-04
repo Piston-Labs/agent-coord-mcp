@@ -17,10 +17,13 @@ interface AgentProfile {
   offers: string[];      // What this agent can help with
   needs: string[];       // What this agent needs help with
   capabilities: string[]; // Technical capabilities (canSearch, canBrowse, canRunCode, etc.)
+  mcpTools?: string[];   // List of MCP tools this agent has access to
+  isCloudAgent?: boolean; // True if this is a VM/cloud-spawned agent
   metadata: {
     ide?: string;
     os?: string;
     mcpServers?: string[];
+    toolsVersion?: string; // Version identifier for tool updates
     lastUpdated: string;
   };
 }
@@ -108,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // POST - Register or update profile
     if (req.method === 'POST') {
-      const { agentId, offers, needs, capabilities, ide, os, mcpServers } = req.body;
+      const { agentId, offers, needs, capabilities, ide, os, mcpServers, mcpTools, isCloudAgent, toolsVersion } = req.body;
 
       if (!agentId) {
         return res.status(400).json({ error: 'agentId required' });
@@ -125,10 +128,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         offers: offers || existing?.offers || [],
         needs: needs || existing?.needs || [],
         capabilities: capabilities || existing?.capabilities || [],
+        mcpTools: mcpTools || existing?.mcpTools || [],
+        isCloudAgent: isCloudAgent ?? existing?.isCloudAgent ?? false,
         metadata: {
           ide: ide || existing?.metadata?.ide,
           os: os || existing?.metadata?.os,
           mcpServers: mcpServers || existing?.metadata?.mcpServers,
+          toolsVersion: toolsVersion || existing?.metadata?.toolsVersion,
           lastUpdated: new Date().toISOString()
         }
       };

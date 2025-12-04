@@ -11,7 +11,7 @@
  * Scale: For high-scale, could shard by team/workspace
  */
 
-import type { Agent, GroupMessage, Task, WebSocketMessage, Reaction, Zone, Claim, Handoff } from './types';
+import type { Agent, GroupMessage, Task, WebSocketMessage, Reaction, Zone, Claim, Handoff, Env } from './types';
 
 interface CoordinatorState {
   agents: Record<string, Agent>;
@@ -21,11 +21,13 @@ interface CoordinatorState {
 
 export class AgentCoordinator implements DurableObject {
   private state: DurableObjectState;
+  private env: Env;
   private connections: Map<string, WebSocket> = new Map();
   private sql: SqlStorage;
 
-  constructor(state: DurableObjectState, env: unknown) {
+  constructor(state: DurableObjectState, env: Env) {
     this.state = state;
+    this.env = env;
     this.sql = state.storage.sql;
 
     // Initialize SQLite tables on first access
@@ -155,6 +157,10 @@ export class AgentCoordinator implements DurableObject {
           return this.handleHandoffs(request);
         case '/work':
           return this.handleWork(request);
+        case '/onboard':
+          return this.handleOnboard(request);
+        case '/session-resume':
+          return this.handleSessionResume(request);
         case '/health':
           return Response.json({ status: 'ok', type: 'coordinator' });
         default:
@@ -972,5 +978,521 @@ export class AgentCoordinator implements DurableObject {
       claimedAt: row.claimed_at as string | undefined,
       completedAt: row.completed_at as string | undefined
     };
+  }
+
+  // ========== Onboarding Handler ==========
+
+  /**
+   * GET /coordinator/onboard?agentId=phoenix
+   *
+   * Returns a comprehensive onboarding bundle for an agent:
+   * - Soul data (create if new)
+   * - Checkpoint (if returning)
+   * - Team online with flow status
+   * - Suggested first task
+   * - Recent chat messages
+   */
+  private async handleOnboard(request: Request): Promise<Response> {
+    if (request.method !== 'GET') {
+      return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    }
+
+    const url = new URL(request.url);
+    const agentId = url.searchParams.get('agentId');
+
+    if (!agentId) {
+      return Response.json({ error: 'agentId query parameter required' }, { status: 400 });
+    }
+
+    try {
+      // 1. Get soul data from AgentState DO
+      const agentStateId = this.env.AGENT_STATE.idFromName(agentId);
+      const agentStateStub = this.env.AGENT_STATE.get(agentStateId);
+
+      // Fetch soul data
+      const soulUrl = new URL(`http://internal/soul?agentId=${agentId}`);
+      const soulResponse = await agentStateStub.fetch(new Request(soulUrl.toString()));
+      let soul = null;
+      let isNewAgent = false;
+
+      if (soulResponse.ok) {
+        const soulData = await soulResponse.json() as { soul: unknown };
+        soul = soulData.soul;
+      }
+
+      // If no soul, create one
+      if (!soul) {
+        isNewAgent = true;
+        const createSoulResponse = await agentStateStub.fetch(new Request(
+          `http://internal/soul?agentId=${agentId}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ soulId: agentId, name: agentId })
+          }
+        ));
+        if (createSoulResponse.ok) {
+          const createData = await createSoulResponse.json() as { soul: unknown };
+          soul = createData.soul;
+        }
+      }
+
+      // 2. Get checkpoint (if returning)
+      let checkpoint = null;
+      if (!isNewAgent) {
+        const checkpointUrl = new URL(`http://internal/checkpoint?agentId=${agentId}`);
+        const checkpointResponse = await agentStateStub.fetch(new Request(checkpointUrl.toString()));
+        if (checkpointResponse.ok) {
+          const checkpointData = await checkpointResponse.json() as { checkpoint: unknown };
+          checkpoint = checkpointData.checkpoint;
+        }
+      }
+
+      // 3. Get dashboard (includes flow state)
+      let dashboard = null;
+      const dashboardUrl = new URL(`http://internal/dashboard?agentId=${agentId}`);
+      const dashboardResponse = await agentStateStub.fetch(new Request(dashboardUrl.toString()));
+      if (dashboardResponse.ok) {
+        const dashboardData = await dashboardResponse.json() as { dashboard: unknown };
+        dashboard = dashboardData.dashboard;
+      }
+
+      // 4. Get team online with flow status
+      const teamOnline = await this.getTeamWithFlowStatus();
+
+      // 5. Suggest first task
+      const suggestedTask = await this.suggestTask(agentId, soul, checkpoint);
+
+      // 6. Get recent chat (last 5 messages)
+      const recentChat = this.sql.exec(`
+        SELECT id, author, author_type, message, timestamp
+        FROM messages
+        ORDER BY timestamp DESC
+        LIMIT 5
+      `).toArray().map(row => ({
+        id: row.id,
+        author: row.author,
+        authorType: row.author_type,
+        message: row.message,
+        timestamp: row.timestamp
+      })).reverse(); // Oldest first for reading order
+
+      // Build onboarding response
+      const onboardingBundle = {
+        agentId,
+        isNewAgent,
+        timestamp: new Date().toISOString(),
+
+        // Soul & progression
+        soul,
+        dashboard,
+
+        // Context from previous session
+        checkpoint,
+
+        // Team context
+        teamOnline,
+
+        // What to do next
+        suggestedTask,
+
+        // Recent conversation
+        recentChat,
+
+        // Welcome message
+        welcomeMessage: isNewAgent
+          ? `Welcome to the team, ${agentId}! 🎉 You're starting fresh with 0 XP. Complete your first task to begin leveling up!`
+          : `Welcome back, ${agentId}! ${checkpoint ? `You were working on: "${checkpoint.conversationSummary || 'a task'}"` : 'Ready to start fresh?'}`
+      };
+
+      return Response.json({ onboarding: onboardingBundle });
+
+    } catch (error) {
+      return Response.json({
+        error: 'Failed to build onboarding bundle',
+        details: String(error)
+      }, { status: 500 });
+    }
+  }
+
+  /**
+   * Get all online agents with their flow status
+   */
+  private async getTeamWithFlowStatus(): Promise<Array<{
+    agentId: string;
+    status: string;
+    flowStatus: string;
+    currentTask?: string;
+  }>> {
+    // Get agents from local registry
+    const agents = this.sql.exec(`
+      SELECT agent_id, status, current_task
+      FROM agents
+      WHERE status != 'offline'
+      ORDER BY last_seen DESC
+    `).toArray();
+
+    const teamWithFlow: Array<{
+      agentId: string;
+      status: string;
+      flowStatus: string;
+      currentTask?: string;
+    }> = [];
+
+    for (const agent of agents) {
+      const agentId = agent.agent_id as string;
+
+      // Try to get flow status from AgentState DO
+      let flowStatus = 'unknown';
+      try {
+        const agentStateId = this.env.AGENT_STATE.idFromName(agentId);
+        const agentStateStub = this.env.AGENT_STATE.get(agentStateId);
+        const dashboardResponse = await agentStateStub.fetch(
+          new Request(`http://internal/dashboard?agentId=${agentId}`)
+        );
+        if (dashboardResponse.ok) {
+          const data = await dashboardResponse.json() as { dashboard?: { flow?: { status: string } } };
+          flowStatus = data.dashboard?.flow?.status || 'available';
+        }
+      } catch {
+        flowStatus = 'unknown';
+      }
+
+      teamWithFlow.push({
+        agentId,
+        status: agent.status as string,
+        flowStatus,
+        currentTask: agent.current_task as string | undefined
+      });
+    }
+
+    return teamWithFlow;
+  }
+
+  /**
+   * Suggest a task for the agent based on their state
+   */
+  private async suggestTask(
+    agentId: string,
+    soul: unknown,
+    checkpoint: unknown
+  ): Promise<{
+    task: string;
+    reason: string;
+    xpEstimate: number;
+    priority: string;
+  }> {
+    // If returning with checkpoint, suggest resume
+    if (checkpoint && typeof checkpoint === 'object' && 'conversationSummary' in checkpoint) {
+      const cp = checkpoint as { conversationSummary?: string; pendingWork?: string[] };
+      if (cp.conversationSummary || (cp.pendingWork && cp.pendingWork.length > 0)) {
+        return {
+          task: cp.conversationSummary || cp.pendingWork?.[0] || 'Resume previous work',
+          reason: 'Continues your previous session',
+          xpEstimate: 30,
+          priority: 'high'
+        };
+      }
+    }
+
+    // Check for pending escalations (help opportunity)
+    const pendingHandoffs = this.sql.exec(`
+      SELECT title FROM handoffs WHERE status = 'pending' LIMIT 1
+    `).toArray();
+
+    if (pendingHandoffs.length > 0) {
+      return {
+        task: `Help needed: ${pendingHandoffs[0].title}`,
+        reason: 'Someone needs help! Great XP opportunity',
+        xpEstimate: 50,
+        priority: 'medium'
+      };
+    }
+
+    // Check for unassigned tasks
+    const unassignedTasks = this.sql.exec(`
+      SELECT title, priority FROM tasks WHERE assignee IS NULL AND status = 'todo' LIMIT 1
+    `).toArray();
+
+    if (unassignedTasks.length > 0) {
+      return {
+        task: unassignedTasks[0].title as string,
+        reason: 'Unassigned task waiting for pickup',
+        xpEstimate: 25,
+        priority: unassignedTasks[0].priority as string
+      };
+    }
+
+    // Default: introduce yourself
+    return {
+      task: 'Introduce yourself in the group chat',
+      reason: 'Say hello to the team!',
+      xpEstimate: 10,
+      priority: 'low'
+    };
+  }
+
+  // ========== Session Resume Handler ==========
+
+  /**
+   * GET /coordinator/session-resume
+   *
+   * Returns everything needed for the CEO Portal "Resume Last Session" feature:
+   * - Last session summary (from recent chat patterns)
+   * - Agents who participated
+   * - Key accomplishments
+   * - Pending work/handoffs
+   * - Quick action buttons
+   *
+   * This aggregates data to give Tyler a one-click way to pick up where the team left off.
+   */
+  private async handleSessionResume(request: Request): Promise<Response> {
+    if (request.method !== 'GET') {
+      return Response.json({ error: 'Method not allowed' }, { status: 405 });
+    }
+
+    try {
+      // 1. Get recent messages to analyze session activity
+      const recentMessages = this.sql.exec(`
+        SELECT id, author, author_type, message, timestamp
+        FROM messages
+        ORDER BY timestamp DESC
+        LIMIT 100
+      `).toArray();
+
+      // 2. Identify session participants (unique authors in recent chat)
+      const participants = new Map<string, {
+        agentId: string;
+        messageCount: number;
+        lastMessage: string;
+        lastActive: string;
+      }>();
+
+      for (const msg of recentMessages) {
+        const author = msg.author as string;
+        const authorType = msg.author_type as string;
+        if (authorType === 'agent' || authorType === 'human') {
+          if (!participants.has(author)) {
+            participants.set(author, {
+              agentId: author,
+              messageCount: 1,
+              lastMessage: (msg.message as string).substring(0, 100),
+              lastActive: msg.timestamp as string
+            });
+          } else {
+            participants.get(author)!.messageCount++;
+          }
+        }
+      }
+
+      // 3. Find session accomplishments (look for ✅, shipped, completed keywords)
+      const accomplishments: string[] = [];
+      const accomplishmentKeywords = ['✅', 'shipped', 'completed', 'built', 'added', 'fixed', 'implemented', 'deployed'];
+
+      for (const msg of recentMessages) {
+        const message = (msg.message as string).toLowerCase();
+        if (accomplishmentKeywords.some(kw => message.includes(kw))) {
+          // Extract the accomplishment (first line usually has the summary)
+          const firstLine = (msg.message as string).split('\n')[0].substring(0, 150);
+          if (!accomplishments.includes(firstLine) && accomplishments.length < 10) {
+            accomplishments.push(firstLine);
+          }
+        }
+      }
+
+      // 4. Get pending handoffs
+      const pendingHandoffs = this.sql.exec(`
+        SELECT id, title, from_agent, context, priority, created_at
+        FROM handoffs
+        WHERE status = 'pending'
+        ORDER BY created_at DESC
+        LIMIT 5
+      `).toArray().map(row => ({
+        id: row.id,
+        title: row.title,
+        fromAgent: row.from_agent,
+        context: (row.context as string).substring(0, 200),
+        priority: row.priority,
+        createdAt: row.created_at
+      }));
+
+      // 5. Get in-progress tasks
+      const inProgressTasks = this.sql.exec(`
+        SELECT id, title, assignee, priority, description
+        FROM tasks
+        WHERE status = 'in-progress'
+        ORDER BY updated_at DESC
+        LIMIT 5
+      `).toArray().map(row => ({
+        id: row.id,
+        title: row.title,
+        assignee: row.assignee,
+        priority: row.priority,
+        description: row.description
+      }));
+
+      // 6. Get active claims (what agents are currently working on)
+      const activeClaims = this.sql.exec(`
+        SELECT what, by, description, since
+        FROM claims
+        ORDER BY since DESC
+        LIMIT 10
+      `).toArray().map(row => ({
+        what: row.what,
+        by: row.by,
+        description: row.description,
+        since: row.since
+      }));
+
+      // 7. Build quick actions based on state
+      const quickActions: Array<{
+        action: string;
+        label: string;
+        description: string;
+        priority: 'high' | 'medium' | 'low';
+      }> = [];
+
+      if (pendingHandoffs.length > 0) {
+        quickActions.push({
+          action: 'review_handoffs',
+          label: '📋 Review Handoffs',
+          description: `${pendingHandoffs.length} handoff(s) need attention`,
+          priority: 'high'
+        });
+      }
+
+      if (inProgressTasks.length > 0) {
+        quickActions.push({
+          action: 'check_progress',
+          label: '🔄 Check In-Progress',
+          description: `${inProgressTasks.length} task(s) in progress`,
+          priority: 'medium'
+        });
+      }
+
+      quickActions.push({
+        action: 'spawn_team',
+        label: '🚀 Spawn Agent Team',
+        description: 'Start a new autonomous session',
+        priority: 'medium'
+      });
+
+      quickActions.push({
+        action: 'view_chat',
+        label: '💬 View Group Chat',
+        description: 'See latest team discussion',
+        priority: 'low'
+      });
+
+      // 8. Calculate session timeframe
+      let sessionStart: string | null = null;
+      let sessionEnd: string | null = null;
+
+      if (recentMessages.length > 0) {
+        sessionEnd = recentMessages[0].timestamp as string;
+        sessionStart = recentMessages[recentMessages.length - 1].timestamp as string;
+      }
+
+      // 9. Build the resume bundle
+      const resumeBundle = {
+        timestamp: new Date().toISOString(),
+
+        // Session overview
+        session: {
+          messageCount: recentMessages.length,
+          participantCount: participants.size,
+          startTime: sessionStart,
+          endTime: sessionEnd,
+          durationDescription: sessionStart && sessionEnd
+            ? this.formatDuration(new Date(sessionStart), new Date(sessionEnd))
+            : 'Unknown'
+        },
+
+        // Who participated
+        participants: Array.from(participants.values())
+          .sort((a, b) => b.messageCount - a.messageCount),
+
+        // What got done
+        accomplishments: accomplishments.slice(0, 10),
+
+        // What's pending
+        pending: {
+          handoffs: pendingHandoffs,
+          tasks: inProgressTasks,
+          claims: activeClaims
+        },
+
+        // Quick action buttons for CEO Portal
+        quickActions,
+
+        // Most recent context (last 5 messages for quick scan)
+        recentContext: recentMessages.slice(0, 5).map(msg => ({
+          author: msg.author,
+          message: (msg.message as string).substring(0, 200),
+          timestamp: msg.timestamp
+        })).reverse(), // Chronological order
+
+        // Summary for one-line display
+        summaryText: this.buildSummaryText(
+          participants.size,
+          accomplishments.length,
+          pendingHandoffs.length,
+          inProgressTasks.length
+        )
+      };
+
+      return Response.json({ sessionResume: resumeBundle });
+
+    } catch (error) {
+      return Response.json({
+        error: 'Failed to build session resume',
+        details: String(error)
+      }, { status: 500 });
+    }
+  }
+
+  /**
+   * Format duration between two dates
+   */
+  private formatDuration(start: Date, end: Date): string {
+    const diffMs = end.getTime() - start.getTime();
+    const diffMins = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMins / 60);
+
+    if (diffHours > 0) {
+      const remainingMins = diffMins % 60;
+      return `${diffHours}h ${remainingMins}m`;
+    }
+    return `${diffMins}m`;
+  }
+
+  /**
+   * Build a one-line summary for quick display
+   */
+  private buildSummaryText(
+    participantCount: number,
+    accomplishmentCount: number,
+    pendingHandoffs: number,
+    inProgressTasks: number
+  ): string {
+    const parts: string[] = [];
+
+    if (participantCount > 0) {
+      parts.push(`${participantCount} agent${participantCount > 1 ? 's' : ''} active`);
+    }
+
+    if (accomplishmentCount > 0) {
+      parts.push(`${accomplishmentCount} thing${accomplishmentCount > 1 ? 's' : ''} shipped`);
+    }
+
+    if (pendingHandoffs > 0) {
+      parts.push(`${pendingHandoffs} handoff${pendingHandoffs > 1 ? 's' : ''} pending`);
+    }
+
+    if (inProgressTasks > 0) {
+      parts.push(`${inProgressTasks} task${inProgressTasks > 1 ? 's' : ''} in progress`);
+    }
+
+    return parts.join(' • ') || 'No recent activity';
   }
 }

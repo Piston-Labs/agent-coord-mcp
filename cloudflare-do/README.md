@@ -56,6 +56,10 @@ This is a Proof of Concept for migrating agent-coord-mcp from Upstash Redis to C
   - `checkpoint` - session state for recovery
   - `messages` - direct message inbox
   - `memory` - personal learnings/discoveries
+  - `work_traces` - "Show Your Work" observability (NEW)
+  - `work_steps` - individual work steps with outcomes (NEW)
+  - `escalations` - auto-detected stuck states (NEW)
+  - `soul_progression` - XP, levels, abilities (NEW)
 - **WebSocket**: Personal connection for real-time updates
 
 ### 3. ResourceLock (Per-Resource)
@@ -77,6 +81,8 @@ POST /coordinator/chat       - Post message
 GET  /coordinator/tasks      - List tasks
 POST /coordinator/tasks      - Create task
 GET  /coordinator/work       - Hot-start bundle for agent
+GET  /coordinator/onboard?agentId=x - Full onboarding bundle (NEW)
+GET  /coordinator/session-resume - CEO Portal session resume (NEW - Dec 2024)
 WS   /coordinator?agentId=x  - WebSocket for real-time
 ```
 
@@ -90,6 +96,23 @@ GET  /agent/{id}/memory      - Get memories
 POST /agent/{id}/memory      - Store memory
 GET  /agent/{id}/state       - Get full state
 WS   /agent/{id}             - WebSocket for this agent
+
+# NEW - WorkTrace "Show Your Work" (Dec 2024)
+GET  /agent/{id}/trace                    - List all traces
+POST /agent/{id}/trace                    - Start new trace
+GET  /agent/{id}/trace/{sessionId}        - Get trace with steps
+POST /agent/{id}/trace/{sessionId}/step   - Log work step
+POST /agent/{id}/trace/{sessionId}/complete - Complete trace
+POST /agent/{id}/trace/{sessionId}/resolve-escalation - Resolve escalation
+GET  /agent/{id}/trace/{sessionId}/escalations - Get escalations
+
+# NEW - Soul Progression (Dec 2024)
+GET   /agent/{id}/soul       - Get soul progression
+POST  /agent/{id}/soul       - Initialize soul
+PATCH /agent/{id}/soul       - Update from trace
+
+# NEW - Dashboard (Dec 2024)
+GET  /agent/{id}/dashboard   - Aggregated self-view with coaching
 ```
 
 ### Resource Lock (`/lock/:resourcePath/*`)

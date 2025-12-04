@@ -130,6 +130,22 @@ function getDefaultRules(): OnboardingRule[] {
       category: 'tools',
       priority: 10,
       createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'rule-update-resources',
+      title: 'Keep Resource Registry Updated',
+      content: 'When you ship new API endpoints, MCP tools, or integrations, update `api/resource-registry.ts` to document them. This ensures other agents can discover new capabilities. Check `resource-registry action=list` to see current resources.',
+      category: 'tools',
+      priority: 11,
+      createdAt: '2024-01-01T00:00:00Z'
+    },
+    {
+      id: 'rule-cli-agent-restart',
+      title: 'CLI Agents Need Restart for New Tools',
+      content: 'CLI agents (spawned via spawn-agent or spawn-batch) load MCP tools at startup. If you add new MCP tools in src/tools/*.ts, those agents must restart to access them. Document new endpoints in resource-registry so agents know about capabilities even if they cant use them yet.',
+      category: 'coordination',
+      priority: 12,
+      createdAt: '2024-01-01T00:00:00Z'
     }
   ];
 }

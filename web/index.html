@@ -12848,7 +12848,7 @@
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                author: currentUsername,
+                author: USERNAME,
                 authorType: 'human',
                 message: `✅ **Blocker Resolved:** ${blocker.title}\n\nAgents, this is now unblocked!`
               })
@@ -12901,7 +12901,7 @@
     // === CEO TASKS (mapped to user-tasks API) ===
     async function fetchCeoTasks() {
       try {
-        const res = await fetch(API_BASE + '/user-tasks?user=' + currentUsername, { credentials: 'include' });
+        const res = await fetch(API_BASE + '/user-tasks?user=' + USERNAME, { credentials: 'include' });
         const data = await res.json();
         ceoTasks = data.tasks || [];
         renderCeoTasks();
@@ -12985,7 +12985,7 @@
       };
       if (editingCeoTaskId) data.taskId = editingCeoTaskId;
       try {
-        const res = await fetch(API_BASE + '/user-tasks?user=' + currentUsername, {
+        const res = await fetch(API_BASE + '/user-tasks?user=' + USERNAME, {
           method: editingCeoTaskId ? 'PATCH' : 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -13000,7 +13000,7 @@
     async function deleteCeoTask() {
       if (!editingCeoTaskId || !confirm('Delete this task?')) return;
       try {
-        const res = await fetch(API_BASE + '/user-tasks?user=' + currentUsername + '&taskId=' + editingCeoTaskId, { method: 'DELETE', credentials: 'include' });
+        const res = await fetch(API_BASE + '/user-tasks?user=' + USERNAME + '&taskId=' + editingCeoTaskId, { method: 'DELETE', credentials: 'include' });
         const result = await res.json();
         if (result.success) { hideCeoTaskModal(); await fetchCeoTasks(); }
       } catch (e) { alert('Failed to delete: ' + e.message); }
