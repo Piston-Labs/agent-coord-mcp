@@ -266,60 +266,91 @@ function generateProspectResponse(
   }
 
   // Generate contextual responses based on scenario and stage
+  // messageCount = 1 means first response, 2 means second, etc.
   if (simulation.scenario === 'cold-call') {
-    if (messageCount <= 2) {
+    if (messageCount === 1) {
       message = "I really don't have time for sales calls. What company did you say you're with?";
       if (!feedback) feedback = 'Tip: Acknowledge their time is valuable before pitching.';
-    } else if (messageCount <= 4) {
+    } else if (messageCount === 2) {
       message = "Okay, you have 30 seconds. What do you do?";
       if (!feedback) feedback = 'Now deliver a concise value proposition focused on their problems.';
-    } else {
+    } else if (messageCount === 3) {
       message = "That's interesting. We do have issues with our compressors going down unexpectedly. But how is your solution different from just hiring more maintenance staff?";
       if (!feedback) feedback = 'They showed interest! Now differentiate your solution.';
+    } else if (messageCount === 4) {
+      message = "Hmm, I'd want to see some proof. Do you have case studies from other manufacturers?";
+      if (!feedback) feedback = 'They want validation - provide social proof and specific results.';
+    } else {
+      message = "Alright, I'm intrigued. Send me some information and maybe we can schedule a proper call next week.";
+      if (!feedback) feedback = 'Great progress! Now confirm the next step and get commitment.';
     }
   } else if (simulation.scenario === 'discovery') {
-    if (messageCount <= 2) {
+    if (messageCount === 1) {
       message = "Our biggest issue right now is unexpected equipment failures. Last month we had a refrigeration unit go down and lost $40,000 in product.";
       if (!feedback) feedback = 'They shared a pain point with specific numbers - use this!';
-    } else if (messageCount <= 4) {
+    } else if (messageCount === 2) {
       message = "We have 5 maintenance techs. They're reactive mostly - fixing things when they break. We tried to implement a PM schedule but it's hard to stick to.";
       if (!feedback) feedback = 'Understanding their current process helps you position your solution.';
-    } else {
+    } else if (messageCount === 3) {
       message = "Budget? We spend about $200K a year on maintenance and repairs. But getting new budget approved is tough right now.";
       if (!feedback) feedback = 'Good discovery! Now tie your solution to their existing budget pain.';
+    } else if (messageCount === 4) {
+      message = "Decision making? Usually it's me and my VP of Operations. For anything over $50K, the CFO gets involved too.";
+      if (!feedback) feedback = 'Key info about buying process - plan your next steps accordingly.';
+    } else {
+      message = "What would a pilot look like? I'd be interested if we could start small and prove the value first.";
+      if (!feedback) feedback = 'Excellent! They want a pilot - scope it appropriately.';
     }
   } else if (simulation.scenario === 'objection-handling') {
-    if (messageCount <= 2) {
+    if (messageCount === 1) {
       message = "My IT team is already stretched thin. They're worried about security and having another system to manage.";
       if (!feedback) feedback = 'Address their IT concerns with specific security features and ease of management.';
-    } else if (messageCount <= 4) {
-      message = "Even if I wanted to, we're in a budget freeze until Q2. My hands are tied.";
+    } else if (messageCount === 2) {
+      message = "Okay, that helps with the security side. But even if I wanted to, we're in a budget freeze until Q2. My hands are tied.";
       if (!feedback) feedback = 'Budget freeze objection - explore pilot programs or ROI-based approaches.';
+    } else if (messageCount === 3) {
+      message = "A pilot could work... but I'll be honest - my boss doesn't believe in this 'predictive AI' stuff. He thinks it's hype.";
+      if (!feedback) feedback = 'Use case studies and concrete examples to address skepticism.';
+    } else if (messageCount === 4) {
+      message = "Those results are impressive. Let me talk to him. What kind of guarantee do you offer?";
+      if (!feedback) feedback = 'They want risk reduction - explain your guarantee or pilot terms.';
     } else {
-      message = "I'll be honest - my boss doesn't believe in this 'predictive AI' stuff. He thinks it's hype.";
-      if (!feedback) feedback = 'Final objection. Use case studies and concrete examples to address skepticism.';
+      message = "Alright, you've addressed my concerns. Let's set up a meeting with my boss next week.";
+      if (!feedback) feedback = 'Success! You handled the objections. Now lock in that meeting.';
     }
   } else if (simulation.scenario === 'demo') {
-    if (messageCount <= 2) {
+    if (messageCount === 1) {
       message = "How long does installation take? We can't afford a lot of downtime.";
       if (!feedback) feedback = 'Technical question - be specific about installation process and timeline.';
-    } else if (messageCount <= 4) {
+    } else if (messageCount === 2) {
       message = "What happens if a sensor fails? Do we lose data?";
       if (!feedback) feedback = 'Good question about reliability - explain redundancy and support.';
-    } else {
+    } else if (messageCount === 3) {
       message = "This looks good on screen, but how do my technicians actually use it day-to-day? They're not very tech-savvy.";
       if (!feedback) feedback = 'User adoption concern - show ease of use and training support.';
+    } else if (messageCount === 4) {
+      message = "What about integration with our CMMS? We use Fiix for work orders.";
+      if (!feedback) feedback = 'Integration question - explain your API and existing integrations.';
+    } else {
+      message = "I like what I see. What would pricing look like for 50 pieces of equipment?";
+      if (!feedback) feedback = 'Buying signal! Transition from demo to pricing discussion carefully.';
     }
   } else if (simulation.scenario === 'closing') {
-    if (messageCount <= 2) {
+    if (messageCount === 1) {
       message = "I need to run this by my boss. She makes all the final decisions on vendors.";
       if (!feedback) feedback = 'Identify the decision maker and offer to present to them directly.';
-    } else if (messageCount <= 4) {
+    } else if (messageCount === 2) {
       message = "The proposal is for 50 sensors but I was thinking we should start smaller. Maybe 10 units on our most critical equipment.";
       if (!feedback) feedback = 'They want to start small - this is a buying signal. Accommodate while protecting value.';
-    } else {
+    } else if (messageCount === 3) {
       message = "Look, I'm being honest - you're not the only vendor we're looking at. What makes you different?";
       if (!feedback) feedback = 'Competitive situation - focus on unique differentiators, not price.';
+    } else if (messageCount === 4) {
+      message = "Your support model is better, I'll give you that. What about implementation timeline?";
+      if (!feedback) feedback = 'They're comparing - emphasize your implementation advantages.';
+    } else {
+      message = "Okay, I think we can move forward. Can you send over a revised proposal for the pilot?";
+      if (!feedback) feedback = 'They want to buy! Confirm next steps and timeline for proposal.';
     }
   } else {
     message = "Tell me more about that.";
