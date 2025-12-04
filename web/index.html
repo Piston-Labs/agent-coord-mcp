@@ -9844,50 +9844,98 @@
 
       <!-- Resources View -->
       <div class="tab-content" id="resourcesView">
-        <div class="resources-header" style="padding: 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <h3 style="margin: 0; font-size: 16px;">Resource Documentation Hub</h3>
-            <p style="margin: 4px 0 0; font-size: 12px; color: var(--text-secondary);">MCP tools, API endpoints, and integrations</p>
+        <!-- Wiki-style layout with sidebar navigation -->
+        <div style="display: flex; height: 100%; overflow: hidden;">
+          <!-- Left Sidebar - Quick Navigation -->
+          <div id="resourcesSidebar" style="width: 220px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0;">
+            <!-- Search -->
+            <div style="padding: 12px; border-bottom: 1px solid var(--border);">
+              <input type="text" id="resourceSearch" placeholder="🔍 Search wiki..." oninput="fetchResources()" style="width: 100%; padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 13px;">
+            </div>
+            <!-- Stats Summary -->
+            <div style="padding: 12px; border-bottom: 1px solid var(--border); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+              <div style="text-align: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--accent);" id="resourceToolCount">0</div>
+                <div style="font-size: 9px; color: var(--text-secondary);">Tools</div>
+              </div>
+              <div style="text-align: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--success);" id="resourceEndpointCount">0</div>
+                <div style="font-size: 9px; color: var(--text-secondary);">Endpoints</div>
+              </div>
+              <div style="text-align: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--warning);" id="resourceIntegrationCount">0</div>
+                <div style="font-size: 9px; color: var(--text-secondary);">Integrations</div>
+              </div>
+              <div style="text-align: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                <div style="font-size: 18px; font-weight: 700; color: var(--human-color);" id="resourceRepoCount">0</div>
+                <div style="font-size: 9px; color: var(--text-secondary);">Repos</div>
+              </div>
+            </div>
+            <!-- Category Navigation -->
+            <div style="flex: 1; overflow-y: auto; padding: 8px;">
+              <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.5px;">MCP Tools</div>
+              <div id="wikiToolNav" style="margin-bottom: 12px;"></div>
+
+              <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.5px;">API Endpoints</div>
+              <div id="wikiEndpointNav" style="margin-bottom: 12px;"></div>
+
+              <div style="font-size: 10px; font-weight: 600; color: var(--text-secondary); padding: 8px 8px 4px; text-transform: uppercase; letter-spacing: 0.5px;">Quick Links</div>
+              <div id="wikiQuickLinks">
+                <a href="#" onclick="scrollToSection('integrations'); return false;" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; color: var(--text-secondary); text-decoration: none; font-size: 12px; border-radius: 4px; transition: all 0.15s;">
+                  <span>🔗</span> External Services
+                </a>
+                <a href="#" onclick="scrollToSection('repos'); return false;" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; color: var(--text-secondary); text-decoration: none; font-size: 12px; border-radius: 4px; transition: all 0.15s;">
+                  <span>📦</span> Connected Repos
+                </a>
+              </div>
+            </div>
+            <!-- Collapse Button -->
+            <div style="padding: 8px; border-top: 1px solid var(--border);">
+              <button onclick="toggleResourcesSidebar()" style="width: 100%; padding: 6px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-secondary); cursor: pointer; font-size: 11px;">◀ Collapse</button>
+            </div>
           </div>
-          <div style="display: flex; gap: 8px; align-items: center;">
-            <select id="resourceCategory" onchange="fetchResources()" style="padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 12px;">
-              <option value="">All Categories</option>
-              <option value="core">Core Tools</option>
-              <option value="messaging">Messaging</option>
-              <option value="resources">Resources</option>
-              <option value="context">Context</option>
-              <option value="orchestration">Orchestration</option>
-              <option value="integrations">Integrations</option>
-              <option value="testing">Testing</option>
-              <option value="endpoints">API Endpoints</option>
-              <option value="external">External Services</option>
-            </select>
-            <input type="text" id="resourceSearch" placeholder="Search..." oninput="fetchResources()" style="padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 4px; color: var(--text-primary); font-size: 12px; width: 150px;">
-            <button onclick="fetchResources()" style="padding: 6px 12px; background: var(--accent); border: none; border-radius: 4px; color: white; cursor: pointer; font-size: 12px;">Refresh</button>
-          </div>
-        </div>
-        <div class="resources-stats" style="padding: 12px 16px; display: flex; gap: 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border);">
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 700; color: var(--accent);" id="resourceToolCount">0</div>
-            <div style="font-size: 10px; color: var(--text-secondary);">MCP Tools</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 700; color: var(--success);" id="resourceEndpointCount">0</div>
-            <div style="font-size: 10px; color: var(--text-secondary);">API Endpoints</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 700; color: var(--warning);" id="resourceIntegrationCount">0</div>
-            <div style="font-size: 10px; color: var(--text-secondary);">Integrations</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 20px; font-weight: 700; color: var(--human-color);" id="resourceRepoCount">0</div>
-            <div style="font-size: 10px; color: var(--text-secondary);">Repos</div>
-          </div>
-        </div>
-        <div class="resources-content" style="padding: 16px; overflow-y: auto; height: calc(100% - 140px);">
-          <div id="resourcesList">
-            <div style="text-align: center; padding: 40px; color: var(--text-secondary);">
-              Loading resources...
+
+          <!-- Main Content Area -->
+          <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+            <!-- Header -->
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary);">
+              <div>
+                <h3 style="margin: 0; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 24px;">📚</span> Resource Wiki
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 12px; color: var(--text-secondary);">Complete documentation for MCP tools, API endpoints, and integrations</p>
+              </div>
+              <div style="display: flex; gap: 8px; align-items: center;">
+                <select id="resourceCategory" onchange="fetchResources()" style="padding: 8px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); font-size: 12px;">
+                  <option value="">📋 All Categories</option>
+                  <optgroup label="MCP Tools">
+                    <option value="core">⚙️ Core</option>
+                    <option value="messaging">💬 Messaging</option>
+                    <option value="context">🧠 Context</option>
+                    <option value="orchestration">🎯 Orchestration</option>
+                    <option value="testing">🧪 Testing</option>
+                    <option value="durable-objects">💾 Durable Objects</option>
+                  </optgroup>
+                  <optgroup label="API Endpoints">
+                    <option value="api">🔌 All Endpoints</option>
+                  </optgroup>
+                  <optgroup label="Other">
+                    <option value="integrations">🔗 Integrations</option>
+                    <option value="repos">📦 Repositories</option>
+                  </optgroup>
+                </select>
+                <button onclick="fetchResources()" style="padding: 8px 16px; background: var(--accent); border: none; border-radius: 6px; color: white; cursor: pointer; font-size: 12px; font-weight: 500;">↻ Refresh</button>
+              </div>
+            </div>
+
+            <!-- Wiki Content -->
+            <div class="resources-content" style="flex: 1; padding: 20px; overflow-y: auto;">
+              <div id="resourcesList">
+                <div style="text-align: center; padding: 60px; color: var(--text-secondary);">
+                  <div style="font-size: 40px; margin-bottom: 16px;">📚</div>
+                  Loading wiki...
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -12552,11 +12600,13 @@
         const res = await fetch(API_BASE + '/ceo-portal?resource=work-progress', { credentials: 'include' });
         const data = await res.json();
         if (!res.ok || data.error) {
-          console.error('Work progress API error:', data.error || res.status);
+          console.error('Work progress API error:', data.error, data.details || res.status);
+          const errorDetails = data.details ? `<div style="color: var(--text-tertiary); font-size: 11px; margin-top: 8px; font-family: monospace;">${data.details}</div>` : '';
           container.innerHTML = `<div class="ceo-empty">
             <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
             <div style="font-size: 16px; font-weight: 600; color: var(--warning); margin-bottom: 8px;">Access Denied</div>
             <div style="color: var(--text-secondary);">${data.error || 'Failed to load work progress. Make sure you are logged in as superadmin.'}</div>
+            ${errorDetails}
             <button onclick="loadWorkProgress()" style="margin-top: 16px; background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Retry</button>
           </div>`;
           return;
@@ -14169,11 +14219,26 @@
       const container = document.getElementById('resourcesList');
       let html = '';
 
+      // Track data for sidebar navigation
+      const toolCategories = [];
+      const endpointCategories = [];
+
+      // Update stats counters
+      const toolCount = data.tools?.items?.length || 0;
+      const endpointCount = data.endpoints?.items?.length || 0;
+      const integrationCount = data.integrations?.items?.length || 0;
+      const repoCount = data.repos?.items?.length || 0;
+
+      document.getElementById('resourceToolCount').textContent = toolCount;
+      document.getElementById('resourceEndpointCount').textContent = endpointCount;
+      document.getElementById('resourceIntegrationCount').textContent = integrationCount;
+      document.getElementById('resourceRepoCount').textContent = repoCount;
+
       // Check for integrations that need setup
       const needsSetup = (data.integrations?.items || []).filter(i => i.status === 'needs-setup');
 
       if (needsSetup.length > 0) {
-        html += `<div style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, rgba(248,81,73,0.1), rgba(248,81,73,0.05)); border: 1px solid var(--danger); border-radius: 8px;">
+        html += `<div id="section-setup" style="margin-bottom: 24px; padding: 16px; background: linear-gradient(135deg, rgba(248,81,73,0.1), rgba(248,81,73,0.05)); border: 1px solid var(--danger); border-radius: 8px;">
           <div style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--danger); display: flex; align-items: center; gap: 8px;">
             <span style="font-size: 18px;">⚠️</span> Setup Required
             <span style="font-size: 11px; font-weight: normal; padding: 2px 8px; background: var(--danger); color: white; border-radius: 10px;">${needsSetup.length} item${needsSetup.length > 1 ? 's' : ''}</span>
@@ -14197,80 +14262,114 @@
         html += '</div></div>';
       }
 
-      // Render MCP Tools
+      // Render MCP Tools with collapsible sections
       if (data.tools?.items?.length > 0) {
-        const categories = [...new Set(data.tools.items.map(t => t.category))];
+        const categories = [...new Set(data.tools.items.map(t => t.category))].sort();
+
+        html += `<div id="section-tools" style="margin-bottom: 24px;">
+          <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--accent); display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--accent);">
+            <span style="font-size: 20px;">🛠️</span> MCP Tools
+            <span style="font-size: 12px; font-weight: normal; padding: 3px 10px; background: var(--accent); color: white; border-radius: 12px;">${toolCount}</span>
+          </div>`;
 
         for (const cat of categories) {
           const tools = data.tools.items.filter(t => t.category === cat);
-          html += `<div style="margin-bottom: 20px;">
-            <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--accent); text-transform: capitalize; display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 16px;">${getCategoryIcon(cat)}</span> ${cat} Tools
-              <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${tools.length})</span>
+          const sectionId = `tools-${cat}`;
+          toolCategories.push({ id: sectionId, name: cat, count: tools.length, icon: getCategoryIcon(cat) });
+
+          html += `<div id="${sectionId}" class="wiki-section" style="margin-bottom: 16px;">
+            <div class="wiki-section-header" onclick="toggleWikiSection('${sectionId}')" style="cursor: pointer; padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="wiki-section-toggle" id="toggle-${sectionId}" style="transition: transform 0.2s;">▼</span>
+                <span style="font-size: 16px;">${getCategoryIcon(cat)}</span>
+                <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize;">${cat}</span>
+                <span style="font-size: 11px; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; color: var(--text-secondary);">${tools.length}</span>
+              </div>
             </div>
-            <div style="display: grid; gap: 8px;">`;
+            <div class="wiki-section-content" id="content-${sectionId}" style="border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden;">
+              <div style="display: grid; gap: 1px; background: var(--border);">`;
 
           for (const tool of tools) {
-            html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                  <span style="font-weight: 600; color: var(--text-primary);">${tool.name}</span>
-                  <span style="font-size: 10px; padding: 2px 6px; background: var(--bg-tertiary); border-radius: 10px; margin-left: 8px; color: var(--text-secondary);">MCP Tool</span>
+            html += `<div style="padding: 12px 14px; background: var(--bg-primary);">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <code style="font-family: monospace; font-weight: 600; color: var(--accent); font-size: 13px;">${tool.name}</code>
                 </div>
-                <span style="font-size: 10px; color: var(--text-secondary);">${tool.file || ''}</span>
+                <span style="font-size: 10px; color: var(--text-secondary); font-family: monospace;">${tool.file || ''}</span>
               </div>
-              <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${tool.description}</p>
+              <p style="margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${tool.description}</p>
             </div>`;
           }
-          html += '</div></div>';
+          html += '</div></div></div>';
         }
+        html += '</div>';
       }
 
-      // Render API Endpoints
+      // Render API Endpoints with collapsible sections by category
       if (data.endpoints?.items?.length > 0) {
-        html += `<div style="margin-bottom: 20px;">
-          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--success); display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 16px;">🔌</span> API Endpoints
-            <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${data.endpoints.items.length})</span>
-          </div>
-          <div style="display: grid; gap: 8px;">`;
+        const epCategories = [...new Set(data.endpoints.items.map(ep => ep.category || 'other'))].sort();
 
-        for (const ep of data.endpoints.items) {
-          html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <code style="font-family: monospace; color: var(--accent); font-size: 12px;">${ep.path}</code>
-              <div style="display: flex; gap: 4px;">
-                ${ep.methods.map(m => `<span style="font-size: 11px; padding: 2px 5px; background: ${getMethodColor(m)}; color: white; border-radius: 3px;">${m}</span>`).join('')}
+        html += `<div id="section-endpoints" style="margin-bottom: 24px;">
+          <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--success); display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--success);">
+            <span style="font-size: 20px;">🔌</span> API Endpoints
+            <span style="font-size: 12px; font-weight: normal; padding: 3px 10px; background: var(--success); color: white; border-radius: 12px;">${endpointCount}</span>
+          </div>`;
+
+        for (const cat of epCategories) {
+          const endpoints = data.endpoints.items.filter(ep => (ep.category || 'other') === cat);
+          const sectionId = `endpoints-${cat}`;
+          endpointCategories.push({ id: sectionId, name: cat, count: endpoints.length, icon: getEndpointCategoryIcon(cat) });
+
+          html += `<div id="${sectionId}" class="wiki-section" style="margin-bottom: 16px;">
+            <div class="wiki-section-header" onclick="toggleWikiSection('${sectionId}')" style="cursor: pointer; padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; user-select: none;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="wiki-section-toggle" id="toggle-${sectionId}" style="transition: transform 0.2s;">▼</span>
+                <span style="font-size: 16px;">${getEndpointCategoryIcon(cat)}</span>
+                <span style="font-weight: 600; color: var(--text-primary); text-transform: capitalize;">${cat}</span>
+                <span style="font-size: 11px; padding: 2px 8px; background: var(--bg-tertiary); border-radius: 10px; color: var(--text-secondary);">${endpoints.length}</span>
               </div>
             </div>
-            <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${ep.description}</p>
-          </div>`;
+            <div class="wiki-section-content" id="content-${sectionId}" style="border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; overflow: hidden;">
+              <div style="display: grid; gap: 1px; background: var(--border);">`;
+
+          for (const ep of endpoints) {
+            html += `<div style="padding: 12px 14px; background: var(--bg-primary);">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                <code style="font-family: monospace; color: var(--success); font-size: 12px; font-weight: 500;">${ep.path}</code>
+                <div style="display: flex; gap: 4px;">
+                  ${ep.methods.map(m => `<span style="font-size: 10px; padding: 2px 6px; background: ${getMethodColor(m)}; color: white; border-radius: 3px; font-weight: 500;">${m}</span>`).join('')}
+                </div>
+              </div>
+              <p style="margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${ep.description}</p>
+            </div>`;
+          }
+          html += '</div></div></div>';
         }
-        html += '</div></div>';
+        html += '</div>';
       }
 
       // Render External Integrations
       if (data.integrations?.items?.length > 0) {
-        html += `<div style="margin-bottom: 20px;">
-          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--warning); display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 16px;">🔗</span> External Integrations
-            <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${data.integrations.items.length})</span>
+        html += `<div id="section-integrations" style="margin-bottom: 24px;">
+          <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--warning); display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--warning);">
+            <span style="font-size: 20px;">🔗</span> External Integrations
+            <span style="font-size: 12px; font-weight: normal; padding: 3px 10px; background: var(--warning); color: white; border-radius: 12px;">${integrationCount}</span>
           </div>
           <div style="display: grid; gap: 8px;">`;
 
         for (const int of data.integrations.items) {
           const statusConfig = getIntegrationStatusConfig(int.status);
-          html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
+          html += `<div style="padding: 12px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <span style="font-weight: 600; color: var(--text-primary);">${int.name}</span>
-              <span style="font-size: 10px; padding: 2px 8px; background: ${statusConfig.bg}; color: ${statusConfig.color}; border-radius: 10px; display: flex; align-items: center; gap: 4px;">
+              <span style="font-size: 10px; padding: 3px 10px; background: ${statusConfig.bg}; color: ${statusConfig.color}; border-radius: 10px; display: flex; align-items: center; gap: 4px;">
                 <span style="font-size: 8px;">${statusConfig.icon}</span>${statusConfig.label}
               </span>
             </div>
-            <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${int.description}</p>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+            <p style="margin: 0 0 6px; font-size: 12px; color: var(--text-secondary);">${int.description}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
               ${int.endpoint ? `<code style="font-size: 10px; color: var(--text-secondary);">${int.endpoint}</code>` : '<span></span>'}
-              ${int.envVar ? `<code style="font-size: 11px; padding: 1px 4px; background: var(--bg-tertiary); border-radius: 3px; color: var(--text-secondary);">${int.envVar}</code>` : ''}
+              ${int.envVar ? `<code style="font-size: 10px; padding: 2px 6px; background: var(--bg-tertiary); border-radius: 3px; color: var(--text-secondary);">${int.envVar}</code>` : ''}
             </div>
           </div>`;
         }
@@ -14279,28 +14378,135 @@
 
       // Render Connected Repos
       if (data.repos?.items?.length > 0) {
-        html += `<div style="margin-bottom: 20px;">
-          <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px; color: var(--human-color); display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 16px;">📦</span> Connected Repositories
-            <span style="font-size: 11px; font-weight: normal; color: var(--text-secondary);">(${data.repos.items.length})</span>
+        html += `<div id="section-repos" style="margin-bottom: 24px;">
+          <div style="font-size: 16px; font-weight: 700; margin-bottom: 16px; color: var(--human-color); display: flex; align-items: center; gap: 10px; padding-bottom: 8px; border-bottom: 2px solid var(--human-color);">
+            <span style="font-size: 20px;">📦</span> Connected Repositories
+            <span style="font-size: 12px; font-weight: normal; padding: 3px 10px; background: var(--human-color); color: white; border-radius: 12px;">${repoCount}</span>
           </div>
           <div style="display: grid; gap: 8px;">`;
 
         for (const repo of data.repos.items) {
-          html += `<div style="padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-            <span style="font-weight: 600; color: var(--text-primary);">${repo.name}</span>
+          html += `<div style="padding: 12px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <span style="font-weight: 600; color: var(--text-primary);">${repo.name}</span>
+              ${repo.url ? `<a href="${repo.url}" target="_blank" style="font-size: 11px; color: var(--accent); text-decoration: none; display: flex; align-items: center; gap: 4px;">View ↗</a>` : ''}
+            </div>
             ${repo.description ? `<p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${repo.description}</p>` : ''}
-            ${repo.url ? `<a href="${repo.url}" target="_blank" style="font-size: 10px; color: var(--accent);">${repo.url}</a>` : ''}
           </div>`;
         }
         html += '</div></div>';
       }
 
       if (!html) {
-        html = '<div style="text-align: center; padding: 40px; color: var(--text-secondary);">No resources found</div>';
+        html = '<div style="text-align: center; padding: 60px; color: var(--text-secondary);"><div style="font-size: 48px; margin-bottom: 16px;">📚</div>No resources found</div>';
       }
 
       container.innerHTML = html;
+
+      // Populate sidebar navigation
+      populateWikiSidebar(toolCategories, endpointCategories);
+    }
+
+    // Populate the wiki sidebar with navigation links
+    function populateWikiSidebar(toolCategories, endpointCategories) {
+      // Tool navigation
+      const toolNav = document.getElementById('wikiToolNav');
+      if (toolNav) {
+        toolNav.innerHTML = toolCategories.map(cat => `
+          <a href="#" onclick="scrollToSection('${cat.id}'); return false;"
+             style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; color: var(--text-secondary); text-decoration: none; font-size: 12px; border-radius: 4px; transition: all 0.15s;"
+             onmouseover="this.style.background='var(--bg-tertiary)'; this.style.color='var(--text-primary)';"
+             onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)';">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <span>${cat.icon}</span>
+              <span style="text-transform: capitalize;">${cat.name}</span>
+            </span>
+            <span style="font-size: 10px; color: var(--text-secondary);">${cat.count}</span>
+          </a>
+        `).join('');
+      }
+
+      // Endpoint navigation
+      const endpointNav = document.getElementById('wikiEndpointNav');
+      if (endpointNav) {
+        endpointNav.innerHTML = endpointCategories.map(cat => `
+          <a href="#" onclick="scrollToSection('${cat.id}'); return false;"
+             style="display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; color: var(--text-secondary); text-decoration: none; font-size: 12px; border-radius: 4px; transition: all 0.15s;"
+             onmouseover="this.style.background='var(--bg-tertiary)'; this.style.color='var(--text-primary)';"
+             onmouseout="this.style.background='transparent'; this.style.color='var(--text-secondary)';">
+            <span style="display: flex; align-items: center; gap: 6px;">
+              <span>${cat.icon}</span>
+              <span style="text-transform: capitalize;">${cat.name}</span>
+            </span>
+            <span style="font-size: 10px; color: var(--text-secondary);">${cat.count}</span>
+          </a>
+        `).join('');
+      }
+    }
+
+    // Scroll to a section in the wiki
+    function scrollToSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Flash highlight effect
+        section.style.transition = 'background-color 0.3s';
+        section.style.backgroundColor = 'rgba(88, 166, 255, 0.1)';
+        setTimeout(() => {
+          section.style.backgroundColor = '';
+        }, 1000);
+      }
+    }
+
+    // Toggle wiki section collapse/expand
+    function toggleWikiSection(sectionId) {
+      const content = document.getElementById('content-' + sectionId);
+      const toggle = document.getElementById('toggle-' + sectionId);
+      if (content && toggle) {
+        const isCollapsed = content.style.display === 'none';
+        content.style.display = isCollapsed ? 'block' : 'none';
+        toggle.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(-90deg)';
+      }
+    }
+
+    // Toggle resources sidebar collapse/expand
+    function toggleResourcesSidebar() {
+      const sidebar = document.getElementById('resourcesSidebar');
+      if (sidebar) {
+        const isCollapsed = sidebar.style.width === '0px' || sidebar.style.display === 'none';
+        if (isCollapsed) {
+          sidebar.style.width = '220px';
+          sidebar.style.display = 'flex';
+          sidebar.querySelector('button').textContent = '◀ Collapse';
+        } else {
+          sidebar.style.width = '0px';
+          sidebar.style.display = 'none';
+        }
+      }
+    }
+
+    // Get icon for endpoint category
+    function getEndpointCategoryIcon(category) {
+      const icons = {
+        core: '⚙️',
+        agents: '🤖',
+        context: '🧠',
+        souls: '👻',
+        infrastructure: '🏗️',
+        ceo: '👔',
+        fleet: '🚚',
+        sales: '💼',
+        integrations: '🔗',
+        testing: '🧪',
+        planning: '📋',
+        users: '👥',
+        auth: '🔐',
+        system: '⚡',
+        debug: '🐛',
+        do: '💾',
+        other: '📁'
+      };
+      return icons[category] || '📁';
     }
 
     function getCategoryIcon(category) {
@@ -14312,7 +14518,12 @@
         orchestration: '🎯',
         integrations: '🔧',
         testing: '🧪',
-        external: '🔗'
+        external: '🔗',
+        'durable-objects': '💾',
+        infrastructure: '🏗️',
+        sales: '💼',
+        fleet: '🚚',
+        'file-context': '📄'
       };
       return icons[category] || '📦';
     }
