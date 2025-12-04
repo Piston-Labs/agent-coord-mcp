@@ -13,3 +13,5 @@ export { registerTestingTools } from './testing.js';
 export { registerIntegrationTools } from './integrations.js';
 export { registerOrchestrationTools } from './orchestration.js';
 export { registerSpawnTools } from './spawn.js';
+export { registerExternalTools } from './external.js';
+export { registerFileContextTools, fileContextToolDefinitions } from './file-context.js';

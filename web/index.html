@@ -11795,6 +11795,9 @@
       const quickReplies = document.getElementById('trainingQuickReplies');
       if (quickReplies) quickReplies.style.display = 'none';
 
+      // Reset conversation when switching modules to prevent message accumulation
+      resetTrainingConversation();
+
       // On mobile, collapse sidebar after selection
       if (window.innerWidth <= 768) toggleTrainingSidebar();
 
@@ -11876,13 +11879,30 @@
       }
     }
 
-    function addCoachMessage(content) {
+    // Track recent messages to prevent duplicates
+    const recentTrainingMessages = new Set();
+    const MAX_TRAINING_MESSAGES = 100; // Limit DOM elements for memory
+
+    function addCoachMessage(content, messageId = null) {
       const chatMessages = document.getElementById('trainingChatMessages');
       if (!chatMessages) return;
+
+      // Generate or use provided message ID for deduplication
+      const msgId = messageId || 'coach-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+
+      // Check for duplicate (same content in last 5 seconds)
+      const contentHash = content.substring(0, 50);
+      if (recentTrainingMessages.has(contentHash)) {
+        console.log('Skipping duplicate coach message');
+        return;
+      }
+      recentTrainingMessages.add(contentHash);
+      setTimeout(() => recentTrainingMessages.delete(contentHash), 5000);
 
       const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       const msg = document.createElement('div');
       msg.className = 'chat-message coach';
+      msg.id = msgId;
       msg.innerHTML = `
         <div class="message-avatar">🎓</div>
         <div class="message-bubble"><p>${content}</p></div>
@@ -11890,11 +11910,23 @@
       `;
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Memory management: limit total messages
+      limitTrainingMessages(chatMessages);
     }
 
     function addUserMessage(content) {
       const chatMessages = document.getElementById('trainingChatMessages');
       if (!chatMessages) return;
+
+      // Check for duplicate user message
+      const contentHash = 'user-' + content.substring(0, 50);
+      if (recentTrainingMessages.has(contentHash)) {
+        console.log('Skipping duplicate user message');
+        return;
+      }
+      recentTrainingMessages.add(contentHash);
+      setTimeout(() => recentTrainingMessages.delete(contentHash), 5000);
 
       const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       const msg = document.createElement('div');
@@ -11906,11 +11938,40 @@
       `;
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Memory management: limit total messages
+      limitTrainingMessages(chatMessages);
+    }
+
+    function limitTrainingMessages(container) {
+      const messages = container.querySelectorAll('.chat-message');
+      if (messages.length > MAX_TRAINING_MESSAGES) {
+        // Remove oldest messages (keep newest MAX_TRAINING_MESSAGES)
+        const toRemove = messages.length - MAX_TRAINING_MESSAGES;
+        for (let i = 0; i < toRemove; i++) {
+          messages[i].remove();
+        }
+      }
+    }
+
+    function resetTrainingConversation() {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (chatMessages) {
+        // Remove all messages except the typing indicator
+        chatMessages.querySelectorAll('.chat-message, .quick-replies, .quiz-container, .sim-quick-actions').forEach(el => el.remove());
+      }
+      // Clear recent messages tracker
+      recentTrainingMessages.clear();
+      // Reset simulation state
+      activeSimulation = null;
     }
 
     function addQuickRepliesForLesson() {
       const chatMessages = document.getElementById('trainingChatMessages');
       if (!chatMessages || !currentTrainingModule) return;
+
+      // Remove any existing quick replies first to prevent stacking
+      chatMessages.querySelectorAll('.quick-replies').forEach(el => el.remove());
 
       const isLastLesson = currentTrainingLesson >= currentTrainingModule.lessons.length - 1;
       const replies = document.createElement('div');

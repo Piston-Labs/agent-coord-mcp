@@ -41,13 +41,19 @@ const MCP_TOOLS = [
   { id: 'zone', name: 'zone', category: 'resources', description: 'Claim ownership of directories/modules to divide work.', file: 'src/tools/resources.ts' },
 
   // Context Tools (src/tools/context.ts)
-  { id: 'context-cluster', name: 'context-cluster', category: 'context', description: 'Manage hierarchical context clusters for different domains.', file: 'src/tools/context.ts' },
-  { id: 'hot-start', name: 'hot-start', category: 'context', description: 'Quick agent initialization with relevant context loaded.', file: 'src/tools/context.ts' },
-  { id: 'share', name: 'share', category: 'context', description: 'Share and retrieve knowledge between agents.', file: 'src/tools/context.ts' },
+  { id: 'context-load', name: 'context-load', category: 'context', description: 'Load Piston Labs context clusters by domain.', file: 'src/tools/context.ts' },
+  { id: 'context-cluster', name: 'context-cluster', category: 'context', description: 'Smart context loading from GitHub with auto-selection.', file: 'src/tools/context.ts' },
+  { id: 'vision', name: 'vision', category: 'context', description: 'Analyze images, screenshots, diagrams using Claude vision.', file: 'src/tools/context.ts' },
+  { id: 'repo-context', name: 'repo-context', category: 'context', description: 'Store and retrieve persistent codebase knowledge.', file: 'src/tools/context.ts' },
+  { id: 'memory', name: 'memory', category: 'context', description: 'Shared persistent memory for cross-agent knowledge.', file: 'src/tools/context.ts' },
+  { id: 'resource-registry', name: 'resource-registry', category: 'context', description: 'Discover all available MCP tools, API endpoints, and integrations.', file: 'src/tools/context.ts' },
 
   // Orchestration Tools (src/tools/orchestration.ts)
-  { id: 'workflow', name: 'workflow', category: 'orchestration', description: 'Multi-agent collaboration workflows.', file: 'src/tools/orchestration.ts' },
-  { id: 'hub', name: 'hub', category: 'orchestration', description: 'Central coordination hub for multi-agent projects.', file: 'src/tools/orchestration.ts' },
+  { id: 'hot-start', name: 'hot-start', category: 'orchestration', description: 'Load all context instantly for zero cold start.', file: 'src/tools/orchestration.ts' },
+  { id: 'workflow', name: 'workflow', category: 'orchestration', description: 'Use predefined collaboration workflows for common tasks.', file: 'src/tools/orchestration.ts' },
+  { id: 'orchestrate', name: 'orchestrate', category: 'orchestration', description: 'Coordinate complex tasks by breaking into subtasks for specialist agents.', file: 'src/tools/orchestration.ts' },
+  { id: 'spawn-parallel', name: 'spawn-parallel', category: 'orchestration', description: 'Spawn multiple independent tasks in parallel for concurrent execution.', file: 'src/tools/orchestration.ts' },
+  { id: 'auto-poll', name: 'auto-poll', category: 'orchestration', description: 'Start/stop automatic polling for new messages and tasks.', file: 'src/tools/orchestration.ts' },
 
   // Integration Tools (src/tools/integrations.ts)
   { id: 'device', name: 'device', category: 'integrations', description: 'Manage Piston Labs Teltonika GPS device fleet.', file: 'src/tools/integrations.ts' },
@@ -57,17 +63,26 @@ const MCP_TOOLS = [
   { id: 'alerts', name: 'alerts', category: 'integrations', description: 'Manage fleet alerts.', file: 'src/tools/integrations.ts' },
   { id: 'generate-doc', name: 'generate-doc', category: 'integrations', description: 'Generate Piston Labs sales documents.', file: 'src/tools/integrations.ts' },
   { id: 'sales-file', name: 'sales-file', category: 'integrations', description: 'Save documents to Sales Engineering folders.', file: 'src/tools/integrations.ts' },
+  { id: 'google-drive', name: 'google-drive', category: 'integrations', description: 'Document storage and sharing via Google Drive.', file: 'src/tools/integrations.ts' },
+  { id: 'user-tasks', name: 'user-tasks', category: 'integrations', description: 'Manage user tasks and assignments.', file: 'src/tools/integrations.ts' },
   { id: 'shop', name: 'shop', category: 'integrations', description: 'Manage Piston Labs sales pipeline.', file: 'src/tools/integrations.ts' },
   { id: 'sentry', name: 'sentry', category: 'integrations', description: 'Sentry error tracking integration.', file: 'src/tools/integrations.ts' },
+  { id: 'notion', name: 'notion', category: 'integrations', description: 'Notion knowledge base and documentation integration.', file: 'src/tools/integrations.ts' },
 
   // Testing Tools (src/tools/testing.ts)
-  { id: 'ui-test', name: 'ui-test', category: 'testing', description: 'Run UI tests for the dashboard.', file: 'src/tools/testing.ts' },
-  { id: 'agent-test', name: 'agent-test', category: 'testing', description: 'Test agent capabilities and coordination.', file: 'src/tools/testing.ts' },
+  { id: 'ui-test', name: 'ui-test', category: 'testing', description: 'UI/UX testing framework. Create, run, and track visual, accessibility, and interaction tests.', file: 'src/tools/testing.ts' },
+  { id: 'metrics', name: 'metrics', category: 'testing', description: 'Track and report multi-agent efficiency, safety, and coordination metrics.', file: 'src/tools/testing.ts' },
+  { id: 'browser', name: 'browser', category: 'testing', description: 'Playwright-powered browser automation for UI testing.', file: 'src/tools/testing.ts' },
 
   // Spawn Tools (src/tools/spawn.ts)
   { id: 'spawn-agent', name: 'spawn-agent', category: 'orchestration', description: 'Spawn a new Claude Code CLI agent on demand.', file: 'src/tools/spawn.ts' },
   { id: 'spawn-batch', name: 'spawn-batch', category: 'orchestration', description: 'Spawn multiple agents at once (up to 10).', file: 'src/tools/spawn.ts' },
   { id: 'spawn-status', name: 'spawn-status', category: 'orchestration', description: 'Check if spawn service is running.', file: 'src/tools/spawn.ts' },
+
+  // External Integration Tools (src/tools/external.ts)
+  { id: 'linear', name: 'linear', category: 'external', description: 'Linear issue tracking integration. Search, create, update issues.', file: 'src/tools/external.ts' },
+  { id: 'github', name: 'github', category: 'external', description: 'Enhanced GitHub operations. Manage PRs, issues, workflows, reviews.', file: 'src/tools/external.ts' },
+  { id: 'slack', name: 'slack', category: 'external', description: 'Slack team communication integration. Send messages, list channels, search.', file: 'src/tools/external.ts' },
 ];
 
 // External integrations with detailed status

@@ -472,8 +472,8 @@ function getDefaultModules(): TrainingModule[] {
     // Sales Track
     {
       id: 'sales-101',
-      title: 'Sales Engineer Onboarding',
-      description: 'Foundation training for sales engineers - ICP, pitch, objections, and demo skills',
+      title: 'Auto Shop Sales Training',
+      description: 'Foundation training for selling GPS fleet tracking to auto repair shops',
       role: 'sales',
       category: 'Onboarding',
       order: 1,
@@ -486,123 +486,129 @@ function getDefaultModules(): TrainingModule[] {
           title: 'Ideal Customer Profile (ICP)',
           type: 'reading',
           order: 1,
-          content: `# Ideal Customer Profile
+          content: `# Ideal Customer Profile - Auto Repair Shops
 
 ## Primary Targets
-- **Manufacturing facilities** - Equipment downtime costs $10K-50K/hour
-- **Food processing plants** - Cold chain monitoring, FDA compliance
-- **HVAC contractors** - Fleet management, job tracking
-- **Property managers** - Building systems monitoring
+- **Independent auto repair shops** - 2-10 bays, owner-operated
+- **Multi-location shops** - Need visibility across sites
+- **Mobile mechanics** - Service vans doing on-site repairs
+- **Tow truck operators** - Time-sensitive dispatch, customer ETA needs
 
 ## Key Pain Points
-1. Unplanned equipment failures
-2. Reactive maintenance costs 3x more than preventive
-3. No visibility into field operations
-4. Manual tracking and paperwork
+1. **Customer communication** - "When will my tow truck arrive?" calls
+2. **Dispatch inefficiency** - Don't know which tech is closest to a job
+3. **Time tracking** - Manual logs, billing disputes with customers
+4. **Fleet visibility** - No idea where vehicles are in real-time
+
+## Shop Owner Persona
+- Busy, hands-on, skeptical of "fancy technology"
+- Worried about employee pushback on being "tracked"
+- Price-conscious but understands value of saving time
+- Often makes decisions with a business partner
 
 ## Qualification Questions
-- "How much does an hour of downtime cost you?"
-- "How do you currently track equipment health?"
-- "What's your maintenance budget vs. emergency repair budget?"`
+- "How many vehicles do you have - tow trucks, service vans?"
+- "How do customers currently find out when you're arriving?"
+- "How much time do you spend each day coordinating your team?"`
         },
         {
           id: 'sales-101-pitch',
           title: 'The Piston Labs Pitch',
           type: 'reading',
           order: 2,
-          content: `# The Elevator Pitch
+          content: `# The Elevator Pitch for Auto Shops
 
-> "Stop equipment failures before they stop your business."
+> "Know where your trucks are and give customers real ETAs - like Uber, but for your shop."
 
 ## Full Pitch Structure
 
 ### 1. Problem (30 sec)
-"Most businesses find out about equipment problems when something breaks. By then, you're looking at emergency repairs, overtime labor, and lost production."
+"Your customers call asking 'where's the tow truck?' and you're stuck calling your driver. Meanwhile, you've got cars to fix and customers to help."
 
 ### 2. Solution (30 sec)
-"Piston Labs connects your equipment to our monitoring platform. We detect problems before they become failures, so you can schedule maintenance on your terms."
+"Piston Labs puts a GPS tracker in your trucks. You see where everyone is on your phone, and you can send customers a link showing when you'll arrive - just like Uber."
 
 ### 3. Proof (30 sec)
-"Our beta customers have reduced unplanned downtime by 40% and cut emergency repair costs in half."
+"Shops using our system spend 5+ fewer hours per week on dispatch calls, and their Google reviews go up because customers love the ETA updates."
 
 ### 4. Ask (15 sec)
-"Would you like to see how this would work for your [specific equipment]?"`
+"Want to see how it works? I can show you in 5 minutes."`
         },
         {
           id: 'sales-101-objections',
-          title: 'Handling Objections',
+          title: 'Handling Shop Owner Objections',
           type: 'reading',
           order: 3,
-          content: `# Common Objections & Responses
+          content: `# Common Objections from Auto Shop Owners
 
-## "It's too expensive"
-**Response:** "I understand budget is a concern. Let me ask - what did your last emergency repair cost? Our customers typically see ROI in 3-6 months just from avoided emergencies."
+## "My guys will hate being tracked"
+**Response:** "I hear that a lot. Here's what works - position it as a customer service tool, not surveillance. Tell them: 'This is so customers stop calling ME asking where you are, and calling YOU while you're driving.' Most techs actually prefer it once they see it keeps customers off their back."
 
-## "We have maintenance staff already"
-**Response:** "That's great - our tool makes them more effective. Instead of routine check-ups, they can focus on the issues that actually need attention. We've seen maintenance teams handle 30% more equipment with our alerts."
+## "I'm already paying for too many systems"
+**Response:** "I get it - you've got Mitchell, ShopKey, maybe a credit card system... This is different though. It's one small thing that saves you time every day. And at $25/month per truck, if it saves you even one hour of dispatch calls, it pays for itself."
 
-## "What about data security?"
-**Response:** "Security is critical for us too. We use bank-level encryption, and your data never leaves US servers. We're also SOC 2 compliant."
+## "We're a small shop, we don't need this"
+**Response:** "Actually, smaller shops benefit the most. The big chains have dispatchers. You're probably the owner, the manager, AND the dispatcher. This gets you out of the middle so you can focus on customers and running the shop."
 
-## "We already use Samsara/Uptake"
-**Response:** "Those are solid platforms for fleet tracking. We focus specifically on equipment health and predictive maintenance - we often complement those tools rather than replace them."`
+## "Can't my driver just text me their location?"
+**Response:** "They can, but they're driving. Plus you have to stop what you're doing to ask, they have to pull over to respond. With GPS, you just look at your phone and know instantly. And you can share that ETA with customers without any back-and-forth."`
         },
         {
           id: 'sales-101-demo',
           title: 'Demo Best Practices',
           type: 'task',
           order: 4,
-          content: `# Demo Checklist
+          content: `# Demo Checklist for Auto Shop Owners
 
-Complete these tasks to master the product demo:`,
+Complete these tasks to master the shop owner demo:`,
           taskChecklist: [
-            'Watch the recorded demo walkthrough (Loom)',
-            'Set up your own demo environment',
-            'Practice the 5-minute quick demo',
-            'Practice the 20-minute full demo',
-            'Shadow 3 live customer demos',
-            'Deliver a demo to a team member for feedback'
+            'Watch the recorded auto shop demo (Loom)',
+            'Practice showing the live map view with multiple vehicles',
+            'Master the customer ETA link sharing feature',
+            'Practice the "theft protection" use case pitch',
+            'Shadow 3 live demos with shop owners',
+            'Deliver a demo to a team member acting as a skeptical shop owner'
           ]
         },
         {
           id: 'sales-101-quiz',
-          title: 'Sales Fundamentals Quiz',
+          title: 'Auto Shop Sales Quiz',
           type: 'quiz',
           order: 5,
-          content: 'Test your knowledge of the sales fundamentals.',
+          content: 'Test your knowledge of selling to auto repair shops.',
           quiz: [
             {
-              question: 'What is our primary elevator pitch headline?',
+              question: 'What is our primary pitch headline for auto shops?',
               options: [
-                'The future of IoT monitoring',
-                'Stop equipment failures before they stop your business',
-                'Smart sensors for smart businesses',
-                'Predictive maintenance made easy'
+                'Enterprise fleet management solution',
+                'Know where your trucks are and give customers real ETAs',
+                'Advanced GPS tracking technology',
+                'Complete business management software'
               ],
               correctIndex: 1,
-              explanation: 'This headline focuses on the customer benefit (avoiding failures) rather than our technology.'
+              explanation: 'This headline speaks directly to shop owner pain points - fleet visibility and customer communication.'
             },
             {
-              question: 'Which is NOT a primary ICP segment?',
+              question: 'When a shop owner says "my guys will hate being tracked", the best response focuses on:',
               options: [
-                'Manufacturing facilities',
-                'Food processing plants',
-                'Retail stores',
-                'HVAC contractors'
+                'How the tracking is very accurate',
+                'Legal requirements for tracking employees',
+                'Positioning it as customer service, not surveillance',
+                'Offering to hide tracking from employees'
               ],
               correctIndex: 2,
-              explanation: 'Retail stores are not a primary target - we focus on businesses with critical equipment.'
+              explanation: 'Reframe tracking as helping the tech by reducing customer calls while driving.'
             },
             {
-              question: 'When a prospect says "it\'s too expensive", what should you ask about?',
+              question: 'What is the typical price point we mention for auto shops?',
               options: [
-                'Their budget for next year',
-                'Their last emergency repair cost',
-                'Competitor pricing',
-                'Payment plans'
+                '$100/month per truck',
+                '$25/month per truck',
+                '$500 one-time fee',
+                '$5/day per vehicle'
               ],
               correctIndex: 1,
-              explanation: 'Anchoring to their emergency repair costs helps them see ROI potential.'
+              explanation: 'At $25/month per truck, the ROI math is easy - one saved hour of dispatch time pays for it.'
             }
           ]
         }
@@ -709,7 +715,7 @@ Complete these tasks to set up your development environment:`,
     {
       id: 'product-101',
       title: 'Product Overview',
-      description: 'Understanding Piston Labs products and value proposition',
+      description: 'Understanding Piston Labs GPS fleet tracking for auto repair shops',
       role: 'all',
       category: 'Product',
       order: 0,
@@ -725,30 +731,37 @@ Complete these tasks to set up your development environment:`,
           content: `# Piston Labs Product Overview
 
 ## Mission
-**Make predictive maintenance accessible to every business.**
+**Help auto repair shops deliver better customer service through fleet visibility.**
 
-## Products
+## Our Product: GPS Fleet Tracking for Auto Shops
 
-### 1. Equipment Monitoring Platform
-- Real-time telemetry from industrial equipment
-- Predictive failure alerts
-- Maintenance scheduling
+### Core Features
+- **Real-time vehicle tracking** - See all your trucks on one map
+- **Customer ETA sharing** - Send Uber-style "your driver is on the way" links
+- **Trip history** - Know where vehicles went and when
+- **Geofencing alerts** - Get notified when trucks enter/leave your shop
 
-### 2. Fleet Tracking
-- GPS location for service vehicles
-- Driver behavior monitoring
-- Route optimization
+### Hardware
+- Teltonika FMC130 GPS device (hardwired installation)
+- Works with any vehicle - tow trucks, service vans, customer shuttles
+- 30-minute installation, no monthly hardware fees
 
-### 3. Agent Coordination Hub
-- AI agent collaboration platform
-- Multi-model orchestration
-- Real-time team visibility
+### Pricing (Simple)
+- $25/month per vehicle
+- No contracts (month-to-month)
+- Free 30-day pilot available
+
+## Target Customers
+- Independent auto repair shops
+- Tow truck operators
+- Mobile mechanics
+- Multi-location repair businesses
 
 ## Competitive Advantages
-1. **Price** - 60% less than enterprise solutions
-2. **Setup** - Deploy in hours, not months
-3. **Flexibility** - Works with existing equipment
-4. **AI-Powered** - Predictive, not just monitoring`
+1. **Price** - Fraction of enterprise fleet solutions
+2. **Simplicity** - Built for shop owners, not fleet managers
+3. **Customer Focus** - ETA sharing is our killer feature
+4. **No Contracts** - Month-to-month, try before you commit`
         }
       ]
     }

@@ -26,6 +26,7 @@ import { registerIntegrationTools } from './tools/integrations.js';
 import { registerOrchestrationTools } from './tools/orchestration.js';
 import { registerSpawnTools } from './tools/spawn.js';
 import { registerExternalTools } from './tools/external.js';
+import { registerFileContextTools } from './tools/file-context.js';
 
 const server = new McpServer({
   name: 'agent-coord-mcp',
@@ -44,6 +45,7 @@ registerIntegrationTools(server);   // device, aws-status, fleet-analytics, prov
 registerOrchestrationTools(server); // orchestrate, spawn-parallel, workflow, hot-start, auto-poll
 registerSpawnTools(server);         // spawn-agent, spawn-batch, spawn-status
 registerExternalTools(server);      // linear, sentry, notion, github, slack
+registerFileContextTools(server);   // file-info, file-read-smart, file-split-work
 
 // ============================================================================
 // Start Server
