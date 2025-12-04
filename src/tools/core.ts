@@ -599,4 +599,61 @@ export function registerCoreTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // RULES TOOL - Development workflows, QC requirements, success criteria
+  // ============================================================================
+
+  server.tool(
+    'rules',
+    'Get development workflow rules, QC requirements, and success criteria. Use before starting any development work to understand the required process.',
+    {
+      action: z.enum(['get', 'workflow', 'qc-checklist', 'success-criteria']).describe('get=all rules, workflow=specific workflow steps, qc-checklist=QC requirements, success-criteria=what defines success'),
+      workflowType: z.enum(['bugfix', 'feature', 'hotfix', 'refactor']).optional().describe('For workflow action: which workflow to get'),
+      section: z.string().optional().describe('For get action: specific section (workflows, qualityControl, successCriteria, security, coordination)')
+    },
+    async (args) => {
+      const { action, workflowType, section } = args;
+
+      try {
+        switch (action) {
+          case 'workflow': {
+            if (!workflowType) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'workflowType required',
+                validTypes: ['bugfix', 'feature', 'hotfix', 'refactor']
+              }) }] };
+            }
+            const res = await fetch(`${API_BASE}/api/rules?action=validate&type=${workflowType}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'qc-checklist': {
+            const res = await fetch(`${API_BASE}/api/rules?section=qualityControl`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'success-criteria': {
+            const res = await fetch(`${API_BASE}/api/rules?section=successCriteria`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get':
+          default: {
+            const url = section
+              ? `${API_BASE}/api/rules?section=${encodeURIComponent(section)}`
+              : `${API_BASE}/api/rules`;
+            const res = await fetch(url);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }

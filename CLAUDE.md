@@ -87,6 +87,7 @@ Body: {
 - `agent-status` - Update/claim work status
 - `group-chat` - Team-wide messaging (supports `isCloudAgent` flag for VM agents)
 - `profile` - Register capabilities and MCP tools
+- `rules` - **Get development workflows and QC requirements** (use before any dev work!)
 
 ### Agent Tool Inventory System
 Register your available MCP tools so other agents know your capabilities:
@@ -207,6 +208,78 @@ do-onboard agentId=phoenix
 2. Complete or hand off any pending work
 3. Announce departure in chat
 4. Release any claims/locks
+
+## Development Workflows (MANDATORY)
+
+**ALL agents MUST follow these workflows. Use `rules` MCP tool to get full details.**
+
+### Bug Fix Workflow
+```
+1. CLAIM    → Claim the bug fix in coordination system
+2. REPRODUCE → Confirm the bug exists, document steps
+3. IMPLEMENT → Write the fix (minimal, focused changes)
+4. TEST     → npm run build && npm test (ALL must pass)
+5. QC       → Get approval from another agent or human
+6. PUSH     → Push to main ONLY after QC approval
+7. VERIFY   → Confirm fix works in production
+8. ANNOUNCE → Post completion in chat with commit hash
+```
+
+### Feature Development Workflow
+```
+1. CLAIM    → Claim the feature
+2. PLAN     → Break down into tasks, identify files
+3. IMPLEMENT → Write the code (follow existing patterns)
+4. ADD TESTS → Add tests for new functionality
+5. TEST     → npm run build && npm test (ALL must pass)
+6. QC       → Get approval before pushing
+7. PUSH     → Push to main after QC approval
+8. VERIFY   → Confirm feature works in production
+9. DOCUMENT → Update README/CLAUDE.md if significant
+10. ANNOUNCE → Post completion in chat
+```
+
+### Quality Control Requirements
+
+**QC is MANDATORY before pushing to production (except hotfixes).**
+
+QC Checklist:
+- [ ] Build passes (`npm run build`)
+- [ ] All tests pass (`npm test`)
+- [ ] No TypeScript errors
+- [ ] Changes are focused and minimal
+- [ ] No secrets or credentials in code
+- [ ] Follows existing code patterns
+
+**Who Can QC:**
+- Any agent NOT involved in the implementation
+- Must verify tests actually ran
+- Must check production after deploy
+
+### Success Criteria
+
+**A bug fix is successful when:**
+- The original bug no longer reproduces
+- Build passes with 0 errors
+- All existing tests pass (no regressions)
+- QC has approved
+- Production deployment verified
+
+**A feature is successful when:**
+- Feature works as specified
+- Build passes, all tests pass
+- New tests added for new functionality
+- QC approved, production verified
+
+### Hotfix Workflow (Emergency Only)
+```
+1. ANNOUNCE → Post [HOTFIX] in chat immediately
+2. FIX      → Minimal change to resolve issue
+3. TEST     → npm run build must pass
+4. PUSH     → Push immediately (QC can be post-hoc)
+5. VERIFY   → Confirm issue resolved in production
+6. POSTMORTEM → QC review after the fact
+```
 
 ## Code Conventions
 
