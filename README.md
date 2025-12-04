@@ -153,7 +153,7 @@ See `.env.example` for a complete template with documentation.
 | Variable | Description |
 |----------|-------------|
 | `LINEAR_API_KEY` | Linear issue tracking |
-| `SLACK_TOKEN` | Slack team messaging |
+| `DISCORD_BOT_TOKEN` | Discord team messaging |
 | `GITHUB_TOKEN` | Context clusters & repo access |
 | `GITHUB_ORG` | GitHub organization |
 

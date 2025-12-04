@@ -81,7 +81,6 @@ const MCP_TOOLS = [
   // External Integration Tools (src/tools/external.ts)
   { id: 'linear', name: 'linear', category: 'external', description: 'Linear issue tracking integration. Search, create, update issues.', file: 'src/tools/external.ts' },
   { id: 'github', name: 'github', category: 'external', description: 'Enhanced GitHub operations. Manage PRs, issues, workflows, reviews.', file: 'src/tools/external.ts' },
-  { id: 'slack', name: 'slack', category: 'external', description: 'Slack team communication integration. Send messages, list channels, search.', file: 'src/tools/external.ts' },
   { id: 'discord', name: 'discord', category: 'external', description: 'Discord server communication integration. Send messages, list channels, threads, reactions.', file: 'src/tools/external.ts' },
 
   // Soul Transfer & AWS Infrastructure (api/)
@@ -126,17 +125,6 @@ const INTEGRATIONS = [
     setupUrl: 'https://github.com/settings/tokens',
     setupInstructions: 'Create Personal Access Token with repo and workflow scopes.',
     endpoint: '/api/github'
-  },
-  {
-    id: 'slack',
-    name: 'Slack',
-    category: 'external',
-    description: 'Team messaging integration',
-    status: process.env.SLACK_TOKEN ? 'live' : 'needs-setup',
-    envVar: 'SLACK_TOKEN',
-    setupUrl: 'https://api.slack.com/apps',
-    setupInstructions: 'Create app, add Bot Token Scopes (chat:write, channels:read, users:read), install to workspace.',
-    endpoint: '/api/slack'
   },
   {
     id: 'discord',

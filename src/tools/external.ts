@@ -1,13 +1,12 @@
 /**
  * External Integration Tools - Third-party service integrations
  *
- * Tools: linear, sentry, github-enhanced, slack, discord
+ * Tools: linear, sentry, github-enhanced, discord
  *
  * These tools integrate with external services to enhance agent coordination:
  * - Linear: Issue tracking and project management
  * - Sentry: Error tracking and monitoring
  * - GitHub: Enhanced PR, issue, and CI/CD workflows
- * - Slack: Team communication integration
  * - Discord: Discord server communication integration
  */
 
@@ -503,140 +502,6 @@ export function registerExternalTools(server: McpServer) {
             }
             const data = await ghFetch(`${repoPath}/commits/${params.sha}`);
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
-          }
-
-          default:
-            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
-        }
-      } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
-      }
-    }
-  );
-
-  // ============================================================================
-  // SLACK TOOL - Team communication integration
-  // ============================================================================
-
-  server.tool(
-    'slack',
-    'Integrate with Slack for team communications. Send messages, list channels, search. Requires SLACK_TOKEN env var.',
-    {
-      action: z.enum(['send', 'list-channels', 'get-channel', 'search', 'list-users', 'get-user', 'post-thread'])
-        .describe('send, list-channels, get-channel, search, list-users, get-user, post-thread'),
-      channel: z.string().optional().describe('Channel ID or name'),
-      message: z.string().optional().describe('Message text'),
-      threadTs: z.string().optional().describe('Thread timestamp for replies'),
-      query: z.string().optional().describe('Search query'),
-      userId: z.string().optional().describe('User ID'),
-      limit: z.number().optional().default(20).describe('Max results'),
-      agentId: z.string().describe('Your agent ID')
-    },
-    async (args) => {
-      const { action, agentId, ...params } = args;
-
-      const token = process.env.SLACK_TOKEN;
-      if (!token) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: 'SLACK_TOKEN not configured',
-          setup: 'Set SLACK_TOKEN environment variable with a Slack Bot Token (xoxb-...)',
-          scopes: 'Required scopes: chat:write, channels:read, users:read, search:read'
-        }, null, 2) }] };
-      }
-
-      const slackFetch = async (method: string, body?: Record<string, any>) => {
-        const res = await fetch(`https://slack.com/api/${method}`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: body ? JSON.stringify(body) : undefined
-        });
-        return res.json();
-      };
-
-      try {
-        switch (action) {
-          case 'send': {
-            if (!params.channel || !params.message) {
-              return { content: [{ type: 'text', text: 'channel and message required' }] };
-            }
-            const data = await slackFetch('chat.postMessage', {
-              channel: params.channel,
-              text: params.message,
-              thread_ts: params.threadTs
-            });
-            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
-          }
-
-          case 'post-thread': {
-            if (!params.channel || !params.message || !params.threadTs) {
-              return { content: [{ type: 'text', text: 'channel, message, and threadTs required' }] };
-            }
-            const data = await slackFetch('chat.postMessage', {
-              channel: params.channel,
-              text: params.message,
-              thread_ts: params.threadTs
-            });
-            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
-          }
-
-          case 'list-channels': {
-            const data = await slackFetch('conversations.list', {
-              limit: params.limit,
-              types: 'public_channel,private_channel'
-            });
-            const channels = data.channels?.map((c: any) => ({
-              id: c.id,
-              name: c.name,
-              topic: c.topic?.value,
-              memberCount: c.num_members,
-              isPrivate: c.is_private
-            })) || [];
-            return { content: [{ type: 'text', text: JSON.stringify({ channels }, null, 2) }] };
-          }
-
-          case 'get-channel': {
-            if (!params.channel) {
-              return { content: [{ type: 'text', text: 'channel required' }] };
-            }
-            const [info, history] = await Promise.all([
-              slackFetch('conversations.info', { channel: params.channel }),
-              slackFetch('conversations.history', { channel: params.channel, limit: 10 })
-            ]);
-            return { content: [{ type: 'text', text: JSON.stringify({ info: info.channel, recentMessages: history.messages }, null, 2) }] };
-          }
-
-          case 'search': {
-            if (!params.query) {
-              return { content: [{ type: 'text', text: 'query required' }] };
-            }
-            const data = await slackFetch('search.messages', {
-              query: params.query,
-              count: params.limit
-            });
-            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
-          }
-
-          case 'list-users': {
-            const data = await slackFetch('users.list', { limit: params.limit });
-            const users = data.members?.filter((u: any) => !u.is_bot && !u.deleted).map((u: any) => ({
-              id: u.id,
-              name: u.name,
-              realName: u.real_name,
-              email: u.profile?.email,
-              status: u.profile?.status_text
-            })) || [];
-            return { content: [{ type: 'text', text: JSON.stringify({ users }, null, 2) }] };
-          }
-
-          case 'get-user': {
-            if (!params.userId) {
-              return { content: [{ type: 'text', text: 'userId required' }] };
-            }
-            const data = await slackFetch('users.info', { user: params.userId });
-            return { content: [{ type: 'text', text: JSON.stringify(data.user, null, 2) }] };
           }
 
           default:
