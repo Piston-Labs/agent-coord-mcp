@@ -892,6 +892,121 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'agent-context', status: 'fail', message: 'Failed to access agent context', error: String(e) };
     }
+  },
+
+  // Fleet alerts test - added by phil
+  'alerts': async () => {
+    const start = Date.now();
+    try {
+      const [alertCount, configExists] = await Promise.all([
+        redis.llen('piston:alerts'),
+        redis.exists('piston:alert-config')
+      ]);
+      return {
+        tool: 'alerts',
+        status: 'pass',
+        message: `Fleet alerts accessible (${alertCount} alerts, config ${configExists ? 'exists' : 'uses defaults'})`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'alerts', status: 'fail', message: 'Failed to access fleet alerts', error: String(e) };
+    }
+  },
+
+  // Training system test - added by phil
+  'training': async () => {
+    const start = Date.now();
+    try {
+      const [modules, progress, simulations] = await Promise.all([
+        redis.hlen('agent-coord:training-modules'),
+        redis.hlen('agent-coord:training-progress'),
+        redis.hlen('agent-coord:training-simulations')
+      ]);
+      return {
+        tool: 'training',
+        status: 'pass',
+        message: `Training system accessible (${modules} modules, ${progress} progress records, ${simulations} simulations)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'training', status: 'fail', message: 'Failed to access training system', error: String(e) };
+    }
+  },
+
+  // Roadmap test - added by phil
+  'roadmap': async () => {
+    const start = Date.now();
+    try {
+      const [items, team, cycles] = await Promise.all([
+        redis.hlen('agent-coord:roadmap'),
+        redis.hlen('agent-coord:team'),
+        redis.hlen('agent-coord:cycles')
+      ]);
+      return {
+        tool: 'roadmap',
+        status: 'pass',
+        message: `Roadmap accessible (${items} items, ${team} team members, ${cycles} cycles)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'roadmap', status: 'fail', message: 'Failed to access roadmap', error: String(e) };
+    }
+  },
+
+  // Geofence test - added by phil
+  'geofence': async () => {
+    const start = Date.now();
+    try {
+      const [fences, breaches, locations] = await Promise.all([
+        redis.hlen('piston:geofences'),
+        redis.llen('piston:geofence-breaches'),
+        redis.hlen('piston:device-locations')
+      ]);
+      return {
+        tool: 'geofence',
+        status: 'pass',
+        message: `Geofence system accessible (${fences} fences, ${breaches} breaches, ${locations} device locations)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'geofence', status: 'fail', message: 'Failed to access geofence system', error: String(e) };
+    }
+  },
+
+  // Resource registry test - added by phil
+  'resource-registry': async () => {
+    const start = Date.now();
+    try {
+      const [registry, repos] = await Promise.all([
+        redis.hlen('agent-coord:resource-registry'),
+        redis.hlen('agent-coord:connected-repos')
+      ]);
+      return {
+        tool: 'resource-registry',
+        status: 'pass',
+        message: `Resource registry accessible (${registry} custom entries, ${repos} connected repos)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'resource-registry', status: 'fail', message: 'Failed to access resource registry', error: String(e) };
+    }
+  },
+
+  // Vercel env test - added by phil
+  'vercel-env': async () => {
+    const start = Date.now();
+    try {
+      // Check the audit log exists (doesn't require VERCEL_TOKEN)
+      const auditCount = await redis.llen('agent-coord:vercel-env-audit');
+      return {
+        tool: 'vercel-env',
+        status: 'pass',
+        message: `Vercel env audit log accessible (${auditCount} audit entries)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'vercel-env', status: 'fail', message: 'Failed to access vercel env audit', error: String(e) };
+    }
   }
 };
 
