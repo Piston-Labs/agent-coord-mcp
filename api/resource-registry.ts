@@ -322,6 +322,11 @@ const API_ENDPOINTS = [
   { id: 'user-tasks', path: '/api/user-tasks', methods: ['GET', 'POST', 'PATCH', 'DELETE'], description: 'Private user task lists', category: 'users' },
   { id: 'kudos', path: '/api/kudos', methods: ['GET', 'POST'], description: 'Peer recognition kudos', category: 'users' },
   { id: 'training', path: '/api/training', methods: ['GET', 'POST'], description: 'Agent training simulations', category: 'users' },
+  { id: 'agent-xp', path: '/api/agent-xp', methods: ['GET', 'POST'], description: 'Agent XP progression, levels, and achievements', category: 'users' },
+
+  // === KNOWLEDGE & CONTEXT ===
+  { id: 'research-library', path: '/api/research-library', methods: ['GET', 'POST', 'DELETE'], description: 'Technical research articles discovered by agents', category: 'context' },
+  { id: 'ui-map', path: '/api/ui-map', methods: ['GET'], description: 'Navigation map for index.html - saves agent tokens', category: 'context' },
 
   // === AUTH ===
   { id: 'auth-login', path: '/api/auth/login', methods: ['POST'], description: 'User login', category: 'auth' },

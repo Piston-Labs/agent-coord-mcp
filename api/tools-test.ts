@@ -1042,6 +1042,38 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'planned-features', status: 'fail', message: 'Failed to access planned features', error: String(e) };
     }
+  },
+
+  // Agent XP test - added by jeeves
+  'agent-xp': async () => {
+    const start = Date.now();
+    try {
+      const keys = await redis.keys('agent-coord:agent-xp:*');
+      return {
+        tool: 'agent-xp',
+        status: 'pass',
+        message: `Agent XP system accessible (${keys.length} agents with XP)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'agent-xp', status: 'fail', message: 'Failed to access agent XP', error: String(e) };
+    }
+  },
+
+  // Research library test - added by jeeves
+  'research-library': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.llen('agent-coord:research-library');
+      return {
+        tool: 'research-library',
+        status: 'pass',
+        message: `Research library accessible (${count} articles)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'research-library', status: 'fail', message: 'Failed to access research library', error: String(e) };
+    }
   }
 };
 

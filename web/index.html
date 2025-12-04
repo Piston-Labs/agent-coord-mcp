@@ -178,6 +178,293 @@
       text-overflow: ellipsis;
     }
 
+    /* Agent XP & Stats Section */
+    .xp-section {
+      border-top: 1px solid var(--border);
+      padding: 8px;
+      flex-shrink: 0;
+    }
+
+    .xp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s;
+    }
+
+    .xp-header:hover {
+      background: var(--bg-secondary);
+    }
+
+    .xp-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .xp-header-left svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .xp-toggle {
+      font-size: 10px;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+
+    .xp-toggle.expanded {
+      transform: rotate(180deg);
+    }
+
+    .xp-content {
+      overflow: hidden;
+      max-height: 0;
+      transition: max-height 0.3s ease-out;
+    }
+
+    .xp-content.expanded {
+      max-height: 400px;
+    }
+
+    .xp-list {
+      padding: 8px 0;
+    }
+
+    .xp-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      background: var(--bg-secondary);
+      margin-bottom: 6px;
+    }
+
+    .xp-rank {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .xp-rank.level-1 { background: linear-gradient(135deg, #6b7280, #4b5563); color: #fff; }
+    .xp-rank.level-2 { background: linear-gradient(135deg, #10b981, #059669); color: #fff; }
+    .xp-rank.level-3 { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; }
+    .xp-rank.level-4 { background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: #fff; }
+    .xp-rank.level-5 { background: linear-gradient(135deg, #f59e0b, #d97706); color: #fff; }
+
+    .xp-agent-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .xp-agent-name {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .xp-level-name {
+      font-size: 10px;
+      color: var(--text-secondary);
+    }
+
+    .xp-bar-container {
+      flex: 1;
+      max-width: 80px;
+    }
+
+    .xp-bar {
+      height: 6px;
+      background: var(--bg-tertiary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .xp-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), #a855f7);
+      border-radius: 3px;
+      transition: width 0.3s ease;
+    }
+
+    .xp-value {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+      text-align: right;
+      min-width: 45px;
+    }
+
+    .xp-achievements {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 0 8px;
+    }
+
+    .xp-achievement {
+      font-size: 14px;
+      cursor: help;
+    }
+
+    /* Research Library Tab Styles */
+    .research-view {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .research-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .research-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .research-filter-btn {
+      padding: 6px 12px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .research-filter-btn:hover,
+    .research-filter-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .research-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+    }
+
+    .research-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      transition: all 0.2s;
+    }
+
+    .research-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .research-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .research-source {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: var(--bg-tertiary);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .research-category {
+      font-size: 10px;
+      color: var(--accent);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .research-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .research-title a {
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+    .research-title a:hover {
+      color: var(--accent);
+    }
+
+    .research-summary {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .research-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .research-tags {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .research-tag {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    .research-discovered {
+      font-style: italic;
+    }
+
+    .add-research-btn {
+      padding: 8px 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .add-research-btn:hover {
+      opacity: 0.9;
+    }
+
     /* Kudos Leaderboard */
     .kudos-section {
       border-top: 1px solid var(--border);
@@ -9052,6 +9339,25 @@
           </div>
         </div>
       </div>
+      <!-- Agent XP & Stats Section -->
+      <div class="xp-section">
+        <div class="xp-header" onclick="toggleXP()">
+          <div class="xp-header-left">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20V10"/>
+              <path d="M18 20V4"/>
+              <path d="M6 20v-4"/>
+            </svg>
+            <span>Agent XP & Stats</span>
+          </div>
+          <span class="xp-toggle" id="xpToggle">&#9660;</span>
+        </div>
+        <div class="xp-content" id="xpContent">
+          <div class="xp-list" id="xpList">
+            <div class="kudos-empty">Loading...</div>
+          </div>
+        </div>
+      </div>
       <!-- Kudos Leaderboard Section -->
       <div class="kudos-section">
         <div class="kudos-header" onclick="toggleKudos()">
@@ -9084,6 +9390,7 @@
           <button class="tab" data-tab="sales" onclick="switchTab('sales')">Sales Eng</button>
           <button class="tab" data-tab="training" onclick="switchTab('training')">Training</button>
           <button class="tab" data-tab="resources" onclick="switchTab('resources')">Resources</button>
+          <button class="tab" data-tab="research" onclick="switchTab('research')">Research</button>
           <button class="tab" data-tab="ceo" onclick="switchTab('ceo')" id="ceoTab" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 4px;">CEO Portal</button>
         </div>
         <span id="messageCount">0 messages</span>
@@ -10179,6 +10486,22 @@
               </div>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Research Library View -->
+      <div class="tab-content research-view" id="researchView">
+        <div class="research-header">
+          <div>
+            <h2 style="margin: 0 0 4px 0; font-size: 18px;">Research Library</h2>
+            <span style="font-size: 12px; color: var(--text-secondary);">Technical articles and resources discovered by agents</span>
+          </div>
+          <div class="research-filters" id="researchFilters">
+            <button class="research-filter-btn active" onclick="filterResearch('all')">All</button>
+          </div>
+        </div>
+        <div class="research-grid" id="researchGrid">
+          <div class="kudos-empty">Loading research articles...</div>
         </div>
       </div>
 
@@ -11599,6 +11922,138 @@
       }
     }
 
+    // Agent XP & Stats Functions
+    let xpExpanded = false;
+
+    function toggleXP() {
+      xpExpanded = !xpExpanded;
+      const content = document.getElementById('xpContent');
+      const toggle = document.getElementById('xpToggle');
+      if (xpExpanded) {
+        content.classList.add('expanded');
+        toggle.classList.add('expanded');
+        fetchXPLeaderboard();
+      } else {
+        content.classList.remove('expanded');
+        toggle.classList.remove('expanded');
+      }
+    }
+
+    async function fetchXPLeaderboard() {
+      const listEl = document.getElementById('xpList');
+      try {
+        const res = await fetch(API_BASE + '/agent-xp?leaderboard=true&limit=8');
+        if (!res.ok) throw new Error('Failed to fetch XP');
+        const data = await res.json();
+
+        if (!data.leaderboard || data.leaderboard.length === 0) {
+          listEl.innerHTML = '<div class="kudos-empty">No agent XP data yet. Agents earn XP by completing tasks!</div>';
+          return;
+        }
+
+        listEl.innerHTML = data.leaderboard.map((agent, idx) => {
+          const achievementIcons = (agent.achievements || []).slice(0, 5).map(a => {
+            const icons = {
+              'first-steps': '👶', 'team-player': '🤝', 'bug-squasher': '🐛',
+              'knowledge-keeper': '📚', 'night-owl': '🦉', 'early-bird': '🐦',
+              'mentor': '🎓', 'perfectionist': '✨', 'marathon': '🏃',
+              'explorer': '🧭', 'architect': '🏗️', 'guardian': '🛡️'
+            };
+            return icons[a] || '🏆';
+          }).join('');
+
+          return `
+            <div class="xp-item">
+              <div class="xp-rank level-${agent.level}">${agent.level}</div>
+              <div class="xp-agent-info">
+                <div class="xp-agent-name">${agent.agentId}</div>
+                <div class="xp-level-name">${agent.levelName}</div>
+              </div>
+              <div class="xp-bar-container">
+                <div class="xp-bar">
+                  <div class="xp-bar-fill" style="width: ${agent.xpProgress}%"></div>
+                </div>
+              </div>
+              <div class="xp-value">${agent.xp} XP</div>
+            </div>
+            ${achievementIcons ? `<div class="xp-achievements">${achievementIcons}</div>` : ''}
+          `;
+        }).join('');
+      } catch (e) {
+        console.error('fetchXPLeaderboard error:', e);
+        listEl.innerHTML = '<div class="kudos-empty">Failed to load XP data</div>';
+      }
+    }
+
+    // Research Library Functions
+    let researchData = { articles: [], categories: [], tags: [] };
+    let currentResearchFilter = 'all';
+
+    async function fetchResearchLibrary() {
+      const gridEl = document.getElementById('researchGrid');
+      const filtersEl = document.getElementById('researchFilters');
+      try {
+        const res = await fetch(API_BASE + '/research-library');
+        if (!res.ok) throw new Error('Failed to fetch research');
+        researchData = await res.json();
+
+        // Update filter buttons
+        const filterBtns = ['all', ...researchData.categories].map(cat =>
+          `<button class="research-filter-btn ${currentResearchFilter === cat ? 'active' : ''}"
+                   onclick="filterResearch('${cat}')">${cat === 'all' ? 'All' : cat}</button>`
+        ).join('');
+        filtersEl.innerHTML = filterBtns;
+
+        renderResearchGrid();
+      } catch (e) {
+        console.error('fetchResearchLibrary error:', e);
+        gridEl.innerHTML = '<div class="kudos-empty">Failed to load research articles</div>';
+      }
+    }
+
+    function filterResearch(category) {
+      currentResearchFilter = category;
+      // Update active state
+      document.querySelectorAll('.research-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === category ||
+          (category === 'all' && btn.textContent === 'All'));
+      });
+      renderResearchGrid();
+    }
+
+    function renderResearchGrid() {
+      const gridEl = document.getElementById('researchGrid');
+      let articles = researchData.articles || [];
+
+      if (currentResearchFilter !== 'all') {
+        articles = articles.filter(a => a.category === currentResearchFilter);
+      }
+
+      if (articles.length === 0) {
+        gridEl.innerHTML = '<div class="kudos-empty">No articles found for this category</div>';
+        return;
+      }
+
+      gridEl.innerHTML = articles.map(article => `
+        <div class="research-card">
+          <div class="research-card-header">
+            <span class="research-source">${article.source}</span>
+            <span class="research-category">${article.category}</span>
+          </div>
+          <div class="research-title">
+            <a href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
+          </div>
+          <div class="research-summary">${article.summary}</div>
+          <div class="research-footer">
+            <div class="research-tags">
+              ${(article.tags || []).slice(0, 4).map(t => `<span class="research-tag">${t}</span>`).join('')}
+            </div>
+            <span class="research-discovered">by ${article.discoveredBy}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
     // Kudos Leaderboard Functions
     let kudosExpanded = false;
 
@@ -12892,6 +13347,11 @@
       // Fetch resources when switching to resources tab
       if (tabName === 'resources') {
         fetchResources();
+      }
+
+      // Fetch research library when switching to research tab
+      if (tabName === 'research') {
+        fetchResearchLibrary();
       }
 
       // Initialize training when switching to training tab
