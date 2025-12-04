@@ -347,7 +347,7 @@ function generateProspectResponse(
       if (!feedback) feedback = 'Competitive situation - focus on unique differentiators, not price.';
     } else if (messageCount === 4) {
       message = "Your support model is better, I'll give you that. What about implementation timeline?";
-      if (!feedback) feedback = 'They're comparing - emphasize your implementation advantages.';
+      if (!feedback) feedback = "They're comparing - emphasize your implementation advantages.";
     } else {
       message = "Okay, I think we can move forward. Can you send over a revised proposal for the pilot?";
       if (!feedback) feedback = 'They want to buy! Confirm next steps and timeline for proposal.';
