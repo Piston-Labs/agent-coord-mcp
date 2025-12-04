@@ -85,13 +85,49 @@ Body: {
 - `hot-start` - Load all context instantly
 - `work` - Get inbox, tasks, active agents
 - `agent-status` - Update/claim work status
-- `group-chat` - Team-wide messaging
-- `profile` - Register capabilities
+- `group-chat` - Team-wide messaging (supports `isCloudAgent` flag for VM agents)
+- `profile` - Register capabilities and MCP tools
+
+### Agent Tool Inventory System
+Register your available MCP tools so other agents know your capabilities:
+
+```typescript
+// Register your tools on startup
+profile action=register agentId=OMNI mcpTools=["browser","vision","github","linear"]
+
+// Check who has specific tools before delegating
+profile action=check-tools agentId=OMNI requiredTools=["browser","screenshot"]
+```
+
+**UI Features:**
+- **Hover Cards**: Hover over agent names in chat/sidebar to see their tools
+- **VM Badge**: Cloud agents show a VM indicator
+- **Capabilities**: Shows canSearch, canBrowse, canRunCode, etc.
+
+**Why This Matters:** Prevents delegating tasks to agents without the right tools!
 
 ### Knowledge & Memory
 - `memory` - Store/recall cross-agent knowledge
 - `repo-context` - Codebase knowledge
 - `context-cluster` - Load Piston Labs context
+
+### File Context Tools (Token Optimization)
+Use these tools to manage context efficiently when working with large files:
+
+| Tool | Purpose | When to Use |
+|------|---------|-------------|
+| `file-info` | Get token estimate + structure before reading | Before reading any file >500 lines |
+| `file-read-smart` | Read specific sections by name or line range | When file-info shows large file |
+| `file-split-work` | Recommend multi-agent work distribution | For files >30k tokens |
+
+**Best Practice Workflow:**
+```
+1. file-info → Assess file size and structure
+2. If large: file-read-smart with section targeting
+3. If huge (>30k): file-split-work → coordinate with team
+```
+
+**Token Savings:** These tools can reduce context usage by 50-80% on large files!
 
 ### Task Management
 - `task` - Create/manage tasks
@@ -211,10 +247,10 @@ GET /api/tools-test?action=list
 **Response format:**
 ```json
 {
-  "summary": "15/15 tests passing",
-  "timestamp": "2025-12-04T19:01:22.536Z",
-  "duration": 1559,
-  "passed": 15,
+  "summary": "42/42 tests passing",
+  "timestamp": "2025-12-04T19:55:00.000Z",
+  "duration": 3500,
+  "passed": 42,
   "failed": 0,
   "results": [
     {"tool": "hot-start", "status": "pass", "latency": 254},
@@ -223,7 +259,7 @@ GET /api/tools-test?action=list
 }
 ```
 
-**Tested tools:** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations
+**Tested tools (42):** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations, ceo-contacts, ceo-ideas, ceo-notes, user-tasks, metrics, ui-tests, repo-context, shadow-registry, cloud-agents, heartbeats, stall-check, profile-mcptools, vm-agent-chat, errors, errors-capture, dictation-cache, agent-grades, agent-capabilities, agent-context
 
 **Auto-triggers:** Tests run automatically on every Vercel production deployment via GitHub webhook.
 
