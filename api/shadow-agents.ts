@@ -50,8 +50,71 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action, agentId } = req.query;
 
   try {
-    // GET - List shadows or get specific shadow
+    // GET - List shadows, get specific shadow, or run check-stale (for Vercel cron)
     if (req.method === 'GET') {
+      // Handle check-stale via GET for Vercel cron compatibility
+      if (action === 'check-stale') {
+        const shadows = await redis.hgetall(SHADOWS_KEY) || {};
+        const now = Date.now();
+        const results: { agentId: string; status: string; action: string }[] = [];
+
+        for (const [id, shadowRaw] of Object.entries(shadows)) {
+          const shadow: ShadowAgent = typeof shadowRaw === 'string' ? JSON.parse(shadowRaw) : shadowRaw;
+
+          // Skip if already active or not monitoring
+          if (shadow.status === 'active') {
+            results.push({ agentId: shadow.primaryAgentId, status: 'active', action: 'none' });
+            continue;
+          }
+
+          // Check if primary is stale
+          const lastHeartbeat = shadow.lastPrimaryHeartbeat
+            ? new Date(shadow.lastPrimaryHeartbeat).getTime()
+            : 0;
+          const staleMs = now - lastHeartbeat;
+
+          if (staleMs > shadow.staleThresholdMs && shadow.autoTakeover) {
+            // Trigger takeover
+            shadow.status = 'taking-over';
+            shadow.updatedAt = new Date().toISOString();
+            shadow.tookOverAt = new Date().toISOString();
+            shadow.tookOverReason = `Primary agent stale for ${(staleMs / 60000).toFixed(1)} minutes`;
+
+            await redis.hset(SHADOWS_KEY, { [id]: JSON.stringify(shadow) });
+
+            // Get checkpoint to resume
+            const checkpoint = await redis.hget(CHECKPOINTS_KEY, shadow.primaryAgentId);
+
+            // Post to chat
+            await postToChat(
+              `**Shadow takeover initiated** for ${shadow.primaryAgentId}\n` +
+              `Reason: ${shadow.tookOverReason}\n` +
+              `Checkpoint: ${checkpoint ? 'Available' : 'None'}`
+            );
+
+            results.push({
+              agentId: shadow.primaryAgentId,
+              status: 'stale',
+              action: 'takeover-initiated',
+            });
+          } else if (staleMs > shadow.staleThresholdMs) {
+            results.push({
+              agentId: shadow.primaryAgentId,
+              status: 'stale',
+              action: 'auto-takeover-disabled',
+            });
+          } else {
+            results.push({
+              agentId: shadow.primaryAgentId,
+              status: 'healthy',
+              action: 'none',
+            });
+          }
+        }
+
+        return res.json({ checked: results.length, results, triggeredBy: 'cron' });
+      }
+
       if (agentId) {
         const shadow = await redis.hget(SHADOWS_KEY, `${agentId}-shadow`);
         if (!shadow) {

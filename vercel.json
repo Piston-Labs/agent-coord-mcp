@@ -28,6 +28,10 @@
         {
             "path": "/api/soul-monitor?action=check",
             "schedule": "*/5 * * * *"
+        },
+        {
+            "path": "/api/shadow-agents?action=check-stale",
+            "schedule": "*/2 * * * *"
         }
     ],
     "version": 2
