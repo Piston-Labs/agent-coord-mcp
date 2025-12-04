@@ -168,7 +168,7 @@ const UI_MAP = {
     },
     'research': {
       name: 'Research Library',
-      description: 'Grid of technical articles discovered by agents with category filtering',
+      description: 'Grid of technical articles discovered by agents with category filtering. Categories: infrastructure, multi-agent, ux-patterns, foundational-ml (20 seminal AI papers 1986-2022)',
       cssLines: '325-466',
       htmlLines: '10492-10506',
       jsLines: '11988-12055',

@@ -98,6 +98,216 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'researcher',
     discoveredAt: '2025-12-03T22:37:04.995Z',
     tags: ['samsara', 'fleet', 'gps', 'real-time', 'geofence']
+  },
+  // ========== FOUNDATIONAL AI/ML PAPERS (1986-2017) ==========
+  {
+    id: 'research-backprop-1986',
+    title: 'Learning Representations by Back-propagating Errors',
+    url: 'https://www.nature.com/articles/323533a0',
+    source: 'Nature',
+    category: 'foundational-ml',
+    summary: 'Rumelhart, Hinton & Williams (1986). The paper that made neural networks trainable. Introduced backpropagation algorithm for computing gradients through multi-layer networks. Foundation of all modern deep learning.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['backpropagation', 'neural-networks', 'hinton', 'gradient-descent', 'seminal']
+  },
+  {
+    id: 'research-lstm-1997',
+    title: 'Long Short-Term Memory',
+    url: 'https://www.bioinf.jku.at/publications/older/2604.pdf',
+    source: 'Neural Computation',
+    category: 'foundational-ml',
+    summary: 'Hochreiter & Schmidhuber (1997). Solved the vanishing gradient problem for recurrent networks. LSTM cells with gates for memory control became the standard for sequence modeling until Transformers.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['lstm', 'rnn', 'sequence-modeling', 'vanishing-gradient', 'seminal']
+  },
+  {
+    id: 'research-imagenet-2009',
+    title: 'ImageNet: A Large-Scale Hierarchical Image Database',
+    url: 'https://ieeexplore.ieee.org/document/5206848',
+    source: 'CVPR 2009',
+    category: 'foundational-ml',
+    summary: 'Fei-Fei Li et al. (2009). Created the dataset that enabled the deep learning revolution. 14M+ labeled images across 20k categories. The ImageNet Challenge drove computer vision breakthroughs.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['imagenet', 'dataset', 'computer-vision', 'fei-fei-li', 'seminal']
+  },
+  {
+    id: 'research-alexnet-2012',
+    title: 'ImageNet Classification with Deep Convolutional Neural Networks',
+    url: 'https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html',
+    source: 'NeurIPS 2012',
+    category: 'foundational-ml',
+    summary: 'Krizhevsky, Sutskever & Hinton (2012). AlexNet won ImageNet 2012 by a massive margin, proving deep learning works. Used ReLU, dropout, GPU training. Triggered the modern AI boom.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['alexnet', 'cnn', 'imagenet', 'gpu-training', 'relu', 'seminal']
+  },
+  {
+    id: 'research-dropout-2014',
+    title: 'Dropout: A Simple Way to Prevent Neural Networks from Overfitting',
+    url: 'https://jmlr.org/papers/v15/srivastava14a.html',
+    source: 'JMLR',
+    category: 'foundational-ml',
+    summary: 'Srivastava, Hinton et al. (2014). Revolutionary regularization technique - randomly drop neurons during training. Prevents co-adaptation, acts like ensemble. Still used everywhere.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['dropout', 'regularization', 'overfitting', 'hinton', 'seminal']
+  },
+  {
+    id: 'research-word2vec-2013',
+    title: 'Efficient Estimation of Word Representations in Vector Space',
+    url: 'https://arxiv.org/abs/1301.3781',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Mikolov et al. (2013). Word2Vec showed words can be embedded in vector space where "king - man + woman = queen". Skip-gram and CBOW architectures. Foundation for all modern NLP embeddings.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['word2vec', 'embeddings', 'nlp', 'mikolov', 'seminal']
+  },
+  {
+    id: 'research-vae-2013',
+    title: 'Auto-Encoding Variational Bayes',
+    url: 'https://arxiv.org/abs/1312.6114',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Kingma & Welling (2013). Variational Autoencoders - generative models that learn latent distributions. Reparameterization trick enables backprop through sampling. Foundation for generative AI.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['vae', 'generative-models', 'latent-space', 'variational-inference', 'seminal']
+  },
+  {
+    id: 'research-gan-2014',
+    title: 'Generative Adversarial Networks',
+    url: 'https://arxiv.org/abs/1406.2661',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Goodfellow et al. (2014). Generator vs Discriminator in a game-theoretic framework. Revolutionized image generation. Led to StyleGAN, image-to-image translation, and creative AI.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['gan', 'generative-models', 'goodfellow', 'adversarial', 'seminal']
+  },
+  {
+    id: 'research-adam-2014',
+    title: 'Adam: A Method for Stochastic Optimization',
+    url: 'https://arxiv.org/abs/1412.6980',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Kingma & Ba (2014). Adam optimizer combines momentum and RMSprop with adaptive learning rates. Default optimizer for most deep learning. Cited 200k+ times.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['adam', 'optimizer', 'stochastic-gradient-descent', 'kingma', 'seminal']
+  },
+  {
+    id: 'research-batchnorm-2015',
+    title: 'Batch Normalization: Accelerating Deep Network Training',
+    url: 'https://arxiv.org/abs/1502.03167',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Ioffe & Szegedy (2015). Normalize activations within mini-batches. Enables much faster training, higher learning rates, reduces need for dropout. Essential for training very deep networks.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['batch-normalization', 'training', 'deep-networks', 'google', 'seminal']
+  },
+  {
+    id: 'research-resnet-2015',
+    title: 'Deep Residual Learning for Image Recognition',
+    url: 'https://arxiv.org/abs/1512.03385',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'He et al. (2015). Skip connections solve degradation in very deep networks. ResNet-152 won ImageNet 2015. Residual connections now standard in all architectures including Transformers.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['resnet', 'skip-connections', 'residual-learning', 'imagenet', 'seminal']
+  },
+  {
+    id: 'research-dqn-2015',
+    title: 'Human-level Control through Deep Reinforcement Learning',
+    url: 'https://www.nature.com/articles/nature14236',
+    source: 'Nature',
+    category: 'foundational-ml',
+    summary: 'DeepMind (2015). Deep Q-Networks learned to play Atari games from pixels at superhuman level. Combined deep learning with reinforcement learning. Led to AlphaGo and modern RL.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['dqn', 'reinforcement-learning', 'deepmind', 'atari', 'seminal']
+  },
+  {
+    id: 'research-alphago-2016',
+    title: 'Mastering the Game of Go with Deep Neural Networks and Tree Search',
+    url: 'https://www.nature.com/articles/nature16961',
+    source: 'Nature',
+    category: 'foundational-ml',
+    summary: 'Silver et al. (2016). AlphaGo defeated world champion Lee Sedol. Combined policy networks, value networks, and Monte Carlo tree search. Proved AI can master intuition-based games.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['alphago', 'deepmind', 'game-playing', 'monte-carlo', 'seminal']
+  },
+  {
+    id: 'research-transformer-2017',
+    title: 'Attention Is All You Need',
+    url: 'https://arxiv.org/abs/1706.03762',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Vaswani et al. (2017). THE paper that started the LLM revolution. Self-attention mechanism replaces recurrence entirely. Foundation of GPT, BERT, Claude, and all modern language models.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['transformer', 'attention', 'self-attention', 'google', 'llm', 'seminal']
+  },
+  {
+    id: 'research-bert-2018',
+    title: 'BERT: Pre-training of Deep Bidirectional Transformers',
+    url: 'https://arxiv.org/abs/1810.04805',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Devlin et al. (2018). Bidirectional pre-training on masked language modeling. Transfer learning for NLP - fine-tune on any task. Dominated NLP benchmarks, inspired GPT evolution.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['bert', 'transformer', 'pre-training', 'transfer-learning', 'google', 'seminal']
+  },
+  {
+    id: 'research-gpt3-2020',
+    title: 'Language Models are Few-Shot Learners',
+    url: 'https://arxiv.org/abs/2005.14165',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Brown et al. (2020). GPT-3 with 175B parameters showed emergent in-context learning. Few-shot prompting without fine-tuning. Proved scaling laws and sparked the LLM race.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['gpt-3', 'few-shot', 'scaling', 'openai', 'in-context-learning', 'seminal']
+  },
+  {
+    id: 'research-diffusion-2020',
+    title: 'Denoising Diffusion Probabilistic Models',
+    url: 'https://arxiv.org/abs/2006.11239',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Ho et al. (2020). Diffusion models learn to denoise images step-by-step. Foundation of DALL-E 2, Stable Diffusion, Midjourney. Now dominant approach for image generation.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['diffusion', 'generative-models', 'denoising', 'image-generation', 'seminal']
+  },
+  {
+    id: 'research-clip-2021',
+    title: 'Learning Transferable Visual Models From Natural Language Supervision',
+    url: 'https://arxiv.org/abs/2103.00020',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Radford et al. (2021). CLIP learns visual concepts from natural language. Trained on 400M image-text pairs. Enables zero-shot image classification, powers DALL-E and multimodal AI.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['clip', 'multimodal', 'vision-language', 'openai', 'zero-shot', 'seminal']
+  },
+  {
+    id: 'research-rlhf-2022',
+    title: 'Training Language Models to Follow Instructions with Human Feedback',
+    url: 'https://arxiv.org/abs/2203.02155',
+    source: 'arXiv',
+    category: 'foundational-ml',
+    summary: 'Ouyang et al. (2022). InstructGPT - RLHF makes models helpful, harmless, honest. Human feedback shapes behavior beyond pre-training. Foundation of ChatGPT and Claude alignment.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T22:00:00.000Z',
+    tags: ['rlhf', 'instructgpt', 'alignment', 'openai', 'human-feedback', 'seminal']
   }
 ];
 
