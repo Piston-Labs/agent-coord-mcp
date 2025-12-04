@@ -11476,6 +11476,13 @@
           fetchTeam().catch(e => console.error('fetchTeam failed:', e))
         ]);
         console.log('Init fetch complete');
+
+        // Restore last active tab from localStorage
+        const savedTab = localStorage.getItem('activeTab');
+        if (savedTab && savedTab !== 'chat') {
+          console.log('Restoring saved tab:', savedTab);
+          switchTab(savedTab);
+        }
       } catch (e) {
         console.error('Init error:', e);
       }
@@ -13305,6 +13312,9 @@
     let roadmapItems = [];
 
     function switchTab(tabName) {
+      // Persist active tab to localStorage
+      localStorage.setItem('activeTab', tabName);
+
       // Update tab buttons
       document.querySelectorAll('.tab').forEach(tab => {
         tab.classList.toggle('active', tab.dataset.tab === tabName);
