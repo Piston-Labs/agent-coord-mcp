@@ -258,7 +258,9 @@ export function registerTestingTools(server: McpServer) {
       text: z.string().optional().describe('Text to type'),
       script: z.string().optional().describe('JavaScript to evaluate in page'),
       fullPage: z.boolean().optional().describe('Take full page screenshot (default: true)'),
-      waitFor: z.string().optional().describe('Selector to wait for before action')
+      waitFor: z.string().optional().describe('Selector to wait for before action'),
+      maxWidth: z.number().optional().describe('Max screenshot width in pixels (default: 800, max: 1280). Reduces token usage.'),
+      quality: z.number().optional().describe('JPEG quality 1-100 (default: 60). Lower = smaller tokens. PNG used if not set.')
     },
     async (args) => {
       const { action } = args;
@@ -289,19 +291,45 @@ export function registerTestingTools(server: McpServer) {
             if (args.waitFor) {
               await page.waitForSelector(args.waitFor, { timeout: 10000 });
             }
+
+            // Limit screenshot size to reduce token consumption
+            // Default to viewport-only (fullPage: false) and 800px width
+            const maxWidth = Math.min(args.maxWidth || 800, 1280);
+            const useJpeg = args.quality !== undefined;
+            const quality = Math.min(Math.max(args.quality || 60, 1), 100);
+
+            // Set viewport to limited width if needed
+            const currentViewport = page.viewportSize();
+            if (currentViewport && currentViewport.width > maxWidth) {
+              const aspectRatio = currentViewport.height / currentViewport.width;
+              await page.setViewportSize({
+                width: maxWidth,
+                height: Math.round(maxWidth * aspectRatio)
+              });
+            }
+
             const screenshot = await page.screenshot({
-              fullPage: args.fullPage !== false,
-              type: 'png'
+              fullPage: args.fullPage === true, // Default to false (viewport only)
+              type: useJpeg ? 'jpeg' : 'png',
+              quality: useJpeg ? quality : undefined
             });
+
             const base64 = screenshot.toString('base64');
+            const sizeKB = Math.round(base64.length * 0.75 / 1024); // Approximate decoded size
+
+            // Warn if still large
+            const warning = sizeKB > 500 ? `⚠️ Large screenshot (${sizeKB}KB). Consider using quality:40 or maxWidth:640 to reduce tokens.` : undefined;
+
             return {
               content: [{
                 type: 'text',
                 text: JSON.stringify({
                   success: true,
-                  screenshot: `data:image/png;base64,${base64}`,
+                  screenshot: `data:image/${useJpeg ? 'jpeg' : 'png'};base64,${base64}`,
                   dimensions: await page.viewportSize(),
-                  url: page.url()
+                  url: page.url(),
+                  sizeKB,
+                  warning
                 })
               }]
             };
