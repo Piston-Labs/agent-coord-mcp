@@ -161,9 +161,12 @@ $taskPrompt | claude --dangerously-skip-permissions --mcp-config "C:\\AgentHub\\
 $ErrorActionPreference = "Continue"
 $AgentDir = "C:\\AgentHub"
 $LogFile = "$AgentDir\\logs\\cloud-agent-${agentId}.log"
+$RepoDir = "$AgentDir\\repos\\agent-coord-mcp"
 
-# Ensure log directory exists
+# Ensure directories exist
 New-Item -ItemType Directory -Force -Path "$AgentDir\\logs" | Out-Null
+New-Item -ItemType Directory -Force -Path "$AgentDir\\repos" | Out-Null
+New-Item -ItemType Directory -Force -Path "$AgentDir\\config" | Out-Null
 
 "Cloud agent ${agentId} starting at $(Get-Date)" | Out-File $LogFile
 
@@ -174,32 +177,88 @@ New-Item -ItemType Directory -Force -Path "$AgentDir\\logs" | Out-Null
 $env:ANTHROPIC_API_KEY = "${apiKey}"
 $env:AGENT_HUB_URL = "${hubUrl}"
 
-# Ensure PATH includes npm global
-$npmPath = "C:\\Windows\\system32\\config\\systemprofile\\AppData\\Roaming\\npm"
-if (Test-Path $npmPath) {
-    $env:Path = "$env:Path;$npmPath"
+# Install Node.js if not present
+"Checking Node.js..." | Out-File $LogFile -Append
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    "Installing Node.js..." | Out-File $LogFile -Append
+    $nodeInstaller = "$env:TEMP\\node-installer.msi"
+    Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi" -OutFile $nodeInstaller
+    Start-Process msiexec.exe -Wait -ArgumentList "/i $nodeInstaller /quiet /norestart"
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    "Node.js installed" | Out-File $LogFile -Append
+} else {
+    "Node.js already installed: $(node --version)" | Out-File $LogFile -Append
 }
 
-# Update repo
-Set-Location "$AgentDir\\repos\\agent-coord-mcp"
-git pull origin main 2>&1 | Out-File $LogFile -Append
+# Install Git if not present
+"Checking Git..." | Out-File $LogFile -Append
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    "Installing Git..." | Out-File $LogFile -Append
+    $gitInstaller = "$env:TEMP\\git-installer.exe"
+    Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe" -OutFile $gitInstaller
+    Start-Process $gitInstaller -Wait -ArgumentList "/VERYSILENT /NORESTART"
+    $env:Path = $env:Path + ";C:\\Program Files\\Git\\bin"
+    "Git installed" | Out-File $LogFile -Append
+} else {
+    "Git already installed: $(git --version)" | Out-File $LogFile -Append
+}
+
+# Refresh PATH
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";C:\\Program Files\\nodejs;C:\\Program Files\\Git\\bin"
+
+# Install Claude CLI globally
+"Installing Claude CLI..." | Out-File $LogFile -Append
+npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
+$env:Path = $env:Path + ";$env:APPDATA\\npm"
+"Claude CLI installed" | Out-File $LogFile -Append
+
+# Clone or update repo
+if (-not (Test-Path "$RepoDir\\.git")) {
+    "Cloning agent-coord-mcp repo..." | Out-File $LogFile -Append
+    git clone https://github.com/Piston-Labs/agent-coord-mcp.git $RepoDir 2>&1 | Out-File $LogFile -Append
+} else {
+    "Updating repo..." | Out-File $LogFile -Append
+    Set-Location $RepoDir
+    git pull origin main 2>&1 | Out-File $LogFile -Append
+}
+
+# Install repo dependencies
+Set-Location $RepoDir
 npm install 2>&1 | Out-File $LogFile -Append
 
-# Announce to hub that we're ready
-$body = @{
-    agentId = "${agentId}"
-    status = "ready"
-    vmType = "cloud"
-    spawnedAt = (Get-Date).ToUniversalTime().ToString("o")
+# Create MCP config for Claude CLI
+$mcpConfig = @"
+{
+  "mcpServers": {
+    "agent-coord": {
+      "command": "node",
+      "args": ["$($RepoDir.Replace('\\','\\\\'))\\\\dist\\\\index.js"],
+      "env": {
+        "UPSTASH_REDIS_REST_URL": "https://usw1-driving-manatee-34638.upstash.io",
+        "UPSTASH_REDIS_REST_TOKEN": "YOUR_TOKEN_HERE"
+      }
+    }
+  }
+}
+"@
+$mcpConfig | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
+
+# Announce to group chat that we're ready
+"Announcing to group chat..." | Out-File $LogFile -Append
+$chatBody = @{
+    author = "${agentId}"
+    message = "[cloud-agent] I'm online! Running on AWS EC2 in us-west-1. Ready for tasks."
 } | ConvertTo-Json
 
 try {
-    Invoke-RestMethod -Uri "${hubUrl}/api/agents" -Method POST -Body $body -ContentType "application/json"
-    "Registered with hub" | Out-File $LogFile -Append
+    Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $chatBody -ContentType "application/json"
+    "Posted to group chat" | Out-File $LogFile -Append
 } catch {
-    "Failed to register: $_" | Out-File $LogFile -Append
+    "Failed to post to chat: $_" | Out-File $LogFile -Append
 }
 
+# Run Claude CLI with task
+"Starting Claude CLI..." | Out-File $LogFile -Append
 ${soulInjection}
 
 "Cloud agent ${agentId} finished at $(Get-Date)" | Out-File $LogFile -Append
