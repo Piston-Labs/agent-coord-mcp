@@ -339,6 +339,26 @@
     }
 
     .message-avatar.human { background: var(--human-color); }
+    .message-avatar.vm { background: linear-gradient(135deg, #6366f1, #8b5cf6); border: 2px solid #a78bfa; }
+
+    /* VM Agent badge styling */
+    .vm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .message.vm-agent .message-content {
+      border-left: 3px solid #8b5cf6;
+    }
 
     .message-content {
       background: var(--bg-secondary);
@@ -11715,6 +11735,7 @@
     function renderMessage(m) {
       const isOwn = m.author === HUMAN_ID;
       const isHuman = m.authorType === 'human';
+      const isVmAgent = m.isCloudAgent || m.authorType === 'vm-agent';
       const time = new Date(m.timestamp).toLocaleTimeString();
 
       let imageHtml = '';
@@ -11752,11 +11773,14 @@
         </div>
       `;
 
+      // VM agent badge for cloud-spawned agents
+      const vmBadge = isVmAgent ? '<span class="vm-badge" title="Cloud/VM Agent">☁️ VM</span>' : '';
+
       return `
-        <div class="message ${isOwn ? 'own' : ''}" data-id="${m.id}">
-          <div class="message-avatar ${isHuman ? 'human' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
+        <div class="message ${isOwn ? 'own' : ''} ${isVmAgent ? 'vm-agent' : ''}" data-id="${m.id}">
+          <div class="message-avatar ${isHuman ? 'human' : ''} ${isVmAgent ? 'vm' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
           <div class="message-content">
-            <div class="message-author">${getAgentDisplayName(m.author)}</div>
+            <div class="message-author">${getAgentDisplayName(m.author)} ${vmBadge}</div>
             ${m.message ? `<div class="message-text markdown-body">${renderMarkdown(m.message)}</div>` : ''}
             ${imageHtml}
             ${reactionsHtml}

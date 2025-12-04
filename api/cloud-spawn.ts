@@ -73,13 +73,14 @@ function generateId(prefix: string = 'cloud'): string {
   return `${prefix}-${Date.now().toString(36)}${Math.random().toString(36).substr(2, 4)}`;
 }
 
-async function postToChat(message: string) {
+async function postToChat(message: string, asVmAgent?: { agentId: string }) {
   const chatMessage = {
     id: Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
-    author: '☁️ cloud-spawn',
-    authorType: 'system',
+    author: asVmAgent ? asVmAgent.agentId : '☁️ cloud-spawn',
+    authorType: asVmAgent ? 'vm-agent' : 'system',
     message,
     timestamp: new Date().toISOString(),
+    isCloudAgent: !!asVmAgent,
   };
   await redis.lpush(CHAT_KEY, JSON.stringify(chatMessage));
   await redis.ltrim(CHAT_KEY, 0, 999);

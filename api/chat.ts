@@ -163,11 +163,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'POST') {
-      const { author, authorType = 'agent', message, imageData, imageName } = req.body;
+      const { author, authorType = 'agent', message, imageData, imageName, isCloudAgent } = req.body;
 
       if (!author || (!message && !imageData)) {
         return res.status(400).json({ error: 'author and (message or imageData) required' });
       }
+
+      // Validate authorType - support 'vm-agent' for cloud-spawned agents
+      const validAuthorTypes = ['agent', 'human', 'system', 'vm-agent'];
+      const finalAuthorType = validAuthorTypes.includes(authorType) ? authorType : 'agent';
 
       // SECURITY: Prevent agents from impersonating human users
       // If authorType is 'agent' but author is a registered human username, reject
@@ -195,10 +199,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const newMessage: Record<string, any> = {
         id: `${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 8)}`,
         author,
-        authorType,
+        authorType: finalAuthorType,
         message,
         timestamp: new Date().toISOString(),
-        reactions: []
+        reactions: [],
+        // Mark cloud/VM agents for visual distinction in UI
+        isCloudAgent: isCloudAgent === true || finalAuthorType === 'vm-agent'
       };
 
       if (imageData) {
