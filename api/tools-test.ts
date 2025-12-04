@@ -756,6 +756,142 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'vm-agent-chat', status: 'fail', message: 'Failed VM agent chat test', error: String(e) };
     }
+  },
+
+  // Error tracking tests - added by OMNI
+  'errors': async () => {
+    const start = Date.now();
+    try {
+      const [issueCount, errorCount, statsCount] = await Promise.all([
+        redis.hlen('agent-coord:error-issues'),
+        redis.llen('agent-coord:errors'),
+        redis.hlen('agent-coord:error-stats')
+      ]);
+      return {
+        tool: 'errors',
+        status: 'pass',
+        message: `Error tracking accessible (${issueCount} issues, ${errorCount} events, ${statsCount} stat entries)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'errors', status: 'fail', message: 'Failed to access error tracking', error: String(e) };
+    }
+  },
+
+  'errors-capture': async () => {
+    const start = Date.now();
+    const testId = `error-test-${Date.now()}`;
+    try {
+      // Test error capture cycle
+      const errorEvent = {
+        id: testId,
+        title: 'Test error for validation',
+        level: 'info',
+        culprit: 'tools-test:errors-capture',
+        timestamp: new Date().toISOString(),
+        tags: { test: 'true' }
+      };
+      await redis.lpush('agent-coord:errors', JSON.stringify(errorEvent));
+
+      // Verify it exists
+      const recent = await redis.lrange('agent-coord:errors', 0, 0);
+      const found = recent.some((e: string | object) => {
+        const parsed = typeof e === 'string' ? JSON.parse(e) : e;
+        return parsed.id === testId;
+      });
+
+      // Clean up
+      await redis.lpop('agent-coord:errors');
+
+      return {
+        tool: 'errors-capture',
+        status: found ? 'pass' : 'fail',
+        message: found ? 'Error capture/retrieve cycle successful' : 'Error not found after capturing',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'errors-capture', status: 'fail', message: 'Failed error capture test', error: String(e) };
+    }
+  },
+
+  // Dictation cache test - added by OMNI
+  'dictation-cache': async () => {
+    const start = Date.now();
+    const testId = `dictation-test-${Date.now()}`;
+    try {
+      // Test dictation cache (Redis layer, not AWS)
+      const dictation = {
+        id: testId,
+        title: 'Test dictation for validation',
+        type: 'note',
+        content: 'Test content',
+        createdAt: new Date().toISOString()
+      };
+      await redis.hset('piston:dictation:cache', { [testId]: JSON.stringify(dictation) });
+
+      // Retrieve it
+      const retrieved = await redis.hget('piston:dictation:cache', testId);
+
+      // Clean up
+      await redis.hdel('piston:dictation:cache', testId);
+
+      return {
+        tool: 'dictation-cache',
+        status: retrieved ? 'pass' : 'fail',
+        message: retrieved ? 'Dictation cache store/retrieve successful' : 'Dictation not found in cache',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'dictation-cache', status: 'fail', message: 'Failed dictation cache test', error: String(e) };
+    }
+  },
+
+  // Agent grades test - added by OMNI
+  'agent-grades': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:agent-grades');
+      return {
+        tool: 'agent-grades',
+        status: 'pass',
+        message: `Agent grades accessible (${count} grades recorded)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'agent-grades', status: 'fail', message: 'Failed to access agent grades', error: String(e) };
+    }
+  },
+
+  // Agent capabilities test - added by OMNI
+  'agent-capabilities': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:capabilities');
+      return {
+        tool: 'agent-capabilities',
+        status: 'pass',
+        message: `Agent capabilities accessible (${count} capability records)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'agent-capabilities', status: 'fail', message: 'Failed to access agent capabilities', error: String(e) };
+    }
+  },
+
+  // Agent context test - added by OMNI
+  'agent-context': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:agent-context');
+      return {
+        tool: 'agent-context',
+        status: 'pass',
+        message: `Agent context accessible (${count} context entries)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'agent-context', status: 'fail', message: 'Failed to access agent context', error: String(e) };
+    }
   }
 };
 
