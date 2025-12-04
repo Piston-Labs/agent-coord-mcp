@@ -308,28 +308,81 @@ export function registerTestingTools(server: McpServer) {
               });
             }
 
+            // Always use JPEG for smaller file sizes
             const screenshot = await page.screenshot({
               fullPage: args.fullPage === true, // Default to false (viewport only)
-              type: useJpeg ? 'jpeg' : 'png',
-              quality: useJpeg ? quality : undefined
+              type: 'jpeg',
+              quality: quality
             });
 
             const base64 = screenshot.toString('base64');
-            const sizeKB = Math.round(base64.length * 0.75 / 1024); // Approximate decoded size
+            const imageDataUri = `data:image/jpeg;base64,${base64}`;
+            const dimensions = await page.viewportSize();
+            const currentUrl = page.url();
+            const imageSizeKb = Math.round(base64.length * 0.75 / 1024);
 
-            // Warn if still large
-            const warning = sizeKB > 500 ? `⚠️ Large screenshot (${sizeKB}KB). Consider using quality:40 or maxWidth:640 to reduce tokens.` : undefined;
+            // CRITICAL: Large screenshots cause massive token consumption and truncation
+            // If >50KB, analyze server-side instead of returning raw base64
+            if (imageSizeKb > 50) {
+              try {
+                const analysisRes = await fetch(`${API_BASE}/api/analyze-image`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    imageData: imageDataUri,
+                    prompt: 'Analyze this screenshot. Describe the page layout, UI elements, text content, any visible errors or issues, and overall appearance. Be specific about element positions and styling.'
+                  })
+                });
 
+                if (analysisRes.ok) {
+                  const analysisData = await analysisRes.json();
+                  return {
+                    content: [{
+                      type: 'text',
+                      text: JSON.stringify({
+                        success: true,
+                        mode: 'analyzed',
+                        imageSizeKb,
+                        dimensions,
+                        url: currentUrl,
+                        analysis: analysisData.analysis,
+                        note: 'Screenshot was analyzed server-side to prevent token overflow. Raw image not included.'
+                      })
+                    }]
+                  };
+                }
+              } catch (analysisError) {
+                // Fall through to metadata-only response
+              }
+
+              // Analysis failed - return metadata only (no raw data that would explode tokens)
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify({
+                    success: true,
+                    mode: 'metadata-only',
+                    imageSizeKb,
+                    dimensions,
+                    url: currentUrl,
+                    warning: `Screenshot is ${imageSizeKb}KB - too large for inline return. Consider maxWidth:640 or quality:40.`,
+                    suggestion: 'Use browser evaluate to inspect specific elements instead of full screenshots.'
+                  })
+                }]
+              };
+            }
+
+            // Small screenshots (<50KB) are safe to return inline
             return {
               content: [{
                 type: 'text',
                 text: JSON.stringify({
                   success: true,
-                  screenshot: `data:image/${useJpeg ? 'jpeg' : 'png'};base64,${base64}`,
-                  dimensions: await page.viewportSize(),
-                  url: page.url(),
-                  sizeKB,
-                  warning
+                  mode: 'inline',
+                  imageSizeKb,
+                  screenshot: imageDataUri,
+                  dimensions,
+                  url: currentUrl
                 })
               }]
             };
