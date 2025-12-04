@@ -327,6 +327,109 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // === WORK PROGRESS (Agent Output Visibility) ===
+    if (resource === 'work-progress') {
+      // Get team memory entries (retros, patterns, decisions)
+      const MEMORY_KEY = 'agent-coord:memory';
+      const CHAT_KEY = 'agent-coord:chat';
+      const SALES_FILES_KEY = 'agent-coord:sales-files';
+
+      const [memories, chatMessages, salesFiles] = await Promise.all([
+        redis.hgetall(MEMORY_KEY) || {},
+        redis.lrange(CHAT_KEY, 0, 100),
+        redis.hgetall(SALES_FILES_KEY) || {},
+      ]);
+
+      // Parse and filter memories
+      const memoryList = Object.values(memories)
+        .map((m: any) => typeof m === 'string' ? JSON.parse(m) : m)
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      // Get session retros and key decisions
+      const sessionRetros = memoryList.filter((m: any) =>
+        m.tags?.includes('retro') || m.tags?.includes('session-complete')
+      );
+      const keyDecisions = memoryList.filter((m: any) => m.category === 'decision');
+      const patterns = memoryList.filter((m: any) => m.category === 'pattern');
+
+      // Parse chat messages
+      const parsedChat = (chatMessages || [])
+        .map((m: any) => typeof m === 'string' ? JSON.parse(m) : m)
+        .slice(0, 50);
+
+      // Parse sales/design docs
+      const docsList = Object.values(salesFiles)
+        .map((d: any) => typeof d === 'string' ? JSON.parse(d) : d)
+        .sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      // Get recent activity summary
+      const recentActivity = parsedChat.slice(0, 20).map((m: any) => ({
+        author: m.author,
+        preview: m.message?.slice(0, 100) + (m.message?.length > 100 ? '...' : ''),
+        timestamp: m.timestamp,
+      }));
+
+      // Extract shipped features from retros
+      let featuresShipped: string[] = [];
+      const latestRetro = sessionRetros[0];
+      if (latestRetro?.content) {
+        const winsMatch = latestRetro.content.match(/WINS:([^]*?)(?=IMPROVEMENTS:|$)/);
+        if (winsMatch) {
+          featuresShipped = winsMatch[1]
+            .split('\n')
+            .filter((line: string) => line.trim().startsWith('-'))
+            .map((line: string) => line.replace(/^-\s*/, '').trim())
+            .filter(Boolean);
+        }
+      }
+
+      return res.json({
+        workProgress: {
+          sessionRetros: sessionRetros.slice(0, 5).map((r: any) => ({
+            id: r.id,
+            content: r.content,
+            tags: r.tags,
+            createdBy: r.createdBy,
+            createdAt: r.createdAt,
+          })),
+          keyDecisions: keyDecisions.slice(0, 10).map((d: any) => ({
+            id: d.id,
+            content: d.content?.slice(0, 500) + (d.content?.length > 500 ? '...' : ''),
+            tags: d.tags,
+            createdBy: d.createdBy,
+            createdAt: d.createdAt,
+          })),
+          patterns: patterns.slice(0, 10).map((p: any) => ({
+            id: p.id,
+            content: p.content?.slice(0, 500) + (p.content?.length > 500 ? '...' : ''),
+            tags: p.tags,
+            createdBy: p.createdBy,
+            createdAt: p.createdAt,
+          })),
+          featuresShipped,
+          designDocs: docsList.slice(0, 10).map((d: any) => ({
+            id: d.id,
+            name: d.name,
+            type: d.type,
+            folder: d.folder,
+            createdAt: d.createdAt,
+            notes: d.notes,
+          })),
+          recentActivity,
+          summary: {
+            totalMemoryEntries: memoryList.length,
+            totalRetros: sessionRetros.length,
+            totalDecisions: keyDecisions.length,
+            totalPatterns: patterns.length,
+            totalDocs: docsList.length,
+            chatMessagesLast24h: parsedChat.filter((m: any) =>
+              new Date(m.timestamp).getTime() > Date.now() - 24 * 60 * 60 * 1000
+            ).length,
+          },
+        },
+      });
+    }
+
     // === DASHBOARD STATS ===
     if (resource === 'stats') {
       const [contacts, ideas, notes] = await Promise.all([
@@ -361,7 +464,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    return res.status(400).json({ error: 'Invalid resource. Use: contacts, ideas, notes, stats, check-access' });
+    return res.status(400).json({ error: 'Invalid resource. Use: contacts, ideas, notes, stats, check-access, work-progress' });
 
   } catch (error) {
     console.error('CEO Portal error:', error);
