@@ -101,6 +101,7 @@ profile action=check-tools agentId=OMNI requiredTools=["browser","screenshot"]
 
 **UI Features:**
 - **Hover Cards**: Hover over agent names in chat/sidebar to see their tools
+- **Mobile Support**: Tap-to-toggle on touch devices with centered modal
 - **VM Badge**: Cloud agents show a VM indicator
 - **Capabilities**: Shows canSearch, canBrowse, canRunCode, etc.
 
@@ -247,10 +248,10 @@ GET /api/tools-test?action=list
 **Response format:**
 ```json
 {
-  "summary": "42/42 tests passing",
-  "timestamp": "2025-12-04T19:55:00.000Z",
+  "summary": "50/50 tests passing",
+  "timestamp": "2025-12-04T20:10:00.000Z",
   "duration": 3500,
-  "passed": 42,
+  "passed": 50,
   "failed": 0,
   "results": [
     {"tool": "hot-start", "status": "pass", "latency": 254},
@@ -259,7 +260,7 @@ GET /api/tools-test?action=list
 }
 ```
 
-**Tested tools (42):** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations, ceo-contacts, ceo-ideas, ceo-notes, user-tasks, metrics, ui-tests, repo-context, shadow-registry, cloud-agents, heartbeats, stall-check, profile-mcptools, vm-agent-chat, errors, errors-capture, dictation-cache, agent-grades, agent-capabilities, agent-context
+**Tested tools (50):** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations, ceo-contacts, ceo-ideas, ceo-notes, user-tasks, metrics, ui-tests, repo-context, shadow-registry, cloud-agents, heartbeats, stall-check, profile-mcptools, vm-agent-chat, errors, errors-capture, dictation-cache, agent-grades, agent-capabilities, agent-context, external-agents, planned-features, context-load, context-cluster, vercel-env-audit, roadmap, whats-next
 
 **Auto-triggers:** Tests run automatically on every Vercel production deployment via GitHub webhook.
 
