@@ -10033,6 +10033,7 @@
               <span style="font-size: 12px; color: var(--text-secondary);">Private workspace for strategic planning</span>
             </div>
             <div class="ceo-stats" id="ceoStats">
+              <div class="ceo-stat"><span class="ceo-stat-value" id="ceoBlockerCount" style="color: #f97316;">0</span><span class="ceo-stat-label">Blockers</span></div>
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoTaskCount">0</span><span class="ceo-stat-label">Tasks</span></div>
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoContactCount">0</span><span class="ceo-stat-label">Contacts</span></div>
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoFollowUpCount">0</span><span class="ceo-stat-label">Follow-ups</span></div>
@@ -10041,13 +10042,26 @@
             </div>
           </div>
           <div class="ceo-tabs">
-            <button class="ceo-tab active" data-ceotab="tasks" onclick="switchCeoTab('tasks')">Tasks</button>
+            <button class="ceo-tab active" data-ceotab="blockers" onclick="switchCeoTab('blockers')" style="background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); color: white;">🚨 Agent Blockers</button>
+            <button class="ceo-tab" data-ceotab="tasks" onclick="switchCeoTab('tasks')">Tasks</button>
             <button class="ceo-tab" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
             <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
             <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
           </div>
           <div class="ceo-content">
-            <div class="ceo-panel active" id="ceoTasksPanel">
+            <!-- Agent Blockers Panel - Things agents need from Tyler -->
+            <div class="ceo-panel active" id="ceoBlockersPanel">
+              <div class="ceo-panel-header" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Tasks agents need YOU to complete to unblock them</span>
+                </div>
+                <button class="ceo-add-btn" onclick="showAddBlockerModal()" style="background: linear-gradient(135deg, #f97316 0%, #ef4444 100%);">+ Add Blocker</button>
+              </div>
+              <div class="ceo-list" id="ceoBlockersList" style="padding: 16px 24px;">
+                <div class="ceo-empty">Loading agent blockers...</div>
+              </div>
+            </div>
+            <div class="ceo-panel" id="ceoTasksPanel">
               <div class="ceo-panel-header">
                 <div class="ceo-filters">
                   <select id="taskStatusFilter" onchange="filterCeoTasks()"><option value="">All Status</option><option value="todo">To Do</option><option value="in-progress">In Progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select>
@@ -12479,19 +12493,129 @@
     let ceoIdeas = [];
     let ceoNotes = [];
     let ceoTasks = [];
+    let ceoBlockers = [];
     let editingContactId = null;
     let editingIdeaId = null;
     let editingNoteId = null;
     let editingCeoTaskId = null;
+    let editingBlockerId = null;
 
     async function initCeoPortal() {
       if (!IS_SUPERADMIN) return;
-      await Promise.all([fetchCeoTasks(), fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
+      await Promise.all([fetchCeoBlockers(), fetchCeoTasks(), fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
     }
 
     function switchCeoTab(tabName) {
-      document.querySelectorAll('.ceo-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.ceotab === tabName));
+      document.querySelectorAll('.ceo-tab').forEach(tab => {
+        const isActive = tab.dataset.ceotab === tabName;
+        tab.classList.toggle('active', isActive);
+        // Keep blocker tab styled
+        if (tab.dataset.ceotab === 'blockers' && !isActive) {
+          tab.style.background = 'transparent';
+          tab.style.color = 'var(--text-secondary)';
+        } else if (tab.dataset.ceotab === 'blockers' && isActive) {
+          tab.style.background = 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)';
+          tab.style.color = 'white';
+        }
+      });
       document.querySelectorAll('.ceo-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'ceo' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Panel'));
+    }
+
+    // === AGENT BLOCKERS - Tasks for Tyler to unblock agents ===
+    async function fetchCeoBlockers() {
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=tyler3&category=agent-blocker', { credentials: 'include' });
+        const data = await res.json();
+        ceoBlockers = (data.tasks || []).filter(t => t.status !== 'done');
+        renderCeoBlockers();
+        document.getElementById('ceoBlockerCount').textContent = ceoBlockers.length;
+      } catch (e) {
+        console.error('Failed to fetch blockers:', e);
+        document.getElementById('ceoBlockersList').innerHTML = '<div class="ceo-empty">Failed to load blockers</div>';
+      }
+    }
+
+    function renderCeoBlockers() {
+      const container = document.getElementById('ceoBlockersList');
+      if (ceoBlockers.length === 0) {
+        container.innerHTML = `
+          <div class="ceo-empty" style="text-align: center; padding: 40px;">
+            <div style="font-size: 48px; margin-bottom: 12px;">✅</div>
+            <div style="font-size: 16px; font-weight: 600; color: var(--success); margin-bottom: 8px;">All Clear!</div>
+            <div style="color: var(--text-secondary);">No blockers from agents. They're working smoothly!</div>
+          </div>`;
+        return;
+      }
+      const priorityColors = { 'urgent': '#ef4444', 'high': '#f97316', 'medium': '#eab308', 'low': '#22c55e' };
+      container.innerHTML = ceoBlockers.map(b => `
+        <div class="ceo-task-card" onclick="showBlockerDetail('${b.id}')" style="border-left: 4px solid ${priorityColors[b.priority] || '#f97316'}; margin-bottom: 12px;">
+          <div class="task-header" style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 18px;">🚨</span>
+            <span class="task-title" style="flex: 1; font-weight: 600;">${escapeHtml(b.title)}</span>
+            <span style="background: ${priorityColors[b.priority]}20; color: ${priorityColors[b.priority]}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600;">${b.priority || 'medium'}</span>
+          </div>
+          ${b.description ? `<div style="font-size: 13px; color: var(--text-secondary); margin: 8px 0 8px 28px; line-height: 1.5;">${escapeHtml(b.description)}</div>` : ''}
+          ${b.notes ? `<div style="font-size: 12px; color: var(--accent); margin: 4px 0 4px 28px; font-style: italic;">Agent note: ${escapeHtml(b.notes)}</div>` : ''}
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border);">
+            <span style="font-size: 11px; color: var(--text-secondary);">Created: ${new Date(b.createdAt || Date.now()).toLocaleDateString()}</span>
+            <button onclick="event.stopPropagation(); markBlockerDone('${b.id}')" style="background: var(--success); color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">✓ Mark Done</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function markBlockerDone(id) {
+      try {
+        const res = await fetch(API_BASE + '/user-tasks?user=tyler3', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ taskId: id, status: 'done' })
+        });
+        if (res.ok) {
+          await fetchCeoBlockers();
+          // Also post to group chat that blocker was resolved
+          const blocker = ceoBlockers.find(b => b.id === id);
+          if (blocker) {
+            fetch(API_BASE + '/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                author: currentUsername,
+                authorType: 'human',
+                message: `✅ **Blocker Resolved:** ${blocker.title}\n\nAgents, this is now unblocked!`
+              })
+            });
+          }
+        }
+      } catch (e) { console.error('Failed to mark blocker done:', e); }
+    }
+
+    function showBlockerDetail(id) {
+      const b = ceoBlockers.find(x => x.id === id);
+      if (!b) return;
+      editingBlockerId = id;
+      document.getElementById('ceoTaskModalTitle').textContent = 'Edit Blocker';
+      document.getElementById('ceoTaskTitle').value = b.title || '';
+      document.getElementById('ceoTaskDescription').value = b.description || '';
+      document.getElementById('ceoTaskStatus').value = b.status || 'todo';
+      document.getElementById('ceoTaskPriority').value = b.priority || 'high';
+      document.getElementById('ceoTaskCategory').value = 'agent-blocker';
+      document.getElementById('ceoTaskDueDate').value = b.dueDate ? b.dueDate.split('T')[0] : '';
+      document.getElementById('ceoTaskNotes').value = b.notes || '';
+      document.getElementById('deleteCeoTaskBtn').style.display = 'inline-block';
+      document.getElementById('ceoTaskModal').style.display = 'flex';
+    }
+
+    function showAddBlockerModal() {
+      editingBlockerId = null;
+      editingCeoTaskId = null;
+      document.getElementById('ceoTaskModalTitle').textContent = 'Add Agent Blocker';
+      document.getElementById('ceoTaskForm').reset();
+      document.getElementById('ceoTaskCategory').value = 'agent-blocker';
+      document.getElementById('ceoTaskPriority').value = 'high';
+      document.getElementById('deleteCeoTaskBtn').style.display = 'none';
+      document.getElementById('ceoTaskModal').style.display = 'flex';
     }
 
     async function fetchCeoStats() {
