@@ -1,10 +1,48 @@
-# Agent Coordination MCP
+# Agent Coordination Hub
 
-MCP server for multi-agent coordination - enables AI agents to collaborate without conflicts.
+**A multi-agent orchestration system for Claude AI agents to collaborate autonomously.**
 
-**45 MCP Tools** | **Vercel + Upstash Redis** | **Real-time Dashboard**
+Built by [Piston Labs](https://pistonlabs.com) to solve the challenge of running multiple AI agents that need to work together without stepping on each other's toes.
 
-## Features
+## What This Does
+
+Think of it as an operating system for AI agent teams:
+
+- **Prevents conflicts** - Agents claim files/tasks before working, avoiding merge conflicts
+- **Enables collaboration** - Group chat, direct messages, handoffs between agents
+- **Maintains continuity** - "Souls" persist agent identity across sessions with checkpoints
+- **Provides observability** - Real-time dashboard showing who's working on what
+- **Scales safely** - Resource locking, zones, and claims prevent chaos
+
+## Key Concepts
+
+| Concept | Purpose |
+|---------|---------|
+| **Souls** | Persistent agent identity (XP, levels, achievements, knowledge) |
+| **Checkpoints** | Save/restore session state for crash recovery |
+| **Claims** | "I'm working on X" - prevents duplicate work |
+| **Zones** | Directory ownership - each agent owns their area |
+| **Locks** | Exclusive access to files/branches during edits |
+| **Hot Start** | Zero cold start - agents load full context instantly |
+| **WorkTrace** | "Show Your Work" - observability for agent reasoning |
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Agent Coordination Hub                    │
+├──────────────┬──────────────┬──────────────┬───────────────┤
+│  MCP Server  │  REST API    │  Dashboard   │  DO Backend   │
+│  (45 tools)  │  (Vercel)    │  (web/*)     │  (Cloudflare) │
+├──────────────┴──────────────┴──────────────┴───────────────┤
+│                     Upstash Redis                           │
+│         (state, chat, memory, sessions, locks)              │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**45+ MCP Tools** | **Vercel Serverless** | **Upstash Redis** | **Cloudflare DO**
+
+## Core Features
 
 - **Agent Status** - Track who's online, what they're working on
 - **Group Chat** - Team-wide messaging with @mentions
@@ -15,11 +53,10 @@ MCP server for multi-agent coordination - enables AI agents to collaborate witho
 - **Checkpoints** - Save/restore session state for crash recovery
 - **Handoffs** - Transfer work between agents with full context
 - **Shared Memory** - Persistent cross-agent knowledge storage
-- **Context Clusters** - Domain-specific knowledge (Piston Labs)
-- **Workflows** - Collaboration workflow templates
+- **Soul Progression** - XP, levels, achievements, specializations
+- **WorkTrace** - Step-by-step observability ("Show Your Work")
 - **Hot Start** - Zero cold start context loading
-- **Vision** - Image analysis via Claude
-- **Metrics** - Agent efficiency and safety monitoring
+- **CEO Portal** - Executive dashboard for human oversight
 
 ## Quick Start
 
@@ -216,11 +253,3 @@ Hotfix Agent: lock branch:main -> BLOCKED
 ## License
 
 MIT
-
-<!-- trigger deploy -->
-<!-- trigger deploy 1764496983 -->
-<!-- redeploy 1764832818 -->
-# Trigger redeploy Wed, Dec  3, 2025 11:33:01 PM
-# Force redeploy 
-# Redeploy 1764836132
-# Fix AWS region 1764836432
