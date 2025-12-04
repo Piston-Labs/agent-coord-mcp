@@ -7529,6 +7529,209 @@
       color: var(--text-secondary);
     }
 
+    /* Google Drive Integration Styles */
+    .files-source-toggle {
+      display: flex;
+      gap: 4px;
+    }
+
+    .source-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      transition: all 0.2s;
+    }
+
+    .source-btn:hover {
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+    }
+
+    .source-btn.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .gdrive-status-banner {
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+    }
+
+    .gdrive-connected, .gdrive-disconnected {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .gdrive-status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .gdrive-status-dot.connected {
+      background: var(--success);
+      box-shadow: 0 0 6px var(--success);
+    }
+
+    .gdrive-status-dot.disconnected {
+      background: var(--text-secondary);
+    }
+
+    .gdrive-connect-btn {
+      padding: 4px 12px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    .gdrive-connect-btn:hover {
+      background: #3367d6;
+    }
+
+    .gdrive-refresh-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 6px;
+      margin-left: auto;
+    }
+
+    .gdrive-files-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .gdrive-actions {
+      display: flex;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .gdrive-action-btn {
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-primary);
+    }
+
+    .gdrive-action-btn:hover {
+      background: var(--bg-secondary);
+      border-color: var(--accent);
+    }
+
+    .gdrive-file-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .gdrive-file-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .gdrive-file-item:hover {
+      background: var(--bg-secondary);
+    }
+
+    .gdrive-file-icon {
+      font-size: 20px;
+    }
+
+    .gdrive-file-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .gdrive-file-name {
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .gdrive-file-meta {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .gdrive-file-actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .gdrive-file-item:hover .gdrive-file-actions {
+      opacity: 1;
+    }
+
+    .gdrive-file-actions button {
+      padding: 4px 8px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-size: 11px;
+      cursor: pointer;
+    }
+
+    .gdrive-loading, .gdrive-empty {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-secondary);
+      font-size: 13px;
+    }
+
+    .local-files-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .local-files-header {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .local-files-header button {
+      background: var(--bg-tertiary);
+      border: none;
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
     .sales-files-list {
       flex: 1;
       overflow-y: auto;
@@ -9546,9 +9749,54 @@
           <!-- Right: File Browser -->
           <div class="sales-files-panel">
             <div class="sales-files-header">
-              <span>📁 My Files</span>
-              <button onclick="createNewFolder()" title="New Folder">➕</button>
+              <span>📁 Files</span>
+              <div class="files-source-toggle">
+                <button class="source-btn active" onclick="switchFileSource('local')" id="localFilesBtn">Local</button>
+                <button class="source-btn" onclick="switchFileSource('gdrive')" id="gdriveFilesBtn">
+                  <svg width="12" height="12" viewBox="0 0 87.3 78" fill="currentColor" style="vertical-align: middle; margin-right: 3px;">
+                    <path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/>
+                    <path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0 -1.2 4.5h27.5z" fill="#00ac47"/>
+                    <path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/>
+                    <path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/>
+                    <path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/>
+                    <path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/>
+                  </svg>
+                  Drive
+                </button>
+              </div>
             </div>
+
+            <!-- Google Drive Status Banner -->
+            <div class="gdrive-status-banner" id="gdriveStatusBanner" style="display: none;">
+              <div class="gdrive-connected" id="gdriveConnected" style="display: none;">
+                <span class="gdrive-status-dot connected"></span>
+                <span>Connected</span>
+                <button onclick="refreshGoogleDrive()" title="Refresh" class="gdrive-refresh-btn">🔄</button>
+              </div>
+              <div class="gdrive-disconnected" id="gdriveDisconnected" style="display: none;">
+                <span class="gdrive-status-dot disconnected"></span>
+                <span>Not Connected</span>
+                <button onclick="connectGoogleDrive()" class="gdrive-connect-btn">Connect</button>
+              </div>
+            </div>
+
+            <!-- Google Drive Files View -->
+            <div class="gdrive-files-view" id="gdriveFilesView" style="display: none;">
+              <div class="gdrive-actions">
+                <button onclick="uploadToGoogleDrive()" class="gdrive-action-btn">
+                  ⬆️ Upload
+                </button>
+                <button onclick="createGoogleDriveFolder()" class="gdrive-action-btn">
+                  📁 New Folder
+                </button>
+              </div>
+              <div class="gdrive-file-list" id="gdriveFileList">
+                <div class="gdrive-loading">Loading files...</div>
+              </div>
+            </div>
+
+            <!-- Local Files View -->
+            <div class="local-files-view" id="localFilesView">
             <div class="sales-folder-tree" id="salesFolderTree">
               <div class="sales-folder" data-folder="proposals">
                 <span class="folder-icon">📂</span>
@@ -9589,6 +9837,7 @@
             <div class="sales-files-list" id="salesFilesList">
               <div class="sales-file-empty">Select a folder to view files</div>
             </div>
+            </div><!-- end local-files-view -->
           </div>
         </div>
       </div>
@@ -16057,6 +16306,269 @@
       const date = new Date(dateStr);
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
+
+    // =========================================================================
+    // Google Drive Integration
+    // =========================================================================
+    let gdriveConnected = false;
+    let gdriveFiles = [];
+    let currentFileSource = 'local';
+
+    async function checkGoogleDriveStatus() {
+      try {
+        const res = await fetch(`${API_BASE}/api/google-drive?action=status`);
+        const data = await res.json();
+        gdriveConnected = data.connected && !data.expired;
+        return gdriveConnected;
+      } catch (e) {
+        console.error('Error checking Google Drive status:', e);
+        return false;
+      }
+    }
+
+    function switchFileSource(source) {
+      currentFileSource = source;
+
+      // Update button states
+      document.getElementById('localFilesBtn').classList.toggle('active', source === 'local');
+      document.getElementById('gdriveFilesBtn').classList.toggle('active', source === 'gdrive');
+
+      // Show/hide views
+      document.getElementById('localFilesView').style.display = source === 'local' ? 'flex' : 'none';
+      document.getElementById('gdriveFilesView').style.display = source === 'gdrive' ? 'flex' : 'none';
+      document.getElementById('gdriveStatusBanner').style.display = source === 'gdrive' ? 'block' : 'none';
+
+      if (source === 'gdrive') {
+        updateGoogleDriveUI();
+      }
+    }
+
+    async function updateGoogleDriveUI() {
+      const connected = await checkGoogleDriveStatus();
+
+      document.getElementById('gdriveConnected').style.display = connected ? 'flex' : 'none';
+      document.getElementById('gdriveDisconnected').style.display = connected ? 'none' : 'flex';
+
+      if (connected) {
+        loadGoogleDriveFiles();
+      } else {
+        document.getElementById('gdriveFileList').innerHTML = `
+          <div class="gdrive-empty">
+            <p style="font-size: 24px; margin-bottom: 10px;">📁</p>
+            <p>Connect Google Drive to access your files</p>
+          </div>
+        `;
+      }
+    }
+
+    async function connectGoogleDrive() {
+      try {
+        const res = await fetch(`${API_BASE}/api/google-drive?action=auth-url`);
+        const data = await res.json();
+        if (data.authUrl) {
+          window.open(data.authUrl, '_blank');
+          // Poll for connection status
+          const pollInterval = setInterval(async () => {
+            const connected = await checkGoogleDriveStatus();
+            if (connected) {
+              clearInterval(pollInterval);
+              updateGoogleDriveUI();
+            }
+          }, 3000);
+          // Stop polling after 5 minutes
+          setTimeout(() => clearInterval(pollInterval), 300000);
+        }
+      } catch (e) {
+        console.error('Error getting auth URL:', e);
+        alert('Failed to get Google Drive authorization URL');
+      }
+    }
+
+    async function loadGoogleDriveFiles() {
+      const fileList = document.getElementById('gdriveFileList');
+      fileList.innerHTML = '<div class="gdrive-loading">Loading files...</div>';
+
+      try {
+        const res = await fetch(`${API_BASE}/api/google-drive?action=list`);
+        const data = await res.json();
+        gdriveFiles = data.files || [];
+
+        if (gdriveFiles.length === 0) {
+          fileList.innerHTML = `
+            <div class="gdrive-empty">
+              <p style="font-size: 24px; margin-bottom: 10px;">📂</p>
+              <p>No files yet</p>
+              <p style="font-size: 11px; margin-top: 8px;">Upload a document to get started</p>
+            </div>
+          `;
+          return;
+        }
+
+        fileList.innerHTML = gdriveFiles.map(file => `
+          <div class="gdrive-file-item" onclick="openGoogleDriveFile('${file.id}', '${file.webViewLink}')">
+            <span class="gdrive-file-icon">${getGdriveFileIcon(file.mimeType)}</span>
+            <div class="gdrive-file-info">
+              <div class="gdrive-file-name">${file.name}</div>
+              <div class="gdrive-file-meta">${formatFileSize(file.size)} • ${formatDate(file.modifiedTime)}</div>
+            </div>
+            <div class="gdrive-file-actions">
+              <button onclick="event.stopPropagation(); openInDrive('${file.webViewLink}')" title="Open in Drive">↗️</button>
+              <button onclick="event.stopPropagation(); deleteGoogleDriveFile('${file.id}', '${file.name}')" title="Delete">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        console.error('Error loading Google Drive files:', e);
+        fileList.innerHTML = '<div class="gdrive-empty">Failed to load files</div>';
+      }
+    }
+
+    function getGdriveFileIcon(mimeType) {
+      if (mimeType?.includes('folder')) return '📁';
+      if (mimeType?.includes('markdown') || mimeType?.includes('text')) return '📝';
+      if (mimeType?.includes('pdf')) return '📕';
+      if (mimeType?.includes('spreadsheet') || mimeType?.includes('excel')) return '📊';
+      if (mimeType?.includes('presentation') || mimeType?.includes('powerpoint')) return '📽️';
+      if (mimeType?.includes('document') || mimeType?.includes('word')) return '📄';
+      if (mimeType?.includes('image')) return '🖼️';
+      return '📄';
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes) return '';
+      const kb = parseInt(bytes) / 1024;
+      if (kb < 1024) return `${kb.toFixed(1)} KB`;
+      return `${(kb / 1024).toFixed(1)} MB`;
+    }
+
+    function openGoogleDriveFile(fileId, webViewLink) {
+      if (webViewLink) {
+        window.open(webViewLink, '_blank');
+      }
+    }
+
+    function openInDrive(webViewLink) {
+      if (webViewLink) {
+        window.open(webViewLink, '_blank');
+      }
+    }
+
+    async function refreshGoogleDrive() {
+      await loadGoogleDriveFiles();
+    }
+
+    async function uploadToGoogleDrive() {
+      // Check if there's content in the editor
+      const editorContent = document.getElementById('salesDocEditor');
+      const docName = document.getElementById('salesDocName');
+
+      if (editorContent && docName && editorContent.value && docName.value) {
+        // Upload current document
+        try {
+          const res = await fetch(`${API_BASE}/api/google-drive?action=upload`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name: docName.value.endsWith('.md') ? docName.value : `${docName.value}.md`,
+              content: editorContent.value,
+              uploadedBy: 'dashboard-user'
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            alert(`Uploaded "${data.file.name}" to Google Drive!`);
+            loadGoogleDriveFiles();
+          } else {
+            alert('Upload failed: ' + (data.error || 'Unknown error'));
+          }
+        } catch (e) {
+          console.error('Upload error:', e);
+          alert('Failed to upload to Google Drive');
+        }
+      } else {
+        // Show file picker for manual upload
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.md,.txt,.doc,.docx,.pdf';
+        input.onchange = async (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const reader = new FileReader();
+          reader.onload = async (event) => {
+            try {
+              const res = await fetch(`${API_BASE}/api/google-drive?action=upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  name: file.name,
+                  content: event.target.result,
+                  uploadedBy: 'dashboard-user'
+                })
+              });
+              const data = await res.json();
+              if (data.success) {
+                alert(`Uploaded "${file.name}" to Google Drive!`);
+                loadGoogleDriveFiles();
+              } else {
+                alert('Upload failed: ' + (data.error || 'Unknown error'));
+              }
+            } catch (err) {
+              console.error('Upload error:', err);
+              alert('Failed to upload file');
+            }
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      }
+    }
+
+    async function createGoogleDriveFolder() {
+      const folderName = prompt('Enter folder name:');
+      if (!folderName) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/google-drive?action=create-folder`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: folderName })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert(`Created folder "${folderName}"`);
+          loadGoogleDriveFiles();
+        } else {
+          alert('Failed to create folder: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        console.error('Error creating folder:', e);
+        alert('Failed to create folder');
+      }
+    }
+
+    async function deleteGoogleDriveFile(fileId, fileName) {
+      if (!confirm(`Delete "${fileName}" from Google Drive?`)) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/google-drive?action=delete&fileId=${fileId}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (data.success) {
+          loadGoogleDriveFiles();
+        } else {
+          alert('Failed to delete: ' + (data.error || 'Unknown error'));
+        }
+      } catch (e) {
+        console.error('Error deleting file:', e);
+        alert('Failed to delete file');
+      }
+    }
+
+    // =========================================================================
+    // Sales Document Functions
+    // =========================================================================
 
     function selectTemplate(templateType) {
       salesSelectedTemplate = templateType;
