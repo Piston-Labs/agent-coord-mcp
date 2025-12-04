@@ -11823,11 +11823,111 @@
         initTraining();
       }
 
+      // Initialize CEO Portal when switching to ceo tab
+      if (tabName === 'ceo') {
+        initCeoPortal();
+      }
+
       // Update telemetry poll rate based on whether telemetry tab is active
       if (typeof updateTelemetryPollRate === 'function') {
         updateTelemetryPollRate();
       }
     }
+
+    // === CEO PORTAL FUNCTIONS ===
+    let ceoContacts = [];
+    let ceoIdeas = [];
+    let ceoNotes = [];
+    let editingContactId = null;
+    let editingIdeaId = null;
+    let editingNoteId = null;
+
+    async function initCeoPortal() {
+      if (!IS_SUPERADMIN) return;
+      await Promise.all([fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
+    }
+
+    function switchCeoTab(tabName) {
+      document.querySelectorAll('.ceo-tab').forEach(tab => tab.classList.toggle('active', tab.dataset.ceotab === tabName));
+      document.querySelectorAll('.ceo-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'ceo' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Panel'));
+    }
+
+    async function fetchCeoStats() {
+      try {
+        const res = await fetch(API_BASE + '/ceo-portal?resource=stats', { credentials: 'include' });
+        const data = await res.json();
+        if (data.stats) {
+          document.getElementById('ceoContactCount').textContent = data.stats.totalContacts;
+          document.getElementById('ceoFollowUpCount').textContent = data.stats.needsFollowUp;
+          document.getElementById('ceoIdeaCount').textContent = data.stats.highPriorityIdeas;
+          document.getElementById('ceoNoteCount').textContent = data.stats.pinnedNotes;
+        }
+      } catch (e) { console.error('Failed to fetch CEO stats:', e); }
+    }
+
+    async function fetchCeoContacts() {
+      try {
+        const res = await fetch(API_BASE + '/ceo-portal?resource=contacts', { credentials: 'include' });
+        const data = await res.json();
+        ceoContacts = data.contacts || [];
+        renderContacts();
+      } catch (e) { console.error('Failed to fetch contacts:', e); document.getElementById('ceoContactsList').innerHTML = '<div class="ceo-empty">Failed to load contacts</div>'; }
+    }
+
+    function filterContacts() { renderContacts(); }
+
+    function renderContacts() {
+      const category = document.getElementById('contactCategoryFilter').value;
+      const status = document.getElementById('contactStatusFilter').value;
+      const search = document.getElementById('contactSearch').value.toLowerCase();
+      let filtered = ceoContacts.filter(c => { if (category && c.category !== category) return false; if (status && c.status !== status) return false; if (search && !c.name.toLowerCase().includes(search) && !(c.company || '').toLowerCase().includes(search)) return false; return true; });
+      const container = document.getElementById('ceoContactsList');
+      if (filtered.length === 0) { container.innerHTML = '<div class="ceo-empty">No contacts found. Click "+ Add Contact" to create one.</div>'; return; }
+      container.innerHTML = filtered.map(c => { const initials = c.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2); const followUp = c.nextFollowUp ? new Date(c.nextFollowUp) : null; const isOverdue = followUp && followUp < new Date(); const followUpText = followUp ? (isOverdue ? 'Overdue: ' : 'Follow-up: ') + followUp.toLocaleDateString() : ''; return `<div class="ceo-contact-card" onclick="showContactDetail('${c.id}')"><div class="contact-avatar">${initials}</div><div class="contact-info"><div class="contact-name">${escapeHtml(c.name)}</div><div class="contact-company">${escapeHtml(c.company || '')}${c.role ? ' - ' + escapeHtml(c.role) : ''}</div><div class="contact-meta"><span class="contact-badge ${c.category}">${c.category}</span><span class="contact-badge ${c.status}">${c.status}</span></div></div><div class="contact-actions">${followUpText ? `<span class="contact-follow-up ${isOverdue ? 'overdue' : ''}">${followUpText}</span>` : ''}</div></div>`; }).join('');
+    }
+
+    function showAddContactModal() { editingContactId = null; document.getElementById('contactModalTitle').textContent = 'Add Contact'; document.getElementById('contactForm').reset(); document.getElementById('deleteContactBtn').style.display = 'none'; document.getElementById('contactModal').style.display = 'flex'; }
+
+    function showContactDetail(id) { const c = ceoContacts.find(x => x.id === id); if (!c) return; editingContactId = id; document.getElementById('contactModalTitle').textContent = 'Edit Contact'; document.getElementById('contactName').value = c.name || ''; document.getElementById('contactCompany').value = c.company || ''; document.getElementById('contactRole').value = c.role || ''; document.getElementById('contactEmail').value = c.email || ''; document.getElementById('contactPhone').value = c.phone || ''; document.getElementById('contactLinkedIn').value = c.linkedIn || ''; document.getElementById('contactCategory').value = c.category || 'other'; document.getElementById('contactStatus').value = c.status || 'active'; document.getElementById('contactNextFollowUp').value = c.nextFollowUp ? c.nextFollowUp.split('T')[0] : ''; document.getElementById('contactNotes').value = c.notes || ''; document.getElementById('deleteContactBtn').style.display = 'inline-block'; document.getElementById('contactModal').style.display = 'flex'; }
+
+    function hideContactModal() { document.getElementById('contactModal').style.display = 'none'; editingContactId = null; }
+
+    async function saveContact(e) { e.preventDefault(); const data = { name: document.getElementById('contactName').value, company: document.getElementById('contactCompany').value, role: document.getElementById('contactRole').value, email: document.getElementById('contactEmail').value, phone: document.getElementById('contactPhone').value, linkedIn: document.getElementById('contactLinkedIn').value, category: document.getElementById('contactCategory').value, status: document.getElementById('contactStatus').value, nextFollowUp: document.getElementById('contactNextFollowUp').value || null, notes: document.getElementById('contactNotes').value }; try { const url = editingContactId ? API_BASE + '/ceo-portal?resource=contacts&id=' + editingContactId : API_BASE + '/ceo-portal?resource=contacts'; const res = await fetch(url, { method: editingContactId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) }); const result = await res.json(); if (result.success) { hideContactModal(); await fetchCeoContacts(); await fetchCeoStats(); } else { alert('Error: ' + (result.error || 'Failed to save')); } } catch (e) { alert('Failed to save contact: ' + e.message); } }
+
+    async function deleteContact() { if (!editingContactId || !confirm('Delete this contact?')) return; try { const res = await fetch(API_BASE + '/ceo-portal?resource=contacts&id=' + editingContactId, { method: 'DELETE', credentials: 'include' }); const result = await res.json(); if (result.success) { hideContactModal(); await fetchCeoContacts(); await fetchCeoStats(); } } catch (e) { alert('Failed to delete: ' + e.message); } }
+
+    async function fetchCeoIdeas() { try { const res = await fetch(API_BASE + '/ceo-portal?resource=ideas', { credentials: 'include' }); const data = await res.json(); ceoIdeas = data.ideas || []; renderIdeas(); } catch (e) { console.error('Failed to fetch ideas:', e); document.getElementById('ceoIdeasList').innerHTML = '<div class="ceo-empty">Failed to load ideas</div>'; } }
+
+    function filterIdeas() { renderIdeas(); }
+
+    function renderIdeas() { const category = document.getElementById('ideaCategoryFilter').value; const priority = document.getElementById('ideaPriorityFilter').value; let filtered = ceoIdeas.filter(i => { if (category && i.category !== category) return false; if (priority && i.priority !== priority) return false; return true; }); const container = document.getElementById('ceoIdeasList'); if (filtered.length === 0) { container.innerHTML = '<div class="ceo-empty">No ideas yet. Click "+ Add Idea" to capture one.</div>'; return; } container.innerHTML = filtered.map(i => `<div class="ceo-idea-card ${i.priority}" onclick="showIdeaDetail('${i.id}')"><div class="idea-header"><span class="idea-title">${escapeHtml(i.title)}</span><span class="idea-category">${i.category}</span></div><div class="idea-description">${escapeHtml(i.description || '')}</div><div class="idea-footer"><span class="idea-status">Status: ${i.status}</span><span class="idea-date">${new Date(i.createdAt).toLocaleDateString()}</span></div></div>`).join(''); }
+
+    function showAddIdeaModal() { editingIdeaId = null; document.getElementById('ideaModalTitle').textContent = 'Add Idea'; document.getElementById('ideaForm').reset(); document.getElementById('deleteIdeaBtn').style.display = 'none'; document.getElementById('ideaModal').style.display = 'flex'; }
+
+    function showIdeaDetail(id) { const i = ceoIdeas.find(x => x.id === id); if (!i) return; editingIdeaId = id; document.getElementById('ideaModalTitle').textContent = 'Edit Idea'; document.getElementById('ideaTitle').value = i.title || ''; document.getElementById('ideaDescription').value = i.description || ''; document.getElementById('ideaCategory').value = i.category || 'other'; document.getElementById('ideaPriority').value = i.priority || 'medium'; document.getElementById('ideaStatus').value = i.status || 'new'; document.getElementById('ideaNotes').value = i.notes || ''; document.getElementById('deleteIdeaBtn').style.display = 'inline-block'; document.getElementById('ideaModal').style.display = 'flex'; }
+
+    function hideIdeaModal() { document.getElementById('ideaModal').style.display = 'none'; editingIdeaId = null; }
+
+    async function saveIdea(e) { e.preventDefault(); const data = { title: document.getElementById('ideaTitle').value, description: document.getElementById('ideaDescription').value, category: document.getElementById('ideaCategory').value, priority: document.getElementById('ideaPriority').value, status: document.getElementById('ideaStatus').value, notes: document.getElementById('ideaNotes').value }; try { const url = editingIdeaId ? API_BASE + '/ceo-portal?resource=ideas&id=' + editingIdeaId : API_BASE + '/ceo-portal?resource=ideas'; const res = await fetch(url, { method: editingIdeaId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) }); const result = await res.json(); if (result.success) { hideIdeaModal(); await fetchCeoIdeas(); await fetchCeoStats(); } else { alert('Error: ' + (result.error || 'Failed to save')); } } catch (e) { alert('Failed to save idea: ' + e.message); } }
+
+    async function deleteIdea() { if (!editingIdeaId || !confirm('Delete this idea?')) return; try { const res = await fetch(API_BASE + '/ceo-portal?resource=ideas&id=' + editingIdeaId, { method: 'DELETE', credentials: 'include' }); const result = await res.json(); if (result.success) { hideIdeaModal(); await fetchCeoIdeas(); await fetchCeoStats(); } } catch (e) { alert('Failed to delete: ' + e.message); } }
+
+    async function fetchCeoNotes() { try { const res = await fetch(API_BASE + '/ceo-portal?resource=notes', { credentials: 'include' }); const data = await res.json(); ceoNotes = data.notes || []; renderNotes(); } catch (e) { console.error('Failed to fetch notes:', e); document.getElementById('ceoNotesList').innerHTML = '<div class="ceo-empty">Failed to load notes</div>'; } }
+
+    function filterNotes() { renderNotes(); }
+
+    function renderNotes() { const category = document.getElementById('noteCategoryFilter').value; const pinnedOnly = document.getElementById('pinnedOnlyFilter').checked; let filtered = ceoNotes.filter(n => { if (category && n.category !== category) return false; if (pinnedOnly && !n.pinned) return false; return true; }); const container = document.getElementById('ceoNotesList'); if (filtered.length === 0) { container.innerHTML = '<div class="ceo-empty">No notes yet. Click "+ Add Note" to create one.</div>'; return; } container.innerHTML = filtered.map(n => `<div class="ceo-note-card ${n.pinned ? 'pinned' : ''}" onclick="showNoteDetail('${n.id}')"><div class="note-header"><span class="note-title">${n.pinned ? '<span class="note-pin">&#128204;</span>' : ''}${escapeHtml(n.title)}</span><span class="note-category">${n.category}</span></div><div class="note-content">${escapeHtml(n.content || '')}</div><div class="note-footer"><span class="note-date">${new Date(n.updatedAt).toLocaleDateString()}</span></div></div>`).join(''); }
+
+    function showAddNoteModal() { editingNoteId = null; document.getElementById('noteModalTitle').textContent = 'Add Note'; document.getElementById('noteForm').reset(); document.getElementById('deleteNoteBtn').style.display = 'none'; document.getElementById('noteModal').style.display = 'flex'; }
+
+    function showNoteDetail(id) { const n = ceoNotes.find(x => x.id === id); if (!n) return; editingNoteId = id; document.getElementById('noteModalTitle').textContent = 'Edit Note'; document.getElementById('noteTitle').value = n.title || ''; document.getElementById('noteContent').value = n.content || ''; document.getElementById('noteCategory').value = n.category || 'other'; document.getElementById('notePinned').checked = n.pinned || false; document.getElementById('deleteNoteBtn').style.display = 'inline-block'; document.getElementById('noteModal').style.display = 'flex'; }
+
+    function hideNoteModal() { document.getElementById('noteModal').style.display = 'none'; editingNoteId = null; }
+
+    async function saveNote(e) { e.preventDefault(); const data = { title: document.getElementById('noteTitle').value, content: document.getElementById('noteContent').value, category: document.getElementById('noteCategory').value, pinned: document.getElementById('notePinned').checked }; try { const url = editingNoteId ? API_BASE + '/ceo-portal?resource=notes&id=' + editingNoteId : API_BASE + '/ceo-portal?resource=notes'; const res = await fetch(url, { method: editingNoteId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: JSON.stringify(data) }); const result = await res.json(); if (result.success) { hideNoteModal(); await fetchCeoNotes(); await fetchCeoStats(); } else { alert('Error: ' + (result.error || 'Failed to save')); } } catch (e) { alert('Failed to save note: ' + e.message); } }
+
+    async function deleteNote() { if (!editingNoteId || !confirm('Delete this note?')) return; try { const res = await fetch(API_BASE + '/ceo-portal?resource=notes&id=' + editingNoteId, { method: 'DELETE', credentials: 'include' }); const result = await res.json(); if (result.success) { hideNoteModal(); await fetchCeoNotes(); await fetchCeoStats(); } } catch (e) { alert('Failed to delete: ' + e.message); } }
+    // === END CEO PORTAL FUNCTIONS ===
 
     // === TRAINING FUNCTIONS ===
     let currentTrainingModule = null;
