@@ -9,3 +9,6 @@ data/
 # Windows artifacts
 nul
 NUL
+
+# Wrangler/Cloudflare local state
+.wrangler/
