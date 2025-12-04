@@ -382,6 +382,27 @@
 
     .message.own .message-author { color: rgba(255,255,255,0.8); }
 
+    /* Agent hover card */
+    .agent-name-hover { cursor: pointer; position: relative; display: inline; }
+    .agent-name-hover:hover { text-decoration: underline; }
+    .agent-hover-card { position: absolute; top: 100%; left: 0; z-index: 1000; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 12px; min-width: 280px; max-width: 320px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: none; }
+    .agent-hover-card.visible { display: block; }
+    .agent-hover-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .agent-hover-card-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+    .agent-hover-card-avatar.vm { background: linear-gradient(135deg, #9333ea, #7c3aed); }
+    .agent-hover-card-name { font-weight: 600; font-size: 14px; }
+    .agent-hover-card-badges { display: flex; gap: 4px; margin-top: 2px; }
+    .agent-hover-card-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; background: var(--bg-tertiary); color: var(--text-secondary); }
+    .agent-hover-card-badge.vm { background: rgba(147,51,234,0.2); color: #a78bfa; }
+    .agent-hover-card-section { margin-top: 8px; }
+    .agent-hover-card-section-title { font-size: 10px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; margin-bottom: 4px; }
+    .agent-hover-card-tools { display: flex; flex-wrap: wrap; gap: 4px; }
+    .agent-hover-card-tool { font-size: 11px; padding: 3px 8px; border-radius: 6px; background: var(--bg-tertiary); border: 1px solid var(--border); }
+    .agent-hover-card-capability { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(34,197,94,0.15); color: #22c55e; }
+    .agent-hover-card-offer { font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(59,130,246,0.15); color: #60a5fa; }
+    .agent-hover-card-meta { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text-secondary); display: flex; gap: 12px; }
+    .agent-hover-card-loading { text-align: center; padding: 20px; color: var(--text-secondary); }
+
     .message-text {
       font-size: 14px;
       line-height: 1.5;
@@ -11801,7 +11822,7 @@
         <div class="message ${isOwn ? 'own' : ''} ${isVmAgent ? 'vm-agent' : ''}" data-id="${m.id}">
           <div class="message-avatar ${isHuman ? 'human' : ''} ${isVmAgent ? 'vm' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
           <div class="message-content">
-            <div class="message-author">${getAgentDisplayName(m.author)} ${vmBadge}</div>
+            <div class="message-author"><span class="agent-name-hover" data-agent-id="${m.author}" onmouseenter="showAgentHoverCard(event, this)" onmouseleave="hideAgentHoverCard()">${getAgentDisplayName(m.author)}<div class="agent-hover-card" id="agentHoverCard-${m.id}"></div></span> ${vmBadge}</div>
             ${m.message ? `<div class="message-text markdown-body">${renderMarkdown(m.message)}</div>` : ''}
             ${imageHtml}
             ${reactionsHtml}
@@ -11812,6 +11833,115 @@
           </div>
         </div>
       `;
+    }
+
+    // Agent hover card functionality
+    let hoverCardTimeout = null;
+    const agentProfileCache = {};
+
+    async function showAgentHoverCard(event, element) {
+      const agentId = element.dataset.agentId;
+      const card = element.querySelector('.agent-hover-card');
+      if (!card) return;
+
+      // Clear any pending hide
+      if (hoverCardTimeout) {
+        clearTimeout(hoverCardTimeout);
+        hoverCardTimeout = null;
+      }
+
+      // Show loading state
+      card.innerHTML = '<div class="agent-hover-card-loading">Loading...</div>';
+      card.classList.add('visible');
+
+      // Check cache first
+      if (agentProfileCache[agentId]) {
+        renderHoverCard(card, agentProfileCache[agentId], agentId);
+        return;
+      }
+
+      // Fetch profile from API
+      try {
+        const res = await fetch(API_BASE + '/agent-profiles?agentId=' + encodeURIComponent(agentId));
+        const data = await res.json();
+        if (data.profile) {
+          agentProfileCache[agentId] = data.profile;
+          renderHoverCard(card, data.profile, agentId);
+        } else {
+          card.innerHTML = '<div class="agent-hover-card-loading">No profile found</div>';
+        }
+      } catch (err) {
+        card.innerHTML = '<div class="agent-hover-card-loading">Failed to load profile</div>';
+      }
+    }
+
+    function renderHoverCard(card, profile, agentId) {
+      const isVm = profile.isCloudAgent;
+      const initials = getInitials(getAgentDisplayName(agentId));
+
+      let html = '<div class="agent-hover-card-header">';
+      html += '<div class="agent-hover-card-avatar' + (isVm ? ' vm' : '') + '">' + initials + '</div>';
+      html += '<div><div class="agent-hover-card-name">' + getAgentDisplayName(agentId) + '</div>';
+      html += '<div class="agent-hover-card-badges">';
+      if (isVm) html += '<span class="agent-hover-card-badge vm">VM Agent</span>';
+      if (profile.metadata?.ide) html += '<span class="agent-hover-card-badge">' + profile.metadata.ide + '</span>';
+      if (profile.metadata?.os) html += '<span class="agent-hover-card-badge">' + profile.metadata.os + '</span>';
+      html += '</div></div></div>';
+
+      // MCP Tools section
+      if (profile.mcpTools && profile.mcpTools.length > 0) {
+        html += '<div class="agent-hover-card-section">';
+        html += '<div class="agent-hover-card-section-title">MCP Tools</div>';
+        html += '<div class="agent-hover-card-tools">';
+        const tools = profile.mcpTools.slice(0, 8);
+        tools.forEach(t => { html += '<span class="agent-hover-card-tool">' + t + '</span>'; });
+        if (profile.mcpTools.length > 8) html += '<span class="agent-hover-card-tool">+' + (profile.mcpTools.length - 8) + ' more</span>';
+        html += '</div></div>';
+      }
+
+      // Capabilities section
+      if (profile.capabilities && profile.capabilities.length > 0) {
+        html += '<div class="agent-hover-card-section">';
+        html += '<div class="agent-hover-card-section-title">Capabilities</div>';
+        html += '<div class="agent-hover-card-tools">';
+        profile.capabilities.forEach(c => { html += '<span class="agent-hover-card-capability">' + c + '</span>'; });
+        html += '</div></div>';
+      }
+
+      // Offers section
+      if (profile.offers && profile.offers.length > 0) {
+        html += '<div class="agent-hover-card-section">';
+        html += '<div class="agent-hover-card-section-title">Can Help With</div>';
+        html += '<div class="agent-hover-card-tools">';
+        profile.offers.forEach(o => { html += '<span class="agent-hover-card-offer">' + o + '</span>'; });
+        html += '</div></div>';
+      }
+
+      // Meta info
+      if (profile.metadata?.lastUpdated) {
+        const updated = new Date(profile.metadata.lastUpdated);
+        const ago = getTimeAgo(updated);
+        html += '<div class="agent-hover-card-meta"><span>Updated: ' + ago + '</span></div>';
+      }
+
+      card.innerHTML = html;
+    }
+
+    function hideAgentHoverCard() {
+      hoverCardTimeout = setTimeout(() => {
+        document.querySelectorAll('.agent-hover-card.visible').forEach(c => c.classList.remove('visible'));
+      }, 200);
+    }
+
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes + 'm ago';
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours + 'h ago';
+      const days = Math.floor(hours / 24);
+      return days + 'd ago';
     }
 
     // Add reaction to a message
