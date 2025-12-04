@@ -204,10 +204,14 @@ export function registerSpawnTools(server: McpServer) {
       soulId: z.string().optional().describe('Existing soul ID to inject (for persistent identity)'),
       soulName: z.string().optional().describe('Name for new soul (creates new soul if no soulId)'),
       vmSize: z.enum(['small', 'medium', 'large']).optional().describe('VM size: small ($0.035/hr), medium ($0.07/hr), large ($0.14/hr)'),
-      requestedBy: z.string().describe('Your agent ID (who is requesting the spawn)')
+      requestedBy: z.string().describe('Your agent ID (who is requesting the spawn)'),
+      // Shadow mode parameters
+      shadowMode: z.boolean().optional().describe('Spawn as dormant shadow agent that activates on primary stall'),
+      shadowFor: z.string().optional().describe('AgentId to shadow (required if shadowMode is true)'),
+      stallThresholdMs: z.number().optional().describe('How long without heartbeat = stall in ms (default: 300000 = 5 min)'),
     },
     async (args) => {
-      const { task, soulId, soulName, vmSize = 'small', requestedBy } = args;
+      const { task, soulId, soulName, vmSize = 'small', requestedBy, shadowMode, shadowFor, stallThresholdMs } = args;
 
       try {
         const response = await fetch(`${API_BASE}/api/cloud-spawn`, {
@@ -218,7 +222,10 @@ export function registerSpawnTools(server: McpServer) {
             soulId,
             soulName,
             vmSize,
-            spawnedBy: requestedBy
+            spawnedBy: requestedBy,
+            shadowMode,
+            shadowFor,
+            stallThresholdMs,
           })
         });
 

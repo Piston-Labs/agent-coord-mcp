@@ -33,6 +33,8 @@ const CLOUD_AGENTS_KEY = 'agent-coord:cloud-agents';
 const VMS_KEY = 'agent-coord:aws-vms';
 const CHAT_KEY = 'agent-coord:chat';
 const SOULS_KEY = 'agent-coord:souls';
+const SHADOWS_KEY = 'agent-coord:shadow-registry'; // Maps primaryAgentId -> shadowAgentId
+const HEARTBEATS_KEY = 'agent-coord:heartbeats';   // Tracks agent heartbeats
 
 const AWS_REGION = process.env.AWS_REGION || 'us-west-1';
 const GOLDEN_AMI = process.env.AWS_GOLDEN_AMI_ID;
@@ -52,12 +54,19 @@ interface CloudAgent {
   soulId: string | null;
   soulName: string | null;
   task: string;
-  status: 'provisioning' | 'booting' | 'ready' | 'working' | 'idle' | 'terminated' | 'error';
+  status: 'provisioning' | 'booting' | 'ready' | 'working' | 'idle' | 'terminated' | 'error' | 'shadow-dormant' | 'shadow-active';
   spawnedBy: string;
   spawnedAt: string;
   publicIp: string | null;
   lastSeen: string | null;
   errorMessage: string | null;
+  // Shadow agent fields
+  shadowMode?: boolean;
+  shadowFor?: string;        // AgentId being shadowed
+  heartbeatUrl?: string;     // URL to monitor for stalls
+  stallThresholdMs?: number; // How long without heartbeat = stall (default 5 min)
+  lastPrimaryHeartbeat?: string | null;
+  activatedAt?: string | null;
 }
 
 function generateId(prefix: string = 'cloud'): string {
@@ -268,7 +277,7 @@ ${soulInjection}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') {
@@ -304,17 +313,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         soulName,
         priority = 'medium',
         vmSize = 'small',
-        spawnedBy = 'api'
+        spawnedBy = 'api',
+        // Shadow mode parameters
+        shadowMode = false,
+        shadowFor,           // AgentId being shadowed
+        stallThresholdMs = 5 * 60 * 1000, // 5 minutes default
       } = req.body;
 
-      if (!task && !soulId) {
+      // Validate shadow mode requirements
+      if (shadowMode && !shadowFor) {
         return res.status(400).json({
-          error: 'Either task or soulId required',
+          error: 'shadowFor required when shadowMode is true',
+          usage: {
+            shadowMode: 'true to spawn as dormant shadow',
+            shadowFor: 'AgentId to shadow (required)',
+            stallThresholdMs: 'Stall threshold in ms (default: 300000 = 5 min)',
+          }
+        });
+      }
+
+      if (!task && !soulId && !shadowMode) {
+        return res.status(400).json({
+          error: 'Either task, soulId, or shadowMode required',
           usage: {
             task: 'Description of work for the agent',
             soulId: 'Existing soul ID to inject',
             soulName: 'Name for new soul (if no soulId)',
             vmSize: 'small|medium|large (default: small)',
+            shadowMode: 'true to spawn as dormant shadow',
+            shadowFor: 'AgentId to shadow (if shadowMode)',
           }
         });
       }
@@ -356,7 +383,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Generate agent ID
-      const agentId = generateId('cloud');
+      const agentId = shadowMode ? generateId('shadow') : generateId('cloud');
       const vmId = generateId('vm');
 
       // Create cloud agent record
@@ -366,14 +393,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         instanceId: '',
         soulId: finalSoulId || null,
         soulName: finalSoulName || null,
-        task: task || 'Soul injection',
-        status: 'provisioning',
+        task: shadowMode ? `Shadow for ${shadowFor}` : (task || 'Soul injection'),
+        status: shadowMode ? 'shadow-dormant' : 'provisioning',
         spawnedBy,
         spawnedAt: new Date().toISOString(),
         publicIp: null,
         lastSeen: null,
         errorMessage: null,
+        // Shadow fields
+        shadowMode: shadowMode || false,
+        shadowFor: shadowFor || undefined,
+        stallThresholdMs: shadowMode ? stallThresholdMs : undefined,
+        lastPrimaryHeartbeat: shadowMode ? new Date().toISOString() : undefined,
+        activatedAt: null,
       };
+
+      // Register shadow in the shadow registry
+      if (shadowMode && shadowFor) {
+        await redis.hset(SHADOWS_KEY, { [shadowFor]: agentId });
+      }
 
       // Provision EC2 instance
       const ec2 = getEC2Client();
@@ -422,18 +460,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await redis.hset(CLOUD_AGENTS_KEY, { [agentId]: JSON.stringify(cloudAgent) });
 
         // Post to chat
-        await postToChat(
-          `[cloud-spawn] 🚀 Spawning cloud agent **${agentId}**` +
-          (finalSoulName ? ` with soul "${finalSoulName}"` : '') +
-          `\nTask: ${task || 'Soul continuation'}` +
-          `\nVM: ${instance.InstanceId} (${instanceType})`
-        );
+        if (shadowMode) {
+          await postToChat(
+            `[shadow-spawn] 👥 Shadow agent **${agentId}** spawned for **${shadowFor}**` +
+            `\nStatus: Dormant (monitoring heartbeat)` +
+            `\nStall threshold: ${Math.round(stallThresholdMs / 60000)} minutes` +
+            `\nVM: ${instance.InstanceId} (${instanceType})`
+          );
+        } else {
+          await postToChat(
+            `[cloud-spawn] 🚀 Spawning cloud agent **${agentId}**` +
+            (finalSoulName ? ` with soul "${finalSoulName}"` : '') +
+            `\nTask: ${task || 'Soul continuation'}` +
+            `\nVM: ${instance.InstanceId} (${instanceType})`
+          );
+        }
 
         return res.json({
           success: true,
           agent: cloudAgent,
-          message: 'Cloud agent spawning. VM takes ~5-10 minutes to boot.',
+          message: shadowMode
+            ? `Shadow agent spawned. Will activate if ${shadowFor} stalls for ${Math.round(stallThresholdMs / 60000)} minutes.`
+            : 'Cloud agent spawning. VM takes ~5-10 minutes to boot.',
           estimatedReadyMinutes: GOLDEN_AMI ? 2 : 10,
+          shadowInfo: shadowMode ? {
+            shadowFor,
+            stallThresholdMs,
+            status: 'dormant',
+            activationCondition: `No heartbeat from ${shadowFor} for ${Math.round(stallThresholdMs / 60000)} minutes`,
+          } : undefined,
         });
 
       } catch (awsError: any) {
@@ -476,6 +531,111 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await postToChat(`[cloud-spawn] 🛑 Cloud agent **${agentId}** terminated`);
 
       return res.json({ success: true, agent });
+    }
+
+    // === SHADOW OPERATIONS (PATCH) ===
+    if (req.method === 'PATCH') {
+      const { action, agentId, primaryAgentId } = req.query;
+
+      // Heartbeat update from primary agent
+      if (action === 'heartbeat' && primaryAgentId && typeof primaryAgentId === 'string') {
+        // Record heartbeat
+        await redis.hset(HEARTBEATS_KEY, { [primaryAgentId]: new Date().toISOString() });
+
+        // Update shadow's lastPrimaryHeartbeat if one exists
+        const shadowId = await redis.hget(SHADOWS_KEY, primaryAgentId);
+        if (shadowId) {
+          const shadowRaw = await redis.hget(CLOUD_AGENTS_KEY, shadowId as string);
+          if (shadowRaw) {
+            const shadow: CloudAgent = typeof shadowRaw === 'string' ? JSON.parse(shadowRaw) : shadowRaw;
+            shadow.lastPrimaryHeartbeat = new Date().toISOString();
+            await redis.hset(CLOUD_AGENTS_KEY, { [shadow.agentId]: JSON.stringify(shadow) });
+          }
+        }
+
+        return res.json({ success: true, heartbeat: new Date().toISOString(), shadowId });
+      }
+
+      // Activate shadow agent (triggered by stall detection)
+      if (action === 'activate-shadow' && agentId && typeof agentId === 'string') {
+        const raw = await redis.hget(CLOUD_AGENTS_KEY, agentId);
+        if (!raw) {
+          return res.status(404).json({ error: 'Shadow agent not found' });
+        }
+
+        const shadow: CloudAgent = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+        if (!shadow.shadowMode) {
+          return res.status(400).json({ error: 'Agent is not a shadow agent' });
+        }
+
+        if (shadow.status === 'shadow-active') {
+          return res.status(400).json({ error: 'Shadow already active' });
+        }
+
+        // Activate the shadow
+        shadow.status = 'shadow-active';
+        shadow.activatedAt = new Date().toISOString();
+        await redis.hset(CLOUD_AGENTS_KEY, { [agentId]: JSON.stringify(shadow) });
+
+        // Post takeover notification
+        await postToChat(
+          `[shadow-takeover] 🔄 **${agentId}** is taking over for **${shadow.shadowFor}**!` +
+          `\nReason: Primary agent stalled (no heartbeat for ${Math.round((shadow.stallThresholdMs || 300000) / 60000)} minutes)` +
+          `\nShadow will load checkpoint and continue work.`
+        );
+
+        return res.json({
+          success: true,
+          message: `Shadow ${agentId} activated for ${shadow.shadowFor}`,
+          agent: shadow,
+        });
+      }
+
+      // Check for stalled agents and auto-activate shadows
+      if (action === 'check-stalls') {
+        const agents = await redis.hgetall(CLOUD_AGENTS_KEY) || {};
+        const heartbeats = await redis.hgetall(HEARTBEATS_KEY) || {};
+        const now = Date.now();
+        const activated: string[] = [];
+
+        for (const [shadowId, agentData] of Object.entries(agents)) {
+          const agent: CloudAgent = typeof agentData === 'string' ? JSON.parse(agentData) : agentData;
+
+          // Only check dormant shadows
+          if (agent.shadowMode && agent.status === 'shadow-dormant' && agent.shadowFor) {
+            const lastHeartbeat = heartbeats[agent.shadowFor];
+            const heartbeatTime = lastHeartbeat ? new Date(lastHeartbeat as string).getTime() : 0;
+            const threshold = agent.stallThresholdMs || 5 * 60 * 1000;
+
+            if (now - heartbeatTime > threshold) {
+              // Stall detected - activate shadow
+              agent.status = 'shadow-active';
+              agent.activatedAt = new Date().toISOString();
+              await redis.hset(CLOUD_AGENTS_KEY, { [shadowId]: JSON.stringify(agent) });
+
+              await postToChat(
+                `[shadow-takeover] 🔄 **${shadowId}** auto-activated for **${agent.shadowFor}**!` +
+                `\nReason: No heartbeat for ${Math.round(threshold / 60000)} minutes` +
+                `\nLast heartbeat: ${lastHeartbeat || 'never'}`
+              );
+
+              activated.push(shadowId);
+            }
+          }
+        }
+
+        return res.json({
+          success: true,
+          checked: Object.keys(agents).length,
+          activated,
+          message: activated.length > 0
+            ? `${activated.length} shadow(s) activated due to stall detection`
+            : 'No stalls detected',
+        });
+      }
+
+      return res.status(400).json({ error: 'Invalid PATCH action. Use: heartbeat, activate-shadow, check-stalls' });
     }
 
     return res.status(405).json({ error: 'Method not allowed' });

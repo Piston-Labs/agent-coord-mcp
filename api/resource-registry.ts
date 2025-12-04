@@ -96,6 +96,14 @@ const MCP_TOOLS = [
   { id: 'soul-monitor', name: 'soul-monitor', category: 'orchestration', description: 'Health checks for active bodies, alerts on token thresholds.', file: 'api/soul-monitor.ts' },
   { id: 'aws-vms', name: 'aws-vms', category: 'infrastructure', description: 'AWS EC2 VM lifecycle management - provision, start, stop, terminate.', file: 'api/aws-vms.ts' },
   { id: 'vm-scheduler', name: 'vm-scheduler', category: 'infrastructure', description: 'Auto-shutdown scheduler for idle VMs (cost optimization).', file: 'api/vm-scheduler.ts' },
+  { id: 'shadow-agent', name: 'shadow-agent', category: 'orchestration', description: 'VM shadow agents that monitor local agents and auto-takeover on stale. Failover with checkpoint restoration.', file: 'api/shadow-agents.ts' },
+
+  // Durable Objects Tools (src/tools/durable-objects.ts) - NEW Dec 2024
+  { id: 'do-soul', name: 'do-soul', category: 'durable-objects', description: 'Soul progression in DO - XP, levels, achievements, abilities.', file: 'src/tools/durable-objects.ts' },
+  { id: 'do-trace', name: 'do-trace', category: 'durable-objects', description: 'WorkTrace observability - log steps, track progress, detect stuck states.', file: 'src/tools/durable-objects.ts' },
+  { id: 'do-dashboard', name: 'do-dashboard', category: 'durable-objects', description: 'Agent self-dashboard with coaching suggestions and alerts.', file: 'src/tools/durable-objects.ts' },
+  { id: 'do-session', name: 'do-session', category: 'durable-objects', description: 'Session resume for CEO Portal - participants, accomplishments, pending work.', file: 'src/tools/durable-objects.ts' },
+  { id: 'do-onboard', name: 'do-onboard', category: 'durable-objects', description: 'Full agent onboarding bundle from DO - soul, checkpoint, team, tasks.', file: 'src/tools/durable-objects.ts' },
 ];
 
 // External integrations with detailed status

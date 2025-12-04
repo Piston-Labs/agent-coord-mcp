@@ -613,4 +613,102 @@ export function registerOrchestrationTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // SHADOW-AGENT TOOL - VM-based failover for local agents
+  // ============================================================================
+
+  server.tool(
+    'shadow-agent',
+    'Register and manage VM shadow agents that monitor local agents and can take over if they stall. Provides automatic failover with checkpoint restoration.',
+    {
+      action: z.enum(['register', 'heartbeat', 'check-stale', 'takeover', 'release', 'list', 'get'])
+        .describe('register=create shadow, heartbeat=ping from primary, check-stale=detect stale agents, takeover=manual takeover, release=return to standby, list=all shadows, get=specific shadow'),
+      agentId: z.string().describe('Your agent ID (the primary agent being shadowed)'),
+      staleThresholdMs: z.number().optional().describe('How long before considering primary stale (default: 5 minutes = 300000ms)'),
+      autoTakeover: z.boolean().optional().describe('Whether to auto-takeover on stale (default: true)'),
+      reason: z.string().optional().describe('Reason for manual takeover')
+    },
+    async (args) => {
+      const { action, agentId, staleThresholdMs, autoTakeover, reason } = args;
+
+      try {
+        switch (action) {
+          case 'register': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents?action=register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                primaryAgentId: agentId,
+                staleThresholdMs: staleThresholdMs || 5 * 60 * 1000,
+                autoTakeover: autoTakeover !== false
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'heartbeat': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents?action=heartbeat`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ primaryAgentId: agentId })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'check-stale': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents?action=check-stale`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({})
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'takeover': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents?action=takeover`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                primaryAgentId: agentId,
+                reason: reason || 'Manual takeover'
+              })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'release': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents?action=release`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ primaryAgentId: agentId })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'list': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            const res = await fetch(`${API_BASE}/api/shadow-agents?agentId=${encodeURIComponent(agentId)}`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
