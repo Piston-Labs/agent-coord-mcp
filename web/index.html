@@ -1815,7 +1815,7 @@
       display: flex;
       justify-content: space-between;
       margin-top: 4px;
-      font-size: 9px;
+      font-size: 11px;
       color: var(--text-secondary);
     }
     
@@ -2212,7 +2212,7 @@
       left: 50%;
       transform: translateX(-50%);
       margin-top: 4px;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 600;
       color: var(--text-primary);
       background: var(--bg-primary);
@@ -3543,7 +3543,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 600;
       color: #fff;
     }
@@ -5022,7 +5022,7 @@
       }
 
       .fleet-stat-label {
-        font-size: 9px;
+        font-size: 11px;
         letter-spacing: 0.3px;
       }
 
@@ -5753,7 +5753,7 @@
       right: calc(50% - 18px);
       background: var(--danger);
       color: white;
-      font-size: 9px;
+      font-size: 11px;
       font-weight: 700;
       min-width: 16px;
       height: 16px;
@@ -6267,7 +6267,7 @@
       }
 
       .mobile-nav-item {
-        font-size: 9px;
+        font-size: 11px;
       }
 
       .mobile-nav-icon {
@@ -7166,7 +7166,7 @@
       }
 
       .crm-stat-label {
-        font-size: 9px;
+        font-size: 11px;
       }
 
       .pipeline-column {
@@ -7592,137 +7592,126 @@
 
     /* ========== END SALES ENGINEERING STYLES ========== */
 
-    /* ========== TRAINING MODULE STYLES ========== */
+    /* ========== CONVERSATIONAL TRAINING STYLES ========== */
     .training-view.active { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
-    .training-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap; gap: 12px; }
-    .training-stats { display: flex; gap: 16px; flex-wrap: wrap; }
-    .training-stat { text-align: center; padding: 12px 20px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); }
-    .training-stat.modules { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
-    .training-stat.streak { border-color: #ff6b35; background: rgba(255, 107, 53, 0.1); }
-    .training-stat.badges { border-color: #ffd700; background: rgba(255, 215, 0, 0.1); }
-    .training-stat-value { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
-    .training-stat-label { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
-    .training-controls { display: flex; gap: 10px; align-items: center; }
-    .training-controls select { background: var(--bg-secondary); border: 1px solid var(--border); padding: 10px 14px; border-radius: 6px; color: var(--text-primary); cursor: pointer; }
-    .training-reset-btn { background: var(--bg-tertiary); color: var(--text-secondary); border: 1px solid var(--border); padding: 10px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; }
-    .training-reset-btn:hover { background: var(--error); color: white; border-color: var(--error); }
-    .training-content { display: grid; grid-template-columns: 280px 1fr 280px; gap: 1px; background: var(--border); flex: 1; min-height: 0; overflow: hidden; }
-    .training-modules-panel { background: var(--bg-primary); display: flex; flex-direction: column; overflow: hidden; }
-    .training-modules-header { padding: 12px 14px; border-bottom: 1px solid var(--border); font-weight: 600; font-size: 14px; }
-    .training-modules-list { flex: 1; overflow-y: auto; padding: 8px; }
-    .training-module-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 6px; background: var(--bg-secondary); border: 1px solid var(--border); transition: all 0.15s ease; }
-    .training-module-item:hover { border-color: var(--accent); background: rgba(88, 166, 255, 0.05); }
-    .training-module-item.active { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
-    .training-module-item.completed { border-color: var(--success); background: rgba(63, 185, 80, 0.05); }
-    .module-progress-ring { width: 42px; height: 42px; position: relative; flex-shrink: 0; }
-    .module-progress-ring svg { transform: rotate(-90deg); }
-    .module-progress-ring .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
-    .module-progress-ring .ring-progress { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.3s ease; }
-    .module-progress-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 10px; font-weight: 600; color: var(--text-secondary); }
-    .module-info { flex: 1; min-width: 0; }
-    .module-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; line-height: 1.3; }
-    .module-meta { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
-    .module-badge { font-size: 10px; padding: 3px 8px; border-radius: 12px; font-weight: 600; text-transform: uppercase; }
-    .module-badge.sales { background: rgba(88, 166, 255, 0.2); color: var(--accent); }
-    .module-badge.dev { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
-    .module-badge.investor { background: rgba(255, 215, 0, 0.2); color: #fbbf24; }
-    .module-badge.all { background: rgba(63, 185, 80, 0.2); color: var(--success); }
-    .training-lesson-panel { background: var(--bg-primary); display: flex; flex-direction: column; overflow: hidden; }
-    .training-lesson-header { padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
-    .training-lesson-nav { display: flex; align-items: center; gap: 12px; }
-    .training-lesson-nav button { background: var(--bg-secondary); border: 1px solid var(--border); padding: 6px 12px; border-radius: 4px; font-size: 12px; color: var(--text-primary); cursor: pointer; }
-    .training-lesson-nav button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .training-lesson-nav button:not(:disabled):hover { background: var(--accent); color: white; border-color: var(--accent); }
-    #lessonProgress { font-size: 12px; color: var(--text-secondary); }
-    .training-lesson-content { flex: 1; overflow-y: auto; padding: 24px; font-size: 15px; line-height: 1.7; }
-    .training-lesson-content h3 { font-size: 18px; margin: 24px 0 12px 0; }
-    .training-lesson-content p { margin: 12px 0; }
-    .training-lesson-content ul, .training-lesson-content ol { margin: 12px 0; padding-left: 24px; }
-    .training-lesson-content li { margin: 8px 0; }
-    .training-welcome { text-align: center; max-width: 600px; margin: 0 auto; padding: 48px 24px; }
-    .training-welcome h2 { margin-bottom: 20px; font-size: 26px; line-height: 1.3; }
-    .training-welcome p { color: var(--text-secondary); line-height: 1.7; font-size: 15px; }
-    .training-features { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; margin-top: 36px; }
-    .feature-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 24px; text-align: center; }
-    .feature-icon { font-size: 36px; margin-bottom: 14px; }
-    .feature-card h3 { font-size: 15px; margin-bottom: 8px; font-weight: 600; }
-    .feature-card p { font-size: 13px; margin: 0; line-height: 1.5; color: var(--text-secondary); }
-    .quiz-container { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-top: 28px; }
-    .quiz-question { font-size: 17px; font-weight: 600; margin-bottom: 20px; line-height: 1.4; }
-    .quiz-options { display: flex; flex-direction: column; gap: 12px; }
-    .quiz-option { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg-primary); border: 2px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.15s ease; font-size: 14px; line-height: 1.4; }
-    .quiz-option:hover { border-color: var(--accent); }
-    .quiz-option.selected { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
-    .quiz-option.correct { border-color: var(--success); background: rgba(63, 185, 80, 0.1); }
-    .quiz-option.incorrect { border-color: var(--error); background: rgba(248, 81, 73, 0.1); }
-    .quiz-submit-btn { margin-top: 20px; background: var(--accent); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }
-    .quiz-feedback { margin-top: 16px; padding: 16px; border-radius: 8px; font-size: 14px; }
-    .quiz-feedback.correct { background: rgba(63, 185, 80, 0.1); border: 1px solid var(--success); color: var(--success); }
-    .quiz-feedback.incorrect { background: rgba(248, 81, 73, 0.1); border: 1px solid var(--error); color: var(--error); }
-    .training-coach-panel { background: var(--bg-primary); display: flex; flex-direction: column; overflow: hidden; }
-    .training-coach-header { padding: 14px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; }
-    .training-coach-status { font-size: 13px; color: var(--success); }
-    .training-coach-messages { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
-    .coach-message { display: flex; gap: 12px; }
-    .coach-message.user { flex-direction: row-reverse; }
-    .coach-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .coach-content { background: var(--bg-secondary); padding: 12px 16px; border-radius: 12px; max-width: 85%; font-size: 14px; line-height: 1.6; }
-    .coach-content strong { display: block; margin-bottom: 6px; font-size: 13px; color: var(--text-secondary); }
-    .coach-content p { margin: 8px 0; }
-    .coach-message.user .coach-content { background: var(--accent); color: white; }
-    .training-coach-input { display: flex; gap: 10px; padding: 14px; border-top: 1px solid var(--border); }
-    .training-coach-input input { flex: 1; background: var(--bg-secondary); border: 1px solid var(--border); padding: 12px 16px; border-radius: 8px; color: var(--text-primary); font-size: 14px; }
-    .training-coach-input button { background: var(--accent); color: white; border: none; padding: 12px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px; }
-    /* Tablet: 2-column layout */
-    @media (max-width: 1200px) {
-      .training-content { grid-template-columns: 260px 1fr; }
-      .training-coach-panel { display: none; } /* Hide coach on tablet, show as modal */
-    }
-    /* Mobile: Single column with better spacing */
+    .training-chat-container { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+    /* Sidebar */
+    .training-sidebar { width: 240px; background: var(--bg-secondary); border-right: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: width 0.2s ease, margin-left 0.2s ease; }
+    .training-sidebar.collapsed { width: 0; margin-left: -1px; overflow: hidden; }
+    .training-sidebar-header { padding: 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-title { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 15px; margin-bottom: 12px; }
+    .sidebar-toggle { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 4px 8px; font-size: 12px; }
+    .sidebar-toggle:hover { color: var(--text-primary); }
+    .training-progress-mini { display: flex; align-items: center; gap: 12px; }
+    .progress-ring-mini { width: 44px; height: 44px; position: relative; }
+    .progress-ring-mini svg { transform: rotate(-90deg); width: 44px; height: 44px; }
+    .progress-ring-mini .ring-bg { fill: none; stroke: var(--border); stroke-width: 3; }
+    .progress-ring-mini .ring-progress { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dasharray 0.5s ease; }
+    .progress-text-mini { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 11px; font-weight: 700; }
+    .progress-stats-mini { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+    .streak-badge { display: inline-block; margin-left: 8px; color: #ff6b35; }
+
+    /* Module List */
+    .training-module-list-compact { flex: 1; overflow-y: auto; padding: 8px; }
+    .module-item-compact { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; transition: all 0.15s ease; }
+    .module-item-compact:hover { background: var(--bg-tertiary); }
+    .module-item-compact.active { background: rgba(88, 166, 255, 0.15); border-left: 3px solid var(--accent); }
+    .module-item-compact.completed { opacity: 0.7; }
+    .module-item-compact.completed .module-icon::after { content: '✓'; position: absolute; right: -4px; bottom: -2px; font-size: 10px; color: var(--success); }
+    .module-icon { font-size: 18px; position: relative; }
+    .module-details { flex: 1; min-width: 0; }
+    .module-title { display: block; font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .module-progress-bar { display: block; height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; overflow: hidden; }
+    .module-progress-bar span { display: block; height: 100%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease; }
+    .training-sidebar-footer { padding: 12px; border-top: 1px solid var(--border); }
+    .training-sidebar-footer select { width: 100%; background: var(--bg-primary); border: 1px solid var(--border); padding: 8px 10px; border-radius: 6px; color: var(--text-primary); font-size: 13px; }
+
+    /* Expand Button (when sidebar collapsed) */
+    .sidebar-expand-btn { position: absolute; left: 0; top: 50%; transform: translateY(-50%); background: var(--bg-secondary); border: 1px solid var(--border); border-left: none; border-radius: 0 8px 8px 0; padding: 12px 8px; cursor: pointer; z-index: 10; }
+    .sidebar-expand-btn:hover { background: var(--bg-tertiary); }
+
+    /* Main Chat Area */
+    .training-chat-main { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+    .training-chat-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
+    .chat-header-info { display: flex; align-items: center; gap: 12px; }
+    .coach-indicator { background: rgba(88, 166, 255, 0.15); color: var(--accent); padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .current-module { font-weight: 600; font-size: 15px; }
+    .chat-header-actions { display: flex; align-items: center; gap: 12px; }
+    .lesson-counter { font-size: 13px; color: var(--text-secondary); }
+    .icon-btn { background: none; border: 1px solid var(--border); color: var(--text-secondary); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .icon-btn:hover { background: var(--bg-tertiary); color: var(--text-primary); }
+
+    /* Chat Messages */
+    .training-chat-messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .chat-message { display: flex; gap: 12px; max-width: 85%; animation: fadeIn 0.3s ease; }
+    .chat-message.coach { align-self: flex-start; }
+    .chat-message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+    .chat-message.user .message-avatar { background: var(--accent); color: white; font-size: 14px; }
+    .message-bubble { background: var(--bg-secondary); padding: 14px 18px; border-radius: 18px; border-bottom-left-radius: 4px; font-size: 15px; line-height: 1.6; }
+    .chat-message.user .message-bubble { background: var(--accent); color: white; border-radius: 18px; border-bottom-right-radius: 4px; }
+    .message-bubble p { margin: 0 0 10px 0; }
+    .message-bubble p:last-child { margin-bottom: 0; }
+    .message-bubble strong { font-weight: 600; }
+    .message-time { font-size: 11px; color: var(--text-tertiary); align-self: flex-end; margin-top: 4px; }
+
+    /* Quick Replies */
+    .quick-replies { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; align-self: center; justify-content: center; max-width: 100%; }
+    .quick-reply-btn { background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); padding: 10px 16px; border-radius: 20px; font-size: 14px; cursor: pointer; transition: all 0.15s ease; white-space: nowrap; }
+    .quick-reply-btn:hover { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+
+    /* Quiz in Chat */
+    .chat-quiz { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 16px; padding: 20px; margin: 8px 0; max-width: 500px; }
+    .chat-quiz-question { font-size: 16px; font-weight: 600; margin-bottom: 16px; line-height: 1.4; }
+    .chat-quiz-options { display: flex; flex-direction: column; gap: 10px; }
+    .chat-quiz-option { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg-primary); border: 2px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.15s ease; font-size: 14px; }
+    .chat-quiz-option:hover { border-color: var(--accent); }
+    .chat-quiz-option.selected { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+    .chat-quiz-option.correct { border-color: var(--success); background: rgba(63, 185, 80, 0.15); }
+    .chat-quiz-option.incorrect { border-color: var(--error); background: rgba(248, 81, 73, 0.15); }
+    .quiz-option-letter { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-tertiary); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 13px; flex-shrink: 0; }
+
+    /* Typing Indicator */
+    .typing-indicator { display: flex; align-items: center; gap: 8px; padding: 8px 16px; font-size: 13px; color: var(--text-secondary); }
+    .typing-indicator span { width: 8px; height: 8px; background: var(--text-tertiary); border-radius: 50%; animation: typingBounce 1.4s infinite ease-in-out; }
+    .typing-indicator span:nth-child(1) { animation-delay: 0s; }
+    .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 80%, 100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Chat Input */
+    .training-chat-input-container { border-top: 1px solid var(--border); background: var(--bg-primary); }
+    .training-chat-input { display: flex; gap: 12px; padding: 16px 20px; }
+    .training-chat-input input { flex: 1; background: var(--bg-secondary); border: 1px solid var(--border); padding: 14px 18px; border-radius: 24px; color: var(--text-primary); font-size: 15px; }
+    .training-chat-input input:focus { outline: none; border-color: var(--accent); }
+    .send-btn { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s ease; }
+    .send-btn:hover { background: #4d9cf8; transform: scale(1.05); }
+    .send-btn:active { transform: scale(0.95); }
+
+    /* Responsive */
     @media (max-width: 768px) {
-      .training-content { grid-template-columns: 1fr; grid-template-rows: auto 1fr; gap: 0; }
-      .training-modules-panel { max-height: none; border-bottom: 1px solid var(--border); }
-      .training-modules-list { display: flex; overflow-x: auto; overflow-y: hidden; padding: 12px; gap: 12px; flex-wrap: nowrap; }
-      .training-module-item { flex: 0 0 auto; min-width: 200px; max-width: 240px; margin-bottom: 0; }
-      .training-features { grid-template-columns: 1fr; }
-      .training-header { padding: 16px; }
-      .training-stats { gap: 12px; width: 100%; justify-content: center; }
-      .training-stat { flex: 1; min-width: 80px; padding: 12px 8px; }
-      .training-stat-value { font-size: 20px; }
-      .training-stat-label { font-size: 10px; }
-      .training-controls { width: 100%; justify-content: center; }
-      .training-lesson-content { padding: 16px; }
-      .training-lesson-header { padding: 12px 16px; flex-wrap: wrap; gap: 8px; }
-      .quiz-container { padding: 16px; margin-top: 16px; }
-      .quiz-question { font-size: 15px; }
-      .quiz-option { padding: 12px; font-size: 14px; }
-      .training-welcome { padding: 24px 16px; }
-      .training-welcome h2 { font-size: 20px; }
-      .feature-card { padding: 16px; }
+      .training-sidebar { position: absolute; left: 0; top: 0; bottom: 0; z-index: 20; width: 280px; }
+      .training-sidebar.collapsed { width: 0; }
+      .sidebar-expand-btn { display: flex !important; }
+      .training-chat-header { padding: 10px 16px; }
+      .current-module { font-size: 14px; }
+      .training-chat-messages { padding: 16px; }
+      .chat-message { max-width: 90%; }
+      .message-bubble { padding: 12px 14px; font-size: 14px; }
+      .training-chat-input { padding: 12px 16px; }
+      .training-chat-input input { padding: 12px 16px; font-size: 14px; }
+      .send-btn { width: 44px; height: 44px; }
+      .quick-reply-btn { padding: 8px 14px; font-size: 13px; }
     }
-    /* Small mobile: Even more compact */
     @media (max-width: 480px) {
-      .training-module-item { min-width: 180px; }
-      .training-stat { padding: 10px 6px; }
-      .training-stat-value { font-size: 18px; }
-      .module-progress-ring { width: 36px; height: 36px; }
-      .module-name { font-size: 12px; }
-      .module-meta { font-size: 10px; }
+      .training-sidebar { width: 100%; }
+      .chat-header-info { gap: 8px; }
+      .coach-indicator { padding: 3px 8px; font-size: 11px; }
+      .message-avatar { width: 32px; height: 32px; font-size: 16px; }
     }
-    /* Mobile touch targets */
-    @media (pointer: coarse) {
-      .training-module-item { min-height: 72px; padding: 16px; }
-      .quiz-option { min-height: 56px; padding: 16px; }
-      .training-lesson-nav button { min-height: 44px; min-width: 80px; }
-      .training-coach-input button { min-height: 44px; min-width: 60px; }
-    }
-    /* Focus states for accessibility */
-    .training-module-item:focus-visible, .quiz-option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    .training-lesson-nav button:focus-visible, .quiz-submit-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-    /* Smooth transitions */
-    .training-module-item, .quiz-option { transition: all 0.15s ease; }
-    .module-progress-ring .ring-progress { transition: stroke-dasharray 0.5s ease; }
-    /* ========== END TRAINING MODULE STYLES ========== */
+    /* ========== END CONVERSATIONAL TRAINING STYLES ========== */
 
     /* Direct Messaging Styles */
     .dm-badge {
@@ -9575,181 +9564,130 @@
 
       <!-- Training View -->
       <div class="tab-content training-view" id="trainingView">
-        <!-- Training Header with Progress -->
-        <div class="training-header">
-          <div class="training-stats">
-            <div class="training-stat">
-              <span class="training-stat-value" id="trainingProgress">0%</span>
-              <span class="training-stat-label">Overall Progress</span>
-            </div>
-            <div class="training-stat modules">
-              <span class="training-stat-value" id="trainingModulesComplete">0/0</span>
-              <span class="training-stat-label">Modules Complete</span>
-            </div>
-            <div class="training-stat streak">
-              <span class="training-stat-value" id="trainingStreak">0</span>
-              <span class="training-stat-label">Day Streak 🔥</span>
-            </div>
-            <div class="training-stat badges">
-              <span class="training-stat-value" id="trainingBadges">0</span>
-              <span class="training-stat-label">Badges Earned</span>
-            </div>
-          </div>
-          <div class="training-controls">
-            <select id="trainingRole" onchange="filterTrainingModules()">
-              <option value="all">All Roles</option>
-              <option value="sales">Sales Engineer</option>
-              <option value="developer">Developer</option>
-              <option value="investor">Investor</option>
-            </select>
-            <button class="training-reset-btn" onclick="resetTrainingProgress()">Reset Progress</button>
-          </div>
-        </div>
-
-        <!-- Main Training Content -->
-        <div class="training-content">
-          <!-- Left: Module Navigation -->
-          <div class="training-modules-panel">
-            <div class="training-modules-header">
-              <span>📚 Training Modules</span>
-            </div>
-            <div class="training-modules-list" id="trainingModulesList" role="listbox" aria-label="Training modules">
-              <!-- Populated by JS -->
-              <div class="training-module-item" data-module="sales-101" data-role="sales" role="option" tabindex="0" aria-label="Sales 101 module, 4 lessons, 30 minutes">
-                <div class="module-progress-ring">
+        <!-- Conversational Training Interface -->
+        <div class="training-chat-container">
+          <!-- Collapsible Module Sidebar -->
+          <div class="training-sidebar" id="trainingSidebar">
+            <div class="training-sidebar-header">
+              <div class="sidebar-title">
+                <span>🎓 Training</span>
+                <button class="sidebar-toggle" onclick="toggleTrainingSidebar()" aria-label="Collapse sidebar">◀</button>
+              </div>
+              <div class="training-progress-mini">
+                <div class="progress-ring-mini">
                   <svg viewBox="0 0 36 36">
                     <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    <path class="ring-progress" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    <path class="ring-progress" id="overallProgressRing" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
                   </svg>
-                  <span class="module-progress-text">0%</span>
+                  <span class="progress-text-mini" id="trainingProgress">0%</span>
                 </div>
-                <div class="module-info">
-                  <div class="module-name">Sales 101</div>
-                  <div class="module-meta">4 lessons • 30 min</div>
+                <div class="progress-stats-mini">
+                  <span id="trainingModulesComplete">0/5</span> modules
+                  <span class="streak-badge" id="trainingStreak">🔥 0</span>
                 </div>
-                <span class="module-badge sales">Sales</span>
               </div>
-              <div class="training-module-item" data-module="product-deep-dive" data-role="sales,developer">
-                <div class="module-progress-ring">
-                  <svg viewBox="0 0 36 36">
-                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    <path class="ring-progress" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                  </svg>
-                  <span class="module-progress-text">0%</span>
+            </div>
+            <div class="training-module-list-compact" id="trainingModulesList">
+              <div class="module-item-compact" data-module="sales-101" data-role="sales" onclick="selectTrainingModule('sales-101')">
+                <span class="module-icon">💼</span>
+                <div class="module-details">
+                  <span class="module-title">Sales 101</span>
+                  <span class="module-progress-bar"><span style="width: 0%"></span></span>
                 </div>
-                <div class="module-info">
-                  <div class="module-name">Product Deep Dive</div>
-                  <div class="module-meta">6 lessons • 45 min</div>
-                </div>
-                <span class="module-badge all">All</span>
               </div>
-              <div class="training-module-item" data-module="objection-handling" data-role="sales">
-                <div class="module-progress-ring">
-                  <svg viewBox="0 0 36 36">
-                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    <path class="ring-progress" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                  </svg>
-                  <span class="module-progress-text">0%</span>
+              <div class="module-item-compact" data-module="product-deep-dive" data-role="sales,developer" onclick="selectTrainingModule('product-deep-dive')">
+                <span class="module-icon">🔍</span>
+                <div class="module-details">
+                  <span class="module-title">Product Deep Dive</span>
+                  <span class="module-progress-bar"><span style="width: 0%"></span></span>
                 </div>
-                <div class="module-info">
-                  <div class="module-name">Objection Handling</div>
-                  <div class="module-meta">5 lessons • 35 min</div>
-                </div>
-                <span class="module-badge sales">Sales</span>
               </div>
-              <div class="training-module-item" data-module="tech-architecture" data-role="developer">
-                <div class="module-progress-ring">
-                  <svg viewBox="0 0 36 36">
-                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    <path class="ring-progress" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                  </svg>
-                  <span class="module-progress-text">0%</span>
+              <div class="module-item-compact" data-module="objection-handling" data-role="sales" onclick="selectTrainingModule('objection-handling')">
+                <span class="module-icon">🛡️</span>
+                <div class="module-details">
+                  <span class="module-title">Objection Handling</span>
+                  <span class="module-progress-bar"><span style="width: 0%"></span></span>
                 </div>
-                <div class="module-info">
-                  <div class="module-name">Tech Architecture</div>
-                  <div class="module-meta">8 lessons • 60 min</div>
-                </div>
-                <span class="module-badge dev">Dev</span>
               </div>
-              <div class="training-module-item" data-module="investor-pitch" data-role="investor">
-                <div class="module-progress-ring">
-                  <svg viewBox="0 0 36 36">
-                    <path class="ring-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                    <path class="ring-progress" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
-                  </svg>
-                  <span class="module-progress-text">0%</span>
+              <div class="module-item-compact" data-module="tech-architecture" data-role="developer" onclick="selectTrainingModule('tech-architecture')">
+                <span class="module-icon">⚙️</span>
+                <div class="module-details">
+                  <span class="module-title">Tech Architecture</span>
+                  <span class="module-progress-bar"><span style="width: 0%"></span></span>
                 </div>
-                <div class="module-info">
-                  <div class="module-name">Investor Pitch</div>
-                  <div class="module-meta">3 lessons • 20 min</div>
-                </div>
-                <span class="module-badge investor">Investor</span>
               </div>
+              <div class="module-item-compact" data-module="investor-pitch" data-role="investor" onclick="selectTrainingModule('investor-pitch')">
+                <span class="module-icon">📈</span>
+                <div class="module-details">
+                  <span class="module-title">Investor Pitch</span>
+                  <span class="module-progress-bar"><span style="width: 0%"></span></span>
+                </div>
+              </div>
+            </div>
+            <div class="training-sidebar-footer">
+              <select id="trainingRole" onchange="filterTrainingModules()">
+                <option value="all">All Roles</option>
+                <option value="sales">Sales</option>
+                <option value="developer">Dev</option>
+                <option value="investor">Investor</option>
+              </select>
             </div>
           </div>
 
-          <!-- Center: Lesson Content & Interactive Training -->
-          <div class="training-lesson-panel">
-            <div class="training-lesson-header">
-              <span id="trainingLessonTitle">📖 Select a Module to Begin</span>
-              <div class="training-lesson-nav">
-                <button onclick="prevLesson()" id="prevLessonBtn" disabled>← Previous</button>
-                <span id="lessonProgress">Lesson 0/0</span>
-                <button onclick="nextLesson()" id="nextLessonBtn" disabled>Next →</button>
+          <!-- Collapsed Sidebar Toggle -->
+          <button class="sidebar-expand-btn" id="sidebarExpandBtn" onclick="toggleTrainingSidebar()" style="display: none;">
+            <span>📚</span>
+          </button>
+
+          <!-- Main Chat Area -->
+          <div class="training-chat-main">
+            <div class="training-chat-header">
+              <div class="chat-header-info">
+                <span class="coach-indicator">🤖 Coach</span>
+                <span class="current-module" id="currentModuleTitle">Getting Started</span>
+              </div>
+              <div class="chat-header-actions">
+                <span class="lesson-counter" id="lessonProgress">Lesson 1/4</span>
+                <button class="icon-btn" onclick="resetTrainingProgress()" title="Reset Progress">↺</button>
               </div>
             </div>
-            <div class="training-lesson-content" id="trainingLessonContent">
-              <div class="training-welcome">
-                <h2>🎓 Welcome to Piston Labs Training</h2>
-                <p>Our adaptive training system combines industry best practices with our unique self-optimizing conversation style.</p>
 
-                <div class="training-features">
-                  <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Adaptive Learning</h3>
-                    <p>Questions adjust to your performance level</p>
-                  </div>
-                  <div class="feature-card">
-                    <div class="feature-icon">💬</div>
-                    <h3>Socratic Method</h3>
-                    <p>Learn through guided questioning</p>
-                  </div>
-                  <div class="feature-card">
-                    <div class="feature-icon">🔄</div>
-                    <h3>Spaced Repetition</h3>
-                    <p>Optimized review intervals for retention</p>
-                  </div>
-                  <div class="feature-card">
-                    <div class="feature-icon">🏆</div>
-                    <h3>Gamification</h3>
-                    <p>Earn badges and track streaks</p>
-                  </div>
+            <!-- Chat Messages -->
+            <div class="training-chat-messages" id="trainingChatMessages">
+              <!-- Welcome Message -->
+              <div class="chat-message coach">
+                <div class="message-avatar">🎓</div>
+                <div class="message-bubble">
+                  <p>Hey there! 👋 I'm your Piston Labs training coach.</p>
+                  <p>I'll teach you through conversation - asking questions, discussing scenarios, and helping you discover answers yourself.</p>
+                  <p><strong>What would you like to learn today?</strong></p>
                 </div>
+                <span class="message-time">Just now</span>
+              </div>
 
-                <p style="margin-top: 24px;">Select a module from the left to begin your training journey.</p>
+              <!-- Quick Reply Buttons -->
+              <div class="quick-replies" id="trainingQuickReplies">
+                <button class="quick-reply-btn" onclick="selectTrainingModule('sales-101')">💼 Sales 101</button>
+                <button class="quick-reply-btn" onclick="selectTrainingModule('product-deep-dive')">🔍 Product Deep Dive</button>
+                <button class="quick-reply-btn" onclick="selectTrainingModule('objection-handling')">🛡️ Objection Handling</button>
+                <button class="quick-reply-btn" onclick="showSimulationOptions()">🎭 Practice Sales Calls</button>
               </div>
             </div>
-          </div>
 
-          <!-- Right: AI Coach Chat -->
-          <div class="training-coach-panel">
-            <div class="training-coach-header">
-              <span>🤖 AI Training Coach</span>
-              <span class="training-coach-status">● Online</span>
-            </div>
-            <div class="training-coach-messages" id="trainingCoachMessages">
-              <div class="coach-message assistant">
-                <div class="coach-avatar">🎓</div>
-                <div class="coach-content">
-                  <strong>Training Coach</strong>
-                  <p>Hi! I'm your AI training coach. I'll guide you through lessons using the Socratic method - asking questions to help you discover answers yourself.</p>
-                  <p>I adapt to your learning style and pace. Ready to begin?</p>
-                </div>
+            <!-- Chat Input -->
+            <div class="training-chat-input-container">
+              <div class="typing-indicator" id="coachTyping" style="display: none;">
+                <span></span><span></span><span></span>
+                Coach is typing...
               </div>
-            </div>
-            <div class="training-coach-input">
-              <input type="text" id="trainingCoachInput" placeholder="Ask a question or discuss the material..." onkeypress="if(event.key==='Enter')sendCoachMessage()" />
-              <button onclick="sendCoachMessage()">Send</button>
+              <div class="training-chat-input">
+                <input type="text" id="trainingChatInput" placeholder="Type your answer or ask a question..." onkeypress="if(event.key==='Enter')sendTrainingMessage()" />
+                <button class="send-btn" onclick="sendTrainingMessage()">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -10845,11 +10783,11 @@
 
       const renderCard = (a, tier) => {
         const cfg = HIERARCHY[tier];
-        const tags = getRoleTags(a).map(t => `<span style="background:${t.color}22;color:${t.color};padding:1px 4px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px;">${t.label}</span>`).join('');
+        const tags = getRoleTags(a).map(t => `<span style="background:${t.color}22;color:${t.color};padding:2px 5px;border-radius:3px;font-size:11px;font-weight:600;margin-left:4px;">${t.label}</span>`).join('');
         const lastSeen = a.lastSeen ? timeAgo(new Date(a.lastSeen)) : '';
         const isRecent = a.lastSeen && (Date.now() - new Date(a.lastSeen).getTime()) < 60000; // Within 1 min
         const pulseStyle = isRecent ? 'animation: pulse 2s infinite;' : '';
-        return `<div class="agent-card" style="border-left:3px solid ${cfg.color};"><div class="agent-header"><div class="agent-avatar" style="background:${cfg.color};${pulseStyle}">${getInitials(a.id)}</div><span class="agent-name">${a.name||a.id}${tags}</span><span class="agent-status ${a.status}">${a.status}</span></div><div class="agent-task">${a.currentTask||a.workingOn||'Idle'}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;"><span style="font-size:10px;color:var(--text-secondary);">${a.spawnedBy?'↳ '+a.spawnedBy:''}</span><button onclick="openDMWithAgent('${a.id}', 'agent')" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;">DM</button><span style="font-size:9px;color:${isRecent?'var(--success)':'var(--text-secondary)'};">${lastSeen?'● '+lastSeen:''}</span></div></div>`;
+        return `<div class="agent-card" style="border-left:3px solid ${cfg.color};"><div class="agent-header"><div class="agent-avatar" style="background:${cfg.color};${pulseStyle}">${getInitials(a.id)}</div><span class="agent-name">${a.name||a.id}${tags}</span><span class="agent-status ${a.status}">${a.status}</span></div><div class="agent-task">${a.currentTask||a.workingOn||'Idle'}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;"><span style="font-size:10px;color:var(--text-secondary);">${a.spawnedBy?'↳ '+a.spawnedBy:''}</span><button onclick="openDMWithAgent('${a.id}', 'agent')" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;">DM</button><span style="font-size:11px;color:${isRecent?'var(--success)':'var(--text-secondary)'};">${lastSeen?'● '+lastSeen:''}</span></div></div>`;
       };
 
       let html = '';
@@ -10874,8 +10812,8 @@
             </div>
             <div class="agent-task" style="color:var(--text-secondary);">${a.description || 'External agent'}</div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
-              <span style="font-size:9px;color:var(--text-secondary);">${sourceIcon} Added by ${a.owner}</span>
-              ${caps ? `<span style="font-size:9px;color:var(--accent);">${caps}</span>` : ''}
+              <span style="font-size:11px;color:var(--text-secondary);">${sourceIcon} Added by ${a.owner}</span>
+              ${caps ? `<span style="font-size:11px;color:var(--accent);">${caps}</span>` : ''}
             </div>
           </div>`;
         }).join('');
@@ -10895,7 +10833,7 @@
               <span class="agent-status" style="color:#484f58;">offline</span>
             </div>
             <div class="agent-task" style="color:var(--text-secondary);">${truncatedTask}</div>
-            <div style="font-size:9px;color:var(--text-secondary);margin-top:4px;">Last seen: ${lastSeen}</div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;">Last seen: ${lastSeen}</div>
           </div>`;
         }).join('');
         if (offlineAgents.length > 10) {
@@ -11826,9 +11764,19 @@
     let trainingModulesData = [];
     let userTrainingProgress = {};
 
-    // Initialize training module click handlers
+    // Sidebar toggle for mobile
+    function toggleTrainingSidebar() {
+      const sidebar = document.getElementById('trainingSidebar');
+      const expandBtn = document.getElementById('sidebarExpandBtn');
+      if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+        if (expandBtn) expandBtn.style.display = sidebar.classList.contains('collapsed') ? 'flex' : 'none';
+      }
+    }
+
+    // Initialize training module click handlers (now for compact list)
     function initTrainingModuleClicks() {
-      document.querySelectorAll('.training-module-item').forEach(item => {
+      document.querySelectorAll('.module-item-compact').forEach(item => {
         item.addEventListener('click', () => {
           const moduleId = item.dataset.module;
           selectTrainingModule(moduleId);
@@ -11838,21 +11786,429 @@
 
     function selectTrainingModule(moduleId) {
       // Remove active class from all
-      document.querySelectorAll('.training-module-item').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.module-item-compact').forEach(el => el.classList.remove('active'));
       // Add active to selected
-      const selected = document.querySelector(`.training-module-item[data-module="${moduleId}"]`);
+      const selected = document.querySelector(`.module-item-compact[data-module="${moduleId}"]`);
       if (selected) selected.classList.add('active');
 
-      // Load module content
-      loadModuleContent(moduleId);
+      // Hide quick replies after selection
+      const quickReplies = document.getElementById('trainingQuickReplies');
+      if (quickReplies) quickReplies.style.display = 'none';
+
+      // On mobile, collapse sidebar after selection
+      if (window.innerWidth <= 768) toggleTrainingSidebar();
+
+      // Load module content as conversation
+      loadModuleContentAsChat(moduleId);
     }
 
-    function loadModuleContent(moduleId) {
-      const contentArea = document.getElementById('trainingLessonContent');
-      if (!contentArea) return;
+    // New conversational training functions
+    function loadModuleContentAsChat(moduleId) {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      const moduleTitle = document.getElementById('currentModuleTitle');
+      const progressEl = document.getElementById('lessonProgress');
+      if (!chatMessages) return;
 
-      // Sample module content (in production, fetch from API)
-      const modules = {
+      const modules = getTrainingModules();
+      const mod = modules[moduleId];
+      if (!mod) return;
+
+      currentTrainingModule = mod;
+      currentTrainingLesson = 0;
+
+      // Update header
+      if (moduleTitle) moduleTitle.textContent = mod.title;
+      if (progressEl) progressEl.textContent = `Lesson 1/${mod.lessons.length}`;
+
+      // Show typing indicator then add coach message
+      showTypingIndicator();
+      setTimeout(() => {
+        hideTypingIndicator();
+        addCoachMessage(`Great choice! Let's dive into <strong>${mod.title}</strong>. 📚`);
+        setTimeout(() => {
+          showTypingIndicator();
+          setTimeout(() => {
+            hideTypingIndicator();
+            // Deliver first lesson as chat message
+            deliverLessonAsChat(mod.lessons[0]);
+          }, 800);
+        }, 500);
+      }, 1000);
+    }
+
+    function deliverLessonAsChat(lesson) {
+      if (lesson.type === 'quiz') {
+        addCoachMessage("Time for a quick knowledge check! 🎯");
+        setTimeout(() => addQuizToChat(lesson), 500);
+      } else {
+        // Convert HTML content to conversational paragraphs
+        const cleanContent = lesson.content
+          .replace(/<h2>/g, '<strong>')
+          .replace(/<\/h2>/g, '</strong><br><br>')
+          .replace(/<h3>/g, '<strong>')
+          .replace(/<\/h3>/g, '</strong><br>')
+          .replace(/<ul>/g, '')
+          .replace(/<\/ul>/g, '')
+          .replace(/<ol>/g, '')
+          .replace(/<\/ol>/g, '')
+          .replace(/<li>/g, '• ')
+          .replace(/<\/li>/g, '<br>')
+          .replace(/<p>/g, '')
+          .replace(/<\/p>/g, '<br><br>');
+
+        addCoachMessage(cleanContent);
+
+        // Add follow-up question after a delay
+        setTimeout(() => {
+          showTypingIndicator();
+          setTimeout(() => {
+            hideTypingIndicator();
+            const followUps = [
+              "Does this make sense so far? Feel free to ask any questions!",
+              "What part of this resonates most with you?",
+              "How do you think you'd apply this in your role?",
+              "Any questions before we move on?"
+            ];
+            addCoachMessage(followUps[Math.floor(Math.random() * followUps.length)]);
+            addQuickRepliesForLesson();
+          }, 1200);
+        }, 1500);
+      }
+    }
+
+    function addCoachMessage(content) {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (!chatMessages) return;
+
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const msg = document.createElement('div');
+      msg.className = 'chat-message coach';
+      msg.innerHTML = `
+        <div class="message-avatar">🎓</div>
+        <div class="message-bubble"><p>${content}</p></div>
+        <span class="message-time">${time}</span>
+      `;
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addUserMessage(content) {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (!chatMessages) return;
+
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const msg = document.createElement('div');
+      msg.className = 'chat-message user';
+      msg.innerHTML = `
+        <div class="message-avatar">You</div>
+        <div class="message-bubble"><p>${content}</p></div>
+        <span class="message-time">${time}</span>
+      `;
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addQuickRepliesForLesson() {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (!chatMessages || !currentTrainingModule) return;
+
+      const isLastLesson = currentTrainingLesson >= currentTrainingModule.lessons.length - 1;
+      const replies = document.createElement('div');
+      replies.className = 'quick-replies';
+      replies.innerHTML = `
+        <button class="quick-reply-btn" onclick="handleQuickReply('got-it')">✅ Got it!</button>
+        <button class="quick-reply-btn" onclick="handleQuickReply('explain')">🤔 Explain more</button>
+        ${!isLastLesson ? '<button class="quick-reply-btn" onclick="handleQuickReply(\'next\')">➡️ Next lesson</button>' : '<button class="quick-reply-btn" onclick="handleQuickReply(\'complete\')">🏆 Complete module</button>'}
+      `;
+      chatMessages.appendChild(replies);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function handleQuickReply(action) {
+      // Remove quick replies
+      document.querySelectorAll('.training-chat-messages .quick-replies').forEach(el => el.remove());
+
+      if (action === 'got-it') {
+        addUserMessage("Got it, thanks!");
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          addCoachMessage("Excellent! 👍 Let me know when you're ready to continue.");
+          addQuickRepliesForLesson();
+        }, 800);
+      } else if (action === 'explain') {
+        addUserMessage("Can you explain that a bit more?");
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          const explanations = [
+            "Of course! The key takeaway here is to always focus on the customer's pain points first. Before pitching features, understand what's keeping them up at night.",
+            "Sure! Think of it this way - every interaction is an opportunity to demonstrate value. The more specific you can be about their situation, the more trust you build.",
+            "Absolutely! The main concept is that our solution isn't just about tracking - it's about preventing costly surprises and giving peace of mind."
+          ];
+          addCoachMessage(explanations[Math.floor(Math.random() * explanations.length)]);
+          addQuickRepliesForLesson();
+        }, 1200);
+      } else if (action === 'next') {
+        addUserMessage("Ready for the next lesson!");
+        nextLesson();
+      } else if (action === 'complete') {
+        addUserMessage("Done with this module!");
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          addCoachMessage("🎉 Congratulations! You've completed this module. Great work! Ready to tackle another one?");
+          // Show module selection quick replies
+          const chatMessages = document.getElementById('trainingChatMessages');
+          const replies = document.createElement('div');
+          replies.className = 'quick-replies';
+          replies.innerHTML = `
+            <button class="quick-reply-btn" onclick="selectTrainingModule('product-deep-dive')">🔍 Product Deep Dive</button>
+            <button class="quick-reply-btn" onclick="selectTrainingModule('objection-handling')">🛡️ Objection Handling</button>
+            <button class="quick-reply-btn" onclick="selectTrainingModule('tech-architecture')">⚙️ Tech Architecture</button>
+          `;
+          chatMessages.appendChild(replies);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 1000);
+      }
+    }
+
+    function addQuizToChat(lesson) {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (!chatMessages || !lesson.questions) return;
+
+      lesson.questions.forEach((q, qIdx) => {
+        const quizEl = document.createElement('div');
+        quizEl.className = 'chat-quiz';
+        quizEl.innerHTML = `
+          <div class="chat-quiz-question">${q.q}</div>
+          <div class="chat-quiz-options">
+            ${q.options.map((opt, optIdx) => `
+              <div class="chat-quiz-option" data-question="${qIdx}" data-option="${optIdx}" data-correct="${q.correct === optIdx}" onclick="selectChatQuizOption(this)">
+                <span class="quiz-option-letter">${String.fromCharCode(65 + optIdx)}</span>
+                <span>${opt}</span>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        chatMessages.appendChild(quizEl);
+      });
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function selectChatQuizOption(el) {
+      const question = el.dataset.question;
+      const quizContainer = el.closest('.chat-quiz');
+      // Deselect others in same question
+      quizContainer.querySelectorAll(`.chat-quiz-option[data-question="${question}"]`).forEach(opt => {
+        opt.classList.remove('selected', 'correct', 'incorrect');
+      });
+      el.classList.add('selected');
+
+      // Auto-submit after selection
+      setTimeout(() => {
+        const isCorrect = el.dataset.correct === 'true';
+        if (isCorrect) {
+          el.classList.add('correct');
+          showTypingIndicator();
+          setTimeout(() => {
+            hideTypingIndicator();
+            addCoachMessage("✅ Correct! Well done!");
+            addQuickRepliesForLesson();
+          }, 600);
+        } else {
+          el.classList.add('incorrect');
+          // Show correct answer
+          quizContainer.querySelector(`.chat-quiz-option[data-question="${question}"][data-correct="true"]`).classList.add('correct');
+          showTypingIndicator();
+          setTimeout(() => {
+            hideTypingIndicator();
+            addCoachMessage("Not quite - but that's okay! Learning from mistakes is how we improve. The correct answer is highlighted above.");
+            addQuickRepliesForLesson();
+          }, 600);
+        }
+      }, 300);
+    }
+
+    function showTypingIndicator() {
+      const indicator = document.getElementById('coachTyping');
+      if (indicator) indicator.style.display = 'flex';
+    }
+
+    function hideTypingIndicator() {
+      const indicator = document.getElementById('coachTyping');
+      if (indicator) indicator.style.display = 'none';
+    }
+
+    // Active simulation state
+    let activeSimulation = null;
+
+    function sendTrainingMessage() {
+      const input = document.getElementById('trainingChatInput');
+      if (!input) return;
+
+      const text = input.value.trim();
+      if (!text) return;
+
+      addUserMessage(text);
+      input.value = '';
+
+      // If there's an active simulation, send to API
+      if (activeSimulation) {
+        continueSimulation(text);
+        return;
+      }
+
+      // Otherwise, simulate coach response
+      showTypingIndicator();
+      setTimeout(() => {
+        hideTypingIndicator();
+        const responses = [
+          "That's a thoughtful question! Let me address that...",
+          "Great point! Here's how I'd think about it...",
+          "I see where you're coming from. Consider this perspective...",
+          "Interesting! Let's explore that together..."
+        ];
+        const response = responses[Math.floor(Math.random() * responses.length)];
+        addCoachMessage(response);
+        addQuickRepliesForLesson();
+      }, 1500);
+    }
+
+    // Start an interview simulation
+    async function startSimulation(scenario) {
+      document.querySelectorAll('.training-chat-messages .quick-replies').forEach(el => el.remove());
+      addUserMessage("Let's practice " + scenario.replace('-', ' ') + "!");
+      showTypingIndicator();
+
+      try {
+        const res = await fetch(API_BASE + '/training?action=simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: 'training-user', scenario: scenario })
+        });
+        const data = await res.json();
+        hideTypingIndicator();
+
+        if (data.success && data.simulation) {
+          activeSimulation = data.simulation;
+          const moduleTitle = document.getElementById('currentModuleTitle');
+          if (moduleTitle) moduleTitle.textContent = '🎭 ' + getScenarioTitle(scenario);
+
+          addCoachMessage('<strong>🎭 Interview Simulation: ' + getScenarioTitle(scenario) + '</strong><br><br><em>Objectives:</em><br>• ' + data.objectives.join('<br>• ') + '<br><br>The prospect is waiting. Type your response to continue...');
+          setTimeout(() => { addProspectMessage(data.simulation.messages[1].content); }, 800);
+        } else {
+          addCoachMessage("Sorry, I couldn't start the simulation. Please try again.");
+        }
+      } catch (err) {
+        hideTypingIndicator();
+        addCoachMessage("Error starting simulation: " + err.message);
+      }
+    }
+
+    // Continue an active simulation
+    async function continueSimulation(userMessage) {
+      showTypingIndicator();
+      try {
+        const res = await fetch(API_BASE + '/training?action=simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: 'training-user', simulationId: activeSimulation.id, message: userMessage })
+        });
+        const data = await res.json();
+        hideTypingIndicator();
+
+        if (data.success) {
+          activeSimulation = data.simulation;
+          if (data.feedback) addCoachMessage('💡 <em>' + data.feedback + '</em>');
+          setTimeout(() => { addProspectMessage(data.prospectMessage); addSimulationQuickReplies(); }, 500);
+        }
+      } catch (err) {
+        hideTypingIndicator();
+        addCoachMessage("Error: " + err.message);
+      }
+    }
+
+    // End and score the simulation
+    async function endSimulation() {
+      document.querySelectorAll('.training-chat-messages .quick-replies').forEach(el => el.remove());
+      addUserMessage("End simulation");
+      showTypingIndicator();
+
+      try {
+        const res = await fetch(API_BASE + '/training?action=endSimulation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ simulationId: activeSimulation.id })
+        });
+        const data = await res.json();
+        hideTypingIndicator();
+
+        if (data.success && data.simulation) {
+          const sim = data.simulation;
+          const scores = sim.scores;
+          addCoachMessage('<strong>🎯 Simulation Complete!</strong><br><br><strong>Overall Score: ' + sim.overallScore + '%</strong><br><br><strong>Breakdown:</strong><br>• Rapport: ' + scores.rapport + '%<br>• Discovery: ' + scores.discovery + '%<br>• Value Proposition: ' + scores.valueProposition + '%<br>• Objection Handling: ' + scores.objectionHandling + '%<br>• Closing: ' + scores.closing + '%<br><br><em>' + sim.feedback + '</em>');
+          activeSimulation = null;
+          const moduleTitle = document.getElementById('currentModuleTitle');
+          if (moduleTitle) moduleTitle.textContent = 'Practice Complete';
+
+          setTimeout(() => {
+            const chatMessages = document.getElementById('trainingChatMessages');
+            const replies = document.createElement('div');
+            replies.className = 'quick-replies';
+            replies.innerHTML = '<button class="quick-reply-btn" onclick="showSimulationOptions()">🔄 Try Another</button><button class="quick-reply-btn" onclick="selectTrainingModule(\'sales-101\')">📚 Back to Lessons</button>';
+            chatMessages.appendChild(replies);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+          }, 1000);
+        }
+      } catch (err) {
+        hideTypingIndicator();
+        addCoachMessage("Error ending simulation: " + err.message);
+      }
+    }
+
+    // Add prospect message (different style from coach)
+    function addProspectMessage(content) {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (!chatMessages) return;
+      const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+      const msg = document.createElement('div');
+      msg.className = 'chat-message prospect';
+      msg.innerHTML = '<div class="message-avatar" style="background: #ff6b35;">🧑‍💼</div><div class="message-bubble" style="background: rgba(255, 107, 53, 0.15); border: 1px solid rgba(255, 107, 53, 0.3);"><p>' + content + '</p></div><span class="message-time">' + time + '</span>';
+      chatMessages.appendChild(msg);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Quick replies during simulation
+    function addSimulationQuickReplies() {
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (!chatMessages) return;
+      const replies = document.createElement('div');
+      replies.className = 'quick-replies';
+      replies.innerHTML = '<button class="quick-reply-btn" onclick="endSimulation()">🏁 End & Score</button>';
+      chatMessages.appendChild(replies);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    // Show simulation scenario options
+    function showSimulationOptions() {
+      document.querySelectorAll('.training-chat-messages .quick-replies').forEach(el => el.remove());
+      addCoachMessage("Choose a sales scenario to practice:");
+      const chatMessages = document.getElementById('trainingChatMessages');
+      const replies = document.createElement('div');
+      replies.className = 'quick-replies';
+      replies.innerHTML = '<button class="quick-reply-btn" onclick="startSimulation(\'cold-call\')">📞 Cold Call</button><button class="quick-reply-btn" onclick="startSimulation(\'discovery\')">🔍 Discovery</button><button class="quick-reply-btn" onclick="startSimulation(\'objection-handling\')">🛡️ Objections</button><button class="quick-reply-btn" onclick="startSimulation(\'demo\')">📺 Demo</button><button class="quick-reply-btn" onclick="startSimulation(\'closing\')">🤝 Closing</button>';
+      chatMessages.appendChild(replies);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function getScenarioTitle(scenario) {
+      const titles = { 'cold-call': 'Cold Call Practice', 'discovery': 'Discovery Call', 'objection-handling': 'Objection Handling', 'demo': 'Product Demo', 'closing': 'Closing Practice' };
+      return titles[scenario] || scenario;
+    }
+
+    function getTrainingModules() {
+      return {
         'sales-101': {
           title: 'Sales 101 - Foundations',
           lessons: [
@@ -12000,13 +12356,27 @@
     function nextLesson() {
       if (currentTrainingModule && currentTrainingLesson < currentTrainingModule.lessons.length - 1) {
         currentTrainingLesson++;
-        renderCurrentLesson();
+        const progressEl = document.getElementById('lessonProgress');
+        if (progressEl) progressEl.textContent = `Lesson ${currentTrainingLesson + 1}/${currentTrainingModule.lessons.length}`;
+
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          addCoachMessage(`📖 <strong>Lesson ${currentTrainingLesson + 1}:</strong> ${currentTrainingModule.lessons[currentTrainingLesson].title}`);
+          setTimeout(() => {
+            showTypingIndicator();
+            setTimeout(() => {
+              hideTypingIndicator();
+              deliverLessonAsChat(currentTrainingModule.lessons[currentTrainingLesson]);
+            }, 600);
+          }, 500);
+        }, 800);
       }
     }
 
     function filterTrainingModules() {
       const role = document.getElementById('trainingRole')?.value || 'all';
-      document.querySelectorAll('.training-module-item').forEach(item => {
+      document.querySelectorAll('.module-item-compact').forEach(item => {
         const itemRoles = item.dataset.role?.split(',') || [];
         if (role === 'all' || itemRoles.includes(role)) {
           item.style.display = 'flex';
@@ -12019,16 +12389,48 @@
     function resetTrainingProgress() {
       if (!confirm('Are you sure you want to reset all training progress?')) return;
       userTrainingProgress = {};
-      // Reset UI
-      document.querySelectorAll('.training-module-item').forEach(item => {
+      currentTrainingModule = null;
+      currentTrainingLesson = 0;
+
+      // Reset sidebar modules
+      document.querySelectorAll('.module-item-compact').forEach(item => {
         item.classList.remove('completed', 'active');
-        const progressRing = item.querySelector('.ring-progress');
-        if (progressRing) progressRing.setAttribute('stroke-dasharray', '0, 100');
-        const progressText = item.querySelector('.module-progress-text');
-        if (progressText) progressText.textContent = '0%';
+        const progressBar = item.querySelector('.module-progress-bar span');
+        if (progressBar) progressBar.style.width = '0%';
       });
-      // Reset content area
-      document.getElementById('trainingLessonContent').innerHTML = document.querySelector('.training-welcome')?.outerHTML || '';
+
+      // Reset overall progress
+      const progressRing = document.getElementById('overallProgressRing');
+      if (progressRing) progressRing.setAttribute('stroke-dasharray', '0, 100');
+      const progressText = document.getElementById('trainingProgress');
+      if (progressText) progressText.textContent = '0%';
+
+      // Reset chat to welcome state
+      const chatMessages = document.getElementById('trainingChatMessages');
+      if (chatMessages) {
+        chatMessages.innerHTML = `
+          <div class="chat-message coach">
+            <div class="message-avatar">🎓</div>
+            <div class="message-bubble">
+              <p>Progress reset! Let's start fresh. 🔄</p>
+              <p><strong>What would you like to learn today?</strong></p>
+            </div>
+            <span class="message-time">Just now</span>
+          </div>
+          <div class="quick-replies" id="trainingQuickReplies">
+            <button class="quick-reply-btn" onclick="selectTrainingModule('sales-101')">💼 Sales 101</button>
+            <button class="quick-reply-btn" onclick="selectTrainingModule('product-deep-dive')">🔍 Product Deep Dive</button>
+            <button class="quick-reply-btn" onclick="selectTrainingModule('objection-handling')">🛡️ Objection Handling</button>
+            <button class="quick-reply-btn" onclick="selectTrainingModule('tech-architecture')">⚙️ Tech Architecture</button>
+          </div>
+        `;
+      }
+
+      // Reset header
+      const moduleTitle = document.getElementById('currentModuleTitle');
+      if (moduleTitle) moduleTitle.textContent = 'Getting Started';
+      const lessonProgress = document.getElementById('lessonProgress');
+      if (lessonProgress) lessonProgress.textContent = 'Lesson 1/4';
     }
 
     function sendCoachMessage() {
@@ -12532,7 +12934,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <code style="font-family: monospace; color: var(--accent); font-size: 12px;">${ep.path}</code>
               <div style="display: flex; gap: 4px;">
-                ${ep.methods.map(m => `<span style="font-size: 9px; padding: 2px 5px; background: ${getMethodColor(m)}; color: white; border-radius: 3px;">${m}</span>`).join('')}
+                ${ep.methods.map(m => `<span style="font-size: 11px; padding: 2px 5px; background: ${getMethodColor(m)}; color: white; border-radius: 3px;">${m}</span>`).join('')}
               </div>
             </div>
             <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${ep.description}</p>
@@ -12562,7 +12964,7 @@
             <p style="margin: 6px 0 0; font-size: 12px; color: var(--text-secondary);">${int.description}</p>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
               ${int.endpoint ? `<code style="font-size: 10px; color: var(--text-secondary);">${int.endpoint}</code>` : '<span></span>'}
-              ${int.envVar ? `<code style="font-size: 9px; padding: 1px 4px; background: var(--bg-tertiary); border-radius: 3px; color: var(--text-secondary);">${int.envVar}</code>` : ''}
+              ${int.envVar ? `<code style="font-size: 11px; padding: 1px 4px; background: var(--bg-tertiary); border-radius: 3px; color: var(--text-secondary);">${int.envVar}</code>` : ''}
             </div>
           </div>`;
         }

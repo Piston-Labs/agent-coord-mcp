@@ -23,16 +23,31 @@ async function debugMobile() {
   await page.goto(testUrl, { waitUntil: 'networkidle' });
   await page.waitForTimeout(2000); // Wait for JS to initialize
 
-  // Handle login overlay if present - force hide it via JS
-  await page.evaluate(() => {
-    const overlay = document.getElementById('loginOverlay');
-    if (overlay) {
-      overlay.style.display = 'none';
-      // Also set localStorage to skip login next time
-      localStorage.setItem('chatUsername', 'test-user');
+  // Handle login overlay if present - properly dismiss it
+  const loginOverlay = await page.$('#loginOverlay');
+  if (loginOverlay) {
+    const isVisible = await loginOverlay.isVisible();
+    if (isVisible) {
+      console.log('Login overlay detected, dismissing...');
+      // Set localStorage first so app thinks we're logged in
+      await page.evaluate(() => {
+        localStorage.setItem('chatUsername', 'test-user');
+        localStorage.setItem('agentId', 'test-agent');
+      });
+      // Force hide overlay and remove from DOM flow
+      await page.evaluate(() => {
+        const overlay = document.getElementById('loginOverlay');
+        if (overlay) {
+          overlay.style.display = 'none';
+          overlay.style.visibility = 'hidden';
+          overlay.style.pointerEvents = 'none';
+          overlay.remove(); // Remove completely to avoid interference
+        }
+      });
+      await page.waitForTimeout(500); // Let UI settle
     }
-  });
-  console.log('Login overlay dismissed via JS');
+  }
+  console.log('Login overlay dismissed');
 
   // Check 1: Chat input visibility on initial load
   console.log('--- TEST 1: Chat Input on Initial Load ---');

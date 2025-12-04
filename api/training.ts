@@ -190,29 +190,29 @@ function calculateDifficultyLevel(overallScore: number, totalQuizzes: number): '
  */
 const INTERVIEW_SCENARIOS = {
   'cold-call': {
-    title: 'Cold Call Practice',
-    systemPrompt: `You are a busy plant manager at a manufacturing facility. You receive cold calls regularly and are skeptical but not rude. You have real problems with equipment downtime costing you $15K/hour. You haven't heard of Piston Labs. Start dismissive but warm up if the caller asks good questions and demonstrates understanding of your problems. Don't make it too easy - push back on vague claims.`,
-    objectives: ['Build initial rapport', 'Earn the right to ask questions', 'Identify a pain point', 'Schedule a follow-up']
+    title: 'Cold Call Practice - Auto Shop Owner',
+    systemPrompt: `You are a busy auto repair shop owner with 3 service bays and 4 technicians. You get sales calls all the time and are skeptical. Your main pain points: customers complain about not knowing when their car will be ready, you have no idea where your mobile technician is, and parts deliveries are unpredictable. You haven't heard of Piston Labs. Start dismissive but warm up if the caller asks good questions about your actual problems.`,
+    objectives: ['Build rapport with busy shop owner', 'Identify fleet/tracking pain points', 'Connect to customer satisfaction issues', 'Schedule a follow-up']
   },
   'discovery': {
-    title: 'Discovery Call Practice',
-    systemPrompt: `You are the operations director at a food processing plant. You agreed to a 30-minute call because equipment failures are hurting your production. You have a maintenance team of 5 people and are evaluating options. You've looked at Samsara but found it too expensive. Be open but don't volunteer information - make them earn it with good questions.`,
-    objectives: ['Understand current pain points', 'Map the decision process', 'Identify budget and timeline', 'Qualify the opportunity']
+    title: 'Discovery Call - Multi-Location Shop',
+    systemPrompt: `You own 2 auto repair shops and are considering expansion to a 3rd location. You agreed to a call because managing techs across locations is getting difficult. You have 2 mobile service vans and 8 technicians total. Your current "system" is texting and phone calls. You've heard of GPS tracking but think it might be "Big Brother" for your team. Be open but push back on surveillance concerns.`,
+    objectives: ['Understand multi-location challenges', 'Map technician dispatch process', 'Address privacy/trust concerns', 'Qualify for pilot program']
   },
   'objection-handling': {
-    title: 'Objection Handling Practice',
-    systemPrompt: `You are interested in the product but have concerns: 1) Your IT team is understaffed and worried about security, 2) You're in a budget freeze until Q2, 3) Your boss doesn't believe in "predictive" technology. Raise these objections one at a time. Be convinced by good arguments but don't give in easily.`,
-    objectives: ['Address security concerns', 'Navigate budget constraints', 'Handle skepticism about AI/predictive tech', 'Find a path forward']
+    title: 'Objection Handling - Common Shop Concerns',
+    systemPrompt: `You're the owner of a successful auto shop interested in the product but have concerns: 1) Your technicians will hate being tracked and might quit, 2) You're already paying for shop management software and don't want another system, 3) You're not sure if tracking really helps customer satisfaction. Raise these objections one at a time.`,
+    objectives: ['Address employee privacy concerns', 'Show integration with existing tools', 'Connect tracking to customer experience', 'Demonstrate ROI']
   },
   'demo': {
-    title: 'Product Demo Practice',
-    systemPrompt: `You are watching a demo of Piston Labs. You manage 50 pieces of equipment across 3 facilities. Ask practical questions: How does installation work? What happens when a sensor fails? How do I train my team? What does the mobile app look like? Be engaged but skeptical of any claims that seem too good.`,
-    objectives: ['Clear product explanation', 'Handle technical questions', 'Show relevant use cases', 'Create urgency without pressure']
+    title: 'Product Demo - Shop Fleet Tracking',
+    systemPrompt: `You're watching a demo of Piston Labs fleet tracking for your auto shop. You have 2 tow trucks and 1 mobile service van. Ask practical questions: How do I see where my trucks are right now? Can customers see when the tow truck is coming? What if a driver turns off the device? How much does this cost per vehicle? Be engaged but skeptical.`,
+    objectives: ['Show real-time fleet visibility', 'Demonstrate customer-facing features', 'Handle cost/pricing questions', 'Show mobile app for technicians']
   },
   'closing': {
-    title: 'Closing Practice',
-    systemPrompt: `You've seen the demo and are impressed but hesitant to commit. You need to talk to your boss. You're worried about implementation disruption. You want to start smaller than the proposal suggests. You're also evaluating one other vendor. Push back on the close but be persuadable with the right approach.`,
-    objectives: ['Summarize value proposition', 'Address final concerns', 'Propose clear next steps', 'Ask for commitment']
+    title: 'Closing Practice - Pilot Program',
+    systemPrompt: `You've seen the demo and like it but hesitant to commit. You want to try it on just one vehicle first. You're worried about the monthly cost adding up. Your service advisor thinks it's unnecessary. You need to talk to your business partner before signing anything. Push back but be persuadable with the right pilot offer.`,
+    objectives: ['Propose 30-day pilot on one vehicle', 'Address cost concerns with ROI examples', 'Handle internal stakeholder objections', 'Get commitment to next step']
   }
 };
 
@@ -221,11 +221,11 @@ const INTERVIEW_SCENARIOS = {
  */
 function getOpeningLine(scenario: string): string {
   const openings: Record<string, string> = {
-    'cold-call': "Hello? ... Yes, who is this? I'm in the middle of something.",
-    'discovery': "Hi, thanks for calling. I have about 25 minutes before my next meeting. What did you want to discuss?",
-    'objection-handling': "Look, I like what you're showing me, but I have some serious concerns we need to address before I can move forward.",
-    'demo': "Okay, I'm ready to see the demo. Just so you know, I've seen a lot of these platforms and most of them overpromise.",
-    'closing': "So, I've seen the demo and talked to my team. We're interested, but I'm not sure we're ready to sign anything today."
+    'cold-call': "Yeah, this is Mike's Auto... hold on, I got a customer. *pause* Okay, what do you need? I'm pretty busy here.",
+    'discovery': "Hey, thanks for calling back. Yeah, I got about 20 minutes before my next car comes in. What's this GPS thing about?",
+    'objection-handling': "Alright, I've been thinking about what you showed me. I like the idea but my guys are gonna flip if I tell them I'm tracking their every move.",
+    'demo': "Okay, show me how this works. I've got two tow trucks and a service van. Just so you know, I'm not great with technology.",
+    'closing': "Look, I showed this to my business partner and he thinks it could work. But I want to start small - maybe just one truck to test it out."
   };
   return openings[scenario] || "Hello, how can I help you?";
 }
@@ -269,88 +269,88 @@ function generateProspectResponse(
   // messageCount = 1 means first response, 2 means second, etc.
   if (simulation.scenario === 'cold-call') {
     if (messageCount === 1) {
-      message = "I really don't have time for sales calls. What company did you say you're with?";
-      if (!feedback) feedback = 'Tip: Acknowledge their time is valuable before pitching.';
+      message = "Look, I get calls like this every day. We're a small shop - I don't need fancy technology.";
+      if (!feedback) feedback = 'Tip: Acknowledge they are busy and focus on specific problems they might have.';
     } else if (messageCount === 2) {
-      message = "Okay, you have 30 seconds. What do you do?";
-      if (!feedback) feedback = 'Now deliver a concise value proposition focused on their problems.';
+      message = "GPS tracking? What, you want to spy on my guys? I trust my technicians.";
+      if (!feedback) feedback = 'Common objection! Reframe from "tracking employees" to "improving customer service."';
     } else if (messageCount === 3) {
-      message = "That's interesting. We do have issues with our compressors going down unexpectedly. But how is your solution different from just hiring more maintenance staff?";
-      if (!feedback) feedback = 'They showed interest! Now differentiate your solution.';
+      message = "Hmm... actually customers do complain they never know when the tow truck is coming. That's a real problem.";
+      if (!feedback) feedback = 'They revealed a pain point! Dig deeper on customer experience issues.';
     } else if (messageCount === 4) {
-      message = "Hmm, I'd want to see some proof. Do you have case studies from other manufacturers?";
-      if (!feedback) feedback = 'They want validation - provide social proof and specific results.';
+      message = "Other shops are using this? Like who? Any auto repair places around here?";
+      if (!feedback) feedback = 'They want social proof - share relevant case studies from similar shops.';
     } else {
-      message = "Alright, I'm intrigued. Send me some information and maybe we can schedule a proper call next week.";
-      if (!feedback) feedback = 'Great progress! Now confirm the next step and get commitment.';
+      message = "Alright, send me some info. Maybe we can talk next week when things slow down.";
+      if (!feedback) feedback = 'Great progress! Confirm the follow-up and get a specific time.';
     }
   } else if (simulation.scenario === 'discovery') {
     if (messageCount === 1) {
-      message = "Our biggest issue right now is unexpected equipment failures. Last month we had a refrigeration unit go down and lost $40,000 in product.";
-      if (!feedback) feedback = 'They shared a pain point with specific numbers - use this!';
+      message = "My main headache? Managing techs between my two locations. I never know who's where or if jobs are running late.";
+      if (!feedback) feedback = 'Key pain point! Ask about how this impacts customers and operations.';
     } else if (messageCount === 2) {
-      message = "We have 5 maintenance techs. They're reactive mostly - fixing things when they break. We tried to implement a PM schedule but it's hard to stick to.";
-      if (!feedback) feedback = 'Understanding their current process helps you position your solution.';
+      message = "Right now we just text and call. It works but... sometimes guys don't answer. And I waste time tracking people down.";
+      if (!feedback) feedback = 'Their current process is manual and frustrating - quantify the time waste.';
     } else if (messageCount === 3) {
-      message = "Budget? We spend about $200K a year on maintenance and repairs. But getting new budget approved is tough right now.";
-      if (!feedback) feedback = 'Good discovery! Now tie your solution to their existing budget pain.';
+      message = "Time? Probably an hour a day just figuring out where everyone is and rerouting jobs. That's time I should spend with customers.";
+      if (!feedback) feedback = 'They quantified the problem - 5+ hours per week! Calculate the cost.';
     } else if (messageCount === 4) {
-      message = "Decision making? Usually it's me and my VP of Operations. For anything over $50K, the CFO gets involved too.";
-      if (!feedback) feedback = 'Key info about buying process - plan your next steps accordingly.';
+      message = "Yeah, the Big Brother thing worries me. My best tech has been with me 8 years. I don't want him to feel like I don't trust him.";
+      if (!feedback) feedback = 'Trust/privacy concern - explain how to position it as a tool, not surveillance.';
     } else {
-      message = "What would a pilot look like? I'd be interested if we could start small and prove the value first.";
-      if (!feedback) feedback = 'Excellent! They want a pilot - scope it appropriately.';
+      message = "If we could try it on just the mobile service van first, I might be interested. What would that cost?";
+      if (!feedback) feedback = 'Buying signal! They want a pilot - make it easy to say yes.';
     }
   } else if (simulation.scenario === 'objection-handling') {
     if (messageCount === 1) {
-      message = "My IT team is already stretched thin. They're worried about security and having another system to manage.";
-      if (!feedback) feedback = 'Address their IT concerns with specific security features and ease of management.';
+      message = "My guys are gonna hate this. Tony's been driving that tow truck for 6 years - he'll think I'm treating him like a kid.";
+      if (!feedback) feedback = 'Employee resistance objection - position it as a customer service tool, not monitoring.';
     } else if (messageCount === 2) {
-      message = "Okay, that helps with the security side. But even if I wanted to, we're in a budget freeze until Q2. My hands are tied.";
-      if (!feedback) feedback = 'Budget freeze objection - explore pilot programs or ROI-based approaches.';
+      message = "I'm already paying $400/month for Mitchell and ShopKey. I can't keep adding systems.";
+      if (!feedback) feedback = 'Software overload concern - show simplicity and potential integration benefits.';
     } else if (messageCount === 3) {
-      message = "A pilot could work... but I'll be honest - my boss doesn't believe in this 'predictive AI' stuff. He thinks it's hype.";
-      if (!feedback) feedback = 'Use case studies and concrete examples to address skepticism.';
+      message = "How does GPS even help with customer satisfaction? They just want their car fixed.";
+      if (!feedback) feedback = 'Connect the dots - ETA updates, faster dispatch, fewer angry calls asking "where's my tow truck?"';
     } else if (messageCount === 4) {
-      message = "Those results are impressive. Let me talk to him. What kind of guarantee do you offer?";
-      if (!feedback) feedback = 'They want risk reduction - explain your guarantee or pilot terms.';
+      message = "Okay, that makes sense. But what if my driver just turns off the phone or leaves it in the truck?";
+      if (!feedback) feedback = 'Technical objection - explain the device is hardwired, not phone-based.';
     } else {
-      message = "Alright, you've addressed my concerns. Let's set up a meeting with my boss next week.";
-      if (!feedback) feedback = 'Success! You handled the objections. Now lock in that meeting.';
+      message = "Alright, you've got some good answers. Let me think about it and talk to my partner.";
+      if (!feedback) feedback = 'Success! Ask when you can follow up and what would help the partner conversation.';
     }
   } else if (simulation.scenario === 'demo') {
     if (messageCount === 1) {
-      message = "How long does installation take? We can't afford a lot of downtime.";
-      if (!feedback) feedback = 'Technical question - be specific about installation process and timeline.';
+      message = "So I can see where my trucks are right now? Like, in real time? Show me.";
+      if (!feedback) feedback = 'Show the live map view - point out their use case (tow truck dispatch).';
     } else if (messageCount === 2) {
-      message = "What happens if a sensor fails? Do we lose data?";
-      if (!feedback) feedback = 'Good question about reliability - explain redundancy and support.';
+      message = "What about when my driver is underground in a parking garage? Does it still work?";
+      if (!feedback) feedback = 'Good technical question - explain GPS limitations and how the device handles signal loss.';
     } else if (messageCount === 3) {
-      message = "This looks good on screen, but how do my technicians actually use it day-to-day? They're not very tech-savvy.";
-      if (!feedback) feedback = 'User adoption concern - show ease of use and training support.';
+      message = "Can my customers see when the truck is coming? Like an Uber ETA thing?";
+      if (!feedback) feedback = 'Great feature request - show the customer ETA sharing feature.';
     } else if (messageCount === 4) {
-      message = "What about integration with our CMMS? We use Fiix for work orders.";
-      if (!feedback) feedback = 'Integration question - explain your API and existing integrations.';
+      message = "What happens if somebody steals one of my trucks? Can I track it?";
+      if (!feedback) feedback = 'Recovery/theft protection use case - explain 24/7 tracking and alerts.';
     } else {
-      message = "I like what I see. What would pricing look like for 50 pieces of equipment?";
-      if (!feedback) feedback = 'Buying signal! Transition from demo to pricing discussion carefully.';
+      message = "This is pretty cool actually. What does it cost per truck per month?";
+      if (!feedback) feedback = 'Buying signal! Present pricing clearly and emphasize ROI.';
     }
   } else if (simulation.scenario === 'closing') {
     if (messageCount === 1) {
-      message = "I need to run this by my boss. She makes all the final decisions on vendors.";
-      if (!feedback) feedback = 'Identify the decision maker and offer to present to them directly.';
+      message = "I talked to my partner. He's interested but wants to start with just one truck to test it.";
+      if (!feedback) feedback = 'They want a pilot - agree and make it easy. One truck is a foot in the door.';
     } else if (messageCount === 2) {
-      message = "The proposal is for 50 sensors but I was thinking we should start smaller. Maybe 10 units on our most critical equipment.";
-      if (!feedback) feedback = 'They want to start small - this is a buying signal. Accommodate while protecting value.';
+      message = "How long do we have to commit? I don't want to be locked into a year if it doesn't work.";
+      if (!feedback) feedback = 'Commitment concern - explain your trial/pilot terms and flexibility.';
     } else if (messageCount === 3) {
-      message = "Look, I'm being honest - you're not the only vendor we're looking at. What makes you different?";
-      if (!feedback) feedback = 'Competitive situation - focus on unique differentiators, not price.';
+      message = "What if we don't like it? Is there a money-back guarantee or something?";
+      if (!feedback) feedback = 'Risk reduction - explain your satisfaction guarantee or pilot terms.';
     } else if (messageCount === 4) {
-      message = "Your support model is better, I'll give you that. What about implementation timeline?";
-      if (!feedback) feedback = "They're comparing - emphasize your implementation advantages.";
+      message = "Okay, and installation - I can't have the truck out of service. How long does it take?";
+      if (!feedback) feedback = 'Practical logistics - explain quick installation (30 min) with minimal downtime.';
     } else {
-      message = "Okay, I think we can move forward. Can you send over a revised proposal for the pilot?";
-      if (!feedback) feedback = 'They want to buy! Confirm next steps and timeline for proposal.';
+      message = "Alright, let's try it on the main tow truck first. What do you need from me to get started?";
+      if (!feedback) feedback = 'They said yes! Confirm next steps: vehicle info, install scheduling, and paperwork.';
     }
   } else {
     message = "Tell me more about that.";
