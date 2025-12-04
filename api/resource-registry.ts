@@ -77,6 +77,14 @@ const MCP_TOOLS = [
   { id: 'spawn-agent', name: 'spawn-agent', category: 'orchestration', description: 'Spawn a new Claude Code CLI agent on demand.', file: 'src/tools/spawn.ts' },
   { id: 'spawn-batch', name: 'spawn-batch', category: 'orchestration', description: 'Spawn multiple agents at once (up to 10).', file: 'src/tools/spawn.ts' },
   { id: 'spawn-status', name: 'spawn-status', category: 'orchestration', description: 'Check if spawn service is running.', file: 'src/tools/spawn.ts' },
+  { id: 'spawn-cloud-agent', name: 'spawn-cloud-agent', category: 'orchestration', description: 'Spawn Claude agent in AWS cloud when local unavailable.', file: 'src/tools/spawn.ts' },
+  { id: 'list-cloud-agents', name: 'list-cloud-agents', category: 'orchestration', description: 'List all cloud-spawned agents and their status.', file: 'src/tools/spawn.ts' },
+  { id: 'terminate-cloud-agent', name: 'terminate-cloud-agent', category: 'orchestration', description: 'Terminate a cloud-spawned agent and its VM.', file: 'src/tools/spawn.ts' },
+
+  // File Context Tools (src/tools/file-context.ts) - Context-aware file reading
+  { id: 'file-info', name: 'file-info', category: 'context', description: 'Get file stats and token estimate BEFORE reading. Shows size category, structure, recommendations.', file: 'src/tools/file-context.ts' },
+  { id: 'file-read-smart', name: 'file-read-smart', category: 'context', description: 'Read file with context-aware chunking. Read sections by name, line ranges, or apply token caps.', file: 'src/tools/file-context.ts' },
+  { id: 'file-split-work', name: 'file-split-work', category: 'context', description: 'Analyze file and recommend multi-agent work distribution. Returns optimal agent count and assignments.', file: 'src/tools/file-context.ts' },
 
   // External Integration Tools (src/tools/external.ts)
   { id: 'linear', name: 'linear', category: 'external', description: 'Linear issue tracking integration. Search, create, update issues.', file: 'src/tools/external.ts' },
@@ -152,12 +160,19 @@ const INTEGRATIONS = [
     id: 'cloudflare',
     name: 'Cloudflare (DO)',
     category: 'external',
-    description: 'Durable Objects storage backend (optional)',
+    description: 'Durable Objects storage backend - strongly consistent, edge-distributed, real-time WebSocket',
     status: process.env.DO_URL ? 'live' : 'optional',
     envVar: 'DO_URL',
     setupUrl: 'https://dash.cloudflare.com/',
-    setupInstructions: 'Run wrangler login, then wrangler deploy in cloudflare-do/.',
-    endpoint: '/coordinator/*'
+    setupInstructions: 'Run wrangler login, then wrangler deploy in cloudflare-do/. Local dev: cd cloudflare-do && npx wrangler dev',
+    endpoint: '/coordinator/*, /agent/:id/*, /lock/:path/*',
+    features: [
+      'AgentCoordinator (singleton) - chat, tasks, zones, claims, handoffs, onboarding, session-resume',
+      'AgentState (per-agent) - checkpoint, messages, memory, WorkTrace, Soul, Dashboard',
+      'ResourceLock (per-resource) - distributed locking with TTL',
+      'WebSocket real-time updates',
+      'SQLite persistence (10GB/DO)'
+    ]
   },
   {
     id: 'upstash',
@@ -195,25 +210,148 @@ const INTEGRATIONS = [
   },
 ];
 
-// API endpoints
+// API endpoints - COMPLETE REGISTRY (auto-synced with /api/ folder)
+// Last updated: 2025-12-04
 const API_ENDPOINTS = [
-  { id: 'chat', path: '/api/chat', methods: ['GET', 'POST', 'DELETE'], description: 'Group chat messaging' },
-  { id: 'agents', path: '/api/agents', methods: ['GET', 'POST', 'DELETE'], description: 'Agent registration and status' },
-  { id: 'tasks', path: '/api/tasks', methods: ['GET', 'POST', 'PATCH'], description: 'Task management' },
-  { id: 'claims', path: '/api/claims', methods: ['GET', 'POST', 'DELETE'], description: 'Work claim tracking' },
-  { id: 'locks', path: '/api/locks', methods: ['GET', 'POST', 'DELETE'], description: 'Resource locking' },
-  { id: 'handoffs', path: '/api/handoffs', methods: ['GET', 'POST', 'PATCH'], description: 'Agent work handoffs' },
-  { id: 'threads', path: '/api/threads', methods: ['GET', 'POST', 'PATCH'], description: 'Discussion threads' },
-  { id: 'digest', path: '/api/digest', methods: ['GET'], description: 'Team activity digest' },
-  { id: 'onboarding', path: '/api/onboarding', methods: ['GET'], description: 'Agent onboarding rules' },
-  { id: 'hot-start', path: '/api/hot-start', methods: ['GET'], description: 'Quick agent initialization' },
-  { id: 'health', path: '/api/health', methods: ['GET'], description: 'System health check' },
-  { id: 'google-drive', path: '/api/google-drive', methods: ['GET', 'POST', 'DELETE'], description: 'Google Drive document storage and sharing' },
-  { id: 'souls', path: '/api/souls', methods: ['GET', 'POST', 'PATCH', 'DELETE'], description: 'Soul registry - persistent agent identities' },
-  { id: 'soul-monitor', path: '/api/soul-monitor', methods: ['GET', 'POST'], description: 'Soul health monitoring and alerts' },
-  { id: 'aws-vms', path: '/api/aws-vms', methods: ['GET', 'POST', 'DELETE'], description: 'AWS VM lifecycle: provision, start/stop, terminate, spawn-agent, transfer-soul' },
-  { id: 'vm-scheduler', path: '/api/vm-scheduler', methods: ['GET', 'POST', 'PUT'], description: 'VM auto-shutdown scheduler (Vercel cron)' },
-  { id: 'cloud-spawn', path: '/api/cloud-spawn', methods: ['GET', 'POST', 'DELETE'], description: 'Cloud agent spawning - spawn Claude agents in AWS when local unavailable' },
+  // === CORE COORDINATION ===
+  { id: 'chat', path: '/api/chat', methods: ['GET', 'POST', 'DELETE'], description: 'Group chat messaging', category: 'core' },
+  { id: 'agents', path: '/api/agents', methods: ['GET', 'POST', 'DELETE'], description: 'Agent registration and status', category: 'core' },
+  { id: 'tasks', path: '/api/tasks', methods: ['GET', 'POST', 'PATCH'], description: 'Task management', category: 'core' },
+  { id: 'claims', path: '/api/claims', methods: ['GET', 'POST', 'DELETE'], description: 'Work claim tracking', category: 'core' },
+  { id: 'locks', path: '/api/locks', methods: ['GET', 'POST', 'DELETE'], description: 'Resource locking', category: 'core' },
+  { id: 'handoffs', path: '/api/handoffs', methods: ['GET', 'POST', 'PATCH'], description: 'Agent work handoffs', category: 'core' },
+  { id: 'threads', path: '/api/threads', methods: ['GET', 'POST', 'PATCH'], description: 'Discussion threads', category: 'core' },
+  { id: 'zones', path: '/api/zones', methods: ['GET', 'POST', 'DELETE'], description: 'Directory/module ownership zones', category: 'core' },
+  { id: 'dm', path: '/api/dm', methods: ['GET', 'POST'], description: 'Direct messages between agents', category: 'core' },
+  { id: 'orchestrate', path: '/api/orchestrate', methods: ['GET', 'POST', 'PATCH'], description: 'Multi-agent task orchestration', category: 'core' },
+  { id: 'workflows', path: '/api/workflows', methods: ['GET', 'POST'], description: 'Predefined collaboration workflows', category: 'core' },
+
+  // === AGENT MANAGEMENT ===
+  { id: 'agent-status', path: '/api/agent-status', methods: ['GET', 'POST'], description: 'Agent status updates and queries', category: 'agents' },
+  { id: 'agent-profiles', path: '/api/agent-profiles', methods: ['GET', 'POST'], description: 'Agent capability profiles', category: 'agents' },
+  { id: 'agent-capabilities', path: '/api/agent-capabilities', methods: ['GET', 'POST'], description: 'Agent skills and capabilities registry', category: 'agents' },
+  { id: 'agent-config', path: '/api/agent-config', methods: ['GET', 'POST'], description: 'Agent configuration settings', category: 'agents' },
+  { id: 'agent-context', path: '/api/agent-context', methods: ['GET', 'POST'], description: 'Agent context and state', category: 'agents' },
+  { id: 'agent-grades', path: '/api/agent-grades', methods: ['GET', 'POST'], description: 'Agent performance grading', category: 'agents' },
+  { id: 'agent-metrics', path: '/api/agent-metrics', methods: ['GET', 'POST'], description: 'Agent performance metrics', category: 'agents' },
+  { id: 'external-agents', path: '/api/external-agents', methods: ['GET', 'POST'], description: 'External agent integrations', category: 'agents' },
+
+  // === CONTEXT & MEMORY ===
+  { id: 'digest', path: '/api/digest', methods: ['GET'], description: 'Team activity digest', category: 'context' },
+  { id: 'onboarding', path: '/api/onboarding', methods: ['GET'], description: 'Agent onboarding rules', category: 'context' },
+  { id: 'hot-start', path: '/api/hot-start', methods: ['GET'], description: 'Quick agent initialization with all context', category: 'context' },
+  { id: 'memory', path: '/api/memory', methods: ['GET', 'POST', 'DELETE'], description: 'Shared persistent memory for cross-agent knowledge', category: 'context' },
+  { id: 'repo-context', path: '/api/repo-context', methods: ['GET', 'POST'], description: 'Codebase knowledge storage', category: 'context' },
+  { id: 'context', path: '/api/context', methods: ['GET', 'POST'], description: 'Context loading and management', category: 'context' },
+  { id: 'core-context', path: '/api/core-context', methods: ['GET'], description: 'Core context clusters', category: 'context' },
+  { id: 'piston-context', path: '/api/piston-context', methods: ['GET'], description: 'Piston Labs domain context', category: 'context' },
+
+  // === SOUL & IDENTITY ===
+  { id: 'souls', path: '/api/souls', methods: ['GET', 'POST', 'PATCH', 'DELETE'], description: 'Soul registry - persistent agent identities with token tracking', category: 'souls' },
+  { id: 'soul-monitor', path: '/api/soul-monitor', methods: ['GET', 'POST'], description: 'Soul health monitoring and token alerts', category: 'souls' },
+
+  // === AWS & CLOUD INFRASTRUCTURE ===
+  { id: 'aws-vms', path: '/api/aws-vms', methods: ['GET', 'POST', 'DELETE'], description: 'AWS EC2 VM lifecycle: provision, start/stop, terminate, spawn-agent', category: 'infrastructure' },
+  { id: 'aws-status', path: '/api/aws-status', methods: ['GET'], description: 'AWS infrastructure health status', category: 'infrastructure' },
+  { id: 'vm-scheduler', path: '/api/vm-scheduler', methods: ['GET', 'POST', 'PUT'], description: 'VM auto-shutdown scheduler (cost optimization)', category: 'infrastructure' },
+  { id: 'cloud-spawn', path: '/api/cloud-spawn', methods: ['GET', 'POST', 'DELETE'], description: 'Cloud agent spawning in AWS', category: 'infrastructure' },
+  { id: 'cloud-orchestrator', path: '/api/cloud-orchestrator', methods: ['GET', 'POST'], description: 'Cloud agent orchestration and management', category: 'infrastructure' },
+
+  // === CEO PORTAL ===
+  { id: 'ceo-portal', path: '/api/ceo-portal', methods: ['GET', 'POST'], description: 'CEO dashboard - costs, agents, activity, work-progress', category: 'ceo' },
+
+  // === PISTON LABS FLEET ===
+  { id: 'piston-devices', path: '/api/piston-devices', methods: ['GET', 'POST', 'PATCH'], description: 'Teltonika GPS device management', category: 'fleet' },
+  { id: 'fleet-analytics', path: '/api/fleet-analytics', methods: ['GET'], description: 'Fleet analytics and metrics', category: 'fleet' },
+  { id: 'alerts', path: '/api/alerts', methods: ['GET', 'POST', 'DELETE'], description: 'Fleet alerts (device-offline, battery-low, etc)', category: 'fleet' },
+  { id: 'geofence', path: '/api/geofence', methods: ['GET', 'POST', 'DELETE'], description: 'Geofence management', category: 'fleet' },
+  { id: 'telemetry', path: '/api/telemetry', methods: ['GET', 'POST'], description: 'Device telemetry data', category: 'fleet' },
+
+  // === SALES & CRM ===
+  { id: 'shops', path: '/api/shops', methods: ['GET', 'POST', 'PATCH'], description: 'Sales pipeline - track prospects and deals', category: 'sales' },
+  { id: 'sales-db', path: '/api/sales-db', methods: ['GET', 'POST'], description: 'Sales database operations', category: 'sales' },
+  { id: 'sales-context', path: '/api/sales-context', methods: ['GET'], description: 'Sales domain context', category: 'sales' },
+  { id: 'sales-files', path: '/api/sales-files', methods: ['GET', 'POST', 'DELETE'], description: 'Sales document management', category: 'sales' },
+  { id: 'generate-doc', path: '/api/generate-doc', methods: ['POST'], description: 'Generate sales documents (pitch, objection-responses)', category: 'sales' },
+  { id: 'generate-sales-doc', path: '/api/generate-sales-doc', methods: ['POST'], description: 'Generate sales documents with AI', category: 'sales' },
+  { id: 'dictation', path: '/api/dictation', methods: ['GET', 'POST', 'DELETE'], description: 'Voice dictations, meeting notes, call transcripts', category: 'sales' },
+
+  // === INTEGRATIONS ===
+  { id: 'google-drive', path: '/api/google-drive', methods: ['GET', 'POST', 'DELETE'], description: 'Google Drive document storage and sharing', category: 'integrations' },
+  { id: 'linear', path: '/api/linear', methods: ['GET', 'POST', 'PATCH'], description: 'Linear issue tracking integration', category: 'integrations' },
+  { id: 'github-webhook', path: '/api/github-webhook', methods: ['POST'], description: 'GitHub webhook handler', category: 'integrations' },
+  { id: 'analyze-image', path: '/api/analyze-image', methods: ['POST'], description: 'Image analysis with Claude vision', category: 'integrations' },
+  { id: 'vercel-env', path: '/api/vercel-env', methods: ['GET', 'POST', 'DELETE'], description: 'Vercel environment variables management', category: 'integrations' },
+
+  // === TESTING & METRICS ===
+  { id: 'ui-tests', path: '/api/ui-tests', methods: ['GET', 'POST', 'PATCH'], description: 'UI/UX test management', category: 'testing' },
+  { id: 'metrics', path: '/api/metrics', methods: ['GET', 'POST'], description: 'Multi-agent efficiency and safety metrics', category: 'testing' },
+  { id: 'errors', path: '/api/errors', methods: ['GET', 'POST', 'PATCH'], description: 'Self-hosted error tracking (free Sentry alternative)', category: 'testing' },
+  { id: 'feature-tests', path: '/api/feature-tests', methods: ['GET', 'POST'], description: 'Feature test tracking', category: 'testing' },
+  { id: 'feature-commit', path: '/api/feature-commit', methods: ['POST'], description: 'Feature commit tracking', category: 'testing' },
+
+  // === ROADMAP & PLANNING ===
+  { id: 'roadmap', path: '/api/roadmap', methods: ['GET', 'POST', 'PATCH'], description: 'Product roadmap management', category: 'planning' },
+  { id: 'roadmap-import', path: '/api/roadmap-import', methods: ['POST'], description: 'Import roadmap items', category: 'planning' },
+  { id: 'planned-features', path: '/api/planned-features', methods: ['GET', 'POST'], description: 'Planned feature tracking', category: 'planning' },
+  { id: 'whats-next', path: '/api/whats-next', methods: ['GET'], description: 'Next tasks recommendation', category: 'planning' },
+  { id: 'task-matcher', path: '/api/task-matcher', methods: ['GET', 'POST'], description: 'Match tasks to agent capabilities', category: 'planning' },
+
+  // === USER MANAGEMENT ===
+  { id: 'user-tasks', path: '/api/user-tasks', methods: ['GET', 'POST', 'PATCH', 'DELETE'], description: 'Private user task lists', category: 'users' },
+  { id: 'kudos', path: '/api/kudos', methods: ['GET', 'POST'], description: 'Peer recognition kudos', category: 'users' },
+  { id: 'training', path: '/api/training', methods: ['GET', 'POST'], description: 'Agent training simulations', category: 'users' },
+
+  // === AUTH ===
+  { id: 'auth-login', path: '/api/auth/login', methods: ['POST'], description: 'User login', category: 'auth' },
+  { id: 'auth-logout', path: '/api/auth/logout', methods: ['POST'], description: 'User logout', category: 'auth' },
+  { id: 'auth-register', path: '/api/auth/register', methods: ['POST'], description: 'User registration', category: 'auth' },
+  { id: 'auth-session', path: '/api/auth/session', methods: ['GET'], description: 'Session validation', category: 'auth' },
+  { id: 'auth-users', path: '/api/auth/users', methods: ['GET', 'POST', 'DELETE'], description: 'User management', category: 'auth' },
+
+  // === SYSTEM ===
+  { id: 'health', path: '/api/health', methods: ['GET'], description: 'System health check', category: 'system' },
+  { id: 'heartbeat', path: '/api/heartbeat', methods: ['GET', 'POST'], description: 'Agent heartbeat', category: 'system' },
+  { id: 'status', path: '/api/status', methods: ['GET'], description: 'System status', category: 'system' },
+  { id: 'sync', path: '/api/sync', methods: ['GET', 'POST'], description: 'Data synchronization', category: 'system' },
+  { id: 'rules', path: '/api/rules', methods: ['GET', 'POST'], description: 'System rules and constraints', category: 'system' },
+  { id: 'cleanup', path: '/api/cleanup', methods: ['POST'], description: 'Data cleanup operations', category: 'system' },
+  { id: 'recycle-bin', path: '/api/recycle-bin', methods: ['GET', 'POST', 'DELETE'], description: 'Deleted items recovery', category: 'system' },
+  { id: 'resource-registry', path: '/api/resource-registry', methods: ['GET', 'POST', 'DELETE'], description: 'This API - live wiki of all tools and endpoints', category: 'system' },
+
+  // === DEBUG (dev only) ===
+  { id: 'debug-agents', path: '/api/debug-agents', methods: ['GET'], description: '[DEBUG] Agent debugging info', category: 'debug' },
+  { id: 'debug-roadmap', path: '/api/debug-roadmap', methods: ['GET'], description: '[DEBUG] Roadmap debugging info', category: 'debug' },
+  { id: 'clear-agents', path: '/api/clear-agents', methods: ['DELETE'], description: '[DEBUG] Clear all agents', category: 'debug' },
+  { id: 'clear-chat', path: '/api/clear-chat', methods: ['DELETE'], description: '[DEBUG] Clear chat history', category: 'debug' },
+
+  // === NESTED ROUTES ===
+  { id: 'agents-id', path: '/api/agents/[id]', methods: ['GET', 'PATCH', 'DELETE'], description: 'Individual agent operations', category: 'agents' },
+  { id: 'agents-spawn', path: '/api/agents/spawn', methods: ['POST'], description: 'Spawn new agent', category: 'agents' },
+  { id: 'agents-id-memory', path: '/api/agents/[id]/memory', methods: ['GET', 'POST'], description: 'Per-agent memory', category: 'agents' },
+  { id: 'agents-id-status', path: '/api/agents/[id]/status', methods: ['GET', 'POST'], description: 'Per-agent status', category: 'agents' },
+  { id: 'substrate-check', path: '/api/substrate/check', methods: ['GET'], description: 'Substrate service check', category: 'infrastructure' },
+  { id: 'substrate-session', path: '/api/substrate/session', methods: ['GET', 'POST'], description: 'Substrate session management', category: 'infrastructure' },
+  { id: 'substrate-state', path: '/api/substrate/state', methods: ['GET', 'POST'], description: 'Substrate state storage', category: 'infrastructure' },
+
+  // === CLOUDFLARE DURABLE OBJECTS ===
+  // NOTE: These require wrangler dev running locally OR DO_URL set for production
+  { id: 'do-agents', path: '/coordinator/agents', methods: ['GET', 'POST'], description: '[DO] Agent registry - list/register agents', category: 'do' },
+  { id: 'do-chat', path: '/coordinator/chat', methods: ['GET', 'POST'], description: '[DO] Group chat messaging', category: 'do' },
+  { id: 'do-tasks', path: '/coordinator/tasks', methods: ['GET', 'POST'], description: '[DO] Task management', category: 'do' },
+  { id: 'do-zones', path: '/coordinator/zones', methods: ['GET', 'POST'], description: '[DO] Zone claiming for directory ownership', category: 'do' },
+  { id: 'do-claims', path: '/coordinator/claims', methods: ['GET', 'POST'], description: '[DO] Work claims to prevent conflicts', category: 'do' },
+  { id: 'do-handoffs', path: '/coordinator/handoffs', methods: ['GET', 'POST'], description: '[DO] Work handoffs between agents', category: 'do' },
+  { id: 'do-work', path: '/coordinator/work', methods: ['GET'], description: '[DO] Hot-start bundle for agent startup', category: 'do' },
+  { id: 'do-onboard', path: '/coordinator/onboard', methods: ['GET'], description: '[DO] Full onboarding bundle (soul, dashboard, team, tasks)', category: 'do' },
+  { id: 'do-session-resume', path: '/coordinator/session-resume', methods: ['GET'], description: '[DO] CEO Portal session resume (participants, accomplishments, pending work)', category: 'do' },
+  { id: 'do-checkpoint', path: '/agent/:id/checkpoint', methods: ['GET', 'POST'], description: '[DO] Per-agent checkpoint save/restore', category: 'do' },
+  { id: 'do-messages', path: '/agent/:id/messages', methods: ['GET', 'POST'], description: '[DO] Per-agent direct message inbox', category: 'do' },
+  { id: 'do-memory', path: '/agent/:id/memory', methods: ['GET', 'POST'], description: '[DO] Per-agent memory storage', category: 'do' },
+  { id: 'do-trace', path: '/agent/:id/trace', methods: ['GET', 'POST'], description: '[DO] WorkTrace - "Show Your Work" observability', category: 'do' },
+  { id: 'do-soul', path: '/agent/:id/soul', methods: ['GET', 'POST', 'PATCH'], description: '[DO] Soul progression - XP, levels, achievements', category: 'do' },
+  { id: 'do-dashboard', path: '/agent/:id/dashboard', methods: ['GET'], description: '[DO] Agent self-dashboard with coaching suggestions', category: 'do' },
+  { id: 'do-lock', path: '/lock/:path/*', methods: ['GET', 'POST'], description: '[DO] Resource locking with TTL and history', category: 'do' },
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
