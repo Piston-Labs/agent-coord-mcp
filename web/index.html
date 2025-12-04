@@ -10042,15 +10042,28 @@
             </div>
           </div>
           <div class="ceo-tabs">
-            <button class="ceo-tab active" data-ceotab="blockers" onclick="switchCeoTab('blockers')" style="background: linear-gradient(135deg, #f97316 0%, #ef4444 100%); color: white;">🚨 Agent Blockers</button>
+            <button class="ceo-tab active" data-ceotab="progress" onclick="switchCeoTab('progress')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">📊 Work Progress</button>
+            <button class="ceo-tab" data-ceotab="blockers" onclick="switchCeoTab('blockers')">🚨 Blockers</button>
             <button class="ceo-tab" data-ceotab="tasks" onclick="switchCeoTab('tasks')">Tasks</button>
             <button class="ceo-tab" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
             <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
             <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
           </div>
           <div class="ceo-content">
+            <!-- Work Progress Panel - See what agents accomplished -->
+            <div class="ceo-panel active" id="ceoProgressPanel">
+              <div class="ceo-panel-header" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Agent work output - sessions, decisions, shipped features</span>
+                </div>
+                <button class="ceo-add-btn" onclick="loadWorkProgress()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">🔄 Refresh</button>
+              </div>
+              <div class="ceo-list" id="ceoProgressList" style="padding: 16px 24px;">
+                <div class="ceo-empty">Loading work progress...</div>
+              </div>
+            </div>
             <!-- Agent Blockers Panel - Things agents need from Tyler -->
-            <div class="ceo-panel active" id="ceoBlockersPanel">
+            <div class="ceo-panel" id="ceoBlockersPanel">
               <div class="ceo-panel-header" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%);">
                 <div style="display: flex; align-items: center; gap: 12px;">
                   <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Tasks agents need YOU to complete to unblock them</span>
@@ -12502,14 +12515,14 @@
 
     async function initCeoPortal() {
       if (!IS_SUPERADMIN) return;
-      await Promise.all([fetchCeoBlockers(), fetchCeoTasks(), fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
+      await Promise.all([loadWorkProgress(), fetchCeoBlockers(), fetchCeoTasks(), fetchCeoContacts(), fetchCeoIdeas(), fetchCeoNotes(), fetchCeoStats()]);
     }
 
     function switchCeoTab(tabName) {
       document.querySelectorAll('.ceo-tab').forEach(tab => {
         const isActive = tab.dataset.ceotab === tabName;
         tab.classList.toggle('active', isActive);
-        // Keep blocker tab styled
+        // Keep special tab styles
         if (tab.dataset.ceotab === 'blockers' && !isActive) {
           tab.style.background = 'transparent';
           tab.style.color = 'var(--text-secondary)';
@@ -12517,8 +12530,155 @@
           tab.style.background = 'linear-gradient(135deg, #f97316 0%, #ef4444 100%)';
           tab.style.color = 'white';
         }
+        if (tab.dataset.ceotab === 'progress' && !isActive) {
+          tab.style.background = 'transparent';
+          tab.style.color = 'var(--text-secondary)';
+        } else if (tab.dataset.ceotab === 'progress' && isActive) {
+          tab.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+          tab.style.color = 'white';
+        }
       });
       document.querySelectorAll('.ceo-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'ceo' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Panel'));
+      // Load work progress when tab is shown
+      if (tabName === 'progress') loadWorkProgress();
+    }
+
+    // === WORK PROGRESS - See what agents accomplished ===
+    let workProgressData = null;
+    async function loadWorkProgress() {
+      const container = document.getElementById('ceoProgressList');
+      container.innerHTML = '<div class="ceo-empty">Loading work progress...</div>';
+      try {
+        const res = await fetch(API_BASE + '/ceo-portal?resource=work-progress', { credentials: 'include' });
+        const data = await res.json();
+        workProgressData = data.workProgress;
+        renderWorkProgress();
+      } catch (e) {
+        console.error('Failed to load work progress:', e);
+        container.innerHTML = '<div class="ceo-empty">Failed to load work progress. Make sure you are logged in as superadmin.</div>';
+      }
+    }
+
+    function renderWorkProgress() {
+      const container = document.getElementById('ceoProgressList');
+      if (!workProgressData) {
+        container.innerHTML = '<div class="ceo-empty">No work progress data available.</div>';
+        return;
+      }
+      const { sessionRetros, keyDecisions, patterns, featuresShipped, designDocs, recentActivity, summary } = workProgressData;
+
+      let html = `
+        <!-- Summary Stats -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; margin-bottom: 20px;">
+          <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #10b981;">${summary?.totalMemoryEntries || 0}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">Memory Entries</div>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #6366f1;">${summary?.totalDecisions || 0}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">Decisions</div>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #f59e0b;">${summary?.totalPatterns || 0}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">Patterns</div>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #ec4899;">${summary?.totalDocs || 0}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">Docs</div>
+          </div>
+          <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; text-align: center;">
+            <div style="font-size: 24px; font-weight: 700; color: #8b5cf6;">${summary?.chatMessagesLast24h || 0}</div>
+            <div style="font-size: 11px; color: var(--text-secondary);">Msgs (24h)</div>
+          </div>
+        </div>
+      `;
+
+      // Session Retros
+      if (sessionRetros && sessionRetros.length > 0) {
+        html += `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">📋 Session Retrospectives</h3>
+            ${sessionRetros.map(r => `
+              <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #10b981;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 8px;">
+                  by ${r.createdBy || 'unknown'} • ${new Date(r.createdAt).toLocaleString()}
+                </div>
+                <pre style="font-size: 12px; line-height: 1.5; white-space: pre-wrap; color: var(--text-primary); margin: 0; font-family: inherit;">${escapeHtml(r.content || '').slice(0, 1000)}${(r.content || '').length > 1000 ? '...' : ''}</pre>
+                ${r.tags ? `<div style="margin-top: 8px;">${r.tags.map(t => `<span style="background: var(--accent); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-right: 4px;">${t}</span>`).join('')}</div>` : ''}
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Features Shipped
+      if (featuresShipped && featuresShipped.length > 0) {
+        html += `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">🚀 Features Shipped</h3>
+            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px;">
+              <ul style="margin: 0; padding-left: 20px; color: var(--text-primary);">
+                ${featuresShipped.map(f => `<li style="margin-bottom: 6px; font-size: 13px;">${escapeHtml(f)}</li>`).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+      }
+
+      // Design Docs
+      if (designDocs && designDocs.length > 0) {
+        html += `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">📄 Design Documents</h3>
+            ${designDocs.map(d => `
+              <div style="background: var(--bg-tertiary); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
+                <span style="font-size: 20px;">📄</span>
+                <div style="flex: 1;">
+                  <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${escapeHtml(d.name || 'Untitled')}</div>
+                  <div style="font-size: 11px; color: var(--text-secondary);">${d.type || 'document'} • ${d.folder || 'general'} • ${new Date(d.createdAt).toLocaleDateString()}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Key Decisions
+      if (keyDecisions && keyDecisions.length > 0) {
+        html += `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">🎯 Key Decisions (${keyDecisions.length})</h3>
+            ${keyDecisions.slice(0, 5).map(d => `
+              <div style="background: var(--bg-tertiary); padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; border-left: 3px solid #6366f1;">
+                <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">
+                  by ${d.createdBy || 'unknown'} • ${new Date(d.createdAt).toLocaleDateString()}
+                </div>
+                <div style="font-size: 12px; color: var(--text-primary); line-height: 1.4;">${escapeHtml(d.content || '').slice(0, 200)}${(d.content || '').length > 200 ? '...' : ''}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      // Recent Activity
+      if (recentActivity && recentActivity.length > 0) {
+        html += `
+          <div style="margin-bottom: 20px;">
+            <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text-primary);">💬 Recent Activity</h3>
+            <div style="background: var(--bg-tertiary); padding: 16px; border-radius: 8px; max-height: 300px; overflow-y: auto;">
+              ${recentActivity.map(a => `
+                <div style="margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                  <span style="font-weight: 600; color: var(--accent);">${escapeHtml(a.author || 'unknown')}</span>
+                  <span style="font-size: 10px; color: var(--text-secondary); margin-left: 8px;">${new Date(a.timestamp).toLocaleTimeString()}</span>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">${escapeHtml(a.preview || '')}</div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
     }
 
     // === AGENT BLOCKERS - Tasks for Tyler to unblock agents ===
