@@ -1,24 +1,34 @@
 {
-    "outputDirectory":  "web",
-    "buildCommand":  "npm run build",
-    "headers":  [
-                    {
-                        "headers":  [
-                                        {
-                                            "key":  "Access-Control-Allow-Origin",
-                                            "value":  "*"
-                                        },
-                                        {
-                                            "key":  "Access-Control-Allow-Methods",
-                                            "value":  "GET, POST, PUT, DELETE, PATCH, OPTIONS"
-                                        },
-                                        {
-                                            "key":  "Access-Control-Allow-Headers",
-                                            "value":  "Content-Type, Authorization"
-                                        }
-                                    ],
-                        "source":  "/api/(.*)"
-                    }
-                ],
-    "version":  2
+    "outputDirectory": "web",
+    "buildCommand": "npm run build",
+    "headers": [
+        {
+            "headers": [
+                {
+                    "key": "Access-Control-Allow-Origin",
+                    "value": "*"
+                },
+                {
+                    "key": "Access-Control-Allow-Methods",
+                    "value": "GET, POST, PUT, DELETE, PATCH, OPTIONS"
+                },
+                {
+                    "key": "Access-Control-Allow-Headers",
+                    "value": "Content-Type, Authorization"
+                }
+            ],
+            "source": "/api/(.*)"
+        }
+    ],
+    "crons": [
+        {
+            "path": "/api/vm-scheduler?action=run",
+            "schedule": "*/10 * * * *"
+        },
+        {
+            "path": "/api/soul-monitor?action=check",
+            "schedule": "*/5 * * * *"
+        }
+    ],
+    "version": 2
 }
