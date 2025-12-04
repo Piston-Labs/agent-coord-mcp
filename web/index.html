@@ -8054,6 +8054,34 @@
     .ceo-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     /* ========== END CEO PORTAL STYLES ========== */
 
+    /* CEO Portal Mobile Responsiveness */
+    @media (max-width: 768px) {
+      .ceo-header { flex-direction: column; gap: 16px; padding: 16px; }
+      .ceo-header-left { align-items: center; text-align: center; }
+      .ceo-stats { flex-wrap: wrap; justify-content: center; gap: 16px; }
+      .ceo-stat { min-width: 60px; }
+      .ceo-stat-value { font-size: 20px; }
+      .ceo-tabs { padding: 8px 12px; gap: 4px; flex-wrap: wrap; justify-content: center; }
+      .ceo-tab { padding: 8px 12px; font-size: 12px; }
+      .ceo-panel-header { flex-direction: column; gap: 12px; padding: 12px 16px; }
+      .ceo-filters { flex-wrap: wrap; }
+      .ceo-filters input { min-width: 100%; }
+      .ceo-list { padding: 12px 16px; }
+      .ceo-contact-card { flex-direction: column; gap: 12px; }
+      .contact-actions { flex-direction: row; width: 100%; justify-content: space-between; }
+      .ceo-form-row { grid-template-columns: 1fr; }
+      #ceoExecSummary { margin: 12px; padding: 12px 16px; }
+      #execSummaryContent { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+      .ceo-stats { gap: 12px; }
+      .ceo-stat { min-width: 50px; }
+      .ceo-stat-value { font-size: 18px; }
+      .ceo-stat-label { font-size: 9px; }
+      .ceo-tabs { gap: 2px; }
+      .ceo-tab { padding: 6px 10px; font-size: 11px; }
+    }
+
     /* Direct Messaging Styles */
     .dm-badge {
       position: relative;
