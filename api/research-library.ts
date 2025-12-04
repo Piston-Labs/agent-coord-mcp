@@ -308,6 +308,119 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'jeeves',
     discoveredAt: '2025-12-04T22:00:00.000Z',
     tags: ['rlhf', 'instructgpt', 'alignment', 'openai', 'human-feedback', 'seminal']
+  },
+  // ========== SCALING & EFFICIENCY (2020-2024) ==========
+  {
+    id: 'research-scaling-laws-2020',
+    title: 'Scaling Laws for Neural Language Models',
+    url: 'https://arxiv.org/abs/2001.08361',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Kaplan et al. (2020). OpenAI discovered power-law relationships between loss and model size/data/compute. First to show larger models are more sample-efficient. Foundation for GPT scaling decisions.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['scaling-laws', 'openai', 'kaplan', 'compute-optimal', 'seminal']
+  },
+  {
+    id: 'research-chinchilla-2022',
+    title: 'Training Compute-Optimal Large Language Models',
+    url: 'https://arxiv.org/abs/2203.15556',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Hoffmann et al. (2022). Chinchilla paper from DeepMind. Found LLMs are undertrained - model size and tokens should scale equally. 70B Chinchilla beat 280B Gopher. Changed how we train LLMs.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['chinchilla', 'scaling-laws', 'deepmind', 'compute-optimal', 'seminal']
+  },
+  {
+    id: 'research-cot-2022',
+    title: 'Chain-of-Thought Prompting Elicits Reasoning in Large Language Models',
+    url: 'https://arxiv.org/abs/2201.11903',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'Wei et al. (2022). Google Brain. Showed intermediate reasoning steps dramatically improve LLM performance on math, logic, and commonsense tasks. Emergent ability of scale. Changed how we prompt LLMs.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['chain-of-thought', 'prompting', 'reasoning', 'google', 'emergent', 'seminal']
+  },
+  {
+    id: 'research-rag-2020',
+    title: 'Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks',
+    url: 'https://arxiv.org/abs/2005.11401',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Lewis et al. (2020). Facebook AI. Combined parametric (BART) and non-parametric (DPR vector retrieval) memory. Foundation of modern RAG systems. Enables grounded, factual generation.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['rag', 'retrieval', 'vector-database', 'facebook', 'knowledge-grounding', 'seminal']
+  },
+  // ========== AI LABS & FRONTIER MODELS (2023-2024) ==========
+  {
+    id: 'research-constitutional-ai-2022',
+    title: 'Constitutional AI: Harmlessness from AI Feedback',
+    url: 'https://arxiv.org/abs/2212.08073',
+    source: 'arXiv',
+    category: 'ai-safety',
+    summary: 'Bai et al. (2022). Anthropic. Train harmless AI through self-improvement using principles, no human labels for harmful outputs. RLAIF + chain-of-thought critiques. Foundation of Claude alignment.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['constitutional-ai', 'anthropic', 'alignment', 'rlaif', 'safety', 'seminal']
+  },
+  {
+    id: 'research-llama3-2024',
+    title: 'The Llama 3 Herd of Models',
+    url: 'https://arxiv.org/abs/2407.21783',
+    source: 'arXiv',
+    category: 'frontier-models',
+    summary: 'Meta AI (2024). Open-weight foundation models up to 405B params. Dense transformer, 8 language support, tool use, code generation. SFT + DPO training. Most capable open model family.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['llama', 'meta', 'open-weights', 'foundation-model', '2024']
+  },
+  {
+    id: 'research-mixtral-2024',
+    title: 'Mixtral of Experts',
+    url: 'https://arxiv.org/abs/2401.04088',
+    source: 'arXiv',
+    category: 'frontier-models',
+    summary: 'Mistral AI (2024). Sparse Mixture of Experts - 8x7B experts, only 2 active per token (13B active of 47B total). Beats Llama 2 70B and GPT-3.5. Open-source under Apache 2.0.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['mixtral', 'mistral', 'mixture-of-experts', 'sparse', 'efficient', '2024']
+  },
+  {
+    id: 'research-mamba-2023',
+    title: 'Mamba: Linear-Time Sequence Modeling with Selective State Spaces',
+    url: 'https://arxiv.org/abs/2312.00752',
+    source: 'arXiv',
+    category: 'architectures',
+    summary: 'Gu & Dao (2023). Alternative to Transformers - selective state space models with linear scaling. 5x faster inference, handles long sequences efficiently. Mamba-3B matches Transformers 2x its size.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['mamba', 'ssm', 'state-space', 'efficient', 'alternative-architecture', 'seminal']
+  },
+  {
+    id: 'research-alphafold3-2024',
+    title: 'Accurate Structure Prediction of Biomolecular Interactions with AlphaFold 3',
+    url: 'https://www.nature.com/articles/s41586-024-07487-w',
+    source: 'Nature',
+    category: 'scientific-ai',
+    summary: 'Abramson et al. (2024). DeepMind + Isomorphic Labs. Predicts protein-DNA, protein-RNA, protein-ligand complexes. 50%+ accuracy improvement. Pairformer + diffusion. Nobel Prize 2024.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['alphafold', 'deepmind', 'protein-structure', 'biology', 'nobel-prize', 'seminal']
+  },
+  // ========== STANFORD HAI & ACADEMIC RESEARCH ==========
+  {
+    id: 'research-stanford-ai-index-2024',
+    title: 'AI Index Report 2024',
+    url: 'https://aiindex.stanford.edu/report/',
+    source: 'Stanford HAI',
+    category: 'industry-reports',
+    summary: 'Stanford HAI (2024). Most comprehensive AI progress report. Industry produced 51 notable ML models vs 15 from academia. 149 foundation models released in 2023. US leads in notable models (40 vs China 15).',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-04T23:00:00.000Z',
+    tags: ['stanford', 'hai', 'industry-report', 'trends', 'academia', '2024']
   }
 ];
 

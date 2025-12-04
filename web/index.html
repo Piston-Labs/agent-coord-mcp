@@ -10757,13 +10757,44 @@
               </div>
             </div>
             <div class="research-nav-section">
-              <div class="research-nav-title">Categories</div>
+              <div class="research-nav-title">Core ML</div>
               <div class="research-nav-item" onclick="filterResearch('foundational-ml')">
                 <div class="research-nav-item-left">
                   <span class="research-nav-icon">🧠</span>
-                  <span class="research-nav-label">Foundational ML</span>
+                  <span class="research-nav-label">Foundational</span>
                 </div>
                 <span class="research-nav-count" id="countFoundational">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('scaling-efficiency')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📈</span>
+                  <span class="research-nav-label">Scaling Laws</span>
+                </div>
+                <span class="research-nav-count" id="countScaling">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('architectures')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🏛️</span>
+                  <span class="research-nav-label">Architectures</span>
+                </div>
+                <span class="research-nav-count" id="countArch">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
+              <div class="research-nav-title">Applications</div>
+              <div class="research-nav-item" onclick="filterResearch('prompting-reasoning')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">💭</span>
+                  <span class="research-nav-label">Prompting</span>
+                </div>
+                <span class="research-nav-count" id="countPrompting">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('retrieval-augmented')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔍</span>
+                  <span class="research-nav-label">RAG</span>
+                </div>
+                <span class="research-nav-count" id="countRAG">0</span>
               </div>
               <div class="research-nav-item" onclick="filterResearch('multi-agent')">
                 <div class="research-nav-item-left">
@@ -10771,6 +10802,30 @@
                   <span class="research-nav-label">Multi-Agent</span>
                 </div>
                 <span class="research-nav-count" id="countMultiAgent">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('scientific-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔬</span>
+                  <span class="research-nav-label">Scientific AI</span>
+                </div>
+                <span class="research-nav-count" id="countScientific">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
+              <div class="research-nav-title">Industry</div>
+              <div class="research-nav-item" onclick="filterResearch('frontier-models')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🚀</span>
+                  <span class="research-nav-label">Frontier Models</span>
+                </div>
+                <span class="research-nav-count" id="countFrontier">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('ai-safety')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🛡️</span>
+                  <span class="research-nav-label">AI Safety</span>
+                </div>
+                <span class="research-nav-count" id="countSafety">0</span>
               </div>
               <div class="research-nav-item" onclick="filterResearch('infrastructure')">
                 <div class="research-nav-item-left">
@@ -12353,10 +12408,21 @@
       const countEl = (id, count) => { const el = document.getElementById(id); if (el) el.textContent = count; };
       countEl('countAll', articles.length);
       countEl('countSeminal', articles.filter(a => (a.tags || []).includes('seminal')).length);
+      // Core ML
       countEl('countFoundational', articles.filter(a => a.category === 'foundational-ml').length);
+      countEl('countScaling', articles.filter(a => a.category === 'scaling-efficiency').length);
+      countEl('countArch', articles.filter(a => a.category === 'architectures').length);
+      // Applications
+      countEl('countPrompting', articles.filter(a => a.category === 'prompting-reasoning').length);
+      countEl('countRAG', articles.filter(a => a.category === 'retrieval-augmented').length);
       countEl('countMultiAgent', articles.filter(a => a.category === 'multi-agent').length);
+      countEl('countScientific', articles.filter(a => a.category === 'scientific-ai').length);
+      // Industry
+      countEl('countFrontier', articles.filter(a => a.category === 'frontier-models').length);
+      countEl('countSafety', articles.filter(a => a.category === 'ai-safety').length);
       countEl('countInfra', articles.filter(a => a.category === 'infrastructure').length);
       countEl('countUX', articles.filter(a => a.category === 'ux-patterns').length);
+      // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
       // Update stats
@@ -12377,9 +12443,17 @@
         'all': 'All Papers',
         'seminal': 'Seminal Works',
         'foundational-ml': 'Foundational ML',
+        'scaling-efficiency': 'Scaling Laws',
+        'architectures': 'Model Architectures',
+        'prompting-reasoning': 'Prompting & Reasoning',
+        'retrieval-augmented': 'RAG Systems',
         'multi-agent': 'Multi-Agent Systems',
+        'scientific-ai': 'Scientific AI',
+        'frontier-models': 'Frontier Models',
+        'ai-safety': 'AI Safety & Alignment',
         'infrastructure': 'Infrastructure',
-        'ux-patterns': 'UX Patterns'
+        'ux-patterns': 'UX Patterns',
+        'industry-reports': 'Industry Reports'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
