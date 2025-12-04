@@ -419,6 +419,14 @@
     .capability-agent.vm { background: rgba(147, 51, 234, 0.2); color: #a78bfa; }
     .capability-missing { font-size: 11px; color: var(--text-secondary); font-style: italic; padding: 8px; text-align: center; }
 
+    /* Mobile styles for hover cards */
+    @media (max-width: 768px) {
+      .agent-hover-card { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); min-width: 280px; max-width: calc(100vw - 32px); z-index: 2000; }
+      .agent-hover-card-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1999; display: none; }
+      .agent-hover-card-overlay.visible { display: block; }
+      .agent-name-hover { cursor: pointer; }
+    }
+
     .message-text {
       font-size: 14px;
       line-height: 1.5;
@@ -11774,7 +11782,7 @@
         const lastSeen = a.lastSeen ? timeAgo(new Date(a.lastSeen)) : '';
         const isRecent = a.lastSeen && (Date.now() - new Date(a.lastSeen).getTime()) < 60000; // Within 1 min
         const pulseStyle = isRecent ? 'animation: pulse 2s infinite;' : '';
-        return `<div class="agent-card" style="border-left:3px solid ${cfg.color};"><div class="agent-header"><div class="agent-avatar" style="background:${cfg.color};${pulseStyle}">${getInitials(a.id)}</div><span class="agent-name"><span class="agent-name-hover" data-agent-id="${a.id}" onmouseenter="showAgentHoverCard(event, this)" onmouseleave="hideAgentHoverCard()">${a.name||a.id}<div class="agent-hover-card"></div></span>${tags}</span><span class="agent-status ${a.status}">${a.status}</span></div><div class="agent-task">${a.currentTask||a.workingOn||'Idle'}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;"><span style="font-size:10px;color:var(--text-secondary);">${a.spawnedBy?'↳ '+a.spawnedBy:''}</span><button onclick="openDMWithAgent('${a.id}', 'agent')" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;">DM</button><span style="font-size:11px;color:${isRecent?'var(--success)':'var(--text-secondary)'};">${lastSeen?'● '+lastSeen:''}</span></div></div>`;
+        return `<div class="agent-card" style="border-left:3px solid ${cfg.color};"><div class="agent-header"><div class="agent-avatar" style="background:${cfg.color};${pulseStyle}">${getInitials(a.id)}</div><span class="agent-name"><span class="agent-name-hover" data-agent-id="${a.id}" onclick="toggleAgentHoverCard(event, this)" onmouseenter="if(!isTouchDevice)showAgentHoverCard(event, this)" onmouseleave="if(!isTouchDevice)hideAgentHoverCard()">${a.name||a.id}<div class="agent-hover-card"></div></span>${tags}</span><span class="agent-status ${a.status}">${a.status}</span></div><div class="agent-task">${a.currentTask||a.workingOn||'Idle'}</div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;"><span style="font-size:10px;color:var(--text-secondary);">${a.spawnedBy?'↳ '+a.spawnedBy:''}</span><button onclick="openDMWithAgent('${a.id}', 'agent')" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:10px;cursor:pointer;">DM</button><span style="font-size:11px;color:${isRecent?'var(--success)':'var(--text-secondary)'};">${lastSeen?'● '+lastSeen:''}</span></div></div>`;
       };
 
       let html = '';
@@ -11961,7 +11969,7 @@
         <div class="message ${isOwn ? 'own' : ''} ${isVmAgent ? 'vm-agent' : ''}" data-id="${m.id}">
           <div class="message-avatar ${isHuman ? 'human' : ''} ${isVmAgent ? 'vm' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
           <div class="message-content">
-            <div class="message-author"><span class="agent-name-hover" data-agent-id="${m.author}" onmouseenter="showAgentHoverCard(event, this)" onmouseleave="hideAgentHoverCard()">${getAgentDisplayName(m.author)}<div class="agent-hover-card" id="agentHoverCard-${m.id}"></div></span> ${vmBadge}</div>
+            <div class="message-author"><span class="agent-name-hover" data-agent-id="${m.author}" onclick="toggleAgentHoverCard(event, this)" onmouseenter="if(!isTouchDevice)showAgentHoverCard(event, this)" onmouseleave="if(!isTouchDevice)hideAgentHoverCard()">${getAgentDisplayName(m.author)}<div class="agent-hover-card" id="agentHoverCard-${m.id}"></div></span> ${vmBadge}</div>
             ${m.message ? `<div class="message-text markdown-body">${renderMarkdown(m.message)}</div>` : ''}
             ${imageHtml}
             ${reactionsHtml}
@@ -12069,8 +12077,47 @@
     function hideAgentHoverCard() {
       hoverCardTimeout = setTimeout(() => {
         document.querySelectorAll('.agent-hover-card.visible').forEach(c => c.classList.remove('visible'));
+        const overlay = document.getElementById('hoverCardOverlay');
+        if (overlay) overlay.classList.remove('visible');
       }, 200);
     }
+
+    // Mobile touch support - detect if device is touch-enabled
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    function toggleAgentHoverCard(event, element) {
+      event.preventDefault();
+      event.stopPropagation();
+      const card = element.querySelector('.agent-hover-card');
+      if (card && card.classList.contains('visible')) {
+        hideAgentHoverCard();
+      } else {
+        // Hide any other visible cards first
+        document.querySelectorAll('.agent-hover-card.visible').forEach(c => c.classList.remove('visible'));
+        showAgentHoverCard(event, element);
+        // Show overlay on mobile
+        if (isTouchDevice) {
+          let overlay = document.getElementById('hoverCardOverlay');
+          if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'hoverCardOverlay';
+            overlay.className = 'agent-hover-card-overlay';
+            overlay.onclick = () => hideAgentHoverCard();
+            document.body.appendChild(overlay);
+          }
+          overlay.classList.add('visible');
+        }
+      }
+    }
+
+    // Close hover cards when clicking outside (for desktop too)
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.agent-name-hover') && !e.target.closest('.agent-hover-card')) {
+        document.querySelectorAll('.agent-hover-card.visible').forEach(c => c.classList.remove('visible'));
+        const overlay = document.getElementById('hoverCardOverlay');
+        if (overlay) overlay.classList.remove('visible');
+      }
+    });
 
     function getTimeAgo(date) {
       const seconds = Math.floor((new Date() - date) / 1000);

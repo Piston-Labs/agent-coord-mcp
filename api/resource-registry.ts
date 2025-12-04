@@ -67,6 +67,7 @@ const MCP_TOOLS = [
   { id: 'user-tasks', name: 'user-tasks', category: 'integrations', description: 'Manage user tasks and assignments.', file: 'src/tools/integrations.ts' },
   { id: 'shop', name: 'shop', category: 'integrations', description: 'Manage Piston Labs sales pipeline.', file: 'src/tools/integrations.ts' },
   { id: 'errors', name: 'errors', category: 'integrations', description: 'Self-hosted error tracking (free Sentry alternative).', file: 'src/tools/integrations.ts' },
+  { id: 'vercel-env', name: 'vercel-env', category: 'integrations', description: 'Manage Vercel environment variables. List, get, set, delete env vars with audit logging.', file: 'src/tools/integrations.ts' },
 
   // Testing Tools (src/tools/testing.ts)
   { id: 'ui-test', name: 'ui-test', category: 'testing', description: 'UI/UX testing framework. Create, run, and track visual, accessibility, and interaction tests.', file: 'src/tools/testing.ts' },
@@ -215,6 +216,18 @@ const INTEGRATIONS = [
     setupInstructions: 'Run aws/setup.ps1 to deploy CloudFormation stack. Add AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_SUBNET_ID, AWS_SECURITY_GROUP_ID, AWS_IAM_INSTANCE_PROFILE to Vercel.',
     endpoint: '/api/aws-vms',
     features: ['vm-provision', 'auto-shutdown', 'cost-optimization', 'ssm-remote-exec', 'soul-transfer-to-existing-vm']
+  },
+  {
+    id: 'vercel-env',
+    name: 'Vercel Environment',
+    category: 'internal',
+    description: 'Manage Vercel environment variables programmatically with full audit logging',
+    status: process.env.VERCEL_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'VERCEL_TOKEN',
+    setupUrl: 'https://vercel.com/account/tokens',
+    setupInstructions: 'Create token at Vercel Account → Tokens. Add VERCEL_TOKEN and VERCEL_PROJECT_ID to environment.',
+    endpoint: '/api/vercel-env',
+    features: ['list-vars', 'get-var', 'set-var', 'delete-var', 'audit-log', 'authorized-agents-only']
   },
 ];
 
