@@ -23,56 +23,51 @@ async function handleLogin(page: Page): Promise<void> {
   console.log('  Waiting for page load...');
   await page.waitForTimeout(1000);
 
-  // Bypass auth by setting global state and hiding overlay
+  // Bypass auth by removing overlay completely from DOM
   console.log('  Bypassing authentication...');
   await page.evaluate(() => {
     // Set global auth state
     (window as any).isAuthenticated = true;
 
-    // Hide the login overlay
+    // Set localStorage to simulate logged in user
+    localStorage.setItem('chatUsername', 'test-user');
+    localStorage.setItem('agentId', 'test-agent');
+
+    // REMOVE the login overlay completely from DOM (not just hide)
     const overlay = document.getElementById('loginOverlay');
     if (overlay) {
-      overlay.style.display = 'none';
-      overlay.style.visibility = 'hidden';
-      overlay.style.pointerEvents = 'none';
-      overlay.style.zIndex = '-1';
+      overlay.remove();
     }
 
-    // Also hide loading screen if present
+    // Also remove loading screen if present
     const loading = document.getElementById('loadingScreen');
     if (loading) {
-      loading.style.display = 'none';
+      loading.remove();
     }
 
     // Remove any other modal/overlay elements that might block
     document.querySelectorAll('.modal, .overlay, [class*="overlay"]').forEach(el => {
-      const elem = el as HTMLElement;
-      if (elem.id !== 'loginOverlay') {
-        elem.style.display = 'none';
-      }
+      (el as HTMLElement).remove();
     });
   });
 
-  // Wait for state to settle
+  // Wait for DOM to settle
   await page.waitForTimeout(500);
 
-  // Verify overlay is hidden
-  const overlayVisible = await page.evaluate(() => {
-    const overlay = document.getElementById('loginOverlay');
-    if (!overlay) return false;
-    const style = window.getComputedStyle(overlay);
-    return style.display !== 'none' && style.visibility !== 'hidden';
+  // Verify overlay is completely gone
+  const overlayExists = await page.evaluate(() => {
+    return document.getElementById('loginOverlay') !== null;
   });
 
-  if (overlayVisible) {
-    console.log('  ⚠️ Warning: Login overlay still visible, forcing removal...');
+  if (overlayExists) {
+    console.log('  ⚠️ Warning: Login overlay still in DOM, forcing removal...');
     await page.evaluate(() => {
       const overlay = document.getElementById('loginOverlay');
       if (overlay) overlay.remove();
     });
     await page.waitForTimeout(300);
   } else {
-    console.log('  ✅ Login overlay hidden successfully');
+    console.log('  ✅ Login overlay removed successfully');
   }
 }
 
