@@ -12551,11 +12551,26 @@
       try {
         const res = await fetch(API_BASE + '/ceo-portal?resource=work-progress', { credentials: 'include' });
         const data = await res.json();
+        if (!res.ok || data.error) {
+          console.error('Work progress API error:', data.error || res.status);
+          container.innerHTML = `<div class="ceo-empty">
+            <div style="font-size: 48px; margin-bottom: 12px;">🔐</div>
+            <div style="font-size: 16px; font-weight: 600; color: var(--warning); margin-bottom: 8px;">Access Denied</div>
+            <div style="color: var(--text-secondary);">${data.error || 'Failed to load work progress. Make sure you are logged in as superadmin.'}</div>
+            <button onclick="loadWorkProgress()" style="margin-top: 16px; background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Retry</button>
+          </div>`;
+          return;
+        }
         workProgressData = data.workProgress;
         renderWorkProgress();
       } catch (e) {
         console.error('Failed to load work progress:', e);
-        container.innerHTML = '<div class="ceo-empty">Failed to load work progress. Make sure you are logged in as superadmin.</div>';
+        container.innerHTML = `<div class="ceo-empty">
+          <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+          <div style="font-size: 16px; font-weight: 600; color: var(--error); margin-bottom: 8px;">Network Error</div>
+          <div style="color: var(--text-secondary);">Failed to connect to the server. Check your network and try again.</div>
+          <button onclick="loadWorkProgress()" style="margin-top: 16px; background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Retry</button>
+        </div>`;
       }
     }
 
