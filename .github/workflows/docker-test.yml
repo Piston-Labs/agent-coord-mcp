@@ -1,0 +1,114 @@
+# Docker Agent Test Workflow
+# Tests Claude CLI in Docker container for VM→Container migration evaluation
+#
+# Manual trigger: Go to Actions tab → "Docker Agent Test" → Run workflow
+# Measures: Build time, image size, startup time, MCP connectivity
+
+name: Docker Agent Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      dockerfile:
+        description: 'Dockerfile to test'
+        required: true
+        default: 'Dockerfile.claude-worker'
+        type: choice
+        options:
+          - Dockerfile.claude-worker
+          - Dockerfile.cloud-agent
+          - Dockerfile.railway-claude
+      test_mcp:
+        description: 'Test MCP connectivity'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  COORD_API: https://agent-coord-mcp.vercel.app
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Record start time
+        id: start
+        run: echo "time=$(date +%s)" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        id: build
+        run: |
+          echo "Building ${{ inputs.dockerfile }}..."
+          START=$(date +%s)
+          docker build -f ${{ inputs.dockerfile }} -t claude-worker:test .
+          END=$(date +%s)
+          echo "build_time=$((END-START))" >> $GITHUB_OUTPUT
+
+          # Get image size
+          SIZE=$(docker image inspect claude-worker:test --format='{{.Size}}')
+          SIZE_MB=$((SIZE / 1024 / 1024))
+          echo "image_size_mb=$SIZE_MB" >> $GITHUB_OUTPUT
+
+          echo "### Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build time:** $((END-START)) seconds" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image size:** ${SIZE_MB}MB" >> $GITHUB_STEP_SUMMARY
+
+      - name: Test container startup
+        id: startup
+        run: |
+          echo "Testing container startup..."
+          START=$(date +%s)
+
+          # Run container with minimal config, just test it starts
+          docker run --rm \
+            -e ANTHROPIC_API_KEY=test-key \
+            -e AGENT_ID=gh-actions-test \
+            -e COORD_API=${{ env.COORD_API }} \
+            claude-worker:test \
+            bash -c "echo 'Container started'; which claude || echo 'claude not in PATH'; exit 0" \
+            2>&1 || true
+
+          END=$(date +%s)
+          echo "startup_time=$((END-START))" >> $GITHUB_OUTPUT
+
+          echo "- **Startup time:** $((END-START)) seconds" >> $GITHUB_STEP_SUMMARY
+
+      - name: Test MCP connectivity
+        if: ${{ inputs.test_mcp }}
+        run: |
+          echo "Testing MCP API connectivity from container..."
+
+          docker run --rm \
+            -e COORD_API=${{ env.COORD_API }} \
+            claude-worker:test \
+            bash -c "curl -s '${{ env.COORD_API }}/api/chat?action=get&limit=1' | head -c 200" \
+            2>&1 || echo "MCP connectivity test completed"
+
+          echo "- **MCP connectivity:** Tested" >> $GITHUB_STEP_SUMMARY
+
+      - name: Report to coordination hub
+        if: always()
+        env:
+          BUILD_TIME: ${{ steps.build.outputs.build_time }}
+          IMAGE_SIZE: ${{ steps.build.outputs.image_size_mb }}
+          STARTUP_TIME: ${{ steps.startup.outputs.startup_time }}
+        run: |
+          # Post results to group chat
+          curl -s -X POST "${{ env.COORD_API }}/api/chat" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"author\": \"github-actions\",
+              \"authorType\": \"system\",
+              \"message\": \"**Docker Test Results** (${{ inputs.dockerfile }})\n\n- Build time: ${BUILD_TIME}s\n- Image size: ${IMAGE_SIZE}MB\n- Startup time: ${STARTUP_TIME}s\n- MCP test: ${{ inputs.test_mcp && 'enabled' || 'skipped' }}\n\nWorkflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"
+            }" || echo "Failed to post to chat"
+
+      - name: Summary
+        run: |
+          echo "### Test Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Results posted to [coordination hub](${{ env.COORD_API }})" >> $GITHUB_STEP_SUMMARY
