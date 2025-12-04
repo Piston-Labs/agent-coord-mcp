@@ -44,7 +44,7 @@ registerTestingTools(server);       // ui-test, metrics
 registerIntegrationTools(server);   // device, aws-status, fleet-analytics, provision-device, alerts, generate-doc, shop
 registerOrchestrationTools(server); // orchestrate, spawn-parallel, workflow, hot-start, auto-poll
 registerSpawnTools(server);         // spawn-agent, spawn-batch, spawn-status
-registerExternalTools(server);      // linear, sentry, notion, github, slack
+registerExternalTools(server);      // linear, sentry, github, slack
 registerFileContextTools(server);   // file-info, file-read-smart, file-split-work
 
 // ============================================================================
@@ -55,7 +55,7 @@ const transport = new StdioServerTransport();
 
 server.connect(transport).then(() => {
   console.error('[agent-coord-mcp] Server connected and ready');
-  console.error('[agent-coord-mcp] Tools: 36 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, context-cluster, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, sales-file, google-drive, user-tasks, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll, linear, sentry, notion, github, slack)');
+  console.error('[agent-coord-mcp] Tools: 35 (work, agent-status, group-chat, resource, task, zone, message, handoff, checkpoint, context-load, context-cluster, vision, repo-context, memory, ui-test, metrics, device, hot-start, workflow, generate-doc, sales-file, google-drive, user-tasks, shop, aws-status, fleet-analytics, provision-device, alerts, orchestrate, spawn-parallel, auto-poll, linear, sentry, github, slack)');
 }).catch((err: Error) => {
   console.error('[agent-coord-mcp] Failed to connect:', err);
   process.exit(1);

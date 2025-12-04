@@ -1,12 +1,11 @@
 /**
  * External Integration Tools - Third-party service integrations
  *
- * Tools: linear, sentry, notion, github-enhanced, slack
+ * Tools: linear, sentry, github-enhanced, slack
  *
  * These tools integrate with external services to enhance agent coordination:
  * - Linear: Issue tracking and project management
  * - Sentry: Error tracking and monitoring
- * - Notion: Knowledge base and documentation
  * - GitHub: Enhanced PR, issue, and CI/CD workflows
  * - Slack: Team communication integration
  */

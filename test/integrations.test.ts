@@ -1,7 +1,7 @@
 /**
  * Integration APIs Tests
  *
- * Tests the Errors (self-hosted), Notion, and Linear API endpoints.
+ * Tests the Errors (self-hosted) and Linear API endpoints.
  * These APIs return mock data when tokens are not configured.
  * The Errors API is the free error tracking solution using Redis backend.
  * Run with: npx tsx test/integrations.test.ts
@@ -40,86 +40,6 @@ function assert(condition: boolean, message: string) {
 async function main() {
   console.log('=== Integration APIs Tests ===');
   console.log(`API: ${API_BASE}\n`);
-
-  // ============================================================================
-  // NOTION API TESTS
-  // ============================================================================
-  console.log('\n--- Notion API ---');
-
-  await test('Notion search returns results', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=search`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(Array.isArray(data.results), 'Expected results array');
-    assert(typeof data.count === 'number', 'Expected count number');
-  });
-
-  await test('Notion search with query filters results', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=search&query=roadmap`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(Array.isArray(data.results), 'Expected results array');
-  });
-
-  await test('Notion page returns content', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=page&pageId=mock-page-1`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(data.title !== undefined, 'Expected title in response');
-    assert(Array.isArray(data.content), 'Expected content array');
-  });
-
-  await test('Notion page requires pageId', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=page`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.error === 'pageId required', 'Expected pageId required error');
-  });
-
-  await test('Notion database returns info', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=database&databaseId=mock-db-1`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(data.title !== undefined, 'Expected title in response');
-    assert(Array.isArray(data.properties), 'Expected properties array');
-  });
-
-  await test('Notion database requires databaseId', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=database`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.error === 'databaseId required', 'Expected databaseId required error');
-  });
-
-  await test('Notion query returns entries', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=query&databaseId=mock-db-1`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(Array.isArray(data.entries), 'Expected entries array');
-    assert(typeof data.count === 'number', 'Expected count number');
-  });
-
-  await test('Notion query requires databaseId', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=query`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.error === 'databaseId required for query', 'Expected error message');
-  });
-
-  await test('Notion databases list returns array', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=databases`);
-    assert(res.ok, `Expected 200, got ${res.status}`);
-    const data = await res.json();
-    assert(Array.isArray(data.databases), 'Expected databases array');
-    assert(typeof data.count === 'number', 'Expected count number');
-  });
-
-  await test('Notion rejects invalid action', async () => {
-    const res = await fetch(`${API_BASE}/api/notion?action=invalid`);
-    assert(res.status === 400, `Expected 400, got ${res.status}`);
-    const data = await res.json();
-    assert(data.validActions !== undefined, 'Expected validActions in error');
-  });
 
   // ============================================================================
   // LINEAR API TESTS
@@ -292,11 +212,6 @@ async function main() {
   // CROSS-API TESTS
   // ============================================================================
   console.log('\n--- Cross-API Tests ---');
-
-  await test('Notion rejects POST method', async () => {
-    const notionRes = await fetch(`${API_BASE}/api/notion`, { method: 'POST' });
-    assert(notionRes.status === 405, `Notion should reject POST: got ${notionRes.status}`);
-  });
 
   await test('CORS headers are set', async () => {
     const res = await fetch(`${API_BASE}/api/errors`, { method: 'OPTIONS' });
