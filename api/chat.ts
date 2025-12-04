@@ -11,6 +11,26 @@ const POLL_TRACKING_KEY = 'agent-coord:poll-tracking';
 const USERS_KEY = 'agent-coord:users';
 const MAX_MESSAGES = 1000;
 
+// Topic keywords for message filtering (token optimization)
+const TOPIC_KEYWORDS: Record<string, string[]> = {
+  'infrastructure': ['docker', 'railway', 'aws', 'ec2', 'kubernetes', 'k8s', 'vm', 'container', 'deploy', 'cloudflare', 'durable object', 'spawn', 'worker'],
+  'training': ['training', 'lesson', 'quiz', 'module', 'learning', 'simulation', 'roleplay', 'eli', 'spaced repetition'],
+  'sales': ['sales', 'pitch', 'prospect', 'demo', 'objection', 'closing', 'crm', 'pipeline', 'shop owner'],
+  'coordination': ['handoff', 'checkpoint', 'claim', 'task', 'blocker', 'status', 'heartbeat', 'online', 'offline'],
+  'architecture': ['architecture', 'design', 'pattern', 'memory', 'state', 'hybrid', 'tier', 'soul'],
+  'bug': ['bug', 'fix', 'error', 'issue', 'broken', 'failed', 'crash'],
+};
+
+// Check if message matches any of the given topics
+function messageMatchesTopics(message: string, topics: string[]): boolean {
+  const lowerMessage = message.toLowerCase();
+  return topics.some(topic => {
+    const keywords = TOPIC_KEYWORDS[topic];
+    if (!keywords) return false;
+    return keywords.some(keyword => lowerMessage.includes(keyword));
+  });
+}
+
 interface User {
   id: string;
   username: string;
@@ -45,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     if (req.method === 'GET') {
-      const { limit = '50', since, agentId } = req.query;
+      const { limit = '50', since, agentId, topics, mentionsMe, excludeSystem } = req.query;
       const limitNum = parseInt(limit as string, 10);
 
       // Get messages from Redis (stored as JSON strings)
@@ -55,6 +75,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (since && typeof since === 'string') {
         const sinceTime = new Date(since).getTime();
         result = result.filter((m: any) => new Date(m.timestamp).getTime() > sinceTime);
+      }
+
+      // Topic-based filtering for token optimization (researcher insight: 60-80% reduction)
+      // Usage: ?topics=infrastructure,training
+      if (topics && typeof topics === 'string') {
+        const topicList = topics.split(',').map(t => t.trim().toLowerCase());
+        const beforeCount = result.length;
+        result = result.filter((m: any) => {
+          // Always include messages from humans (important context)
+          if (m.authorType === 'human') return true;
+          // Always include system messages about agent status
+          if (m.authorType === 'system') return true;
+          // Filter agent messages by topic
+          return messageMatchesTopics(m.message || '', topicList);
+        });
+        // Add filter stats to help agents understand reduction
+        const filteredCount = beforeCount - result.length;
+        if (filteredCount > 0) {
+          console.log(`[chat] Topic filter reduced ${beforeCount} → ${result.length} messages (${Math.round(filteredCount/beforeCount*100)}% reduction)`);
+        }
+      }
+
+      // Filter to only messages that mention this agent
+      // Usage: ?agentId=phil&mentionsMe=true
+      if (mentionsMe === 'true' && agentId && typeof agentId === 'string') {
+        result = result.filter((m: any) => {
+          const msg = (m.message || '').toLowerCase();
+          return msg.includes(`@${agentId.toLowerCase()}`) ||
+                 msg.includes(`@team`) ||
+                 m.authorType === 'human'; // Always include human messages
+        });
+      }
+
+      // Optionally exclude system messages (heartbeats, online/offline)
+      // Usage: ?excludeSystem=true
+      if (excludeSystem === 'true') {
+        result = result.filter((m: any) => m.authorType !== 'system');
       }
 
       // Return most recent messages (list is newest-first)
@@ -95,6 +152,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         response.pollingAdvisory = pollingAdvisory;
       }
       response.suggestedPollIntervalMs = SUGGESTED_POLL_INTERVAL_MS;
+
+      // Include available topics for filtering (helps agents discover the feature)
+      if (topics) {
+        response.appliedFilters = { topics: topics.split(',').map((t: string) => t.trim()) };
+      }
+      response.availableTopics = Object.keys(TOPIC_KEYWORDS);
 
       return res.json(response);
     }
