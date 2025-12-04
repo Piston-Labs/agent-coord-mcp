@@ -671,6 +671,69 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ bodies: bodyList, count: bodyList.length });
     }
 
+    // Bind soul to body (for initial binding, not transfers)
+    if (action === 'bind' && req.method === 'POST') {
+      if (!soulId || typeof soulId !== 'string') {
+        return res.status(400).json({ error: 'soulId required' });
+      }
+
+      const { bodyId: targetBodyId } = req.body;
+      if (!targetBodyId) {
+        return res.status(400).json({ error: 'bodyId required in body' });
+      }
+
+      // Get soul
+      const soulRaw = await redis.hget(SOULS_KEY, soulId);
+      if (!soulRaw) {
+        return res.status(404).json({ error: 'Soul not found' });
+      }
+      const soul: AgentSoul = typeof soulRaw === 'string' ? JSON.parse(soulRaw) : soulRaw;
+
+      // Check if soul already has a body
+      if (soul.currentBodyId) {
+        return res.status(400).json({ error: 'Soul already has a body. Use initiate-transfer instead.' });
+      }
+
+      // Get body
+      const bodyRaw = await redis.hget(BODIES_KEY, targetBodyId);
+      if (!bodyRaw) {
+        return res.status(404).json({ error: 'Body not found' });
+      }
+      const body: Body = typeof bodyRaw === 'string' ? JSON.parse(bodyRaw) : bodyRaw;
+
+      // Check if body already has a soul
+      if (body.soulId) {
+        return res.status(400).json({ error: 'Body already has a soul' });
+      }
+
+      // Bind them
+      soul.currentBodyId = targetBodyId;
+      soul.updatedAt = new Date().toISOString();
+      soul.lastActiveAt = new Date().toISOString();
+
+      body.soulId = soulId;
+      body.status = 'active';
+
+      await Promise.all([
+        redis.hset(SOULS_KEY, { [soulId]: JSON.stringify(soul) }),
+        redis.hset(BODIES_KEY, { [targetBodyId]: JSON.stringify(body) }),
+      ]);
+
+      return res.json({
+        success: true,
+        soul: {
+          soulId: soul.soulId,
+          name: soul.name,
+          currentBodyId: soul.currentBodyId,
+        },
+        body: {
+          bodyId: body.bodyId,
+          soulId: body.soulId,
+          status: body.status,
+        },
+      });
+    }
+
     // Dashboard stats
     if (action === 'dashboard' && req.method === 'GET') {
       const [souls, bodies, transfers] = await Promise.all([
@@ -721,7 +784,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       validActions: [
         'create', 'get', 'list', 'checkpoint',  // Soul operations
         'spawn-body', 'update-tokens', 'body-status', 'list-bodies',  // Body operations
-        'initiate-transfer', 'complete-transfer', 'get-bundle',  // Transfer operations
+        'bind', 'initiate-transfer', 'complete-transfer', 'get-bundle',  // Binding & Transfer operations
         'dashboard',  // Stats
       ],
     });
