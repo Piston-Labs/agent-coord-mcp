@@ -8690,6 +8690,7 @@
           <button class="tab" data-tab="sales" onclick="switchTab('sales')">Sales Eng</button>
           <button class="tab" data-tab="training" onclick="switchTab('training')">Training</button>
           <button class="tab" data-tab="resources" onclick="switchTab('resources')">Resources</button>
+          <button class="tab" data-tab="ceo" onclick="switchTab('ceo')" id="ceoTab" style="display: none; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 4px;">CEO Portal</button>
         </div>
         <span id="messageCount">0 messages</span>
       </div>
@@ -9693,6 +9694,62 @@
         </div>
       </div>
 
+      <!-- CEO Portal View (Superadmin Only) -->
+      <div class="tab-content" id="ceoView">
+        <div class="ceo-portal">
+          <div class="ceo-header">
+            <div class="ceo-header-left">
+              <h2 style="margin: 0; font-size: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">CEO Command Center</h2>
+              <span style="font-size: 12px; color: var(--text-secondary);">Private workspace for strategic planning</span>
+            </div>
+            <div class="ceo-stats" id="ceoStats">
+              <div class="ceo-stat"><span class="ceo-stat-value" id="ceoContactCount">0</span><span class="ceo-stat-label">Contacts</span></div>
+              <div class="ceo-stat"><span class="ceo-stat-value" id="ceoFollowUpCount">0</span><span class="ceo-stat-label">Follow-ups</span></div>
+              <div class="ceo-stat"><span class="ceo-stat-value" id="ceoIdeaCount">0</span><span class="ceo-stat-label">Ideas</span></div>
+              <div class="ceo-stat"><span class="ceo-stat-value" id="ceoNoteCount">0</span><span class="ceo-stat-label">Notes</span></div>
+            </div>
+          </div>
+          <div class="ceo-tabs">
+            <button class="ceo-tab active" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
+            <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
+            <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
+          </div>
+          <div class="ceo-content">
+            <div class="ceo-panel active" id="ceoContactsPanel">
+              <div class="ceo-panel-header">
+                <div class="ceo-filters">
+                  <select id="contactCategoryFilter" onchange="filterContacts()"><option value="">All Categories</option><option value="investor">Investors</option><option value="partner">Partners</option><option value="customer">Customers</option><option value="advisor">Advisors</option><option value="press">Press</option><option value="other">Other</option></select>
+                  <select id="contactStatusFilter" onchange="filterContacts()"><option value="">All Status</option><option value="active">Active</option><option value="nurturing">Nurturing</option><option value="cold">Cold</option><option value="closed">Closed</option></select>
+                  <input type="text" id="contactSearch" placeholder="Search contacts..." oninput="filterContacts()" style="flex: 1;">
+                </div>
+                <button class="ceo-add-btn" onclick="showAddContactModal()">+ Add Contact</button>
+              </div>
+              <div class="ceo-list" id="ceoContactsList"><div class="ceo-empty">Loading contacts...</div></div>
+            </div>
+            <div class="ceo-panel" id="ceoIdeasPanel">
+              <div class="ceo-panel-header">
+                <div class="ceo-filters">
+                  <select id="ideaCategoryFilter" onchange="filterIdeas()"><option value="">All Categories</option><option value="product">Product</option><option value="marketing">Marketing</option><option value="strategy">Strategy</option><option value="name">Name Ideas</option><option value="feature">Features</option><option value="partnership">Partnerships</option><option value="other">Other</option></select>
+                  <select id="ideaPriorityFilter" onchange="filterIdeas()"><option value="">All Priorities</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+                </div>
+                <button class="ceo-add-btn" onclick="showAddIdeaModal()">+ Add Idea</button>
+              </div>
+              <div class="ceo-list" id="ceoIdeasList"><div class="ceo-empty">Loading ideas...</div></div>
+            </div>
+            <div class="ceo-panel" id="ceoNotesPanel">
+              <div class="ceo-panel-header">
+                <div class="ceo-filters">
+                  <select id="noteCategoryFilter" onchange="filterNotes()"><option value="">All Categories</option><option value="meeting">Meetings</option><option value="strategy">Strategy</option><option value="personal">Personal</option><option value="todo">To-Do</option><option value="other">Other</option></select>
+                  <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-secondary);"><input type="checkbox" id="pinnedOnlyFilter" onchange="filterNotes()"> Pinned only</label>
+                </div>
+                <button class="ceo-add-btn" onclick="showAddNoteModal()">+ Add Note</button>
+              </div>
+              <div class="ceo-list" id="ceoNotesList"><div class="ceo-empty">Loading notes...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Context Panel -->
@@ -10136,14 +10193,28 @@
     
     // Authentication functions
     let isAuthenticated = false;
+    let USER_ROLE = localStorage.getItem('agent-hub-role') || 'user';
+    let IS_SUPERADMIN = false;
+    const SUPERADMIN_USERS = ['tyler', 'tyler3', 'admin'];
+
+    function updateCeoTabVisibility() {
+      const ceoTab = document.getElementById('ceoTab');
+      if (ceoTab) ceoTab.style.display = IS_SUPERADMIN ? 'block' : 'none';
+    }
 
     async function checkSession() {
       try {
-        const res = await fetch(API_BASE + '/auth/session', {
-          credentials: 'include'
-        });
+        const res = await fetch(API_BASE + '/auth/session', { credentials: 'include' });
         const data = await res.json();
-        if (data.authenticated === true && data.session?.username) { USERNAME = data.session.username; localStorage.setItem('agent-hub-username', USERNAME); } return data.authenticated === true;
+        if (data.authenticated === true && data.session?.username) {
+          USERNAME = data.session.username;
+          localStorage.setItem('agent-hub-username', USERNAME);
+          USER_ROLE = data.session.role || 'user';
+          localStorage.setItem('agent-hub-role', USER_ROLE);
+          IS_SUPERADMIN = SUPERADMIN_USERS.includes(USERNAME.toLowerCase());
+          updateCeoTabVisibility();
+        }
+        return data.authenticated === true;
       } catch (e) {
         console.error('Session check failed:', e);
         return false;
@@ -10161,10 +10232,13 @@
         const data = await res.json();
         if (data.success) {
           isAuthenticated = true;
-          // Update USERNAME to the logged-in user's actual username
           if (data.session?.username) {
             USERNAME = data.session.username;
             localStorage.setItem('agent-hub-username', USERNAME);
+            USER_ROLE = data.session.role || 'user';
+            localStorage.setItem('agent-hub-role', USER_ROLE);
+            IS_SUPERADMIN = SUPERADMIN_USERS.includes(USERNAME.toLowerCase());
+            updateCeoTabVisibility();
           }
           return { success: true };
         }
