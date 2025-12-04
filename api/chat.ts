@@ -8,7 +8,26 @@ const redis = new Redis({
 
 const MESSAGES_KEY = 'agent-coord:messages';
 const POLL_TRACKING_KEY = 'agent-coord:poll-tracking';
+const USERS_KEY = 'agent-coord:users';
 const MAX_MESSAGES = 1000;
+
+interface User {
+  id: string;
+  username: string;
+  role: 'admin' | 'user' | 'agent';
+}
+
+// Check if a username belongs to a registered human user
+async function isRegisteredHumanUser(username: string): Promise<boolean> {
+  const users = await redis.hgetall(USERS_KEY) || {};
+  for (const userData of Object.values(users)) {
+    const user: User = typeof userData === 'string' ? JSON.parse(userData) : userData;
+    if (user.username.toLowerCase() === username.toLowerCase() && user.role !== 'agent') {
+      return true;
+    }
+  }
+  return false;
+}
 
 // Polling advisory configuration (inspired by contextOS)
 const MIN_POLL_INTERVAL_MS = 30000;  // 30 seconds minimum
@@ -85,6 +104,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (!author || (!message && !imageData)) {
         return res.status(400).json({ error: 'author and (message or imageData) required' });
+      }
+
+      // SECURITY: Prevent agents from impersonating human users
+      // If authorType is 'agent' but author is a registered human username, reject
+      if (authorType === 'agent') {
+        const isHuman = await isRegisteredHumanUser(author);
+        if (isHuman) {
+          console.warn(`BLOCKED: Agent tried to post as human user "${author}"`);
+          return res.status(403).json({
+            error: 'Identity mismatch: Agents cannot post as registered human users',
+            suggestion: 'Use a unique agent identifier (e.g., "phil", "jeeves") instead of human usernames'
+          });
+        }
       }
 
       // Validate image if provided (max 500KB base64)
