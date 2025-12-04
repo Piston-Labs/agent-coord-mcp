@@ -15,3 +15,4 @@ export { registerOrchestrationTools } from './orchestration.js';
 export { registerSpawnTools } from './spawn.js';
 export { registerExternalTools } from './external.js';
 export { registerFileContextTools, fileContextToolDefinitions } from './file-context.js';
+export { registerDurableObjectsTools } from './durable-objects.js';

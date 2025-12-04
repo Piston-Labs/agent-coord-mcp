@@ -56,6 +56,30 @@ interface GitHubPushEvent {
   };
 }
 
+interface GitHubDeploymentStatusEvent {
+  action: 'created';
+  deployment_status: {
+    state: 'error' | 'failure' | 'inactive' | 'in_progress' | 'queued' | 'pending' | 'success';
+    description: string | null;
+    target_url: string | null;
+    created_at: string;
+  };
+  deployment: {
+    id: number;
+    sha: string;
+    ref: string;
+    environment: string;
+    description: string | null;
+  };
+  repository: {
+    full_name: string;
+    name: string;
+  };
+  sender: {
+    login: string;
+  };
+}
+
 /**
  * Extract roadmap item IDs from text
  * Patterns supported:
@@ -213,23 +237,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.json({
       status: 'active',
-      description: 'GitHub webhook endpoint for roadmap status sync',
+      description: 'GitHub webhook endpoint for roadmap sync and deploy testing',
       setup: {
         payloadUrl: `${req.headers.host}/api/github-webhook`,
         contentType: 'application/json',
-        events: ['pull_request', 'push'],
+        events: ['pull_request', 'push', 'deployment_status'],
         secretConfigured: !!WEBHOOK_SECRET
       },
-      linkingPatterns: [
-        '[roadmap-ID] in PR title',
-        'roadmap-ID in branch name',
-        'fixes roadmap-ID in commit message',
-        'closes roadmap-ID in commit message'
-      ],
-      statusMapping: {
-        'PR opened': 'in-progress',
-        'PR review requested': 'review',
-        'PR merged': 'done'
+      features: {
+        roadmapSync: {
+          description: 'Auto-updates roadmap items based on PR status',
+          linkingPatterns: [
+            '[roadmap-ID] in PR title',
+            'roadmap-ID in branch name',
+            'fixes roadmap-ID in commit message',
+            'closes roadmap-ID in commit message'
+          ],
+          statusMapping: {
+            'PR opened': 'in-progress',
+            'PR review requested': 'review',
+            'PR merged': 'done'
+          }
+        },
+        deployTesting: {
+          description: 'Auto-runs /api/tools-test on successful production deploys',
+          trigger: 'deployment_status event with state=success and environment=Production',
+          output: 'Posts test results to group chat'
+        }
       },
       recentEvents: parsedLogs.slice(0, 10)
     });
@@ -410,6 +444,92 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         itemsUpdated: logEntry.itemsUpdated.length,
         items: logEntry.itemsUpdated
       });
+    }
+
+    // Handle deployment_status events - trigger tools test on successful deploy
+    if (event === 'deployment_status') {
+      const payload = req.body as GitHubDeploymentStatusEvent;
+      const { deployment_status, deployment, repository } = payload;
+
+      // Only trigger on successful production deployments
+      if (deployment_status.state === 'success' && deployment.environment === 'Production') {
+        const now = new Date().toISOString();
+
+        // Run tools test
+        try {
+          const baseUrl = process.env.VERCEL_URL
+            ? `https://${process.env.VERCEL_URL}`
+            : 'https://agent-coord-mcp.vercel.app';
+
+          const testResponse = await fetch(`${baseUrl}/api/tools-test`);
+          const testResults = await testResponse.json();
+
+          // Post results to chat
+          const passed = testResults.passed || 0;
+          const failed = testResults.failed || 0;
+          const total = passed + failed;
+          const status = failed === 0 ? '✅' : '⚠️';
+
+          const chatMessage = {
+            id: `deploy-test-${Date.now().toString(36)}`,
+            author: 'system',
+            authorType: 'system',
+            message: `${status} **Deploy Test Results** (${repository.full_name})\n\nCommit: \`${deployment.sha.substring(0, 7)}\`\nEnvironment: ${deployment.environment}\n\n**Tools Test:** ${passed}/${total} passing${failed > 0 ? `\n⚠️ ${failed} failed` : ''}`,
+            timestamp: now,
+            reactions: []
+          };
+          await redis.lpush('agent-coord:group-chat', JSON.stringify(chatMessage));
+
+          logEntry.processed = true;
+          logEntry.itemsUpdated.push(`tools-test: ${passed}/${total}`);
+          await redis.lpush(WEBHOOK_LOG_KEY, JSON.stringify(logEntry));
+          await redis.ltrim(WEBHOOK_LOG_KEY, 0, 99);
+
+          return res.json({
+            received: true,
+            deployment: {
+              sha: deployment.sha,
+              environment: deployment.environment,
+              status: deployment_status.state
+            },
+            toolsTest: {
+              passed,
+              failed,
+              total
+            }
+          });
+        } catch (testError) {
+          // Log test failure but don't fail the webhook
+          const chatMessage = {
+            id: `deploy-test-error-${Date.now().toString(36)}`,
+            author: 'system',
+            authorType: 'system',
+            message: `⚠️ **Deploy Test Failed**\n\nCommit: \`${deployment.sha.substring(0, 7)}\`\nError: ${String(testError)}`,
+            timestamp: now,
+            reactions: []
+          };
+          await redis.lpush('agent-coord:group-chat', JSON.stringify(chatMessage));
+
+          logEntry.processed = true;
+          logEntry.error = String(testError);
+          await redis.lpush(WEBHOOK_LOG_KEY, JSON.stringify(logEntry));
+          await redis.ltrim(WEBHOOK_LOG_KEY, 0, 99);
+
+          return res.json({
+            received: true,
+            deployment: { sha: deployment.sha, environment: deployment.environment },
+            toolsTestError: String(testError)
+          });
+        }
+      }
+
+      // Non-production or non-success deployment - just acknowledge
+      logEntry.processed = true;
+      logEntry.note = `Deployment ${deployment_status.state} in ${deployment.environment}`;
+      await redis.lpush(WEBHOOK_LOG_KEY, JSON.stringify(logEntry));
+      await redis.ltrim(WEBHOOK_LOG_KEY, 0, 99);
+
+      return res.json({ received: true, note: logEntry.note });
     }
 
     // Other events - just acknowledge
