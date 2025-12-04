@@ -83,6 +83,12 @@ const MCP_TOOLS = [
   { id: 'linear', name: 'linear', category: 'external', description: 'Linear issue tracking integration. Search, create, update issues.', file: 'src/tools/external.ts' },
   { id: 'github', name: 'github', category: 'external', description: 'Enhanced GitHub operations. Manage PRs, issues, workflows, reviews.', file: 'src/tools/external.ts' },
   { id: 'slack', name: 'slack', category: 'external', description: 'Slack team communication integration. Send messages, list channels, search.', file: 'src/tools/external.ts' },
+
+  // Soul Transfer & AWS Infrastructure (api/)
+  { id: 'souls', name: 'souls', category: 'orchestration', description: 'Soul registry - persistent agent identities with token tracking.', file: 'api/souls.ts' },
+  { id: 'soul-monitor', name: 'soul-monitor', category: 'orchestration', description: 'Health checks for active bodies, alerts on token thresholds.', file: 'api/soul-monitor.ts' },
+  { id: 'aws-vms', name: 'aws-vms', category: 'infrastructure', description: 'AWS EC2 VM lifecycle management - provision, start, stop, terminate.', file: 'api/aws-vms.ts' },
+  { id: 'vm-scheduler', name: 'vm-scheduler', category: 'infrastructure', description: 'Auto-shutdown scheduler for idle VMs (cost optimization).', file: 'api/vm-scheduler.ts' },
 ];
 
 // External integrations with detailed status
@@ -187,6 +193,18 @@ const INTEGRATIONS = [
     setupInstructions: 'Create OAuth 2.0 Client ID in Google Cloud Console. Set GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, and optionally GOOGLE_DRIVE_FOLDER_ID.',
     endpoint: '/api/google-drive'
   },
+  {
+    id: 'aws-ec2',
+    name: 'AWS EC2 (Agent VMs)',
+    category: 'infrastructure',
+    description: 'Cloud VM hosting for autonomous Claude agents',
+    status: process.env.AWS_ACCESS_KEY_ID ? 'live' : 'needs-setup',
+    envVar: 'AWS_ACCESS_KEY_ID',
+    setupUrl: 'https://console.aws.amazon.com/iam/',
+    setupInstructions: 'Run aws/setup.ps1 to deploy CloudFormation stack. Add AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_SUBNET_ID, AWS_SECURITY_GROUP_ID, AWS_IAM_INSTANCE_PROFILE to Vercel.',
+    endpoint: '/api/aws-vms',
+    features: ['vm-provision', 'auto-shutdown', 'cost-optimization', 'ssm-remote-exec']
+  },
 ];
 
 // API endpoints
@@ -203,6 +221,10 @@ const API_ENDPOINTS = [
   { id: 'hot-start', path: '/api/hot-start', methods: ['GET'], description: 'Quick agent initialization' },
   { id: 'health', path: '/api/health', methods: ['GET'], description: 'System health check' },
   { id: 'google-drive', path: '/api/google-drive', methods: ['GET', 'POST', 'DELETE'], description: 'Google Drive document storage and sharing' },
+  { id: 'souls', path: '/api/souls', methods: ['GET', 'POST', 'PATCH', 'DELETE'], description: 'Soul registry - persistent agent identities' },
+  { id: 'soul-monitor', path: '/api/soul-monitor', methods: ['GET', 'POST'], description: 'Soul health monitoring and alerts' },
+  { id: 'aws-vms', path: '/api/aws-vms', methods: ['GET', 'POST', 'DELETE'], description: 'AWS VM lifecycle management' },
+  { id: 'vm-scheduler', path: '/api/vm-scheduler', methods: ['GET', 'POST', 'PUT'], description: 'VM auto-shutdown scheduler (Vercel cron)' },
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
