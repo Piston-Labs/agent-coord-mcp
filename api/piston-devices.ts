@@ -50,16 +50,16 @@ interface Device {
   lastFuelLevel?: number;
 }
 
-// Known Piston Labs devices (from teltonika-context-system)
+// Known Piston Labs devices (Teltonika FMM00A OBD-II devices)
 const KNOWN_DEVICES: Record<string, Partial<Device>> = {
   '862464068511489': {
     name: 'Test Device',
-    model: 'FMB920',
+    model: 'FMM00A',
     vehicle: { make: 'Test', model: 'Vehicle', year: 2024 }
   },
   '862464068525638': {
     name: 'Toyota Device',
-    model: 'FMB920',
+    model: 'FMM00A',
     vehicle: { make: 'Toyota', model: 'Camry', year: 2020 }
   },
   '862464068558217': {
@@ -69,7 +69,7 @@ const KNOWN_DEVICES: Record<string, Partial<Device>> = {
   },
   '862464068597504': {
     name: 'Fleet Device 4',
-    model: 'FMB920',
+    model: 'FMM00A',
     vehicle: { make: 'Honda', model: 'Civic', year: 2021 }
   }
 };
@@ -200,13 +200,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Register new device
-      const { 
-        imei: newImei, 
-        name, 
-        model = 'FMB920', 
-        vehicle, 
+      const {
+        imei: newImei,
+        name,
+        model = 'FMM00A',
+        vehicle,
         simIccid,
-        provisionedBy 
+        provisionedBy
       } = body;
 
       if (!newImei) {

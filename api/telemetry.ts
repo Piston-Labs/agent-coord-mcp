@@ -37,8 +37,8 @@ const TELEMETRY_TABLE = process.env.SUPABASE_TELEMETRY_TABLE || 'telemetry';
 /**
  * Device Telemetry API - Real-time vehicle analytics with health monitoring
  *
- * Data source: Teltonika GPS devices via AWS IoT Core pipeline (teltonika-context-system)
- * Pipeline: Teltonika GPS → AWS IoT Core → Lambda → [S3, Supabase, TimescaleDB, Redshift]
+ * Data source: Teltonika FMM00A devices via AWS IoT Core pipeline
+ * Pipeline: Teltonika FMM00A → Soracom LTE → AWS IoT Core → Lambda → [S3, TimescaleDB, Supabase]
  *
  * Queries Supabase REST API for real-time data (ideal for serverless)
  * Falls back to Redis cache if Supabase unavailable

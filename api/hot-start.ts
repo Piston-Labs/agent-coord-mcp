@@ -23,47 +23,46 @@ const CLAIMS_KEY = 'agent-coord:claims';
 // Built-in Piston Labs context (same as piston-context.ts)
 const PISTON_CONTEXT: Record<string, any> = {
   technical: {
-    description: 'Piston Labs technical architecture and systems',
+    description: 'Piston Labs technical architecture - automotive telemetry platform',
     topics: {
-      devices: { summary: 'IoT device fleet management - ESP32/Arduino sensors, Raspberry Pi gateways' },
-      aws: { summary: 'AWS infrastructure - Lambda, DynamoDB, IoT Core, S3, CloudWatch' },
-      lambda: { summary: 'Serverless functions for data processing and API endpoints' },
-      databases: { summary: 'DynamoDB for device data, PostgreSQL for business data, Redis for caching' },
-      api: { summary: 'REST APIs for dashboard, mobile app, and third-party integrations' }
+      devices: { summary: 'Teltonika FMM00A GPS telemetry devices sold to consumers for vehicle tracking' },
+      aws: { summary: 'AWS IoT pipeline: Soracom -> AWS IoT Core -> Lambda -> S3/TimescaleDB/Supabase' },
+      lambda: { summary: 'Python Lambda function parses Teltonika FMM00A protocol data' },
+      databases: { summary: 'S3 for raw data, TimescaleDB for time-series, Supabase for app data' },
+      api: { summary: 'REST APIs for consumer web app and B2B shop dashboard' }
     }
   },
   product: {
-    description: 'Piston Labs product vision, roadmap, and features',
+    description: 'Piston Labs products - B2C telemetry devices and B2B shop dashboard',
     topics: {
-      vision: { summary: 'Industrial IoT platform making equipment monitoring accessible to SMBs' },
-      roadmap: { summary: 'Q1: Mobile app, Q2: Predictive ML, Q3: Marketplace, Q4: Enterprise tier' },
-      dashboard: { summary: 'Real-time monitoring dashboard with customizable widgets and alerts' },
-      alerts: { summary: 'Configurable alerting via SMS, email, Slack, PagerDuty' }
+      vision: { summary: 'Consumer vehicle telemetry + B2B shop dashboard for auto repair marketing' },
+      consumerApp: { summary: 'Consumer web app for vehicle tracking, service history, and maintenance reminders' },
+      shopDashboard: { summary: 'B2B dashboard for auto repair shops - marketing and light CRM (Gran Autismo - READ ONLY)' },
+      roadmap: { summary: 'Beta sprint: IoT devices in cars (Tom) + Shop dashboards (Ryan)' }
     }
   },
   sales: {
-    description: 'Sales strategy, pitch materials, and objection handling',
+    description: 'Sales strategy for B2C device sales and B2B shop subscriptions',
     topics: {
-      strategy: { summary: 'Land-and-expand with SMB manufacturers, target 50-500 employee companies' },
-      pitch: { summary: 'Stop equipment failures before they stop your business' },
-      objections: { summary: 'Common objections and responses' },
-      competitors: { summary: 'Main competitors: Samsara (enterprise), Uptake (ML focus), custom solutions' }
+      strategy: { summary: 'B2C: Sell devices to consumers. B2B: Sell dashboard subscriptions to auto repair shops.' },
+      pitch: { summary: 'B2C: Never miss an oil change. B2B: Turn one-time customers into regulars.' },
+      objections: { summary: 'Common objections and responses for privacy, cost, and existing CRM concerns' },
+      competitors: { summary: 'B2C: Bouncie, Automatic. B2B: ShopBoss, Mitchell, custom solutions.' }
     }
   },
   investor: {
-    description: 'Investor relations, metrics, and pitch materials',
+    description: 'Investor relations and pitch materials',
     topics: {
-      summary: { summary: 'Series A IoT startup, $2M ARR, 150 customers, 40% MoM growth' },
-      pitch: { summary: '$50B industrial IoT market, we are the SMB-focused disruptor' },
-      traction: { summary: 'Key metrics and growth trajectory' }
+      summary: { summary: 'Pre-seed automotive telemetry startup with B2C + B2B model' },
+      pitch: { summary: 'Connecting car owners with their auto shops through vehicle telemetry' },
+      traction: { summary: 'Beta stage with 3 test devices and pilot shops in progress' }
     }
   },
   team: {
-    description: 'Team structure, roles, and onboarding',
+    description: 'Piston Labs team structure',
     topics: {
-      structure: { summary: '15 person team: 8 eng, 3 sales, 2 customer success, 2 founders' },
-      onboarding: { summary: 'New hire onboarding checklist and resources' },
-      culture: { summary: 'Fast-moving, customer-obsessed, technically excellent' }
+      structure: { summary: 'Small founding team: Tyler (CEO), Ryan (Technical Co-Founder), Tom (Hardware/IoT)' },
+      onboarding: { summary: 'New team member onboarding via agent coordination hub' }
     }
   },
   coordination: {
@@ -72,7 +71,8 @@ const PISTON_CONTEXT: Record<string, any> = {
       claims: { summary: 'Always claim files/resources before editing to prevent conflicts' },
       handoffs: { summary: 'Use formal handoffs when transferring work between agents' },
       context: { summary: 'Use context-load for domain knowledge, repo-context for codebase knowledge' },
-      checkpoints: { summary: 'Save checkpoints every 15 minutes and before major operations' }
+      checkpoints: { summary: 'Save checkpoints every 15 minutes and before major operations' },
+      repositories: { summary: 'gran-autismo is READ ONLY (Ryan). agent-coord-mcp and teltonika-context-system are read/write.' }
     }
   }
 };

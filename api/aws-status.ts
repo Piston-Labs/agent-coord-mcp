@@ -13,7 +13,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 const CACHED_STATUS = {
   lastUpdated: new Date().toISOString(),
   source: 'cached',
-  
+
   lambda: {
     functionName: 'parse-teltonika-data',
     runtime: 'python3.13',
@@ -25,23 +25,29 @@ const CACHED_STATUS = {
       avgDuration: '<100ms'
     }
   },
-  
+
   iot: {
     devices: [
-      { name: 'device-862464068525406', status: 'active', type: 'Teltonika FMB920' },
-      { name: 'test-vehicle-001', status: 'active', type: 'Test Device' }
+      { name: 'device-862464068525406', status: 'active', type: 'Teltonika FMM00A' },
+      { name: 'test-vehicle-001', status: 'active', type: 'Teltonika FMM00A' }
     ],
     totalDevices: 2,
-    messagesPerMinute: 3
+    messagesPerMinute: 3,
+    pipeline: 'Soracom SIM -> AWS IoT Core -> Lambda -> S3/TimescaleDB/Supabase'
   },
-  
+
+  soracom: {
+    status: 'healthy',
+    description: 'LTE SIM infrastructure for Teltonika devices',
+    routing: 'Soracom Beam -> AWS IoT Core'
+  },
+
   databases: {
-    s3: { bucket: 'telemetry-raw-usw1', status: 'healthy' },
-    timescale: { status: 'healthy', recentWrites: true },
-    redshift: { status: 'healthy' },
-    supabase: { status: 'healthy' }
+    s3: { bucket: 'telemetry-raw-usw1', status: 'healthy', purpose: 'Raw telemetry archival' },
+    timescale: { status: 'healthy', recentWrites: true, purpose: 'Real-time telemetry queries' },
+    supabase: { status: 'healthy', purpose: 'User accounts, vehicles, service history' }
   },
-  
+
   overall: {
     status: 'HEALTHY',
     uptime: '99.9%',

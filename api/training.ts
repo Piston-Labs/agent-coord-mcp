@@ -652,30 +652,32 @@ Complete these tasks to master the shop owner demo:`,
 ## Core Components
 
 ### 1. IoT Layer (Consumer Devices)
-- Teltonika FMC130 OBD-II devices
-- Captures: GPS, mileage, speed, battery voltage, engine codes
-- MQTT via AWS IoT Core → Lambda → DynamoDB
+- Teltonika FMM00A OBD-II plug-in devices
+- Captures: GPS, mileage, speed, battery voltage, VIN, engine codes
+- Soracom LTE SIM → AWS IoT Core → Lambda → S3/TimescaleDB/Supabase
 
 ### 2. Consumer App
-- View car health and telemetry
-- Get smart maintenance reminders
-- Find and connect with shops
-- Book appointments, view service history
+- View car location and telemetry
+- Get mileage-based maintenance reminders
+- Digital service history
+- Book appointments with connected shops
 
-### 3. Shop Dashboard (SaaS)
+### 3. Shop Dashboard (SaaS - Gran Autismo)
 - Customer list with real-time vehicle data
-- Automated reminder configuration
+- See when customers need service
 - Marketing campaign builder
-- Appointment queue management
+- Appointment management (Ryan's repo - READ ONLY)
 
 ### 4. Backend Services
 - **Vercel Functions** - API endpoints
 - **Upstash Redis** - Real-time data, caching
-- **DynamoDB** - Device telemetry, user profiles
+- **TimescaleDB** - Device telemetry time-series
+- **Supabase** - User profiles, service history
 
 ## Key Repositories
 - \`agent-coord-mcp\` - Coordination hub (this!)
-- \`teltonika-context-system\` - Documentation & context`
+- \`teltonika-context-system\` - Documentation & context
+- \`gran-autismo\` - Shop dashboard (Ryan's - READ ONLY)`
         },
         {
           id: 'dev-101-setup',

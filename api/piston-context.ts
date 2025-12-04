@@ -24,146 +24,162 @@ const PISTON_CONTEXT_KEY = 'agent-coord:piston-context';
 // Built-in Piston Labs context (can be overridden via Redis)
 const PISTON_CONTEXT: Record<string, any> = {
   technical: {
-    description: 'Piston Labs technical architecture and systems',
+    description: 'Piston Labs technical architecture - automotive telemetry platform',
     topics: {
       devices: {
-        summary: 'IoT device fleet management - ESP32/Arduino sensors, Raspberry Pi gateways',
-        details: 'Piston manages fleets of IoT devices for industrial monitoring. Devices include temperature sensors, vibration monitors, and environmental sensors.',
-        patterns: ['MQTT for device communication', 'OTA updates via S3', 'Device shadows for state sync'],
-        files: ['src/devices/', 'firmware/', 'docs/device-specs.md']
+        summary: 'Teltonika FMM00A GPS telemetry devices sold to consumers for vehicle tracking',
+        details: 'Piston Labs sells Teltonika FMM00A OBD-II plug-in devices directly to consumers. These devices connect to vehicles and transmit real-time telemetry data including GPS location, speed, mileage, VIN, and battery voltage.',
+        patterns: ['LTE connectivity via Soracom SIM', 'OBD-II port plug-and-play', 'Real-time telemetry streaming'],
+        hardware: {
+          model: 'Teltonika FMM00A',
+          connectivity: 'LTE via Soracom SIM',
+          interface: 'OBD-II port',
+          data: ['GPS location', 'Speed', 'Odometer/mileage', 'VIN', 'Battery voltage', 'Engine diagnostics']
+        }
       },
       aws: {
-        summary: 'AWS infrastructure - Lambda, DynamoDB, IoT Core, S3, CloudWatch',
-        details: 'Serverless architecture on AWS. IoT Core for device connections, Lambda for processing, DynamoDB for time-series data.',
-        patterns: ['Event-driven Lambda functions', 'DynamoDB single-table design', 'IoT rules engine for routing'],
-        files: ['infrastructure/', 'cdk/', 'docs/aws-architecture.md']
+        summary: 'AWS IoT pipeline: Soracom -> AWS IoT Core -> Lambda -> S3/TimescaleDB/Supabase',
+        details: 'Serverless architecture on AWS. Soracom provides LTE SIM connectivity and routes data to AWS IoT Core. Lambda functions parse Teltonika protocol data and store in S3 (raw), TimescaleDB (time-series), and Supabase (app data).',
+        patterns: ['Soracom Beam for IoT routing', 'AWS IoT Core for device connections', 'Lambda for data parsing', 'Multi-database architecture'],
+        components: {
+          soracom: 'LTE SIM infrastructure and IoT routing',
+          iotCore: 'AWS IoT Core device connections',
+          lambda: 'parse-teltonika-data function (Python 3.13)',
+          s3: 'telemetry-raw-usw1 bucket for raw data archival',
+          timescale: 'Time-series database for real-time telemetry queries',
+          supabase: 'Application database for user accounts, vehicles, service history'
+        }
       },
       lambda: {
-        summary: 'Serverless functions for data processing and API endpoints',
-        details: 'Node.js Lambda functions handle device data ingestion, alerts, and API requests. Cold starts optimized with provisioned concurrency for critical paths.',
-        patterns: ['Middleware pattern for auth', 'Batch processing for high-volume data', 'Dead letter queues for failures'],
-        files: ['lambdas/', 'src/handlers/']
+        summary: 'Python Lambda function parses Teltonika protocol data',
+        details: 'parse-teltonika-data Lambda function (Python 3.13) receives data from AWS IoT Core, parses Teltonika FMM00A protocol, extracts telemetry fields, and writes to S3/TimescaleDB/Supabase.',
+        patterns: ['Teltonika codec parsing', 'Multi-destination writes', 'Error handling with DLQ'],
+        function: {
+          name: 'parse-teltonika-data',
+          runtime: 'python3.13',
+          triggers: ['AWS IoT Core rules engine'],
+          outputs: ['S3', 'TimescaleDB', 'Supabase']
+        }
       },
       databases: {
-        summary: 'DynamoDB for device data, PostgreSQL for business data, Redis for caching',
-        details: 'Time-series device data in DynamoDB with TTL. Business entities in PostgreSQL. Redis for real-time dashboards and session state.',
-        patterns: ['Single-table DynamoDB design', 'Connection pooling for RDS', 'Cache-aside pattern'],
-        files: ['src/db/', 'migrations/', 'docs/data-model.md']
+        summary: 'S3 for raw data, TimescaleDB for time-series, Supabase for app data',
+        details: 'Three-tier storage: S3 archives all raw telemetry, TimescaleDB provides fast time-series queries for real-time dashboards, Supabase stores user accounts, vehicle profiles, and service history.',
+        patterns: ['Raw archival in S3', 'Time-series in TimescaleDB', 'Relational in Supabase/PostgreSQL'],
+        databases: {
+          s3: 'Raw telemetry archival (telemetry-raw-usw1)',
+          timescale: 'Real-time telemetry queries',
+          supabase: 'User accounts, vehicles, service records',
+          redis: 'Upstash Redis for caching and agent coordination'
+        }
       },
       api: {
-        summary: 'REST APIs for dashboard, mobile app, and third-party integrations',
-        details: 'API Gateway + Lambda for REST endpoints. GraphQL for dashboard queries. Webhook system for customer integrations.',
-        patterns: ['JWT authentication', 'Rate limiting per tenant', 'Versioned API paths'],
-        files: ['src/api/', 'docs/api-reference.md']
+        summary: 'REST APIs for consumer web app and shop dashboard',
+        details: 'Vercel serverless functions provide APIs for the consumer web app (vehicle tracking, service history) and B2B shop dashboard (customer management, marketing).',
+        patterns: ['Serverless functions on Vercel', 'JWT authentication', 'Real-time WebSocket updates'],
+        endpoints: ['Consumer web app API', 'Shop dashboard API', 'Agent coordination API']
       }
     }
   },
   product: {
-    description: 'Piston Labs product vision, roadmap, and features',
+    description: 'Piston Labs products - B2C telemetry devices and B2B shop dashboard',
     topics: {
       vision: {
-        summary: 'Industrial IoT platform making equipment monitoring accessible to SMBs',
-        details: 'Piston democratizes industrial monitoring. Enterprise-grade capabilities at SMB prices. Predictive maintenance preventing costly downtime.',
-        keyPoints: ['10x cheaper than enterprise solutions', 'Setup in hours not months', 'No-code alert configuration']
+        summary: 'Consumer vehicle telemetry + B2B shop dashboard for auto repair marketing',
+        details: 'Piston Labs has two products: (1) B2C telemetry devices sold to consumers who plug them into their cars for vehicle tracking and service reminders, and (2) B2B dashboard sold to auto repair shops for customer marketing and light CRM.',
+        products: {
+          b2c: 'Teltonika FMM00A devices + consumer web app for vehicle tracking',
+          b2b: 'Shop dashboard for customer management, marketing, and service coordination'
+        }
+      },
+      consumerApp: {
+        summary: 'Consumer web app for vehicle tracking, service history, and maintenance reminders',
+        details: 'Consumers purchase Teltonika devices and use the companion web app to view real-time vehicle location, track mileage, receive oil change reminders, upload service documents, and request appointments.',
+        features: ['Real-time GPS tracking', 'Mileage tracking', 'Service history', 'Oil change reminders', 'Document upload', 'Appointment requests']
+      },
+      shopDashboard: {
+        summary: 'B2B dashboard for auto repair shops - marketing and light CRM',
+        details: 'Auto repair shops subscribe to the dashboard to manage customer relationships, send marketing campaigns, view customer vehicle data, and coordinate service appointments.',
+        features: ['Customer list/CRM', 'Vehicle service history', 'Marketing campaigns', 'Appointment management', 'PDF document handling'],
+        repo: 'Gran Autismo (Ryan\'s repository - READ ONLY)'
       },
       roadmap: {
-        summary: 'Q1: Mobile app, Q2: Predictive ML, Q3: Marketplace, Q4: Enterprise tier',
-        details: 'Current focus on mobile app for field technicians. Predictive maintenance ML models in development. Partner marketplace for sensors and integrations.',
-        priorities: ['Mobile app MVP', 'Anomaly detection v1', 'Slack/Teams integrations']
-      },
-      dashboard: {
-        summary: 'Real-time monitoring dashboard with customizable widgets and alerts',
-        details: 'React dashboard with real-time WebSocket updates. Drag-drop widget configuration. Multi-tenant with role-based access.',
-        features: ['Live sensor graphs', 'Alert management', 'Device fleet map', 'Report generation'],
-        files: ['dashboard/', 'src/components/']
-      },
-      alerts: {
-        summary: 'Configurable alerting via SMS, email, Slack, PagerDuty',
-        details: 'Threshold-based and anomaly-based alerts. Escalation policies. Alert fatigue prevention with smart grouping.',
-        patterns: ['Alert deduplication', 'Maintenance windows', 'On-call schedules']
+        summary: 'Beta sprint: IoT devices in cars (Tom) + Shop dashboards (Ryan)',
+        priorities: ['Device connectivity and accuracy', 'Consumer app MVP', 'Shop dashboard beta', 'First beta shop onboarding']
       }
     }
   },
   sales: {
-    description: 'Sales strategy, pitch materials, and objection handling',
+    description: 'Sales strategy for B2C device sales and B2B shop subscriptions',
     topics: {
       strategy: {
-        summary: 'Land-and-expand with SMB manufacturers, target 50-500 employee companies',
-        details: 'Initial sale: 5-10 sensors for critical equipment. Expand to full facility. Upsell predictive maintenance.',
-        icp: ['Manufacturing plants', 'Food processing', 'HVAC contractors', 'Property managers'],
-        dealSize: '$500-5000/month recurring'
+        summary: 'B2C: Sell devices to consumers. B2B: Sell dashboard subscriptions to auto repair shops.',
+        details: 'Two sales motions: (1) Sell Teltonika devices to consumers who want vehicle tracking and service reminders, (2) Sell dashboard subscriptions to auto repair shops who want to market to and manage customers.',
+        icp: {
+          b2c: 'Car owners who want vehicle tracking and maintenance reminders',
+          b2b: 'Independent auto repair shops, tire shops, oil change franchises'
+        }
       },
       pitch: {
-        summary: 'Stop equipment failures before they stop your business',
-        details: 'Lead with cost of downtime. Show ROI calculator. Demo real-time alerts. Emphasize quick setup.',
-        talkingPoints: [
-          'Average downtime costs $10K/hour',
-          'Piston customers see 40% reduction in unplanned downtime',
-          'Setup in 2 hours, not 2 months',
-          'No IT department required'
-        ]
+        summary: 'B2C: Never miss an oil change. B2B: Turn one-time customers into regulars.',
+        talkingPoints: {
+          b2c: ['Real-time vehicle tracking', 'Automatic mileage-based reminders', 'Digital service history', 'Easy appointment booking'],
+          b2b: ['See when customers need service', 'Automated marketing campaigns', 'Customer retention tools', 'Competitive advantage']
+        }
       },
       objections: {
         summary: 'Common objections and responses',
         responses: {
-          tooExpensive: 'Calculate their downtime costs. One prevented failure pays for a year.',
-          haveMaintenanceStaff: 'Piston helps them prioritize and catch issues they would miss.',
-          securityConcerns: 'SOC2 compliant, data encrypted, on-prem option available.',
-          alreadyHaveSCADA: 'Piston complements SCADA with predictive capabilities and mobile access.'
+          privacyConcerns: 'Data is encrypted and you control sharing. We never sell data.',
+          dontNeedTracking: 'Even without tracking, the service reminders and digital records add value.',
+          tooExpensive: 'One prevented breakdown pays for years of service.',
+          alreadyHaveCRM: 'Our dashboard integrates vehicle telemetry - see when customers actually need service.'
         }
       },
       competitors: {
-        summary: 'Main competitors: Samsara (enterprise), Uptake (ML focus), custom solutions',
-        positioning: 'Faster setup than Samsara, more affordable than Uptake, more capable than DIY'
+        summary: 'B2C: Bouncie, Automatic. B2B: ShopBoss, Mitchell, custom solutions.',
+        positioning: 'Integrated B2C + B2B ecosystem - consumers get great tracking, shops get actionable customer insights.'
       }
     }
   },
   investor: {
-    description: 'Investor relations, metrics, and pitch materials',
+    description: 'Investor relations and pitch materials',
     topics: {
       summary: {
-        summary: 'Series A IoT startup, $2M ARR, 150 customers, 40% MoM growth',
-        details: 'Founded 2022, raised $5M seed. Product-market fit achieved. Expanding sales team.',
-        highlights: ['Net revenue retention: 130%', 'CAC payback: 8 months', 'Gross margin: 75%']
+        summary: 'Pre-seed automotive telemetry startup with B2C + B2B model',
+        details: 'Piston Labs sells consumer telemetry devices and B2B shop dashboard. Early stage with beta customers.',
+        highlights: ['Two-sided marketplace model', 'Hardware + software recurring revenue', 'Auto repair shop ICP']
       },
       pitch: {
-        summary: '$50B industrial IoT market, we are the SMB-focused disruptor',
-        details: 'Enterprise solutions too complex/expensive for SMBs. Piston is Datadog for industrial equipment.',
-        asks: ['Series A: $15M', 'Use of funds: Sales team, ML capabilities, enterprise features']
+        summary: 'Connecting car owners with their auto shops through vehicle telemetry',
+        details: 'We sell devices to consumers who get vehicle tracking and service reminders. Shops pay for dashboard access to see when customers need service and market to them. Network effects as more consumers connect with shops.',
+        model: ['B2C device sales', 'B2B SaaS subscriptions', 'Potential data/advertising revenue']
       },
       traction: {
-        summary: 'Key metrics and growth trajectory',
+        summary: 'Beta stage with test devices and pilot shops',
         metrics: {
-          arr: '$2M',
-          customers: 150,
-          nrr: '130%',
-          growth: '40% MoM',
-          churn: 'less than 2% monthly'
+          devices: '3 test devices deployed',
+          shops: 'Beta shop onboarding in progress',
+          stage: 'Pre-revenue, validating PMF'
         }
       }
     }
   },
   team: {
-    description: 'Team structure, roles, and onboarding',
+    description: 'Piston Labs team structure',
     topics: {
       structure: {
-        summary: '15 person team: 8 eng, 3 sales, 2 customer success, 2 founders',
+        summary: 'Small founding team: Tyler (CEO), Ryan (Technical Co-Founder), Tom (Hardware/IoT)',
         roles: {
-          founders: ['CEO - Sales/Strategy', 'CTO - Product/Engineering'],
-          engineering: ['2 backend', '2 frontend', '2 firmware', '1 ML', '1 DevOps'],
-          sales: ['2 AEs', '1 SDR'],
-          customerSuccess: ['2 CSMs']
+          tyler: 'CEO - Strategy, sales, agent coordination infrastructure',
+          ryan: 'Technical Co-Founder - Gran Autismo dashboard (React/Supabase)',
+          tom: 'Hardware/IoT - Teltonika devices, AWS IoT pipeline, telemetry accuracy'
         }
       },
       onboarding: {
-        summary: 'New hire onboarding checklist and resources',
-        week1: ['Accounts setup', 'Product demo', 'Codebase overview', 'Shadow customer calls'],
-        week2: ['First PR', 'Meet all teams', 'Customer interview', 'Present learning'],
-        resources: ['Notion wiki', 'Loom recordings', 'Slack channels']
-      },
-      culture: {
-        summary: 'Fast-moving, customer-obsessed, technically excellent',
-        values: ['Ship fast, learn faster', 'Customer problems over our assumptions', 'Ownership mentality', 'Transparent by default']
+        summary: 'New team member onboarding',
+        week1: ['Accounts setup', 'Product demo', 'Architecture overview', 'Device hands-on'],
+        week2: ['First contribution', 'Customer interview', 'Sales shadowing'],
+        resources: ['Agent coordination hub', 'Context clusters', 'Teltonika documentation']
       }
     }
   },
@@ -189,6 +205,14 @@ const PISTON_CONTEXT: Record<string, any> = {
         summary: 'Save checkpoints every 15 minutes and before major operations',
         pattern: 'checkpoint save with current task, decisions, blockers',
         tools: ['checkpoint save/restore']
+      },
+      repositories: {
+        summary: 'Connected repositories and access levels',
+        repos: {
+          'agent-coord-mcp': 'This repo - agent coordination infrastructure (read/write)',
+          'teltonika-context-system': 'Context clusters and domain knowledge (read/write)',
+          'gran-autismo': 'Ryan\'s shop dashboard - READ ONLY (do not write)'
+        }
       }
     }
   }

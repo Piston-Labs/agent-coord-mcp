@@ -295,18 +295,19 @@ function generateTechnicalContent(): string {
 
 ### Infrastructure Stack
 
-- **Devices:** Teltonika FMB920/FMM00A OBD-II trackers
-- **Connectivity:** Soracom cellular SIMs, MQTT over TLS
-- **Cloud:** AWS (IoT Core, Lambda, DynamoDB, S3, Timescale, Redshift)
+- **Devices:** Teltonika FMM00A OBD-II plug-in trackers
+- **Connectivity:** Soracom LTE SIMs, Soracom Beam routing
+- **Cloud:** AWS (IoT Core, Lambda, S3, TimescaleDB) + Supabase
 - **Security:** X.509 certificates, IAM policies, encryption at rest/transit
 
 ### Data Flow
 
 \`\`\`
-Device → MQTT → AWS IoT Core → Lambda → S3 (archive)
-                                      → Timescale (real-time)
-                                      → Redshift (analytics)
-                                      → Supabase (app)
+Teltonika FMM00A → LTE → Soracom SIM → Soracom Beam → AWS IoT Core
+                                                          ↓
+                                                       Lambda (parse-teltonika-data)
+                                                          ↓
+                                    S3 (raw archive) ← → TimescaleDB (real-time) ← → Supabase (app)
 \`\`\`
 
 ### Performance Metrics

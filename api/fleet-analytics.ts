@@ -120,11 +120,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({
           metric: 'health',
           infrastructure: {
+            soracom: { status: 'operational', description: 'LTE SIM connectivity' },
             lambda: { status: 'operational', latency: '<100ms', errorRate: '0%' },
             iotCore: { status: 'operational', protocol: 'MQTT over TLS' },
             s3: { status: 'operational', bucket: 'telemetry-raw-usw1' },
             timescale: { status: 'operational', purpose: 'real-time queries' },
-            redshift: { status: 'operational', purpose: 'analytics' }
+            supabase: { status: 'operational', purpose: 'app data' }
           },
           devices: {
             total: 5,
@@ -137,7 +138,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'mileage':
         return res.json({
           metric: 'mileage',
-          note: 'Mileage data requires querying Timescale/Redshift. Use AWS CLI or dashboard.',
+          note: 'Mileage data requires querying TimescaleDB. Use dashboard or direct query.',
           hint: 'SELECT SUM(distance_km) FROM telemetry WHERE timestamp > NOW() - INTERVAL \'7 days\'',
           devices: Object.entries(DEVICE_FLEET).map(([imei, info]) => ({
             imei,
@@ -149,9 +150,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'trips':
         return res.json({
           metric: 'trips',
-          note: 'Trip data requires querying trip detection algorithm in Redshift.',
+          note: 'Trip data requires querying trip detection in TimescaleDB.',
           hint: 'Trip = sequence of ignition_on -> movement -> ignition_off',
-          awsCliHint: 'aws athena start-query-execution --query-string "SELECT * FROM trips_view"'
+          queryHint: 'Query trips_view in TimescaleDB for processed trip data'
         });
 
       default:
@@ -172,8 +173,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messagesPerDay: Math.floor(86400 / info.transmitInterval)
     })),
     infrastructure: {
-      lambda: { status: 'operational', name: 'parse-teltonika-data' },
-      databases: ['S3 (archive)', 'Timescale (real-time)', 'Redshift (analytics)'],
+      soracom: { status: 'operational', description: 'LTE SIM connectivity via Soracom Beam' },
+      lambda: { status: 'operational', name: 'parse-teltonika-data', runtime: 'python3.13' },
+      databases: ['S3 (raw archive)', 'TimescaleDB (real-time queries)', 'Supabase (app data)'],
       region: 'us-west-1'
     },
     awsCliCommands: {
