@@ -337,11 +337,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const CHAT_KEY = 'agent-coord:chat';
       const SALES_FILES_KEY = 'agent-coord:sales-files';
 
-      const [memories, chatMessages, salesFiles] = await Promise.all([
-        redis.hgetall(MEMORY_KEY) || {},
+      const [memoriesRaw, chatMessages, salesFilesRaw] = await Promise.all([
+        redis.hgetall(MEMORY_KEY),
         redis.lrange(CHAT_KEY, 0, 100),
-        redis.hgetall(SALES_FILES_KEY) || {},
+        redis.hgetall(SALES_FILES_KEY),
       ]);
+
+      // Handle null/undefined from Redis
+      const memories = memoriesRaw || {};
+      const salesFiles = salesFilesRaw || {};
 
       // Parse and filter memories
       const memoryList = Object.values(memories)
