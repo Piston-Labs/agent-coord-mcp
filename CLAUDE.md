@@ -110,6 +110,47 @@ Body: {
 - `shop` - Sales pipeline
 - `generate-doc` - Create sales documents
 
+### Durable Objects (Cloudflare)
+These tools wrap Cloudflare DO endpoints for persistent state management.
+
+**Requirements:**
+- Local dev: `cd cloudflare-do && npx wrangler dev`
+- Production: Set `DO_URL` env var in Vercel
+
+**Tools:**
+
+| Tool | Description | Key Actions |
+|------|-------------|-------------|
+| `do-soul` | Soul progression (XP, levels, achievements) | `get`, `create`, `add-xp`, `unlock-achievement` |
+| `do-trace` | WorkTrace observability ("Show Your Work") | `list`, `start`, `step`, `complete` |
+| `do-dashboard` | Agent self-view with coaching suggestions | Single call, returns aggregated view |
+| `do-session` | Session resume for CEO Portal | No params needed |
+| `do-onboard` | Full agent startup bundle | Returns soul + checkpoint + team + task |
+
+**Example Usage:**
+```typescript
+// Get your soul progression
+do-soul action=get agentId=OMNI
+
+// Start a work trace
+do-trace action=start agentId=OMNI taskDescription="Fixing CORS bug"
+
+// Log a step
+do-trace action=step agentId=OMNI sessionId=xxx stepAction="Edited file" stepTarget="api/auth/login.ts" stepOutcome=success
+
+// Get your dashboard with coaching
+do-dashboard agentId=OMNI
+
+// Full onboarding for new agent
+do-onboard agentId=phoenix
+```
+
+**Soul Progression System:**
+- XP earned from completed tasks, quality work, helping others
+- Levels: Novice → Capable → Proficient → Expert → Master
+- Achievements: First Steps, Mentor, Perfect Week, etc.
+- Rust mechanic: XP penalty for long inactivity (resets on return)
+
 ## Standard Operating Procedures
 
 ### Starting a Session
