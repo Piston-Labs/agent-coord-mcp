@@ -191,7 +191,7 @@ const INTEGRATIONS = [
     setupUrl: 'https://console.aws.amazon.com/iam/',
     setupInstructions: 'Run aws/setup.ps1 to deploy CloudFormation stack. Add AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_SUBNET_ID, AWS_SECURITY_GROUP_ID, AWS_IAM_INSTANCE_PROFILE to Vercel.',
     endpoint: '/api/aws-vms',
-    features: ['vm-provision', 'auto-shutdown', 'cost-optimization', 'ssm-remote-exec']
+    features: ['vm-provision', 'auto-shutdown', 'cost-optimization', 'ssm-remote-exec', 'soul-transfer-to-existing-vm']
   },
 ];
 
@@ -211,7 +211,7 @@ const API_ENDPOINTS = [
   { id: 'google-drive', path: '/api/google-drive', methods: ['GET', 'POST', 'DELETE'], description: 'Google Drive document storage and sharing' },
   { id: 'souls', path: '/api/souls', methods: ['GET', 'POST', 'PATCH', 'DELETE'], description: 'Soul registry - persistent agent identities' },
   { id: 'soul-monitor', path: '/api/soul-monitor', methods: ['GET', 'POST'], description: 'Soul health monitoring and alerts' },
-  { id: 'aws-vms', path: '/api/aws-vms', methods: ['GET', 'POST', 'DELETE'], description: 'AWS VM lifecycle management' },
+  { id: 'aws-vms', path: '/api/aws-vms', methods: ['GET', 'POST', 'DELETE'], description: 'AWS VM lifecycle: provision, start/stop, terminate, spawn-agent, transfer-soul' },
   { id: 'vm-scheduler', path: '/api/vm-scheduler', methods: ['GET', 'POST', 'PUT'], description: 'VM auto-shutdown scheduler (Vercel cron)' },
 ];
 
