@@ -1,8 +1,9 @@
 /**
  * Integration APIs Tests
  *
- * Tests the Sentry, Notion, and Linear API endpoints.
+ * Tests the Errors (self-hosted), Sentry (legacy), Notion, and Linear API endpoints.
  * These APIs return mock data when tokens are not configured.
+ * The Errors API is the free Sentry alternative using Redis backend.
  * Run with: npx tsx test/integrations.test.ts
  */
 
@@ -251,14 +252,112 @@ async function main() {
   });
 
   // ============================================================================
+  // ERRORS API TESTS (Self-hosted Sentry alternative)
+  // ============================================================================
+  console.log('\n--- Errors API (Self-hosted) ---');
+
+  await test('Errors overview returns data', async () => {
+    const res = await fetch(`${API_BASE}/api/errors?action=overview`);
+    assert(res.ok, `Expected 200, got ${res.status}`);
+    const data = await res.json();
+    assert(data.summary !== undefined, 'Expected summary in response');
+    assert(typeof data.summary.unresolvedIssues === 'number', 'Expected unresolvedIssues number');
+    assert(data.summary.source === 'self-hosted', 'Expected source to be self-hosted');
+  });
+
+  await test('Errors issues list returns array', async () => {
+    const res = await fetch(`${API_BASE}/api/errors?action=issues`);
+    assert(res.ok, `Expected 200, got ${res.status}`);
+    const data = await res.json();
+    assert(Array.isArray(data.issues), 'Expected issues array');
+    assert(typeof data.count === 'number', 'Expected count number');
+  });
+
+  await test('Errors capture creates new issue', async () => {
+    const testError = {
+      title: 'Test Error from integration tests',
+      message: 'This is a test error',
+      level: 'warning',
+      culprit: 'test/integrations.test.ts:captureTest',
+      tags: { test: 'true', environment: 'test' },
+      extra: { testRun: Date.now() }
+    };
+
+    const res = await fetch(`${API_BASE}/api/errors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(testError)
+    });
+    assert(res.ok, `Expected 200, got ${res.status}`);
+    const data = await res.json();
+    assert(data.success === true, 'Expected success: true');
+    assert(data.eventId !== undefined, 'Expected eventId');
+    assert(data.issueId !== undefined, 'Expected issueId');
+    assert(data.shortId?.startsWith('AGENT-'), 'Expected shortId like AGENT-XXX');
+  });
+
+  await test('Errors capture requires title', async () => {
+    const res = await fetch(`${API_BASE}/api/errors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'No title' })
+    });
+    assert(res.status === 400, `Expected 400, got ${res.status}`);
+    const data = await res.json();
+    assert(data.error === 'title is required', 'Expected title required error');
+  });
+
+  await test('Errors stats returns chart data', async () => {
+    const res = await fetch(`${API_BASE}/api/errors?action=stats`);
+    assert(res.ok, `Expected 200, got ${res.status}`);
+    const data = await res.json();
+    assert(data.stats !== undefined, 'Expected stats in response');
+    assert(Array.isArray(data.stats.received), 'Expected received array for chart');
+    assert(data.source === 'self-hosted', 'Expected source to be self-hosted');
+  });
+
+  await test('Errors issue detail requires issueId', async () => {
+    const res = await fetch(`${API_BASE}/api/errors?action=issue`);
+    assert(res.status === 400, `Expected 400, got ${res.status}`);
+    const data = await res.json();
+    assert(data.error === 'issueId required', 'Expected issueId required error');
+  });
+
+  await test('Errors PATCH updates issue status', async () => {
+    // First, capture an error to get an issueId
+    const captureRes = await fetch(`${API_BASE}/api/errors`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: 'Test for status update', level: 'info' })
+    });
+    const captureData = await captureRes.json();
+    const issueId = captureData.issueId;
+
+    // Now resolve it
+    const res = await fetch(`${API_BASE}/api/errors?issueId=${issueId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'resolved' })
+    });
+    assert(res.ok, `Expected 200, got ${res.status}`);
+    const data = await res.json();
+    assert(data.success === true, 'Expected success: true');
+    assert(data.issue?.status === 'resolved', 'Expected status to be resolved');
+  });
+
+  await test('Errors rejects invalid action', async () => {
+    const res = await fetch(`${API_BASE}/api/errors?action=invalid`);
+    assert(res.status === 400, `Expected 400, got ${res.status}`);
+    const data = await res.json();
+    assert(data.validActions !== undefined, 'Expected validActions in error');
+  });
+
+  // ============================================================================
   // CROSS-API TESTS
   // ============================================================================
   console.log('\n--- Cross-API Tests ---');
 
-  await test('All integration APIs reject non-GET methods (except Linear)', async () => {
-    const sentryRes = await fetch(`${API_BASE}/api/sentry`, { method: 'POST' });
-    assert(sentryRes.status === 405, `Sentry should reject POST: got ${sentryRes.status}`);
-
+  await test('Notion rejects POST method', async () => {
     const notionRes = await fetch(`${API_BASE}/api/notion`, { method: 'POST' });
     assert(notionRes.status === 405, `Notion should reject POST: got ${notionRes.status}`);
   });

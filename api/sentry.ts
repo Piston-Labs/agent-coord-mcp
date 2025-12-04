@@ -42,19 +42,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { action = 'overview', issueId, query, status, level, limit = '25' } = req.query;
+    const limitNum = Math.min(parseInt(limit as string, 10), 100);
 
-    // Check for Sentry token
+    // Validate required parameters first (before mock data check)
+    switch (action) {
+      case 'issue':
+        if (!issueId) {
+          return res.status(400).json({ error: 'issueId required' });
+        }
+        break;
+      case 'events':
+        if (!issueId) {
+          return res.status(400).json({ error: 'issueId required for events' });
+        }
+        break;
+      case 'overview':
+      case 'issues':
+      case 'stats':
+        break;
+      default:
+        return res.status(400).json({
+          error: `Unknown action: ${action}`,
+          validActions: ['overview', 'issues', 'issue', 'stats', 'events']
+        });
+    }
+
+    // Check for Sentry token - return mock data if not configured
     if (!SENTRY_AUTH_TOKEN) {
-      // Return mock data for demo/development
       return res.json(getMockData(action as string, issueId as string));
     }
 
-    const limitNum = Math.min(parseInt(limit as string, 10), 100);
-
+    // Handle real Sentry API calls
     switch (action) {
       case 'overview':
         return res.json(await getOverview());
-
       case 'issues':
         return res.json(await getIssues({
           query: query as string,
@@ -62,27 +83,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           level: level as string,
           limit: limitNum
         }));
-
       case 'issue':
-        if (!issueId) {
-          return res.status(400).json({ error: 'issueId required' });
-        }
         return res.json(await getIssueDetails(issueId as string));
-
       case 'stats':
         return res.json(await getProjectStats());
-
       case 'events':
-        if (!issueId) {
-          return res.status(400).json({ error: 'issueId required for events' });
-        }
         return res.json(await getIssueEvents(issueId as string, limitNum));
-
-      default:
-        return res.status(400).json({
-          error: `Unknown action: ${action}`,
-          validActions: ['overview', 'issues', 'issue', 'stats', 'events']
-        });
     }
 
   } catch (error) {

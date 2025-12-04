@@ -780,25 +780,76 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
-  // SENTRY TOOL - Error tracking integration
+  // SENTRY TOOL - Error tracking integration (supports both Sentry and self-hosted)
   // ============================================================================
 
   server.tool(
     'sentry',
-    'Sentry error tracking integration. Query issues, get error stats, monitor application health.',
+    'Error tracking integration. Query issues, get error stats, capture errors. Uses self-hosted Redis backend (free) or Sentry if configured.',
     {
-      action: z.enum(['overview', 'issues', 'issue', 'stats', 'events']).describe('overview=summary, issues=list issues, issue=get details, stats=project stats, events=issue events'),
-      issueId: z.string().optional().describe('Issue ID (required for issue/events actions)'),
+      action: z.enum(['overview', 'issues', 'issue', 'stats', 'events', 'capture', 'resolve', 'ignore']).describe('overview=summary, issues=list issues, issue=get details, stats=project stats, events=issue events, capture=log new error, resolve/ignore=update issue status'),
+      issueId: z.string().optional().describe('Issue ID (required for issue/events/resolve/ignore actions)'),
       query: z.string().optional().describe('Search query for filtering issues'),
       status: z.enum(['resolved', 'unresolved', 'ignored']).optional().describe('Filter by issue status'),
       level: z.enum(['fatal', 'error', 'warning', 'info', 'debug']).optional().describe('Filter by severity level'),
       limit: z.number().optional().describe('Max results to return (default 25, max 100)'),
+      // Capture-specific fields
+      title: z.string().optional().describe('Error title/message (for capture action)'),
+      culprit: z.string().optional().describe('Source of the error e.g. file:function (for capture)'),
+      stacktrace: z.string().optional().describe('Full stacktrace (for capture)'),
+      tags: z.record(z.string()).optional().describe('Key-value tags for categorization (for capture)'),
+      extra: z.record(z.any()).optional().describe('Additional context data (for capture)'),
       agentId: z.string().describe('Your agent ID')
     },
     async (args) => {
-      const { action, issueId, query, status, level, limit, agentId } = args;
+      const { action, issueId, query, status, level, limit, title, culprit, stacktrace, tags, extra, agentId } = args;
 
       try {
+        // Use self-hosted errors API (free alternative to Sentry)
+        const apiEndpoint = `${API_BASE}/api/errors`;
+
+        // Handle capture action - POST to create new error
+        if (action === 'capture') {
+          if (!title) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'title is required for capture action' }) }] };
+          }
+          const res = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title,
+              level: level || 'error',
+              culprit: culprit || 'agent-capture',
+              stacktrace,
+              tags: { ...tags, agent: agentId },
+              extra,
+              user: { id: agentId }
+            })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify({
+            success: true,
+            message: data.isNew ? 'New issue created' : 'Event added to existing issue',
+            ...data
+          }, null, 2) }] };
+        }
+
+        // Handle resolve/ignore actions - PATCH to update status
+        if (action === 'resolve' || action === 'ignore') {
+          if (!issueId) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'issueId required' }) }] };
+          }
+          const newStatus = action === 'resolve' ? 'resolved' : 'ignored';
+          const res = await fetch(`${apiEndpoint}?issueId=${issueId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          const data = await res.json();
+          return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+        }
+
+        // Handle GET actions
         const params = new URLSearchParams();
         if (issueId) params.set('issueId', issueId);
         if (query) params.set('query', query);
@@ -807,17 +858,18 @@ export function registerIntegrationTools(server: McpServer) {
         if (limit) params.set('limit', String(limit));
         params.set('action', action);
 
-        const res = await fetch(`${API_BASE}/api/sentry?${params}`);
+        const res = await fetch(`${apiEndpoint}?${params}`);
         const data = await res.json();
 
         // Format overview nicely
         if (action === 'overview' && data.summary) {
           const summary = [
-            `## Sentry Overview`,
+            `## Error Tracking Overview`,
             ``,
+            `**Source:** ${data.summary.source || 'self-hosted'} (free)`,
             `**Unresolved Issues:** ${data.summary.unresolvedIssues}`,
             `**Critical Issues:** ${data.summary.criticalIssues}`,
-            `**Project:** ${data.summary.project}`,
+            `**Events (24h):** ${data.stats?.eventsLast24h || 0}`,
             ``,
             `### Recent Issues:`
           ];
@@ -828,7 +880,7 @@ export function registerIntegrationTools(server: McpServer) {
               summary.push(`  Count: ${issue.count} | Last seen: ${issue.lastSeen}`);
             }
           } else {
-            summary.push('No recent issues!');
+            summary.push('No recent issues - looking good!');
           }
 
           return { content: [{ type: 'text', text: summary.join('\n') }] };

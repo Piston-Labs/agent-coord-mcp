@@ -187,32 +187,33 @@ function calculateDifficultyLevel(overallScore: number, totalQuizzes: number): '
 
 /**
  * Interview scenario prompts for AI simulation
+ * Updated for Piston Labs two-sided marketplace: consumers buy devices, shops subscribe to SaaS dashboard
  */
 const INTERVIEW_SCENARIOS = {
   'cold-call': {
-    title: 'Cold Call Practice - Auto Shop Owner',
-    systemPrompt: `You are a busy auto repair shop owner with 3 service bays and 4 technicians. You get sales calls all the time and are skeptical. Your main pain points: customers complain about not knowing when their car will be ready, you have no idea where your mobile technician is, and parts deliveries are unpredictable. You haven't heard of Piston Labs. Start dismissive but warm up if the caller asks good questions about your actual problems.`,
-    objectives: ['Build rapport with busy shop owner', 'Identify fleet/tracking pain points', 'Connect to customer satisfaction issues', 'Schedule a follow-up']
+    title: 'Cold Call - Auto Shop Owner (SaaS Pitch)',
+    systemPrompt: `You're a busy auto repair shop owner with 3 bays and 2 technicians. You get sales calls all the time. Your pain points: customers forget about oil changes and don't come back, you have no way to remind them, and the big chains (Jiffy Lube, Firestone) are taking your customers with their reminder systems. You've never heard of Piston Labs. Start dismissive but warm up if they talk about customer retention.`,
+    objectives: ['Build rapport with busy shop owner', 'Identify customer retention pain points', 'Explain the consumer device + shop dashboard model', 'Schedule a demo']
   },
   'discovery': {
-    title: 'Discovery Call - Multi-Location Shop',
-    systemPrompt: `You own 2 auto repair shops and are considering expansion to a 3rd location. You agreed to a call because managing techs across locations is getting difficult. You have 2 mobile service vans and 8 technicians total. Your current "system" is texting and phone calls. You've heard of GPS tracking but think it might be "Big Brother" for your team. Be open but push back on surveillance concerns.`,
-    objectives: ['Understand multi-location challenges', 'Map technician dispatch process', 'Address privacy/trust concerns', 'Qualify for pilot program']
+    title: 'Discovery Call - Shop Interested in CRM',
+    systemPrompt: `You own an independent auto shop and agreed to a call because customer retention is your biggest problem. You do great work but customers forget about you between visits. You've tried sending postcards but it's expensive and you never know if they work. You want something automated. Ask how the system knows when customers need service.`,
+    objectives: ['Understand their current customer communication', 'Explain how device telemetry enables smart reminders', 'Show how the shop dashboard works', 'Qualify for pilot program']
   },
   'objection-handling': {
-    title: 'Objection Handling - Common Shop Concerns',
-    systemPrompt: `You're the owner of a successful auto shop interested in the product but have concerns: 1) Your technicians will hate being tracked and might quit, 2) You're already paying for shop management software and don't want another system, 3) You're not sure if tracking really helps customer satisfaction. Raise these objections one at a time.`,
-    objectives: ['Address employee privacy concerns', 'Show integration with existing tools', 'Connect tracking to customer experience', 'Demonstrate ROI']
+    title: 'Objection Handling - Shop Concerns',
+    systemPrompt: `You're interested in the Piston Labs dashboard but have concerns: 1) How do customers get the devices? You don't want to sell hardware. 2) What if customers don't want to share their data? 3) You already have a basic customer database - why pay for another system? Raise these objections one at a time.`,
+    objectives: ['Explain consumers buy devices independently', 'Address data privacy and consumer control', 'Show value beyond basic customer database', 'Demonstrate ROI from automated reminders']
   },
   'demo': {
-    title: 'Product Demo - Shop Fleet Tracking',
-    systemPrompt: `You're watching a demo of Piston Labs fleet tracking for your auto shop. You have 2 tow trucks and 1 mobile service van. Ask practical questions: How do I see where my trucks are right now? Can customers see when the tow truck is coming? What if a driver turns off the device? How much does this cost per vehicle? Be engaged but skeptical.`,
-    objectives: ['Show real-time fleet visibility', 'Demonstrate customer-facing features', 'Handle cost/pricing questions', 'Show mobile app for technicians']
+    title: 'Product Demo - Shop Dashboard',
+    systemPrompt: `You're watching a demo of the Piston Labs shop dashboard. You want to see: How do I see which customers need oil changes soon? How do automated reminders work? Can I send marketing campaigns? What does the customer see on their end? How much does this cost per month? Be engaged but ask practical questions.`,
+    objectives: ['Show customer list with vehicle data', 'Demonstrate automated reminder system', 'Show marketing campaign features', 'Explain pricing tiers']
   },
   'closing': {
-    title: 'Closing Practice - Pilot Program',
-    systemPrompt: `You've seen the demo and like it but hesitant to commit. You want to try it on just one vehicle first. You're worried about the monthly cost adding up. Your service advisor thinks it's unnecessary. You need to talk to your business partner before signing anything. Push back but be persuadable with the right pilot offer.`,
-    objectives: ['Propose 30-day pilot on one vehicle', 'Address cost concerns with ROI examples', 'Handle internal stakeholder objections', 'Get commitment to next step']
+    title: 'Closing - Dashboard Subscription',
+    systemPrompt: `You've seen the demo and like the idea. But you're hesitant: What if none of your customers have the device? Is there a free trial? You need to think about it. Your spouse helps with the business and needs to see it too. Push back but be persuadable with a good trial offer and onboarding help.`,
+    objectives: ['Explain network growth and customer acquisition', 'Offer free trial or pilot period', 'Address spouse/partner involvement', 'Get commitment to start trial']
   }
 };
 
@@ -222,10 +223,10 @@ const INTERVIEW_SCENARIOS = {
 function getOpeningLine(scenario: string): string {
   const openings: Record<string, string> = {
     'cold-call': "Yeah, this is Mike's Auto... hold on, I got a customer. *pause* Okay, what do you need? I'm pretty busy here.",
-    'discovery': "Hey, thanks for calling back. Yeah, I got about 20 minutes before my next car comes in. What's this GPS thing about?",
-    'objection-handling': "Alright, I've been thinking about what you showed me. I like the idea but my guys are gonna flip if I tell them I'm tracking their every move.",
-    'demo': "Okay, show me how this works. I've got two tow trucks and a service van. Just so you know, I'm not great with technology.",
-    'closing': "Look, I showed this to my business partner and he thinks it could work. But I want to start small - maybe just one truck to test it out."
+    'discovery': "Hey, thanks for calling back. Yeah, my problem is customers just don't come back. We do good work but they forget about us. What've you got?",
+    'objection-handling': "Alright, I've been thinking about your dashboard thing. I like the idea of automated reminders but I have some questions.",
+    'demo': "Okay, show me how this works. I want to see how I'd actually use this to get customers to come back more often.",
+    'closing': "Look, I showed this to my wife - she handles the books. She likes it but we're wondering about the trial and how many of our customers would actually have the device."
   };
   return openings[scenario] || "Hello, how can I help you?";
 }
@@ -269,88 +270,88 @@ function generateProspectResponse(
   // messageCount = 1 means first response, 2 means second, etc.
   if (simulation.scenario === 'cold-call') {
     if (messageCount === 1) {
-      message = "Look, I get calls like this every day. We're a small shop - I don't need fancy technology.";
-      if (!feedback) feedback = 'Tip: Acknowledge they are busy and focus on specific problems they might have.';
+      message = "Look, I get calls like this all the time. We're a small shop - we don't need another software subscription.";
+      if (!feedback) feedback = 'Tip: Acknowledge they are busy. Ask about their biggest challenge with repeat customers.';
     } else if (messageCount === 2) {
-      message = "GPS tracking? What, you want to spy on my guys? I trust my technicians.";
-      if (!feedback) feedback = 'Common objection! Reframe from "tracking employees" to "improving customer service."';
+      message = "Customer retention? I mean yeah, that's always an issue. People get their oil change and then you never see them again.";
+      if (!feedback) feedback = 'They acknowledged the pain point! Dig deeper - ask how they currently try to bring customers back.';
     } else if (messageCount === 3) {
-      message = "Hmm... actually customers do complain they never know when the tow truck is coming. That's a real problem.";
-      if (!feedback) feedback = 'They revealed a pain point! Dig deeper on customer experience issues.';
+      message = "We send postcards sometimes but who knows if they work. It's expensive and feels like throwing money away.";
+      if (!feedback) feedback = 'Great discovery! Contrast postcards with automated, data-driven reminders.';
     } else if (messageCount === 4) {
-      message = "Other shops are using this? Like who? Any auto repair places around here?";
-      if (!feedback) feedback = 'They want social proof - share relevant case studies from similar shops.';
+      message = "Wait, so the customer has a device in their car and you can tell when they need service? How does that work exactly?";
+      if (!feedback) feedback = 'They are curious! Explain the consumer device + shop dashboard model simply.';
     } else {
-      message = "Alright, send me some info. Maybe we can talk next week when things slow down.";
-      if (!feedback) feedback = 'Great progress! Confirm the follow-up and get a specific time.';
+      message = "Huh, that's actually pretty interesting. Send me some info - I'll look at it when things slow down.";
+      if (!feedback) feedback = 'Good progress! Push for a specific follow-up time instead of just sending info.';
     }
   } else if (simulation.scenario === 'discovery') {
     if (messageCount === 1) {
-      message = "My main headache? Managing techs between my two locations. I never know who's where or if jobs are running late.";
-      if (!feedback) feedback = 'Key pain point! Ask about how this impacts customers and operations.';
+      message = "Yeah exactly. We do good work but customers just disappear. The chains like Jiffy Lube have those reminder systems - how do I compete with that?";
+      if (!feedback) feedback = 'Key pain point! Empathize and position Piston as the solution for independent shops.';
     } else if (messageCount === 2) {
-      message = "Right now we just text and call. It works but... sometimes guys don't answer. And I waste time tracking people down.";
-      if (!feedback) feedback = 'Their current process is manual and frustrating - quantify the time waste.';
+      message = "Right now I keep a spreadsheet with customer info but honestly I never have time to call people or send reminders.";
+      if (!feedback) feedback = 'Manual process with no follow-through - this is exactly what automation solves.';
     } else if (messageCount === 3) {
-      message = "Time? Probably an hour a day just figuring out where everyone is and rerouting jobs. That's time I should spend with customers.";
-      if (!feedback) feedback = 'They quantified the problem - 5+ hours per week! Calculate the cost.';
+      message = "So the system automatically knows when someone needs an oil change based on their actual mileage? Not just guessing at 3 months?";
+      if (!feedback) feedback = 'They understand the value of real data! Confirm and explain how telemetry beats guesswork.';
     } else if (messageCount === 4) {
-      message = "Yeah, the Big Brother thing worries me. My best tech has been with me 8 years. I don't want him to feel like I don't trust him.";
-      if (!feedback) feedback = 'Trust/privacy concern - explain how to position it as a tool, not surveillance.';
+      message = "What do you mean the customer buys the device? I don't want to be selling hardware to my customers.";
+      if (!feedback) feedback = 'Important clarification! Explain consumers buy devices independently - shops just subscribe to dashboard.';
     } else {
-      message = "If we could try it on just the mobile service van first, I might be interested. What would that cost?";
-      if (!feedback) feedback = 'Buying signal! They want a pilot - make it easy to say yes.';
+      message = "Okay that makes more sense. So I just get the dashboard and any customer who has the device can connect with my shop?";
+      if (!feedback) feedback = 'They get it! Confirm the model and move toward a trial conversation.';
     }
   } else if (simulation.scenario === 'objection-handling') {
     if (messageCount === 1) {
-      message = "My guys are gonna hate this. Tony's been driving that tow truck for 6 years - he'll think I'm treating him like a kid.";
-      if (!feedback) feedback = 'Employee resistance objection - position it as a customer service tool, not monitoring.';
+      message = "My first question - how do my customers even get these devices? I'm not going to sell gadgets. That's not my business.";
+      if (!feedback) feedback = 'Address the business model concern - shops don\'t sell devices, consumers buy them directly.';
     } else if (messageCount === 2) {
-      message = "I'm already paying $400/month for Mitchell and ShopKey. I can't keep adding systems.";
-      if (!feedback) feedback = 'Software overload concern - show simplicity and potential integration benefits.';
+      message = "Okay but what if my customers don't want some device tracking them? People are private about that stuff.";
+      if (!feedback) feedback = 'Data privacy objection - emphasize consumer control and opt-in connection with shops.';
     } else if (messageCount === 3) {
-      message = "How does GPS even help with customer satisfaction? They just want their car fixed.";
-      if (!feedback) feedback = 'Connect the dots - ETA updates, faster dispatch, fewer angry calls asking "where's my tow truck?"';
+      message = "I already have a customer database in my shop management software. Why do I need another system?";
+      if (!feedback) feedback = 'Differentiate from basic database - Piston has real-time mileage data and automated outreach.';
     } else if (messageCount === 4) {
-      message = "Okay, that makes sense. But what if my driver just turns off the phone or leaves it in the truck?";
-      if (!feedback) feedback = 'Technical objection - explain the device is hardwired, not phone-based.';
+      message = "What if none of my current customers have the device? Then I'm paying for nothing.";
+      if (!feedback) feedback = 'Chicken-and-egg concern - explain network growth and how to seed with existing customers.';
     } else {
-      message = "Alright, you've got some good answers. Let me think about it and talk to my partner.";
-      if (!feedback) feedback = 'Success! Ask when you can follow up and what would help the partner conversation.';
+      message = "Alright, those are fair points. What does the dashboard actually cost per month?";
+      if (!feedback) feedback = 'Buying signal! They want pricing - present tiers clearly with ROI framing.';
     }
   } else if (simulation.scenario === 'demo') {
     if (messageCount === 1) {
-      message = "So I can see where my trucks are right now? Like, in real time? Show me.";
-      if (!feedback) feedback = 'Show the live map view - point out their use case (tow truck dispatch).';
+      message = "So this is the dashboard? Show me how I see which of my customers need service soon.";
+      if (!feedback) feedback = 'Show the customer list sorted by upcoming service needs based on mileage.';
     } else if (messageCount === 2) {
-      message = "What about when my driver is underground in a parking garage? Does it still work?";
-      if (!feedback) feedback = 'Good technical question - explain GPS limitations and how the device handles signal loss.';
+      message = "Okay I see the list. But how do the reminders actually go out? Do I have to send them manually?";
+      if (!feedback) feedback = 'Show the automated reminder setup - set rules once, system sends automatically.';
     } else if (messageCount === 3) {
-      message = "Can my customers see when the truck is coming? Like an Uber ETA thing?";
-      if (!feedback) feedback = 'Great feature request - show the customer ETA sharing feature.';
+      message = "Can I send promotions too? Like a winter special for tire checks or something?";
+      if (!feedback) feedback = 'Great question! Show marketing campaign feature and targeting options.';
     } else if (messageCount === 4) {
-      message = "What happens if somebody steals one of my trucks? Can I track it?";
-      if (!feedback) feedback = 'Recovery/theft protection use case - explain 24/7 tracking and alerts.';
+      message = "What does the customer see on their end? Do they get an app notification or what?";
+      if (!feedback) feedback = 'Show the consumer experience - app notification, service history, appointment booking.';
     } else {
-      message = "This is pretty cool actually. What does it cost per truck per month?";
-      if (!feedback) feedback = 'Buying signal! Present pricing clearly and emphasize ROI.';
+      message = "This is pretty slick. What's the monthly cost and is there a contract?";
+      if (!feedback) feedback = 'Buying signal! Present pricing (monthly, no contract) and push for trial.';
     }
   } else if (simulation.scenario === 'closing') {
     if (messageCount === 1) {
-      message = "I talked to my partner. He's interested but wants to start with just one truck to test it.";
-      if (!feedback) feedback = 'They want a pilot - agree and make it easy. One truck is a foot in the door.';
+      message = "Yeah so my wife and I talked about it. We like the automated reminders but we're worried - what if we sign up and none of our customers have the device?";
+      if (!feedback) feedback = 'Valid concern - explain how to seed network: offer devices to loyal customers or promote to new ones.';
     } else if (messageCount === 2) {
-      message = "How long do we have to commit? I don't want to be locked into a year if it doesn't work.";
-      if (!feedback) feedback = 'Commitment concern - explain your trial/pilot terms and flexibility.';
+      message = "Is there a free trial? I don't want to pay if I'm not sure it'll work for our shop.";
+      if (!feedback) feedback = 'Trial request - offer pilot period and explain what success looks like.';
     } else if (messageCount === 3) {
-      message = "What if we don't like it? Is there a money-back guarantee or something?";
-      if (!feedback) feedback = 'Risk reduction - explain your satisfaction guarantee or pilot terms.';
+      message = "How long until we'd actually see customers coming back because of the reminders?";
+      if (!feedback) feedback = 'Set realistic expectations - first reminders go out within weeks of customers connecting.';
     } else if (messageCount === 4) {
-      message = "Okay, and installation - I can't have the truck out of service. How long does it take?";
-      if (!feedback) feedback = 'Practical logistics - explain quick installation (30 min) with minimal downtime.';
+      message = "Okay, and if we want to cancel after the trial we can just stop? No penalties?";
+      if (!feedback) feedback = 'Confirm no-contract, month-to-month terms. Remove all risk.';
     } else {
-      message = "Alright, let's try it on the main tow truck first. What do you need from me to get started?";
-      if (!feedback) feedback = 'They said yes! Confirm next steps: vehicle info, install scheduling, and paperwork.';
+      message = "Alright, let's try the trial. What do I need to do to get started?";
+      if (!feedback) feedback = 'They said yes! Walk through onboarding: account setup, connect first customers, set reminder rules.';
     }
   } else {
     message = "Tell me more about that.";
@@ -465,15 +466,16 @@ function scoreSimulation(simulation: InterviewSimulation): {
 }
 
 /**
- * Default training modules based on researcher's findings
+ * Default training modules - Updated for Piston Labs two-sided marketplace
+ * Consumers buy devices, shops subscribe to SaaS dashboard
  */
 function getDefaultModules(): TrainingModule[] {
   return [
     // Sales Track
     {
       id: 'sales-101',
-      title: 'Auto Shop Sales Training',
-      description: 'Foundation training for selling GPS fleet tracking to auto repair shops',
+      title: 'Sales Training - Shop Dashboard',
+      description: 'Foundation training for selling the Piston Labs shop dashboard SaaS to auto repair shops',
       role: 'sales',
       category: 'Onboarding',
       order: 1,
@@ -483,132 +485,141 @@ function getDefaultModules(): TrainingModule[] {
       lessons: [
         {
           id: 'sales-101-icp',
-          title: 'Ideal Customer Profile (ICP)',
+          title: 'Understanding Our Two Customer Types',
           type: 'reading',
           order: 1,
-          content: `# Ideal Customer Profile - Auto Repair Shops
+          content: `# Piston Labs Has Two Customer Types
 
-## Primary Targets
-- **Independent auto repair shops** - 2-10 bays, owner-operated
-- **Multi-location shops** - Need visibility across sites
-- **Mobile mechanics** - Service vans doing on-site repairs
-- **Tow truck operators** - Time-sensitive dispatch, customer ETA needs
+## 1. Consumers (Device Buyers)
+People who buy and install OBD-II devices in their cars:
+- **Car owners** wanting to track their vehicle's health and mileage
+- **Parents** monitoring teen drivers
+- **Used car buyers** wanting maintenance history that follows the car
+- **DIY mechanics** who want data on their vehicles
 
-## Key Pain Points
-1. **Customer communication** - "When will my tow truck arrive?" calls
-2. **Dispatch inefficiency** - Don't know which tech is closest to a job
-3. **Time tracking** - Manual logs, billing disputes with customers
-4. **Fleet visibility** - No idea where vehicles are in real-time
+## 2. Auto Repair Shops (SaaS Subscribers)
+Shops that subscribe to our dashboard:
+- **Independent repair shops** struggling with customer retention
+- **Multi-location shops** needing centralized customer data
+- **Shops** wanting to compete with chain reminder systems (Jiffy Lube, etc.)
+- **Forward-thinking owners** who want to automate marketing
 
-## Shop Owner Persona
-- Busy, hands-on, skeptical of "fancy technology"
-- Worried about employee pushback on being "tracked"
-- Price-conscious but understands value of saving time
-- Often makes decisions with a business partner
+## The Magic: Network Effects
+- Consumers create the telemetry network by buying devices
+- Shops pay for access to engage with customers on the network
+- More consumers = more value for shops
+- More shops = more value for consumers (appointment booking, find trusted shops)
 
-## Qualification Questions
-- "How many vehicles do you have - tow trucks, service vans?"
-- "How do customers currently find out when you're arriving?"
-- "How much time do you spend each day coordinating your team?"`
+## Key Shop Pain Points
+1. **Customer retention** - People get one oil change and never come back
+2. **No reminder system** - Can't compete with chain stores' automated outreach
+3. **Manual processes** - Keeping spreadsheets, sending postcards
+4. **No customer insight** - Don't know actual mileage or service needs`
         },
         {
           id: 'sales-101-pitch',
-          title: 'The Piston Labs Pitch',
+          title: 'The Shop Pitch',
           type: 'reading',
           order: 2,
           content: `# The Elevator Pitch for Auto Shops
 
-> "Know where your trucks are and give customers real ETAs - like Uber, but for your shop."
+> "Turn every oil change into a lifetime customer."
 
 ## Full Pitch Structure
 
 ### 1. Problem (30 sec)
-"Your customers call asking 'where's the tow truck?' and you're stuck calling your driver. Meanwhile, you've got cars to fix and customers to help."
+"Your biggest competitor isn't the shop down the street - it's forgetting. Customers come in for an oil change, you do great work, and then they never come back because they forgot about you."
 
 ### 2. Solution (30 sec)
-"Piston Labs puts a GPS tracker in your trucks. You see where everyone is on your phone, and you can send customers a link showing when you'll arrive - just like Uber."
+"Piston Labs connects you with customers who have our telemetry device in their car. You see their actual mileage and service needs, and the system automatically sends reminders when they're due. No more postcards that go in the trash."
 
 ### 3. Proof (30 sec)
-"Shops using our system spend 5+ fewer hours per week on dispatch calls, and their Google reviews go up because customers love the ETA updates."
+"Shops using our dashboard see 30% more repeat visits because reminders go out at exactly the right time - based on real mileage, not guessing."
 
 ### 4. Ask (15 sec)
-"Want to see how it works? I can show you in 5 minutes."`
+"Want to see how the dashboard works? I can show you in 5 minutes."
+
+## Key Points to Emphasize
+- **You don't sell the devices** - Consumers buy them directly
+- **Real data, not guessing** - Mileage-based reminders, not calendar-based
+- **Set it and forget it** - Automated reminders once you configure rules
+- **Low risk** - Month-to-month, no contracts`
         },
         {
           id: 'sales-101-objections',
           title: 'Handling Shop Owner Objections',
           type: 'reading',
           order: 3,
-          content: `# Common Objections from Auto Shop Owners
+          content: `# Common Shop Owner Objections
 
-## "My guys will hate being tracked"
-**Response:** "I hear that a lot. Here's what works - position it as a customer service tool, not surveillance. Tell them: 'This is so customers stop calling ME asking where you are, and calling YOU while you're driving.' Most techs actually prefer it once they see it keeps customers off their back."
+## "I don't want to sell devices to my customers"
+**Response:** "You don't have to! Consumers buy devices on their own - for mileage tracking, maintenance reminders, teen driver monitoring. When they need service, they connect with shops like yours through the network. You just subscribe to the dashboard."
 
-## "I'm already paying for too many systems"
-**Response:** "I get it - you've got Mitchell, ShopKey, maybe a credit card system... This is different though. It's one small thing that saves you time every day. And at $25/month per truck, if it saves you even one hour of dispatch calls, it pays for itself."
+## "What if my customers don't have the device?"
+**Response:** "That's where growth comes in. You can mention Piston to customers who'd benefit - parents of teen drivers, people who forget oil changes. Or just wait for network growth - we're adding consumers every day. Start with a trial and see which of your existing customers are already on the network."
 
-## "We're a small shop, we don't need this"
-**Response:** "Actually, smaller shops benefit the most. The big chains have dispatchers. You're probably the owner, the manager, AND the dispatcher. This gets you out of the middle so you can focus on customers and running the shop."
+## "What about customer privacy? People don't want to be tracked."
+**Response:** "Consumers choose to share data with specific shops. They control everything - who sees their info, when to disconnect. Most consumers love it because they get smart reminders and easy appointment booking. Nobody's tracking them without consent."
 
-## "Can't my driver just text me their location?"
-**Response:** "They can, but they're driving. Plus you have to stop what you're doing to ask, they have to pull over to respond. With GPS, you just look at your phone and know instantly. And you can share that ETA with customers without any back-and-forth."`
+## "I already have shop management software"
+**Response:** "This isn't replacing your POS or scheduler. It's a customer engagement layer. Your software tracks what happened - our dashboard tells you what's coming. When should you reach out? Who needs service? That's what we automate."`
         },
         {
           id: 'sales-101-demo',
           title: 'Demo Best Practices',
           type: 'task',
           order: 4,
-          content: `# Demo Checklist for Auto Shop Owners
+          content: `# Demo Checklist for Shop Dashboard
 
 Complete these tasks to master the shop owner demo:`,
           taskChecklist: [
-            'Watch the recorded auto shop demo (Loom)',
-            'Practice showing the live map view with multiple vehicles',
-            'Master the customer ETA link sharing feature',
-            'Practice the "theft protection" use case pitch',
-            'Shadow 3 live demos with shop owners',
-            'Deliver a demo to a team member acting as a skeptical shop owner'
+            'Learn the customer list view - sorted by upcoming service needs',
+            'Master the automated reminder configuration flow',
+            'Practice showing the marketing campaign builder',
+            'Understand the consumer app experience (what customers see)',
+            'Know the pricing tiers and when to mention trial',
+            'Practice handling the "chicken and egg" question about device adoption'
           ]
         },
         {
           id: 'sales-101-quiz',
-          title: 'Auto Shop Sales Quiz',
+          title: 'Shop Sales Quiz',
           type: 'quiz',
           order: 5,
-          content: 'Test your knowledge of selling to auto repair shops.',
+          content: 'Test your knowledge of selling the shop dashboard.',
           quiz: [
             {
-              question: 'What is our primary pitch headline for auto shops?',
+              question: 'What are Piston Labs\' two customer types?',
               options: [
-                'Enterprise fleet management solution',
-                'Know where your trucks are and give customers real ETAs',
-                'Advanced GPS tracking technology',
-                'Complete business management software'
+                'Fleet managers and drivers',
+                'Consumers (device buyers) and Auto Repair Shops (SaaS)',
+                'Car dealers and insurance companies',
+                'Mechanics and parts suppliers'
               ],
               correctIndex: 1,
-              explanation: 'This headline speaks directly to shop owner pain points - fleet visibility and customer communication.'
+              explanation: 'Consumers buy devices to track their cars. Shops subscribe to the dashboard to engage with those consumers.'
             },
             {
-              question: 'When a shop owner says "my guys will hate being tracked", the best response focuses on:',
+              question: 'When a shop owner asks "Do I have to sell the devices?", the correct answer is:',
               options: [
-                'How the tracking is very accurate',
-                'Legal requirements for tracking employees',
-                'Positioning it as customer service, not surveillance',
-                'Offering to hide tracking from employees'
-              ],
-              correctIndex: 2,
-              explanation: 'Reframe tracking as helping the tech by reducing customer calls while driving.'
-            },
-            {
-              question: 'What is the typical price point we mention for auto shops?',
-              options: [
-                '$100/month per truck',
-                '$25/month per truck',
-                '$500 one-time fee',
-                '$5/day per vehicle'
+                'Yes, you make a commission on each device',
+                'No - consumers buy devices directly, shops just subscribe to the dashboard',
+                'Yes, but we provide them at cost',
+                'Only if you want the full features'
               ],
               correctIndex: 1,
-              explanation: 'At $25/month per truck, the ROI math is easy - one saved hour of dispatch time pays for it.'
+              explanation: 'Shops never sell hardware. They subscribe to the SaaS dashboard to access customers on the network.'
+            },
+            {
+              question: 'What is our opening hook for shops?',
+              options: [
+                'Track your fleet in real-time',
+                'Turn every oil change into a lifetime customer',
+                'The cheapest GPS tracking solution',
+                'Enterprise-grade fleet management'
+              ],
+              correctIndex: 1,
+              explanation: 'This hook speaks to the shop\'s real pain point: customer retention, not fleet tracking.'
             }
           ]
         }
@@ -634,32 +645,36 @@ Complete these tasks to master the shop owner demo:`,
           order: 1,
           content: `# Piston Labs Architecture
 
+## Two-Sided Marketplace
+- **Consumer Side:** OBD-II devices + mobile app for car owners
+- **Shop Side:** SaaS dashboard for customer engagement
+
 ## Core Components
 
-### 1. IoT Layer (Teltonika Devices)
-- FMC130 GPS trackers with CAN bus readers
-- MQTT over AWS IoT Core
-- Lambda processors for data ingestion
+### 1. IoT Layer (Consumer Devices)
+- Teltonika FMC130 OBD-II devices
+- Captures: GPS, mileage, speed, battery voltage, engine codes
+- MQTT via AWS IoT Core → Lambda → DynamoDB
 
-### 2. Backend Services
+### 2. Consumer App
+- View car health and telemetry
+- Get smart maintenance reminders
+- Find and connect with shops
+- Book appointments, view service history
+
+### 3. Shop Dashboard (SaaS)
+- Customer list with real-time vehicle data
+- Automated reminder configuration
+- Marketing campaign builder
+- Appointment queue management
+
+### 4. Backend Services
 - **Vercel Functions** - API endpoints
 - **Upstash Redis** - Real-time data, caching
-- **PostgreSQL** - Historical data (via Supabase)
-
-### 3. Frontend
-- Single-page dashboard (vanilla JS)
-- Real-time WebSocket updates
-- Mobile-responsive design
-
-### 4. Agent Coordination Hub
-- Multi-agent collaboration platform
-- MCP (Model Context Protocol) tools
-- Cloudflare Durable Objects for state
+- **DynamoDB** - Device telemetry, user profiles
 
 ## Key Repositories
-- \`piston-dashboard\` - Main web application
-- \`gran-autismo\` - Teltonika device management
-- \`agent-coord-mcp\` - This hub!
+- \`agent-coord-mcp\` - Coordination hub (this!)
 - \`teltonika-context-system\` - Documentation & context`
         },
         {
@@ -715,7 +730,7 @@ Complete these tasks to set up your development environment:`,
     {
       id: 'product-101',
       title: 'Product Overview',
-      description: 'Understanding Piston Labs GPS fleet tracking for auto repair shops',
+      description: 'Understanding Piston Labs two-sided marketplace - consumer devices + shop SaaS',
       role: 'all',
       category: 'Product',
       order: 0,
@@ -731,37 +746,34 @@ Complete these tasks to set up your development environment:`,
           content: `# Piston Labs Product Overview
 
 ## Mission
-**Help auto repair shops deliver better customer service through fleet visibility.**
+**Connect car owners with trusted repair shops through vehicle telemetry.**
 
-## Our Product: GPS Fleet Tracking for Auto Shops
+## Two-Sided Marketplace
 
-### Core Features
-- **Real-time vehicle tracking** - See all your trucks on one map
-- **Customer ETA sharing** - Send Uber-style "your driver is on the way" links
-- **Trip history** - Know where vehicles went and when
-- **Geofencing alerts** - Get notified when trucks enter/leave your shop
+### For Consumers (Device Buyers)
+- OBD-II device plugs into any car (1996+)
+- Mobile app shows car health, mileage, battery status
+- Smart maintenance reminders based on actual mileage
+- Find trusted shops and book appointments
+- Service history follows the car if sold
 
-### Hardware
-- Teltonika FMC130 GPS device (hardwired installation)
-- Works with any vehicle - tow trucks, service vans, customer shuttles
-- 30-minute installation, no monthly hardware fees
+### For Shops (SaaS Dashboard)
+- CRM showing customers with Piston devices
+- See real mileage and upcoming service needs
+- Automated reminders (oil change, tires, inspections)
+- Marketing campaigns to customers due for service
+- Appointment booking from the consumer app
 
-### Pricing (Simple)
-- $25/month per vehicle
-- No contracts (month-to-month)
-- Free 30-day pilot available
+## Revenue Model
+1. **Device Sales** - One-time purchase by consumers
+2. **Shop SaaS** - Monthly subscription for dashboard access
+3. **Future: Network fees** - Appointment bookings, lead generation
 
-## Target Customers
-- Independent auto repair shops
-- Tow truck operators
-- Mobile mechanics
-- Multi-location repair businesses
-
-## Competitive Advantages
-1. **Price** - Fraction of enterprise fleet solutions
-2. **Simplicity** - Built for shop owners, not fleet managers
-3. **Customer Focus** - ETA sharing is our killer feature
-4. **No Contracts** - Month-to-month, try before you commit`
+## Why We Win
+- **Network Effects** - More consumers = more value for shops, and vice versa
+- **Real Data** - Mileage-based reminders beat calendar guessing
+- **Independent Shop Focus** - Help them compete with chains
+- **Consumer Control** - Privacy-first, opt-in connections`
         }
       ]
     }

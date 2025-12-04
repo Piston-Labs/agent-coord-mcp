@@ -10024,7 +10024,78 @@
   <script>
     const API_BASE = window.location.origin + '/api';
     const POLL_INTERVAL = 2000;
-    
+
+    // =========================================================================
+    // Error Tracking - Self-hosted (free Sentry alternative)
+    // =========================================================================
+    const ErrorTracker = {
+      // Capture and send error to backend
+      async capture(error, context = {}) {
+        try {
+          const errorData = {
+            title: error.message || String(error),
+            message: error.message || String(error),
+            level: context.level || 'error',
+            culprit: context.culprit || error.stack?.split('\n')[1]?.trim() || 'unknown',
+            platform: 'javascript',
+            environment: window.location.hostname.includes('localhost') ? 'development' : 'production',
+            stacktrace: error.stack,
+            tags: {
+              url: window.location.pathname,
+              userAgent: navigator.userAgent.substring(0, 100),
+              ...context.tags
+            },
+            extra: {
+              ...context.extra,
+              timestamp: new Date().toISOString()
+            },
+            user: {
+              id: localStorage.getItem('agent-hub-username') || 'anonymous'
+            }
+          };
+
+          await fetch(API_BASE + '/errors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(errorData)
+          });
+        } catch (e) {
+          // Silently fail - don't want error tracking to cause more errors
+          console.warn('Error tracker failed:', e);
+        }
+      },
+
+      // Capture a warning
+      warn(message, context = {}) {
+        this.capture(new Error(message), { ...context, level: 'warning' });
+      },
+
+      // Capture info message
+      info(message, context = {}) {
+        this.capture(new Error(message), { ...context, level: 'info' });
+      }
+    };
+
+    // Global error handler
+    window.onerror = function(message, source, lineno, colno, error) {
+      ErrorTracker.capture(error || new Error(message), {
+        culprit: `${source}:${lineno}:${colno}`,
+        tags: { type: 'uncaught' }
+      });
+      return false; // Let default handler run too
+    };
+
+    // Unhandled promise rejection handler
+    window.onunhandledrejection = function(event) {
+      ErrorTracker.capture(event.reason instanceof Error ? event.reason : new Error(String(event.reason)), {
+        tags: { type: 'unhandled-promise' }
+      });
+    };
+
+    // Expose globally for manual error reporting
+    window.ErrorTracker = ErrorTracker;
+    // =========================================================================
+
     // Username persistence - check localStorage or generate random
     let USERNAME = localStorage.getItem('agent-hub-username') || 'human-' + Math.random().toString(36).substr(2, 6);
     const HUMAN_ID = USERNAME;
@@ -12232,12 +12303,25 @@
     function addProspectMessage(content) {
       const chatMessages = document.getElementById('trainingChatMessages');
       if (!chatMessages) return;
+
+      // Check for duplicate prospect message
+      const contentHash = 'prospect-' + content.substring(0, 50);
+      if (recentTrainingMessages.has(contentHash)) {
+        console.log('Skipping duplicate prospect message');
+        return;
+      }
+      recentTrainingMessages.add(contentHash);
+      setTimeout(() => recentTrainingMessages.delete(contentHash), 5000);
+
       const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
       const msg = document.createElement('div');
       msg.className = 'chat-message prospect';
       msg.innerHTML = '<div class="message-avatar" style="background: #ff6b35;">🧑‍💼</div><div class="message-bubble" style="background: rgba(255, 107, 53, 0.15); border: 1px solid rgba(255, 107, 53, 0.3);"><p>' + content + '</p></div><span class="message-time">' + time + '</span>';
       chatMessages.appendChild(msg);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Memory management: limit total messages
+      limitTrainingMessages(chatMessages);
     }
 
     // Quick replies during simulation
@@ -12273,38 +12357,48 @@
         'sales-101': {
           title: 'Sales 101 - Foundations',
           lessons: [
-            { title: 'Understanding Our ICP', content: `<h2>Ideal Customer Profile</h2><p>Our primary targets are:</p><ul><li><strong>Manufacturing:</strong> Plants with equipment uptime concerns</li><li><strong>Food Processing:</strong> Cold storage and compliance requirements</li><li><strong>HVAC Companies:</strong> Fleet and service optimization</li><li><strong>Property Managers:</strong> Multi-site asset tracking</li></ul><p>Key question to ask yourself: <em>"What pain point does this customer have that our solution addresses?"</em></p>` },
-            { title: 'The Piston Pitch', content: `<h2>Core Value Proposition</h2><p><strong>Opening Hook:</strong> "Stop equipment failures before they stop your business."</p><p>The pitch structure:</p><ol><li>Identify their current pain (reactive maintenance, surprise breakdowns)</li><li>Paint the cost picture (downtime, emergency repairs, lost revenue)</li><li>Present the solution (predictive monitoring, real-time alerts)</li><li>Show the proof (case studies, ROI calculations)</li></ol>` },
-            { title: 'Handling Objections', content: `<h2>Common Objections & Responses</h2><p><strong>"It's too expensive"</strong><br>Response: Compare to cost of ONE breakdown. Our average customer saves 3-5x the subscription cost in prevented downtime.</p><p><strong>"We have maintenance staff"</strong><br>Response: Great! We make them more effective by telling them WHERE to look BEFORE problems happen.</p><p><strong>"Security concerns"</strong><br>Response: All data is encrypted, we're SOC 2 compliant, and you own your data.</p>` },
+            { title: 'Understanding Our Two ICPs', content: `<h2>Ideal Customer Profiles</h2><p>Piston Labs has <strong>two distinct customer types</strong>:</p><h3>1. Consumers (Device Buyers)</h3><ul><li>Car owners who want to track their vehicle's health</li><li>Parents wanting to monitor teen drivers</li><li>Used car buyers wanting maintenance history</li><li>DIY mechanics who want data on their vehicles</li></ul><h3>2. Auto Repair Shops (SaaS Subscribers)</h3><ul><li>Independent repair shops wanting to grow customer relationships</li><li>Shops struggling with customer retention</li><li>Shops wanting to automate marketing and reminders</li><li>Multi-location shops needing centralized customer data</li></ul><p><em>The magic: Consumers create the network, shops pay for access to engage with them.</em></p>` },
+            { title: 'The Consumer Pitch', content: `<h2>Selling to Consumers</h2><p><strong>Opening Hook:</strong> "Know your car's health before your mechanic does."</p><p><strong>Value Props:</strong></p><ul><li>Get oil change and maintenance reminders automatically</li><li>Track your mileage for tax deductions or reimbursement</li><li>See your car's battery health before you're stranded</li><li>Keep a complete service history that follows the car</li><li>Find trusted shops and schedule appointments instantly</li></ul><p><strong>Price Anchor:</strong> "Less than a cup of coffee per month to never miss another oil change."</p>` },
+            { title: 'The Shop Pitch', content: `<h2>Selling to Auto Repair Shops</h2><p><strong>Opening Hook:</strong> "Turn every oil change into a lifetime customer."</p><p><strong>Value Props:</strong></p><ul><li><strong>CRM Dashboard:</strong> See all your customers, their vehicles, and service history in one place</li><li><strong>Automated Reminders:</strong> System sends oil change, tire rotation, and inspection reminders automatically</li><li><strong>Marketing Campaigns:</strong> Send seasonal promotions to customers due for service</li><li><strong>Appointment Booking:</strong> Customers can book directly from their app</li><li><strong>Network Effect:</strong> New customers find you through the Piston network</li></ul><p><strong>ROI Pitch:</strong> "If our reminders bring back just 2 extra customers per month, the dashboard pays for itself."</p>` },
             { title: 'Quiz: Sales Foundations', type: 'quiz', questions: [
-              { q: 'What is our opening hook?', options: ['Track your equipment', 'Stop equipment failures before they stop your business', 'Monitor everything'], correct: 1 },
-              { q: 'How should you respond to "too expensive"?', options: ['Offer a discount', 'Compare to cost of one breakdown', 'Ignore and continue'], correct: 1 }
+              { q: 'What are our two customer types?', options: ['Fleet managers and drivers', 'Consumers (device buyers) and Auto Repair Shops (SaaS)', 'Car dealers and insurance companies'], correct: 1 },
+              { q: 'What is the consumer opening hook?', options: ['Track your fleet', 'Know your car\'s health before your mechanic does', 'Save money on repairs'], correct: 1 },
+              { q: 'What is the shop opening hook?', options: ['Turn every oil change into a lifetime customer', 'Track all your vehicles', 'Reduce downtime'], correct: 0 }
             ]}
           ]
         },
         'product-deep-dive': {
           title: 'Product Deep Dive',
           lessons: [
-            { title: 'System Architecture', content: `<h2>How Piston Works</h2><p>Our system has three main components:</p><ol><li><strong>Teltonika Devices:</strong> GPS + OBD-II readers installed in vehicles</li><li><strong>AWS IoT Pipeline:</strong> Real-time data ingestion and processing</li><li><strong>Dashboard:</strong> Customer-facing UI for monitoring and alerts</li></ol><p>Data flows from device → AWS IoT Core → Lambda processing → DynamoDB → Dashboard</p>` },
-            { title: 'Feature Overview', content: `<h2>Core Features</h2><ul><li><strong>Real-time Tracking:</strong> GPS location updated every 10 seconds</li><li><strong>Geofencing:</strong> Alerts when vehicles enter/exit defined areas</li><li><strong>Telemetry:</strong> Speed, mileage, battery voltage monitoring</li><li><strong>Service History:</strong> Track maintenance and repairs per vehicle</li><li><strong>CRM Integration:</strong> Customer management for shops</li></ul>` }
+            { title: 'The Piston Network', content: `<h2>How Piston Labs Works</h2><p>We're building a <strong>telemetry network</strong> that connects car owners with repair shops.</p><h3>For Consumers:</h3><ul><li><strong>OBD-II Device:</strong> Plugs into any car (1996+), tracks location, mileage, battery, diagnostics</li><li><strong>Mobile App:</strong> View car health, get maintenance reminders, find shops, book appointments</li><li><strong>Service History:</strong> All repairs logged automatically, follows the car if sold</li></ul><h3>For Shops:</h3><ul><li><strong>Dashboard (SaaS):</strong> CRM to manage customers on the Piston network</li><li><strong>Customer Profiles:</strong> See vehicle info, service history, and upcoming needs</li><li><strong>Automated Marketing:</strong> Send reminders and campaigns to customers due for service</li><li><strong>Appointment System:</strong> Receive and manage bookings from the network</li></ul>` },
+            { title: 'Data Flow Architecture', content: `<h2>How Data Flows</h2><ol><li><strong>Device in Car:</strong> Teltonika OBD-II reader captures GPS, speed, mileage, battery voltage, engine codes</li><li><strong>Cellular Upload:</strong> Data sent every 10 seconds via cellular to AWS IoT Core</li><li><strong>Processing:</strong> Lambda functions process and store in DynamoDB</li><li><strong>Consumer App:</strong> Car owner sees their vehicle data, gets smart reminders</li><li><strong>Shop Dashboard:</strong> Repair shops see their customers' vehicles and upcoming service needs</li></ol><p><em>The consumer owns their data. Shops only see customers who've connected with them.</em></p>` },
+            { title: 'Shop Dashboard Features', content: `<h2>The Shop Dashboard</h2><p>This is our SaaS product - what shops pay monthly to access.</p><h3>Core Features:</h3><ul><li><strong>Customer List:</strong> All customers with Piston devices who've connected to the shop</li><li><strong>Vehicle Cards:</strong> Year/make/model, current mileage, last service, next service due</li><li><strong>Service History:</strong> Complete record of all work done at the shop</li><li><strong>Smart Reminders:</strong> Automatic oil change, tire rotation, inspection reminders</li><li><strong>Marketing Campaigns:</strong> Send promotions to customers due for specific services</li><li><strong>Appointment Queue:</strong> Customers book online, shop sees the queue</li><li><strong>Analytics:</strong> Customer retention, campaign performance, revenue attribution</li></ul>` }
           ]
         },
         'objection-handling': {
-          title: 'Advanced Objection Handling',
+          title: 'Objection Handling',
           lessons: [
-            { title: 'Price Objections', content: `<h2>Overcoming Price Concerns</h2><p>Remember: Price objections are often value objections in disguise.</p><p><strong>The ROI Calculator:</strong></p><ul><li>Average cost of unplanned breakdown: $5,000-$15,000</li><li>Lost revenue during downtime: varies by customer</li><li>Emergency service premium: 2-3x normal rates</li></ul><p>Ask: "How much did your last unplanned breakdown cost you?"</p>` }
+            { title: 'Consumer Objections', content: `<h2>Consumer Objection Handling</h2><p><strong>"I don't want to be tracked"</strong><br>Response: "You own your data completely. Only YOU can see your location. Shops only see service info when you choose to connect with them. You can delete everything anytime."</p><p><strong>"My car is too old"</strong><br>Response: "If it's 1996 or newer, it has an OBD-II port. That's most cars on the road today!"</p><p><strong>"I already have a mechanic"</strong><br>Response: "Perfect! Connect with them on Piston and they can send you automatic reminders. No more forgetting that oil change."</p><p><strong>"What's the monthly cost?"</strong><br>Response: "The device is a one-time purchase. The app is free for basic features. It's less than what you'd pay for one tow truck call."</p>` },
+            { title: 'Shop Objections', content: `<h2>Shop Objection Handling</h2><p><strong>"We already have shop management software"</strong><br>Response: "Piston isn't replacing your POS or scheduler - it's adding a customer engagement layer. Think of it as a CRM that automatically knows when customers need service."</p><p><strong>"Our customers won't install devices"</strong><br>Response: "You don't have to sell the devices. Consumers buy them on their own, then find YOUR shop through the network. You're getting pre-qualified leads."</p><p><strong>"How do I know it'll bring in business?"</strong><br>Response: "Start with your existing customers. When they connect, you'll see their real mileage and can send perfectly-timed reminders. If just 2 customers come back because of a reminder, the dashboard pays for itself."</p><p><strong>"We're too busy to learn new software"</strong><br>Response: "The dashboard runs itself. Set up your reminder rules once, and it automatically sends messages. Most shops spend 10 minutes a day on it."</p>` },
+            { title: 'Quiz: Objection Handling', type: 'quiz', questions: [
+              { q: 'How do you handle "I don\'t want to be tracked"?', options: ['Explain that tracking is required', 'Emphasize the consumer owns their data and controls who sees it', 'Offer a discount'], correct: 1 },
+              { q: 'What\'s the ROI pitch for shops?', options: ['Reduce employee costs', 'If 2 extra customers come back, the dashboard pays for itself', 'Track your fleet'], correct: 1 }
+            ]}
           ]
         },
         'tech-architecture': {
           title: 'Technical Architecture',
           lessons: [
-            { title: 'AWS Infrastructure', content: `<h2>AWS Services We Use</h2><ul><li><strong>IoT Core:</strong> MQTT message broker for device communication</li><li><strong>Lambda:</strong> Serverless data processing</li><li><strong>DynamoDB:</strong> NoSQL database for device data</li><li><strong>S3:</strong> Document and image storage</li><li><strong>CloudWatch:</strong> Monitoring and alerting</li></ul>` }
+            { title: 'Device & Connectivity', content: `<h2>The Teltonika Device</h2><ul><li><strong>Model:</strong> Teltonika FMC130 or similar OBD-II tracker</li><li><strong>Connection:</strong> Plugs into standard OBD-II port (all cars 1996+)</li><li><strong>Power:</strong> Draws from car battery, has low-power sleep mode</li><li><strong>Connectivity:</strong> 4G LTE cellular with GPS</li></ul><h3>Data Captured:</h3><ul><li>GPS location (10-second intervals when moving)</li><li>Speed and mileage</li><li>Battery voltage</li><li>Engine diagnostic codes (check engine light)</li><li>Trip start/stop events</li></ul>` },
+            { title: 'AWS Infrastructure', content: `<h2>Cloud Architecture</h2><ul><li><strong>AWS IoT Core:</strong> MQTT broker receiving device telemetry</li><li><strong>Lambda:</strong> Serverless functions process incoming data</li><li><strong>DynamoDB:</strong> Stores device data, user profiles, service history</li><li><strong>S3:</strong> Document storage (service records, images)</li><li><strong>CloudWatch:</strong> Monitoring, alerting, and logging</li></ul><h3>Data Privacy:</h3><ul><li>All data encrypted in transit and at rest</li><li>Consumers own their data - can export or delete anytime</li><li>Shops only see data for customers who connect with them</li></ul>` }
           ]
         },
         'investor-pitch': {
-          title: 'Investor Pitch Deck',
+          title: 'Investor Pitch',
           lessons: [
-            { title: 'The Opportunity', content: `<h2>Market Opportunity</h2><p>Fleet management is a $30B+ market growing 15% annually.</p><p><strong>Our Differentiator:</strong> We focus on the underserved SMB market - local shops and small fleets that can't afford enterprise solutions like Samsara.</p>` }
+            { title: 'The Opportunity', content: `<h2>Market Opportunity</h2><p><strong>The Problem:</strong></p><ul><li>280M+ cars in the US, most owners forget maintenance</li><li>70% of auto repair revenue comes from repeat customers</li><li>Independent shops have no good way to stay connected with customers</li></ul><p><strong>Our Solution:</strong></p><ul><li>Consumer OBD-II devices create a vehicle telemetry network</li><li>SaaS dashboard lets shops engage customers with automated reminders and marketing</li><li>Network effects: more consumers = more value for shops, more shops = more value for consumers</li></ul>` },
+            { title: 'Business Model', content: `<h2>Revenue Streams</h2><h3>1. Device Sales (One-time)</h3><p>Consumers buy the OBD-II device. Hardware margin + customer acquisition.</p><h3>2. Shop SaaS (Recurring)</h3><p>Monthly subscription for the shop dashboard. Tiers based on customer count and features.</p><h3>3. Network Revenue (Future)</h3><p>Lead generation, appointment booking fees, parts marketplace integration.</p><h3>Key Metrics:</h3><ul><li>Devices in field (network size)</li><li>Shop MRR (monthly recurring revenue)</li><li>Customers per shop (engagement)</li><li>Reminder → appointment conversion rate</li></ul>` },
+            { title: 'Competitive Position', content: `<h2>Why We Win</h2><p><strong>vs. Fleet Management (Samsara, Verizon Connect):</strong><br>They target enterprises with 50+ vehicles. We target consumers and SMB shops. Different market entirely.</p><p><strong>vs. Shop Management Software (Mitchell, ShopWare):</strong><br>They're operational tools (scheduling, invoicing). We're customer engagement + telemetry. Complementary, not competitive.</p><p><strong>vs. Consumer Apps (Carfax, MyCarFax):</strong><br>They track service history manually. We get real-time telemetry from the device. Much more accurate mileage and automated reminders.</p><p><strong>Our Moat:</strong> Network effects. Every device strengthens the network for shops. Every shop makes the network more valuable for consumers.</p>` }
           ]
         }
       };

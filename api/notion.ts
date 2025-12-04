@@ -42,45 +42,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const { action = 'search', pageId, databaseId, query, limit = '25' } = req.query;
-
-    // Check for Notion token
-    if (!NOTION_TOKEN) {
-      // Return mock data for demo/development
-      return res.json(getMockData(action as string, { pageId: pageId as string, databaseId: databaseId as string, query: query as string }));
-    }
-
     const limitNum = Math.min(parseInt(limit as string, 10), 100);
 
+    // Validate required parameters first (before mock data check)
     switch (action) {
-      case 'search':
-        return res.json(await searchNotion(query as string, limitNum));
-
       case 'page':
         if (!pageId) {
           return res.status(400).json({ error: 'pageId required' });
         }
-        return res.json(await getPage(pageId as string));
-
+        break;
       case 'database':
         if (!databaseId) {
           return res.status(400).json({ error: 'databaseId required' });
         }
-        return res.json(await getDatabase(databaseId as string));
-
+        break;
       case 'query':
         if (!databaseId) {
           return res.status(400).json({ error: 'databaseId required for query' });
         }
-        return res.json(await queryDatabase(databaseId as string, limitNum));
-
+        break;
+      case 'search':
       case 'databases':
-        return res.json(await listDatabases());
-
+        break;
       default:
         return res.status(400).json({
           error: `Unknown action: ${action}`,
           validActions: ['search', 'page', 'database', 'query', 'databases']
         });
+    }
+
+    // Check for Notion token - return mock data if not configured
+    if (!NOTION_TOKEN) {
+      return res.json(getMockData(action as string, { pageId: pageId as string, databaseId: databaseId as string, query: query as string }));
+    }
+
+    // Handle real Notion API calls
+    switch (action) {
+      case 'search':
+        return res.json(await searchNotion(query as string, limitNum));
+      case 'page':
+        return res.json(await getPage(pageId as string));
+      case 'database':
+        return res.json(await getDatabase(databaseId as string));
+      case 'query':
+        return res.json(await queryDatabase(databaseId as string, limitNum));
+      case 'databases':
+        return res.json(await listDatabases());
     }
 
   } catch (error) {

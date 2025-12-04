@@ -88,15 +88,16 @@ const MCP_TOOLS = [
 // External integrations with detailed status
 const INTEGRATIONS = [
   {
-    id: 'sentry',
-    name: 'Sentry',
-    category: 'external',
-    description: 'Error tracking and monitoring',
-    status: process.env.SENTRY_AUTH_TOKEN ? 'live' : 'needs-setup',
-    envVar: 'SENTRY_AUTH_TOKEN',
-    setupUrl: 'https://sentry.io/settings/auth-tokens/',
-    setupInstructions: 'Create auth token with project:read, event:read scopes. Also set SENTRY_ORG.',
-    endpoint: '/api/sentry'
+    id: 'errors',
+    name: 'Error Tracking',
+    category: 'internal',
+    description: 'Self-hosted error tracking (free Sentry alternative)',
+    status: 'live',
+    envVar: null,
+    setupUrl: null,
+    setupInstructions: 'Uses Redis backend - no external setup required. POST /api/errors to capture, GET for queries.',
+    endpoint: '/api/errors',
+    features: ['error-capture', 'issue-grouping', 'statistics', 'resolve/ignore', 'search']
   },
   {
     id: 'linear',
