@@ -545,16 +545,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
-    // POST: Replace all rules (admin only)
+    // POST: Replace all rules or reset to defaults
     if (req.method === 'POST') {
-      const { rules, adminKey } = req.body;
+      const { rules, adminKey, action: postAction } = req.body;
 
       if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'piston-admin') {
         return res.status(403).json({ error: 'Admin key required' });
       }
 
+      // Reset to defaults action
+      if (postAction === 'reset') {
+        const defaultsWithTimestamp = { ...DEFAULT_RULES, lastUpdated: new Date().toISOString() };
+        await redis.set(RULES_KEY, JSON.stringify(defaultsWithTimestamp));
+        await postToChat('[rules-reset] Development rules have been reset to v2.0.0 defaults');
+        return res.json({
+          success: true,
+          message: 'Rules reset to defaults',
+          version: DEFAULT_RULES.version,
+          lastUpdated: defaultsWithTimestamp.lastUpdated,
+        });
+      }
+
       if (!rules) {
-        return res.status(400).json({ error: 'rules object required' });
+        return res.status(400).json({ error: 'rules object required (or use action: "reset")' });
       }
 
       const newRules = { ...rules, lastUpdated: new Date().toISOString() };
