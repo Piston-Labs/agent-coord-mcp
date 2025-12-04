@@ -10,6 +10,11 @@ const SHADOWS_KEY = 'agent-coord:shadow-agents';
 const AGENTS_KEY = 'agent-coord:agents';
 const CHECKPOINTS_KEY = 'agent-coord:checkpoints';
 
+// API base for internal calls
+const API_BASE = process.env.VERCEL_URL
+  ? `https://${process.env.VERCEL_URL}`
+  : process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
 /**
  * Shadow Agent - A VM-based agent that monitors and can take over for a local agent
  */
@@ -38,6 +43,51 @@ interface ShadowAgent {
  * GET /api/shadow-agents - List all shadows
  * GET /api/shadow-agents?agentId=X - Get shadow for specific agent
  */
+
+/**
+ * Spawn a cloud VM to take over for a stale primary agent
+ */
+async function spawnShadowVM(
+  primaryAgentId: string,
+  checkpoint: any,
+  reason: string
+): Promise<{ success: boolean; vmId?: string; error?: string }> {
+  try {
+    // Build task description from checkpoint
+    let task = `Shadow takeover for ${primaryAgentId}. Reason: ${reason}`;
+    if (checkpoint?.state?.currentTask) {
+      task += `\n\nResume task: ${checkpoint.state.currentTask}`;
+    }
+    if (checkpoint?.state?.context) {
+      task += `\n\nContext: ${checkpoint.state.context}`;
+    }
+
+    // Call cloud-spawn to create the shadow VM
+    const response = await fetch(`${API_BASE}/api/cloud-spawn`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task,
+        shadowMode: true,
+        shadowFor: primaryAgentId,
+        stallThresholdMs: 5 * 60 * 1000, // 5 minutes
+        spawnedBy: 'shadow-agent-system',
+        priority: 'high',
+      }),
+    });
+
+    const data = await response.json();
+
+    if (data.agent?.agentId) {
+      return { success: true, vmId: data.agent.agentId };
+    } else {
+      return { success: false, error: data.error || 'Failed to spawn VM' };
+    }
+  } catch (error) {
+    return { success: false, error: String(error) };
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -56,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (action === 'check-stale') {
         const shadows = await redis.hgetall(SHADOWS_KEY) || {};
         const now = Date.now();
-        const results: { agentId: string; status: string; action: string }[] = [];
+        const results: { agentId: string; status: string; action: string; vmId?: string }[] = [];
 
         for (const [id, shadowRaw] of Object.entries(shadows)) {
           const shadow: ShadowAgent = typeof shadowRaw === 'string' ? JSON.parse(shadowRaw) : shadowRaw;
@@ -80,23 +130,54 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             shadow.tookOverAt = new Date().toISOString();
             shadow.tookOverReason = `Primary agent stale for ${(staleMs / 60000).toFixed(1)} minutes`;
 
-            await redis.hset(SHADOWS_KEY, { [id]: JSON.stringify(shadow) });
-
             // Get checkpoint to resume
-            const checkpoint = await redis.hget(CHECKPOINTS_KEY, shadow.primaryAgentId);
+            const checkpointRaw = await redis.hget(CHECKPOINTS_KEY, shadow.primaryAgentId);
+            const checkpoint = checkpointRaw
+              ? (typeof checkpointRaw === 'string' ? JSON.parse(checkpointRaw) : checkpointRaw)
+              : null;
 
-            // Post to chat
-            await postToChat(
-              `**Shadow takeover initiated** for ${shadow.primaryAgentId}\n` +
-              `Reason: ${shadow.tookOverReason}\n` +
-              `Checkpoint: ${checkpoint ? 'Available' : 'None'}`
+            // Spawn shadow VM to take over
+            const spawnResult = await spawnShadowVM(
+              shadow.primaryAgentId,
+              checkpoint,
+              shadow.tookOverReason
             );
 
-            results.push({
-              agentId: shadow.primaryAgentId,
-              status: 'stale',
-              action: 'takeover-initiated',
-            });
+            if (spawnResult.success) {
+              shadow.status = 'active';
+              shadow.vmId = spawnResult.vmId;
+
+              // Post to chat with VM info
+              await postToChat(
+                `**Shadow VM ACTIVE** for ${shadow.primaryAgentId}\n` +
+                `Reason: ${shadow.tookOverReason}\n` +
+                `VM: ${spawnResult.vmId}\n` +
+                `Checkpoint: ${checkpoint ? 'Injected' : 'None'}`
+              );
+
+              results.push({
+                agentId: shadow.primaryAgentId,
+                status: 'stale',
+                action: 'vm-spawned',
+                vmId: spawnResult.vmId,
+              });
+            } else {
+              // VM spawn failed - stay in taking-over state for retry
+              await postToChat(
+                `**Shadow takeover FAILED** for ${shadow.primaryAgentId}\n` +
+                `Reason: ${shadow.tookOverReason}\n` +
+                `Error: ${spawnResult.error}\n` +
+                `Will retry on next cron run.`
+              );
+
+              results.push({
+                agentId: shadow.primaryAgentId,
+                status: 'stale',
+                action: 'spawn-failed',
+              });
+            }
+
+            await redis.hset(SHADOWS_KEY, { [id]: JSON.stringify(shadow) });
           } else if (staleMs > shadow.staleThresholdMs) {
             results.push({
               agentId: shadow.primaryAgentId,
@@ -202,11 +283,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ updated: true, shadow });
       }
 
-      // Check for stale agents and trigger takeover
+      // Check for stale agents and trigger takeover (POST version)
       if (action === 'check-stale') {
         const shadows = await redis.hgetall(SHADOWS_KEY) || {};
         const now = Date.now();
-        const results: { agentId: string; status: string; action: string }[] = [];
+        const results: { agentId: string; status: string; action: string; vmId?: string }[] = [];
 
         for (const [id, shadowRaw] of Object.entries(shadows)) {
           const shadow: ShadowAgent = typeof shadowRaw === 'string' ? JSON.parse(shadowRaw) : shadowRaw;
@@ -230,23 +311,51 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             shadow.tookOverAt = new Date().toISOString();
             shadow.tookOverReason = `Primary agent stale for ${(staleMs / 60000).toFixed(1)} minutes`;
 
-            await redis.hset(SHADOWS_KEY, { [id]: JSON.stringify(shadow) });
-
             // Get checkpoint to resume
-            const checkpoint = await redis.hget(CHECKPOINTS_KEY, shadow.primaryAgentId);
+            const checkpointRaw = await redis.hget(CHECKPOINTS_KEY, shadow.primaryAgentId);
+            const checkpoint = checkpointRaw
+              ? (typeof checkpointRaw === 'string' ? JSON.parse(checkpointRaw) : checkpointRaw)
+              : null;
 
-            // Post to chat
-            await postToChat(
-              `**Shadow takeover initiated** for ${shadow.primaryAgentId}\n` +
-              `Reason: ${shadow.tookOverReason}\n` +
-              `Checkpoint: ${checkpoint ? 'Available' : 'None'}`
+            // Spawn shadow VM to take over
+            const spawnResult = await spawnShadowVM(
+              shadow.primaryAgentId,
+              checkpoint,
+              shadow.tookOverReason
             );
 
-            results.push({
-              agentId: shadow.primaryAgentId,
-              status: 'stale',
-              action: 'takeover-initiated',
-            });
+            if (spawnResult.success) {
+              shadow.status = 'active';
+              shadow.vmId = spawnResult.vmId;
+
+              await postToChat(
+                `**Shadow VM ACTIVE** for ${shadow.primaryAgentId}\n` +
+                `Reason: ${shadow.tookOverReason}\n` +
+                `VM: ${spawnResult.vmId}\n` +
+                `Checkpoint: ${checkpoint ? 'Injected' : 'None'}`
+              );
+
+              results.push({
+                agentId: shadow.primaryAgentId,
+                status: 'stale',
+                action: 'vm-spawned',
+                vmId: spawnResult.vmId,
+              });
+            } else {
+              await postToChat(
+                `**Shadow takeover FAILED** for ${shadow.primaryAgentId}\n` +
+                `Reason: ${shadow.tookOverReason}\n` +
+                `Error: ${spawnResult.error}`
+              );
+
+              results.push({
+                agentId: shadow.primaryAgentId,
+                status: 'stale',
+                action: 'spawn-failed',
+              });
+            }
+
+            await redis.hset(SHADOWS_KEY, { [id]: JSON.stringify(shadow) });
           } else if (staleMs > shadow.staleThresholdMs) {
             results.push({
               agentId: shadow.primaryAgentId,
