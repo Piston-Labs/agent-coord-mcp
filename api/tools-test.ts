@@ -609,6 +609,69 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'repo-context', status: 'fail', message: 'Failed to access repo context', error: String(e) };
     }
+  },
+
+  // Shadow agent system tests - added by OMNI
+  'shadow-registry': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:shadow-agents');
+      return {
+        tool: 'shadow-registry',
+        status: 'pass',
+        message: `Shadow registry accessible (${count} shadows registered)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'shadow-registry', status: 'fail', message: 'Failed to access shadow registry', error: String(e) };
+    }
+  },
+
+  'cloud-agents': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:cloud-agents');
+      return {
+        tool: 'cloud-agents',
+        status: 'pass',
+        message: `Cloud agents accessible (${count} cloud agents)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'cloud-agents', status: 'fail', message: 'Failed to access cloud agents', error: String(e) };
+    }
+  },
+
+  'heartbeats': async () => {
+    const start = Date.now();
+    try {
+      const count = await redis.hlen('agent-coord:heartbeats');
+      return {
+        tool: 'heartbeats',
+        status: 'pass',
+        message: `Heartbeats accessible (${count} agents with heartbeats)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'heartbeats', status: 'fail', message: 'Failed to access heartbeats', error: String(e) };
+    }
+  },
+
+  'stall-check': async () => {
+    const start = Date.now();
+    try {
+      // Test the stall check endpoint indirectly by checking agents key
+      const agentCount = await redis.hlen('agent-coord:agents');
+      const heartbeatCount = await redis.hlen('agent-coord:heartbeats');
+      return {
+        tool: 'stall-check',
+        status: 'pass',
+        message: `Stall check data accessible (${agentCount} agents, ${heartbeatCount} heartbeats)`,
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'stall-check', status: 'fail', message: 'Failed to access stall check data', error: String(e) };
+    }
   }
 };
 
