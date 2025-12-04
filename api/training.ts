@@ -256,11 +256,17 @@ async function generateProspectResponse(
 
     // Build conversation history for Claude
     const conversationHistory = simulation.messages
-      .filter(m => m.role !== 'system')
+      .filter(m => m.role !== 'system' && m.content && m.content.trim())
       .map(m => ({
         role: m.role === 'prospect' ? 'assistant' as const : 'user' as const,
         content: m.content
       }));
+
+    // Ensure we have valid messages to send
+    if (conversationHistory.length === 0) {
+      console.error('No valid messages in conversation history');
+      return generateFallbackResponse(simulation);
+    }
 
     // Generate prospect response
     const prospectResponse = await anthropic.messages.create({
