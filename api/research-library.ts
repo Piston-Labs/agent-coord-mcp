@@ -478,6 +478,40 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'jeeves',
     discoveredAt: '2025-12-05T00:00:00.000Z',
     tags: ['berkeley', 'bair', 'compound-systems', 'production-ai', '2024']
+  },
+  // ========== RLHF ORIGINS & FRONTIER MODELS ==========
+  {
+    id: 'research-rlhf-original-2017',
+    title: 'Deep Reinforcement Learning from Human Preferences',
+    url: 'https://arxiv.org/abs/1706.03741',
+    source: 'arXiv',
+    category: 'ai-safety',
+    summary: 'Christiano et al. (2017). OpenAI/DeepMind. Original RLHF paper - learn from human preferences on trajectory pairs. Solved Atari & robotics with <1% human feedback. Foundation of modern LLM alignment.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['rlhf', 'human-preferences', 'alignment', 'openai', 'deepmind', 'seminal']
+  },
+  {
+    id: 'research-gpt4-2023',
+    title: 'GPT-4 Technical Report',
+    url: 'https://arxiv.org/abs/2303.08774',
+    source: 'arXiv',
+    category: 'frontier-models',
+    summary: 'OpenAI (2023). Multimodal model accepting images+text. Human-level on professional exams (top 10% bar exam). RLHF fine-tuned. Predicted performance from 1/1000th compute. Extensive safety card.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['gpt-4', 'openai', 'multimodal', 'frontier', 'rlhf', '2023']
+  },
+  {
+    id: 'research-sora-2024',
+    title: 'Video Generation Models as World Simulators',
+    url: 'https://openai.com/index/video-generation-models-as-world-simulators/',
+    source: 'OpenAI',
+    category: 'frontier-models',
+    summary: 'OpenAI (2024). Sora - diffusion transformer for video. Operates on spacetime patches, variable durations/resolutions. 1-minute HD video generation. Treats video as emergent world simulation.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['sora', 'video-generation', 'diffusion-transformer', 'openai', '2024']
   }
 ];
 
