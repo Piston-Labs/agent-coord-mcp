@@ -517,6 +517,143 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'jeeves',
     discoveredAt: '2025-12-05T00:00:00.000Z',
     tags: ['sora', 'video-generation', 'diffusion-transformer', 'openai', '2024']
+  },
+
+  // ========================================================================
+  // 2024 BREAKTHROUGH PAPERS
+  // ========================================================================
+
+  // Fine-tuning & Adaptation (2024)
+  {
+    id: 'research-lora-forgets-2024',
+    title: 'LoRA Learns Less and Forgets Less',
+    url: 'https://arxiv.org/abs/2405.09673',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Biderman et al. (2024). Key LoRA insight: full finetuning absorbs more new knowledge but causes more forgetting. LoRA changes fewer params, learns less but retains more. Crucial for domain adaptation vs. catastrophic forgetting tradeoff.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['lora', 'fine-tuning', 'forgetting', 'domain-adaptation', '2024']
+  },
+  {
+    id: 'research-dora-2024',
+    title: 'DoRA: Weight-Decomposed Low-Rank Adaptation',
+    url: 'https://arxiv.org/abs/2402.09353',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Liu et al. (2024). Extends LoRA by decomposing weights into magnitude vector + directional matrix. Applies low-rank updates only to directional component, trains magnitude separately. Better performance than LoRA with same param count.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['dora', 'lora', 'fine-tuning', 'weight-decomposition', '2024']
+  },
+  {
+    id: 'research-phi4-2024',
+    title: 'Phi-4 Technical Report',
+    url: 'https://arxiv.org/abs/2412.08905',
+    source: 'arXiv',
+    category: 'frontier-models',
+    summary: 'Microsoft (2024). 14B parameter open-weight LLM trained primarily on synthetic data from GPT-4o. Outperforms similarly-sized models. Demonstrates power of high-quality synthetic data for pretraining.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['phi-4', 'microsoft', 'synthetic-data', 'small-model', '2024']
+  },
+
+  // Visual & Generative AI (2024)
+  {
+    id: 'research-var-2024',
+    title: 'Visual AutoRegressive Modeling: Scalable Image Generation via Next-Scale Prediction',
+    url: 'https://arxiv.org/abs/2404.02905',
+    source: 'arXiv',
+    category: 'architectures',
+    summary: 'Tian et al. (2024). NeurIPS 2024 Award. New image generation paradigm: predicts images coarse-to-fine across scales instead of token-by-token. Outperforms diffusion transformers on visual tasks. Efficient in-painting and editing.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['var', 'image-generation', 'autoregressive', 'neurips-award', '2024']
+  },
+  {
+    id: 'research-sam3-2024',
+    title: 'Segment Anything Model 3 (SAM 3)',
+    url: 'https://arxiv.org/abs/2408.00714',
+    source: 'arXiv',
+    category: 'architectures',
+    summary: 'Meta (2024). SAM upgraded for video. Unified model for promptable segmentation and tracking. Decoupled recognition and localization. State-of-the-art on video object segmentation benchmarks.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['sam', 'segmentation', 'video', 'meta', '2024']
+  },
+
+  // Reasoning & O1 (2024)
+  {
+    id: 'research-o1-replication-2024',
+    title: 'O1 Replication Journey: A Strategic Progress Report',
+    url: 'https://arxiv.org/abs/2410.18982',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'GAIR (2024). Attempts to replicate OpenAI o1 reasoning. Uses distillation with careful prompting to extract thought processes. Achieves parity with o1-preview and o1-mini. Key insight: multi-step reasoning can emerge from training.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['o1', 'reasoning', 'distillation', 'replication', '2024']
+  },
+
+  // Efficiency & Infrastructure (2024)
+  {
+    id: 'research-kv-cache-compression-2024',
+    title: 'Model Tells You What to Discard: Adaptive KV Cache Compression for LLMs',
+    url: 'https://arxiv.org/abs/2310.01801',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Ge et al. (2024). ICLR 2024 Outstanding Paper. Reduces LLM memory during inference by profiling attention patterns and constructing KV cache adaptively. Major memory savings without quality loss.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['kv-cache', 'compression', 'inference', 'efficiency', 'iclr-award', '2024']
+  },
+  {
+    id: 'research-lightrag-2024',
+    title: 'LightRAG: Simple and Fast Retrieval-Augmented Generation',
+    url: 'https://arxiv.org/abs/2410.05779',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Guo et al. (2024). Improves RAG by integrating graph structures. Entity extraction + relationship graphs for better contextual awareness. More efficient retrieval than dense vector approaches. Drop-in replacement for traditional RAG.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['rag', 'graph', 'retrieval', 'efficiency', '2024']
+  },
+
+  // Scaling Laws Update (2024)
+  {
+    id: 'research-scaling-precision-2024',
+    title: 'Scaling Laws for Precision',
+    url: 'https://arxiv.org/abs/2411.04330',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Dettmers et al. (2024). Updates Chinchilla scaling laws. Analyzes impact of numerical precision on compute-optimal training. Low precision can significantly alter optimal model size. Critical for efficient training planning.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['scaling-laws', 'precision', 'quantization', 'chinchilla', '2024']
+  },
+
+  // Claude & Anthropic (2024)
+  {
+    id: 'research-claude3-model-card-2024',
+    title: 'The Claude 3 Model Family: A New Standard for Intelligence',
+    url: 'https://www-cdn.anthropic.com/de8ba9b01c9ab7cbabf5c33b80b7bbc618857627/Model_Card_Claude_3.pdf',
+    source: 'Anthropic',
+    category: 'frontier-models',
+    summary: 'Anthropic (2024). Claude 3 family: Haiku, Sonnet, Opus. First AI to surpass human-level performance across reasoning, math, and coding benchmarks. 200K context window, vision capabilities. Sets new intelligence standard.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['claude-3', 'anthropic', 'frontier', 'multimodal', '2024']
+  },
+  {
+    id: 'research-claude-character-2024',
+    title: 'Claude\'s Character',
+    url: 'https://www.anthropic.com/research/claude-character',
+    source: 'Anthropic',
+    category: 'ai-safety',
+    summary: 'Anthropic (2024). Detailed exploration of how Claude\'s values, personality and behavior emerge from training. Discusses honesty, helpfulness, harmlessness, and how character traits are instilled. Key AI alignment reading.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:20:00.000Z',
+    tags: ['claude', 'anthropic', 'character', 'alignment', 'values', '2024']
   }
 ];
 
