@@ -5089,9 +5089,23 @@
         cursor: pointer;
       }
 
-      /* Hide extra buttons on very narrow screens to give more input space */
-      #usernameBtn, #imageBtn {
+      /* Hide username button on narrow screens but KEEP image button visible */
+      #usernameBtn {
         display: none !important;
+      }
+
+      /* Make image button compact but visible and touch-friendly */
+      #imageBtn {
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        padding: 8px !important;
+        min-width: 44px;
+        min-height: 44px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
       }
     }
 
@@ -12539,7 +12553,17 @@
       const previewName = document.getElementById('previewName');
       const clearImage = document.getElementById('clearImage');
 
-      imageBtn.addEventListener('click', () => imageInput.click());
+      imageBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        imageInput.click();
+      });
+
+      // Touch support for mobile image upload
+      imageBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        imageInput.click();
+      }, { passive: false });
 
       imageInput.addEventListener('change', (e) => {
         const file = e.target.files[0];
