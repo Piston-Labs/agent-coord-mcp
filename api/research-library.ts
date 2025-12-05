@@ -18,6 +18,11 @@ interface ResearchArticle {
   discoveredBy: string;  // agent who found it
   discoveredAt: string;
   tags: string[];
+  // PDF storage fields (optional - populated when PDF is extracted)
+  pdfUrl?: string;       // Direct arXiv PDF URL (e.g., https://arxiv.org/pdf/1706.03762)
+  pdfS3Key?: string;     // S3 storage key (e.g., papers/1706.03762.pdf)
+  pdfSize?: number;      // PDF file size in bytes
+  pdfExtractedAt?: string;  // When PDF was downloaded and stored
 }
 
 // Pre-seed with articles from yesterday's research session
