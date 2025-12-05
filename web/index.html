@@ -739,26 +739,27 @@
       .research-content { padding: 12px; }
     }
 
-    /* Research Mobile Toggle Button */
+    /* Research Mobile Toggle Button - only visible on mobile when research tab active */
     .research-mobile-toggle {
       display: none;
       position: fixed;
-      bottom: 20px;
+      bottom: 80px;
       right: 20px;
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: var(--accent);
+      background: #58a6ff;
       color: white;
       border: none;
       font-size: 24px;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-      z-index: 1000;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      z-index: 9999;
       transition: transform 0.2s, background 0.2s;
     }
     .research-mobile-toggle:hover { transform: scale(1.1); }
     .research-mobile-toggle:active { transform: scale(0.95); }
+    .research-mobile-toggle.visible { display: flex; align-items: center; justify-content: center; }
     .research-overlay {
       display: none;
       position: fixed;
@@ -794,7 +795,7 @@
       .research-sidebar.mobile-open {
         transform: translateX(0);
       }
-      .research-mobile-toggle { display: flex; align-items: center; justify-content: center; }
+      /* Toggle visibility controlled by JS with .visible class */
       .research-nav {
         display: flex;
         flex-direction: column;
@@ -11361,14 +11362,15 @@
         </div>
       </div>
 
+      <!-- Research Mobile Toggle (outside tab-content for proper fixed positioning) -->
+      <button class="research-mobile-toggle" id="researchMobileToggle" onclick="toggleResearchSidebarMobile()" aria-label="Toggle navigation">
+        <span id="researchToggleIcon">☰</span>
+      </button>
+      <!-- Research Mobile Overlay -->
+      <div class="research-overlay" id="researchOverlay" onclick="closeResearchSidebar()"></div>
+
       <!-- Research Library View -->
       <div class="tab-content research-view" id="researchView">
-        <!-- Mobile sidebar toggle button -->
-        <button class="research-mobile-toggle" onclick="toggleResearchSidebarMobile()" aria-label="Toggle navigation">
-          <span id="researchToggleIcon">☰</span>
-        </button>
-        <!-- Mobile overlay -->
-        <div class="research-overlay" id="researchOverlay" onclick="closeResearchSidebar()"></div>
         <!-- Library Sidebar -->
         <div class="research-sidebar">
           <div class="research-sidebar-header">
@@ -14752,6 +14754,9 @@
         fetchAnalysisList(); // Load analysis cache for learning indicators
       }
 
+      // Show/hide research mobile toggle based on tab and screen size
+      updateResearchMobileToggle(tabName === 'research');
+
       // Initialize training when switching to training tab
       if (tabName === 'training') {
         initTraining();
@@ -16831,6 +16836,24 @@
         document.body.style.overflow = '';
       }
     }
+
+    // Show/hide research mobile toggle based on tab and screen width
+    function updateResearchMobileToggle(isResearchTab) {
+      const toggle = document.getElementById('researchMobileToggle');
+      if (!toggle) return;
+      const isMobile = window.innerWidth <= 768;
+      if (isResearchTab && isMobile) {
+        toggle.classList.add('visible');
+      } else {
+        toggle.classList.remove('visible');
+      }
+    }
+
+    // Update on resize
+    window.addEventListener('resize', () => {
+      const activeTab = localStorage.getItem('activeTab') || 'chat';
+      updateResearchMobileToggle(activeTab === 'research');
+    });
 
     // Get icon for endpoint category
     function getEndpointCategoryIcon(category) {
