@@ -739,6 +739,82 @@
       .research-content { padding: 12px; }
     }
 
+    /* Research Mobile Toggle Button */
+    .research-mobile-toggle {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .research-mobile-toggle:hover { transform: scale(1.1); }
+    .research-mobile-toggle:active { transform: scale(0.95); }
+    .research-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 999;
+    }
+    .research-overlay.active { display: block; }
+
+    /* Research Phone (768px) - Slide-out drawer */
+    @media (max-width: 768px) {
+      .research-view { flex-direction: row !important; }
+      .research-sidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 85% !important;
+        max-width: 320px;
+        height: 100vh !important;
+        min-width: auto !important;
+        max-height: 100vh !important;
+        z-index: 1001;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+        border-right: 1px solid var(--border) !important;
+        border-bottom: none !important;
+        flex-direction: column !important;
+      }
+      .research-sidebar.mobile-open {
+        transform: translateX(0);
+      }
+      .research-mobile-toggle { display: flex; align-items: center; justify-content: center; }
+      .research-nav {
+        display: flex;
+        flex-direction: column;
+        flex-wrap: nowrap;
+        padding: 8px;
+        gap: 4px;
+        overflow-y: auto;
+      }
+      .research-nav-section { display: block; }
+      .research-nav-title { display: block; }
+      .research-nav-item {
+        padding: 8px 12px;
+        border-radius: 6px;
+        border-left: none;
+        background: transparent;
+      }
+      .research-nav-item.active { background: var(--accent); }
+      .research-sidebar-footer { display: block; }
+    }
+
     /* Small Mobile (under 480px) */
     @media (max-width: 480px) {
       .research-header-title { font-size: 16px; }
@@ -751,6 +827,7 @@
       .research-nav-item { padding: 4px 8px; font-size: 11px; }
       .research-content { padding: 8px; }
       .research-grid { gap: 10px; }
+      .research-sidebar { width: 100% !important; max-width: 100%; }
     }
 
     /* ===========================================
@@ -11272,6 +11349,12 @@
 
       <!-- Research Library View -->
       <div class="tab-content research-view" id="researchView">
+        <!-- Mobile sidebar toggle button -->
+        <button class="research-mobile-toggle" onclick="toggleResearchSidebarMobile()" aria-label="Toggle navigation">
+          <span id="researchToggleIcon">☰</span>
+        </button>
+        <!-- Mobile overlay -->
+        <div class="research-overlay" id="researchOverlay" onclick="closeResearchSidebar()"></div>
         <!-- Library Sidebar -->
         <div class="research-sidebar">
           <div class="research-sidebar-header">
@@ -16687,6 +16770,37 @@
         if (overlay) overlay.classList.remove('active');
         if (toggleIcon) toggleIcon.textContent = '☰';
         document.body.style.overflow = ''; // Restore scroll
+      }
+    }
+
+    // Mobile-specific toggle for research sidebar
+    function toggleResearchSidebarMobile() {
+      const sidebar = document.querySelector('.research-sidebar');
+      const overlay = document.getElementById('researchOverlay');
+      const toggleIcon = document.getElementById('researchToggleIcon');
+      if (sidebar) {
+        const isOpen = sidebar.classList.contains('mobile-open');
+        if (isOpen) {
+          closeResearchSidebar();
+        } else {
+          sidebar.classList.add('mobile-open');
+          if (overlay) overlay.classList.add('active');
+          if (toggleIcon) toggleIcon.textContent = '✕';
+          document.body.style.overflow = 'hidden';
+        }
+      }
+    }
+
+    // Close research sidebar (mobile)
+    function closeResearchSidebar() {
+      const sidebar = document.querySelector('.research-sidebar');
+      const overlay = document.getElementById('researchOverlay');
+      const toggleIcon = document.getElementById('researchToggleIcon');
+      if (sidebar) {
+        sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('active');
+        if (toggleIcon) toggleIcon.textContent = '☰';
+        document.body.style.overflow = '';
       }
     }
 
