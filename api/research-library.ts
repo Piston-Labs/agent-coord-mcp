@@ -1126,6 +1126,179 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'phil',
     discoveredAt: '2025-12-05T00:30:00.000Z',
     tags: ['instructor', 'instruction-following', 'flexible-embeddings', 'multi-task']
+  },
+
+  // ========================================================================
+  // INTERPRETABILITY & MECHANISTIC (2020-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-circuits-2020',
+    title: 'Zoom In: An Introduction to Circuits',
+    url: 'https://distill.pub/2020/circuits/zoom-in/',
+    source: 'Distill',
+    category: 'interpretability',
+    summary: 'Olah et al. (2020). Anthropic/OpenAI. Foundational circuits work - neural networks as computational graphs. Features, circuits, universality. Pioneered mechanistic interpretability. Must-read for understanding NNs.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['circuits', 'interpretability', 'distill', 'anthropic', 'mechanistic', 'seminal']
+  },
+  {
+    id: 'research-induction-heads-2022',
+    title: 'In-context Learning and Induction Heads',
+    url: 'https://transformer-circuits.pub/2022/in-context-learning-and-induction-heads/',
+    source: 'Transformer Circuits',
+    category: 'interpretability',
+    summary: 'Olsson et al. (2022). Anthropic. Induction heads implement in-context learning. Two-layer attention pattern for copying. Phase change during training. Key to understanding transformers.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['induction-heads', 'in-context-learning', 'anthropic', 'mechanistic', 'seminal']
+  },
+  {
+    id: 'research-toy-models-superposition-2022',
+    title: 'Toy Models of Superposition',
+    url: 'https://transformer-circuits.pub/2022/toy_model/',
+    source: 'Transformer Circuits',
+    category: 'interpretability',
+    summary: 'Elhage et al. (2022). Anthropic. Models represent more features than dimensions via superposition. Explains polysemanticity. Key challenge for interpretability. Foundational theory paper.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['superposition', 'polysemanticity', 'anthropic', 'theory', 'interpretability']
+  },
+  {
+    id: 'research-monosemanticity-2023',
+    title: 'Towards Monosemanticity: Decomposing Language Models With Dictionary Learning',
+    url: 'https://transformer-circuits.pub/2023/monosemantic-features/',
+    source: 'Transformer Circuits',
+    category: 'interpretability',
+    summary: 'Bricken et al. (2023). Anthropic. Sparse autoencoders find monosemantic features. 512x overcomplete dictionary. Interpretable features from Claude. Breakthrough for scalable interpretability.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['monosemanticity', 'sparse-autoencoders', 'anthropic', 'dictionary-learning', 'seminal']
+  },
+  {
+    id: 'research-scaling-monosemanticity-2024',
+    title: 'Scaling Monosemanticity: Extracting Interpretable Features from Claude 3 Sonnet',
+    url: 'https://transformer-circuits.pub/2024/scaling-monosemanticity/',
+    source: 'Transformer Circuits',
+    category: 'interpretability',
+    summary: 'Templeton et al. (2024). Anthropic. SAEs on Claude 3 Sonnet at scale. Millions of interpretable features. Golden Gate Bridge feature. Abstract concepts like deception. State-of-the-art interpretability.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['scaling', 'monosemanticity', 'anthropic', 'claude-3', 'sae', '2024']
+  },
+  {
+    id: 'research-probing-2019',
+    title: 'A Structural Probe for Finding Syntax in Word Representations',
+    url: 'https://arxiv.org/abs/1905.06316',
+    source: 'arXiv',
+    category: 'interpretability',
+    summary: 'Hewitt & Manning (2019). Stanford. Linear probes reveal syntax trees in BERT embeddings. Models learn linguistic structure. Classic probing technique. Foundation for probing research.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['probing', 'syntax', 'bert', 'stanford', 'linguistics']
+  },
+  {
+    id: 'research-attention-viz-2019',
+    title: 'What Does BERT Look At? An Analysis of BERT\'s Attention',
+    url: 'https://arxiv.org/abs/1906.04341',
+    source: 'arXiv',
+    category: 'interpretability',
+    summary: 'Clark et al. (2019). Stanford. Analyze BERT attention patterns. Heads specialize: syntax, coreference, rare words. Not all heads are interpretable. Seminal attention analysis.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['attention', 'bert', 'visualization', 'stanford', 'analysis']
+  },
+
+  // ========================================================================
+  // BENCHMARKS & EVALUATION (2019-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-mmlu-2021',
+    title: 'Measuring Massive Multitask Language Understanding',
+    url: 'https://arxiv.org/abs/2009.03300',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Hendrycks et al. (2021). UC Berkeley. MMLU - 57 subjects from STEM to humanities. Tests world knowledge and reasoning. Standard LLM benchmark. GPT-4 first to exceed 86%.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['mmlu', 'benchmark', 'multitask', 'berkeley', 'knowledge', 'seminal']
+  },
+  {
+    id: 'research-hellaswag-2019',
+    title: 'HellaSwag: Can a Machine Really Finish Your Sentence?',
+    url: 'https://arxiv.org/abs/1905.07830',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Zellers et al. (2019). UW. Commonsense NLI with adversarial filtering. BERT: 47%, Humans: 95%. Tests physical and social commonsense. Still challenging for models.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['hellaswag', 'benchmark', 'commonsense', 'adversarial', 'nli']
+  },
+  {
+    id: 'research-bigbench-2022',
+    title: 'Beyond the Imitation Game: Quantifying and extrapolating the capabilities of language models',
+    url: 'https://arxiv.org/abs/2206.04615',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Srivastava et al. (2022). Google + 400 authors. BIG-bench - 204 tasks testing diverse capabilities. Found emergent abilities at scale. Influenced scaling research.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['big-bench', 'benchmark', 'emergent', 'google', 'comprehensive']
+  },
+  {
+    id: 'research-gpqa-2023',
+    title: 'GPQA: A Graduate-Level Google-Proof Q&A Benchmark',
+    url: 'https://arxiv.org/abs/2311.12022',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Rein et al. (2023). NYU. PhD-level science questions. Experts: 65%, Non-experts: 34%, GPT-4: 39%. Hard to game with search. Tests deep understanding.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['gpqa', 'benchmark', 'graduate-level', 'science', 'hard']
+  },
+  {
+    id: 'research-arc-2019',
+    title: 'The ARC Challenge: AI2 Reasoning Challenge',
+    url: 'https://arxiv.org/abs/1803.05457',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Clark et al. (2018). AI2. Grade-school science questions requiring reasoning. Easy set + Challenge set. Tests scientific reasoning, not just retrieval. Widely used benchmark.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['arc', 'benchmark', 'reasoning', 'science', 'ai2']
+  },
+  {
+    id: 'research-mbpp-2021',
+    title: 'Program Synthesis with Large Language Models',
+    url: 'https://arxiv.org/abs/2108.07732',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Austin et al. (2021). Google. MBPP - 974 Python programming problems. Tests code generation from descriptions. Complements HumanEval. Standard code benchmark.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['mbpp', 'benchmark', 'code', 'python', 'google']
+  },
+  {
+    id: 'research-mteb-2022',
+    title: 'MTEB: Massive Text Embedding Benchmark',
+    url: 'https://arxiv.org/abs/2210.07316',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Muennighoff et al. (2022). Hugging Face. 58 datasets across 8 embedding tasks. Standard for evaluating embeddings. Leaderboard tracks SOTA. Essential for RAG development.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['mteb', 'benchmark', 'embeddings', 'huggingface', 'leaderboard']
+  },
+  {
+    id: 'research-lmsys-arena-2024',
+    title: 'Chatbot Arena: Benchmarking LLMs in the Wild with Elo Ratings',
+    url: 'https://arxiv.org/abs/2403.04132',
+    source: 'arXiv',
+    category: 'benchmarks',
+    summary: 'Chiang et al. (2024). LMSYS/Berkeley. Human preference voting on model outputs. Elo ratings from 500k+ comparisons. Most trusted LLM ranking. Real-world evaluation.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:32:00.000Z',
+    tags: ['chatbot-arena', 'benchmark', 'elo', 'human-eval', 'lmsys', '2024']
   }
 ];
 
