@@ -325,7 +325,8 @@
     /* Research Library Tab Styles - Digital Library Design */
     .research-view {
       display: flex;
-      height: 100%;
+      flex: 1;
+      min-height: 0;
       overflow: hidden;
     }
 
@@ -1296,6 +1297,12 @@
 
     .tab-content.active {
       display: flex;
+    }
+
+    /* Research view needs row layout, not column */
+    .tab-content.research-view.active {
+      display: flex;
+      flex-direction: row;
     }
 
     /* CRM View specific - contain the pipeline */
