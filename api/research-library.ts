@@ -1008,6 +1008,124 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'phil',
     discoveredAt: '2025-12-05T00:26:00.000Z',
     tags: ['toolllm', 'api-learning', 'toolbench', 'tsinghua', 'dataset']
+  },
+
+  // ========================================================================
+  // RETRIEVAL & RAG (2020-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-dense-passage-2020',
+    title: 'Dense Passage Retrieval for Open-Domain Question Answering',
+    url: 'https://arxiv.org/abs/2004.04906',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Karpukhin et al. (2020). Facebook AI. DPR - dual encoder for question and passage. Dense vectors beat BM25 for QA. Foundation for modern RAG systems. 4.5k citations.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['dpr', 'dense-retrieval', 'qa', 'facebook', 'embeddings', 'seminal']
+  },
+  {
+    id: 'research-colbert-2020',
+    title: 'ColBERT: Efficient and Effective Passage Search via Contextualized Late Interaction',
+    url: 'https://arxiv.org/abs/2004.12832',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Khattab & Zaharia (2020). Stanford. Late interaction between query and doc tokens. Best of dense + sparse worlds. 100x faster than cross-encoders. Powers DSPy retrieval.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['colbert', 'late-interaction', 'efficient-retrieval', 'stanford', 'seminal']
+  },
+  {
+    id: 'research-realm-2020',
+    title: 'REALM: Retrieval-Augmented Language Model Pre-Training',
+    url: 'https://arxiv.org/abs/2002.08909',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Guu et al. (2020). Google. Pre-train LM with retrieval - model learns what to retrieve. End-to-end differentiable. Predecessor to RAG. Key for knowledge-intensive tasks.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['realm', 'retrieval-pretraining', 'google', 'knowledge', 'foundational']
+  },
+  {
+    id: 'research-retro-2022',
+    title: 'Improving Language Models by Retrieving from Trillions of Tokens',
+    url: 'https://arxiv.org/abs/2112.04426',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Borgeaud et al. (2022). DeepMind RETRO. Retrieval from 2T token database. 25x less compute for same performance. Chunked cross-attention. Scalable retrieval-augmented LM.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['retro', 'deepmind', 'trillion-tokens', 'efficient', 'retrieval']
+  },
+  {
+    id: 'research-self-rag-2023',
+    title: 'Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection',
+    url: 'https://arxiv.org/abs/2310.11511',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Asai et al. (2023). Washington/IBM. LM learns WHEN to retrieve via special tokens. Self-critiques for quality. Outperforms ChatGPT on knowledge tasks. Adaptive retrieval.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['self-rag', 'adaptive-retrieval', 'self-critique', 'washington', '2023']
+  },
+  {
+    id: 'research-hyde-2023',
+    title: 'Precise Zero-Shot Dense Retrieval without Relevance Labels',
+    url: 'https://arxiv.org/abs/2212.10496',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Gao et al. (2023). CMU. HyDE - generate hypothetical document, then retrieve. Zero-shot, no training. Works with any encoder. Simple but effective for RAG.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['hyde', 'hypothetical-document', 'zero-shot', 'cmu', 'retrieval']
+  },
+
+  // ========================================================================
+  // EMBEDDINGS & VECTOR DATABASES (2019-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-sentence-bert-2019',
+    title: 'Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks',
+    url: 'https://arxiv.org/abs/1908.10084',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Reimers & Gurevych (2019). Siamese network for sentence embeddings. 65x faster than cross-encoder. Foundation for semantic search. Powers most embedding applications.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['sentence-bert', 'sbert', 'embeddings', 'siamese', 'semantic-search', 'seminal']
+  },
+  {
+    id: 'research-contriever-2022',
+    title: 'Unsupervised Dense Information Retrieval with Contrastive Learning',
+    url: 'https://arxiv.org/abs/2112.09118',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Izacard et al. (2022). Meta. Unsupervised dense retriever via contrastive learning. No labeled data needed. Strong zero-shot performance. Key for domain adaptation.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['contriever', 'contrastive-learning', 'unsupervised', 'meta', 'retrieval']
+  },
+  {
+    id: 'research-e5-2024',
+    title: 'Improving Text Embeddings with Large Language Models',
+    url: 'https://arxiv.org/abs/2401.00368',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Wang et al. (2024). Microsoft E5-Mistral. LLM-based embeddings via synthetic data. SOTA on MTEB benchmark. 1024-dim dense vectors. Best general-purpose embeddings.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['e5', 'microsoft', 'llm-embeddings', 'mteb', 'sota', '2024']
+  },
+  {
+    id: 'research-instructor-2023',
+    title: 'One Embedder, Any Task: Instruction-Finetuned Text Embeddings',
+    url: 'https://arxiv.org/abs/2212.09741',
+    source: 'arXiv',
+    category: 'retrieval-augmented',
+    summary: 'Su et al. (2023). Instructor embeddings - task instructions guide embedding. Single model, many tasks. 70+ benchmarks. Flexible for RAG, classification, clustering.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:30:00.000Z',
+    tags: ['instructor', 'instruction-following', 'flexible-embeddings', 'multi-task']
   }
 ];
 
