@@ -9272,6 +9272,383 @@
       margin-bottom: 20px;
     }
 
+    /* Learning Modal Styles */
+    .learning-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      padding: 20px;
+    }
+    .learning-modal-overlay.active { display: flex; }
+
+    .learning-modal {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 900px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .learning-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .learning-header-info { flex: 1; }
+
+    .learning-title {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      line-height: 1.3;
+    }
+
+    .learning-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .learning-badge {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+    }
+
+    .learning-badge.difficulty-beginner { background: #22c55e22; color: #22c55e; }
+    .learning-badge.difficulty-intermediate { background: #eab30822; color: #eab308; }
+    .learning-badge.difficulty-advanced { background: #f9731622; color: #f97316; }
+    .learning-badge.difficulty-expert { background: #ef444422; color: #ef4444; }
+
+    .learning-close {
+      background: var(--bg-tertiary);
+      border: none;
+      color: var(--text-secondary);
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .learning-close:hover { background: var(--border); color: var(--text-primary); }
+
+    .learning-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      gap: 4px;
+    }
+
+    .learning-tab {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      position: relative;
+    }
+    .learning-tab:hover { color: var(--text-primary); }
+    .learning-tab.active {
+      color: var(--accent);
+    }
+    .learning-tab.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 1px 1px 0 0;
+    }
+
+    .learning-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+    }
+
+    .learning-section { display: none; }
+    .learning-section.active { display: block; }
+
+    .learning-abstract {
+      background: var(--bg-tertiary);
+      padding: 16px;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+    }
+
+    .learning-contributions {
+      margin-bottom: 24px;
+    }
+
+    .learning-contributions h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+
+    .learning-contributions ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .learning-contributions li {
+      padding: 8px 0 8px 24px;
+      position: relative;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .learning-contributions li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--success);
+    }
+
+    /* Concepts Section */
+    .concept-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+
+    .concept-term {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .concept-definition {
+      font-size: 13px;
+      color: var(--text-primary);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+
+    .concept-importance {
+      font-size: 12px;
+      color: var(--text-secondary);
+      padding-left: 12px;
+      border-left: 2px solid var(--success);
+    }
+
+    /* Code Examples Section */
+    .code-example {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    .code-example-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .code-example-desc {
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .code-example-lang {
+      font-size: 11px;
+      color: var(--text-secondary);
+      background: var(--bg-primary);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .code-example pre {
+      margin: 0;
+      padding: 16px;
+      font-family: 'Monaco', 'Consolas', monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      overflow-x: auto;
+      color: var(--text-primary);
+      background: var(--bg-primary);
+    }
+
+    /* Quiz Section */
+    .quiz-question-card {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .quiz-question-number {
+      font-size: 11px;
+      color: var(--accent);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .quiz-question-text {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .quiz-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quiz-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-size: 13px;
+    }
+
+    .quiz-option:hover { border-color: var(--accent); }
+    .quiz-option.selected { border-color: var(--accent); background: rgba(88, 166, 255, 0.1); }
+    .quiz-option.correct { border-color: var(--success) !important; background: rgba(63, 185, 80, 0.15) !important; }
+    .quiz-option.incorrect { border-color: var(--danger) !important; background: rgba(248, 81, 73, 0.15) !important; }
+
+    .quiz-option-letter {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--bg-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .quiz-explanation {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(88, 166, 255, 0.1);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: none;
+    }
+
+    .quiz-explanation.visible { display: block; }
+
+    .quiz-check-btn {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .quiz-check-btn:hover { opacity: 0.9; }
+    .quiz-check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Prerequisites & Related */
+    .prereq-list, .related-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .prereq-item, .related-item {
+      background: var(--bg-tertiary);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .learning-not-analyzed {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .learning-not-analyzed-icon { font-size: 48px; margin-bottom: 16px; }
+    .learning-not-analyzed h3 { font-size: 18px; margin-bottom: 8px; color: var(--text-primary); }
+    .learning-not-analyzed p { font-size: 14px; margin-bottom: 20px; }
+
+    .learning-analyze-btn {
+      padding: 12px 24px;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .learning-analyze-btn:hover { opacity: 0.9; }
+    .learning-analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Learning card badge */
+    .research-card .learning-indicator {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .research-card .learning-indicator:hover {
+      transform: scale(1.1);
+    }
+
     </style>
     <!-- Marked.js for markdown rendering in chat -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -12446,6 +12823,8 @@
     let currentResearchFilter = 'all';
     let currentResearchSearch = '';
     let researchViewMode = 'grid';
+    let analysisCache = {}; // Cache of paper analyses
+    let currentAnalysis = null; // Current paper being viewed
 
     async function fetchResearchLibrary() {
       const gridEl = document.getElementById('researchGrid');
@@ -12577,14 +12956,16 @@
         const year = yearMatch ? yearMatch[1] : '';
         const hasPdf = article.pdfUrl || article.url?.includes('arxiv.org');
         const pdfReady = article.pdfS3Key;
+        const hasAnalysis = analysisCache[article.id];
         return `
-        <div class="research-card${isSeminal ? ' seminal' : ''}">
+        <div class="research-card${isSeminal ? ' seminal' : ''}" onclick="openLearningModal('${article.id}')" style="cursor:pointer;">
+          ${hasAnalysis ? `<div class="learning-indicator" title="AI-analyzed - Click to learn!">🎓</div>` : ''}
           <div class="research-card-header">
             <span class="research-source">${article.source}</span>
             ${year ? `<span class="research-year">${year}</span>` : `<span class="research-category">${article.category}</span>`}
           </div>
           <div class="research-title">
-            <a href="${article.url}" target="_blank" rel="noopener">${article.title}</a>
+            <a href="${article.url}" target="_blank" rel="noopener" onclick="event.stopPropagation();">${article.title}</a>
           </div>
           <div class="research-summary">${article.summary}</div>
           <div class="research-footer">
@@ -12598,7 +12979,8 @@
                 <a href="${article.pdfUrl || article.url.replace('/abs/', '/pdf/')}"
                    target="_blank" rel="noopener"
                    class="research-pdf-btn${pdfReady ? ' stored' : ''}"
-                   title="${pdfReady ? 'PDF stored in library (' + Math.round((article.pdfSize || 0) / 1024) + ' KB)' : 'View PDF on arXiv'}">
+                   title="${pdfReady ? 'PDF stored in library (' + Math.round((article.pdfSize || 0) / 1024) + ' KB)' : 'View PDF on arXiv'}"
+                   onclick="event.stopPropagation();">
                   ${pdfReady ? '📥' : '📄'} PDF
                 </a>
               ` : ''}
@@ -12607,6 +12989,242 @@
           </div>
         </div>
       `}).join('');
+    }
+
+    // Learning Modal Functions
+    async function fetchAnalysisList() {
+      try {
+        const res = await fetch(API_BASE + '/research-analyze?action=list');
+        if (!res.ok) return;
+        const data = await res.json();
+        // Build cache from list
+        (data.analyses || []).forEach(a => {
+          analysisCache[a.articleId] = a;
+        });
+        // Re-render grid to show learning indicators
+        renderResearchGrid();
+      } catch (e) {
+        console.error('fetchAnalysisList error:', e);
+      }
+    }
+
+    async function openLearningModal(articleId) {
+      const modal = document.getElementById('learningModal');
+      const content = document.getElementById('learningContent');
+
+      // Find the article
+      const article = (researchData.articles || []).find(a => a.id === articleId);
+      if (!article) return;
+
+      document.getElementById('learningTitle').textContent = article.title;
+      modal.classList.add('active');
+      content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);">Loading analysis...</div>';
+
+      try {
+        const res = await fetch(API_BASE + '/research-analyze?articleId=' + articleId);
+        if (res.status === 404) {
+          // Not analyzed yet
+          const hasPdf = article.pdfS3Key;
+          content.innerHTML = `
+            <div class="learning-not-analyzed">
+              <div class="learning-not-analyzed-icon">${hasPdf ? '📄' : '🔗'}</div>
+              <h3>Not Yet Analyzed</h3>
+              <p>${hasPdf ? 'This paper has a PDF stored and can be analyzed.' : 'This paper needs a PDF to be analyzed.'}</p>
+              ${hasPdf ? `
+                <button class="learning-analyze-btn" onclick="analyzePaper('${articleId}')">
+                  🧠 Analyze with AI
+                </button>
+              ` : `
+                <a href="${article.url}" target="_blank" class="learning-analyze-btn" style="text-decoration:none;">
+                  📖 Read Paper
+                </a>
+              `}
+            </div>
+          `;
+          return;
+        }
+
+        if (!res.ok) throw new Error('Failed to load analysis');
+        currentAnalysis = await res.json();
+        renderLearningContent();
+
+      } catch (e) {
+        console.error('openLearningModal error:', e);
+        content.innerHTML = '<div style="text-align:center;padding:40px;color:var(--danger);">Failed to load analysis</div>';
+      }
+    }
+
+    function closeLearningModal() {
+      document.getElementById('learningModal').classList.remove('active');
+      currentAnalysis = null;
+    }
+
+    function showLearningTab(tab) {
+      document.querySelectorAll('.learning-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.learning-section').forEach(s => s.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('learningSection-' + tab)?.classList.add('active');
+    }
+
+    function renderLearningContent() {
+      if (!currentAnalysis) return;
+      const a = currentAnalysis;
+
+      // Update header
+      document.getElementById('learningDifficulty').textContent = a.difficulty || 'intermediate';
+      document.getElementById('learningDifficulty').className = 'learning-badge difficulty-' + (a.difficulty || 'intermediate');
+      document.getElementById('learningReadTime').textContent = `~${a.estimatedReadTime || 30} min read`;
+      document.getElementById('learningConceptCount').textContent = `${(a.keyConcepts || []).length} concepts`;
+
+      const content = document.getElementById('learningContent');
+      content.innerHTML = `
+        <!-- Overview Section -->
+        <div class="learning-section active" id="learningSection-overview">
+          <div class="learning-abstract">${a.abstract || 'No abstract available.'}</div>
+
+          ${a.keyContributions && a.keyContributions.length ? `
+            <div class="learning-contributions">
+              <h4>Key Contributions</h4>
+              <ul>${a.keyContributions.map(c => `<li>${c}</li>`).join('')}</ul>
+            </div>
+          ` : ''}
+
+          ${a.methodology ? `
+            <div class="learning-contributions">
+              <h4>Methodology</h4>
+              <p style="font-size:13px;color:var(--text-secondary);line-height:1.6;">${a.methodology}</p>
+            </div>
+          ` : ''}
+
+          ${a.prerequisites && a.prerequisites.length ? `
+            <div class="learning-contributions">
+              <h4>Prerequisites</h4>
+              <div class="prereq-list">${a.prerequisites.map(p => `<span class="prereq-item">${p}</span>`).join('')}</div>
+            </div>
+          ` : ''}
+
+          ${a.tags && a.tags.length ? `
+            <div class="learning-contributions">
+              <h4>Topics</h4>
+              <div class="prereq-list">${a.tags.map(t => `<span class="prereq-item" style="background:rgba(88,166,255,0.1);color:var(--accent);">${t}</span>`).join('')}</div>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Concepts Section -->
+        <div class="learning-section" id="learningSection-concepts">
+          ${(a.keyConcepts || []).map(c => `
+            <div class="concept-card">
+              <div class="concept-term">${c.term}</div>
+              <div class="concept-definition">${c.definition}</div>
+              <div class="concept-importance">${c.importance}</div>
+            </div>
+          `).join('') || '<p style="color:var(--text-secondary);">No concepts extracted.</p>'}
+        </div>
+
+        <!-- Code Section -->
+        <div class="learning-section" id="learningSection-code">
+          ${(a.codeExamples || []).map(c => `
+            <div class="code-example">
+              <div class="code-example-header">
+                <span class="code-example-desc">${c.description}</span>
+                ${c.language ? `<span class="code-example-lang">${c.language}</span>` : ''}
+              </div>
+              <pre>${escapeHtml(c.pseudocode || '')}</pre>
+            </div>
+          `).join('') || '<p style="color:var(--text-secondary);">No code examples available.</p>'}
+
+          ${a.implementationTips && a.implementationTips.length ? `
+            <div class="learning-contributions" style="margin-top:24px;">
+              <h4>Implementation Tips</h4>
+              <ul>${a.implementationTips.map(t => `<li>${t}</li>`).join('')}</ul>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Quiz Section -->
+        <div class="learning-section" id="learningSection-quiz">
+          ${(a.quizQuestions || []).map((q, i) => `
+            <div class="quiz-question-card" data-correct="${q.correctAnswer}">
+              <div class="quiz-question-number">Question ${i + 1} of ${a.quizQuestions.length}</div>
+              <div class="quiz-question-text">${q.question}</div>
+              <div class="quiz-options">
+                ${(q.options || []).map((opt, j) => `
+                  <div class="quiz-option" onclick="selectQuizOption(this, ${j})">
+                    <span class="quiz-option-letter">${String.fromCharCode(65 + j)}</span>
+                    <span>${opt.replace(/^[A-D]\)\s*/, '')}</span>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="quiz-explanation">${q.explanation || ''}</div>
+              <button class="quiz-check-btn" onclick="checkQuizAnswer(this)">Check Answer</button>
+            </div>
+          `).join('') || '<p style="color:var(--text-secondary);">No quiz questions available.</p>'}
+        </div>
+      `;
+    }
+
+    function selectQuizOption(el, idx) {
+      const card = el.closest('.quiz-question-card');
+      card.querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+      el.classList.add('selected');
+      card.dataset.selected = idx;
+    }
+
+    function checkQuizAnswer(btn) {
+      const card = btn.closest('.quiz-question-card');
+      const selected = parseInt(card.dataset.selected);
+      const correct = parseInt(card.dataset.correct);
+
+      if (isNaN(selected)) {
+        alert('Please select an answer first');
+        return;
+      }
+
+      const options = card.querySelectorAll('.quiz-option');
+      options.forEach((o, i) => {
+        o.classList.remove('selected');
+        if (i === correct) o.classList.add('correct');
+        if (i === selected && i !== correct) o.classList.add('incorrect');
+      });
+
+      card.querySelector('.quiz-explanation').classList.add('visible');
+      btn.disabled = true;
+      btn.textContent = selected === correct ? '✓ Correct!' : '✗ Incorrect';
+    }
+
+    async function analyzePaper(articleId) {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = '🔄 Analyzing...';
+
+      try {
+        const res = await fetch(API_BASE + '/research-analyze?action=analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ articleId, agentId: 'web-user' })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          // Reload the modal with the new analysis
+          openLearningModal(articleId);
+          // Update cache
+          analysisCache[articleId] = result;
+          renderResearchGrid();
+        } else {
+          throw new Error(result.error || 'Analysis failed');
+        }
+      } catch (e) {
+        alert('Analysis failed: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = '🧠 Analyze with AI';
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
 
     // Kudos Leaderboard Functions
@@ -13910,6 +14528,7 @@
       // Fetch research library when switching to research tab
       if (tabName === 'research') {
         fetchResearchLibrary();
+        fetchAnalysisList(); // Load analysis cache for learning indicators
       }
 
       // Initialize training when switching to training tab
@@ -21314,6 +21933,32 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Learning Modal -->
+  <div class="learning-modal-overlay" id="learningModal" onclick="if(event.target === this) closeLearningModal()">
+    <div class="learning-modal">
+      <div class="learning-header">
+        <div class="learning-header-info">
+          <div class="learning-title" id="learningTitle">Paper Title</div>
+          <div class="learning-meta">
+            <span class="learning-badge difficulty-intermediate" id="learningDifficulty">Intermediate</span>
+            <span style="font-size: 12px; color: var(--text-secondary);" id="learningReadTime">~30 min read</span>
+            <span style="font-size: 12px; color: var(--text-secondary);" id="learningConceptCount">4 concepts</span>
+          </div>
+        </div>
+        <button class="learning-close" onclick="closeLearningModal()">×</button>
+      </div>
+      <div class="learning-tabs">
+        <button class="learning-tab active" onclick="showLearningTab('overview')">Overview</button>
+        <button class="learning-tab" onclick="showLearningTab('concepts')">Concepts</button>
+        <button class="learning-tab" onclick="showLearningTab('code')">Code</button>
+        <button class="learning-tab" onclick="showLearningTab('quiz')">Quiz</button>
+      </div>
+      <div class="learning-content" id="learningContent">
+        <!-- Content populated by JS -->
       </div>
     </div>
   </div>
