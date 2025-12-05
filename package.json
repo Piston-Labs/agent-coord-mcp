@@ -41,7 +41,7 @@
   "author": "Piston Labs",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.0",
+    "@anthropic-ai/sdk": "^0.71.1",
     "@aws-sdk/client-dynamodb": "^3.940.0",
     "@aws-sdk/client-ec2": "^3.943.0",
     "@aws-sdk/client-s3": "^3.943.0",
