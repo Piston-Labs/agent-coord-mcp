@@ -753,6 +753,110 @@
       .research-grid { gap: 10px; }
     }
 
+    /* ===========================================
+       RESOURCES SECTION MOBILE STYLES
+       =========================================== */
+
+    /* Resources Mobile Toggle Button - hidden by default, shown on mobile */
+    .resources-mobile-toggle {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      z-index: 1000;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .resources-mobile-toggle:hover {
+      transform: scale(1.1);
+      background: var(--accent-hover);
+    }
+    .resources-mobile-toggle:active {
+      transform: scale(0.95);
+    }
+
+    /* Resources Tablet (900px) */
+    @media (max-width: 900px) {
+      #resourcesView > div { flex-direction: column !important; }
+      #resourcesSidebar {
+        width: 100% !important;
+        max-height: 40vh;
+        border-right: none !important;
+        border-bottom: 1px solid var(--border) !important;
+      }
+      #resourcesView .resources-content { padding: 12px !important; }
+    }
+
+    /* Resources Mobile (768px) */
+    @media (max-width: 768px) {
+      #resourcesSidebar {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        width: 85% !important;
+        max-width: 320px;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        z-index: 1001;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        box-shadow: 2px 0 12px rgba(0,0,0,0.2);
+      }
+      #resourcesSidebar.mobile-open {
+        transform: translateX(0);
+      }
+      .resources-mobile-toggle { display: flex; align-items: center; justify-content: center; }
+      .resources-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 1000;
+      }
+      .resources-overlay.active { display: block; }
+      /* Header stacking */
+      #resourcesView [style*="justify-content: space-between"] {
+        flex-direction: column !important;
+        gap: 12px;
+        padding: 12px !important;
+      }
+      #resourcesView [style*="justify-content: space-between"] > div:last-child {
+        width: 100%;
+        flex-wrap: wrap;
+      }
+      #resourcesView select, #resourcesView button { flex: 1; min-width: 0; }
+    }
+
+    /* Resources Small Mobile (480px) */
+    @media (max-width: 480px) {
+      #resourcesSidebar { width: 100% !important; max-width: 100%; }
+      #resourcesView .resources-content { padding: 8px !important; }
+      #resourcesView h3 { font-size: 16px !important; }
+      #resourcesView h3 span:first-child { font-size: 20px !important; }
+      #resourcesView p { font-size: 11px !important; }
+      #resourcesView select { font-size: 11px !important; padding: 6px 8px !important; }
+      #resourcesView button { font-size: 11px !important; padding: 6px 12px !important; }
+      /* Stats grid on small screens */
+      #resourcesSidebar [style*="grid-template-columns: 1fr 1fr"] {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 4px !important;
+        padding: 8px !important;
+      }
+      #resourcesSidebar [style*="font-size: 18px"] { font-size: 14px !important; }
+      #resourcesSidebar [style*="font-size: 9px"] { font-size: 8px !important; }
+    }
+
     /* Kudos Leaderboard */
     .kudos-section {
       border-top: 1px solid var(--border);
@@ -10932,6 +11036,12 @@
 
       <!-- Resources View -->
       <div class="tab-content" id="resourcesView">
+        <!-- Mobile sidebar toggle button -->
+        <button class="resources-mobile-toggle" onclick="toggleResourcesSidebarMobile()" aria-label="Toggle navigation">
+          <span id="resourcesToggleIcon">☰</span>
+        </button>
+        <!-- Mobile overlay -->
+        <div class="resources-overlay" id="resourcesOverlay" onclick="closeResourcesSidebar()"></div>
         <!-- Wiki-style layout with sidebar navigation -->
         <div style="display: flex; height: 100%; overflow: hidden;">
           <!-- Left Sidebar - Quick Navigation -->
@@ -16546,6 +16656,37 @@
           sidebar.style.width = '0px';
           sidebar.style.display = 'none';
         }
+      }
+    }
+
+    // Mobile-specific toggle for resources sidebar
+    function toggleResourcesSidebarMobile() {
+      const sidebar = document.getElementById('resourcesSidebar');
+      const overlay = document.getElementById('resourcesOverlay');
+      const toggleIcon = document.getElementById('resourcesToggleIcon');
+      if (sidebar) {
+        const isOpen = sidebar.classList.contains('mobile-open');
+        if (isOpen) {
+          closeResourcesSidebar();
+        } else {
+          sidebar.classList.add('mobile-open');
+          if (overlay) overlay.classList.add('active');
+          if (toggleIcon) toggleIcon.textContent = '✕';
+          document.body.style.overflow = 'hidden'; // Prevent background scroll
+        }
+      }
+    }
+
+    // Close resources sidebar (mobile)
+    function closeResourcesSidebar() {
+      const sidebar = document.getElementById('resourcesSidebar');
+      const overlay = document.getElementById('resourcesOverlay');
+      const toggleIcon = document.getElementById('resourcesToggleIcon');
+      if (sidebar) {
+        sidebar.classList.remove('mobile-open');
+        if (overlay) overlay.classList.remove('active');
+        if (toggleIcon) toggleIcon.textContent = '☰';
+        document.body.style.overflow = ''; // Restore scroll
       }
     }
 
