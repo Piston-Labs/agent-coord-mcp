@@ -226,6 +226,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
+    // POST: Reset crawl status (if stuck)
+    if (req.method === 'POST' && action === 'reset') {
+      await redis.del(PDF_STATUS_KEY);
+      return res.json({ success: true, message: 'Crawl status reset to idle' });
+    }
+
     // GET: Status
     if (req.method === 'GET' && action === 'status') {
       const status: CrawlStatus = await redis.get(PDF_STATUS_KEY) || {
