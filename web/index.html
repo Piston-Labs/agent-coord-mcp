@@ -654,6 +654,40 @@
 
     .research-discovered { font-style: italic; }
 
+    .research-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .research-pdf-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      background: var(--bg-tertiary);
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: all 0.15s;
+    }
+
+    .research-pdf-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .research-pdf-btn.stored {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+
+    .research-pdf-btn.stored:hover {
+      background: #22c55e;
+      color: #fff;
+    }
+
     /* Empty State */
     .research-empty {
       text-align: center;
@@ -12523,6 +12557,8 @@
         const isSeminal = (article.tags || []).includes('seminal');
         const yearMatch = article.summary.match(/\((\d{4})\)/);
         const year = yearMatch ? yearMatch[1] : '';
+        const hasPdf = article.pdfUrl || article.url?.includes('arxiv.org');
+        const pdfReady = article.pdfS3Key;
         return `
         <div class="research-card${isSeminal ? ' seminal' : ''}">
           <div class="research-card-header">
@@ -12539,7 +12575,17 @@
                 `<span class="research-tag${t === 'seminal' ? ' seminal-tag' : ''}" onclick="searchResearch('${t}'); event.stopPropagation();">${t}</span>`
               ).join('')}
             </div>
-            <span class="research-discovered">by ${article.discoveredBy}</span>
+            <div class="research-actions">
+              ${hasPdf ? `
+                <a href="${article.pdfUrl || article.url.replace('/abs/', '/pdf/')}"
+                   target="_blank" rel="noopener"
+                   class="research-pdf-btn${pdfReady ? ' stored' : ''}"
+                   title="${pdfReady ? 'PDF stored in library (' + Math.round((article.pdfSize || 0) / 1024) + ' KB)' : 'View PDF on arXiv'}">
+                  ${pdfReady ? '📥' : '📄'} PDF
+                </a>
+              ` : ''}
+              <span class="research-discovered">by ${article.discoveredBy}</span>
+            </div>
           </div>
         </div>
       `}).join('');
