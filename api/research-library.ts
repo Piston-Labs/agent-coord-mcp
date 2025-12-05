@@ -853,6 +853,161 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'phil',
     discoveredAt: '2025-12-05T00:22:00.000Z',
     tags: ['longlora', 'lora', 'long-context', 'efficient-training', 'mit']
+  },
+
+  // ========================================================================
+  // ADVANCED REASONING (2022-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-self-consistency-2022',
+    title: 'Self-Consistency Improves Chain of Thought Reasoning in Language Models',
+    url: 'https://arxiv.org/abs/2203.11171',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'Wang et al. (2022). Google. Sample multiple CoT paths, take majority vote. Simple but powerful - improves CoT by 17.9% on GSM8K. No training needed. Key prompting technique.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['self-consistency', 'chain-of-thought', 'voting', 'google', 'seminal']
+  },
+  {
+    id: 'research-tot-2023',
+    title: 'Tree of Thoughts: Deliberate Problem Solving with Large Language Models',
+    url: 'https://arxiv.org/abs/2305.10601',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'Yao et al. (2023). Princeton/Google DeepMind. Extend CoT to tree search - generate, evaluate, backtrack. BFS/DFS over thought space. Solves Game of 24, creative writing. Foundation for o1-style reasoning.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['tree-of-thought', 'reasoning', 'search', 'planning', 'seminal']
+  },
+  {
+    id: 'research-self-refine-2023',
+    title: 'Self-Refine: Iterative Refinement with Self-Feedback',
+    url: 'https://arxiv.org/abs/2303.17651',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'Madaan et al. (2023). CMU. LLM generates → critiques → refines own output. No training or external feedback. 20% improvement on code, math, reviews. Key for agent self-improvement loops.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['self-refine', 'iterative', 'self-improvement', 'cmu', 'agents']
+  },
+  {
+    id: 'research-least-to-most-2022',
+    title: 'Least-to-Most Prompting Enables Complex Reasoning in Large Language Models',
+    url: 'https://arxiv.org/abs/2205.10625',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'Zhou et al. (2022). Google. Decompose complex problems into simpler subproblems, solve sequentially. Generalizes better than CoT. 99.7% on SCAN (vs 16% CoT). Key compositional reasoning technique.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['least-to-most', 'decomposition', 'compositional', 'google', 'prompting']
+  },
+  {
+    id: 'research-scratchpad-2021',
+    title: 'Show Your Work: Scratchpads for Intermediate Computation with Language Models',
+    url: 'https://arxiv.org/abs/2112.00114',
+    source: 'arXiv',
+    category: 'prompting-reasoning',
+    summary: 'Nye et al. (2021). Google. Train models to use "scratchpads" for intermediate steps. Predecessor to CoT. Shows step-by-step reasoning can be learned. Foundation for reasoning research.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['scratchpad', 'intermediate-steps', 'training', 'google', 'foundational']
+  },
+
+  // ========================================================================
+  // MULTI-AGENT SYSTEMS (2023-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-autogen-2023',
+    title: 'AutoGen: Enabling Next-Gen LLM Applications via Multi-Agent Conversation',
+    url: 'https://arxiv.org/abs/2308.08155',
+    source: 'arXiv',
+    category: 'multi-agent',
+    summary: 'Wu et al. (2023). Microsoft. Framework for multi-agent conversations. Agents with different roles collaborate via chat. Human-in-the-loop optional. Powers complex workflows. Production-ready framework.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['autogen', 'multi-agent', 'microsoft', 'conversation', 'framework', 'seminal']
+  },
+  {
+    id: 'research-camel-2023',
+    title: 'CAMEL: Communicative Agents for "Mind" Exploration of Large Language Model Society',
+    url: 'https://arxiv.org/abs/2303.17760',
+    source: 'arXiv',
+    category: 'multi-agent',
+    summary: 'Li et al. (2023). KAUST. Role-playing framework where AI assistants collaborate. Inception prompting to maintain roles. Studies emergent behaviors in agent societies. Early multi-agent research.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['camel', 'role-playing', 'multi-agent', 'society', 'emergence']
+  },
+  {
+    id: 'research-metagpt-2023',
+    title: 'MetaGPT: Meta Programming for A Multi-Agent Collaborative Framework',
+    url: 'https://arxiv.org/abs/2308.00352',
+    source: 'arXiv',
+    category: 'multi-agent',
+    summary: 'Hong et al. (2023). DeepWisdom. Agents take software engineering roles (PM, architect, engineer). SOPs encode human workflows. Produces deployable code from requirements. Practical multi-agent dev.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['metagpt', 'software-engineering', 'multi-agent', 'sop', 'framework']
+  },
+  {
+    id: 'research-crewai-2024',
+    title: 'CrewAI: Framework for Orchestrating Role-Playing Autonomous AI Agents',
+    url: 'https://github.com/joaomdmoura/crewAI',
+    source: 'GitHub',
+    category: 'multi-agent',
+    summary: 'Moura (2024). Production framework for AI agent crews. Role-based agents with goals and backstories. Sequential/hierarchical process flows. Tool integration. 20k+ GitHub stars.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['crewai', 'multi-agent', 'framework', 'roles', 'open-source']
+  },
+  {
+    id: 'research-gpt-engineer-2023',
+    title: 'GPT-Engineer: Specify what you want it to build, the AI asks for clarification, and then builds it',
+    url: 'https://github.com/gpt-engineer-org/gpt-engineer',
+    source: 'GitHub',
+    category: 'agents-tools',
+    summary: 'Osika (2023). Natural language to codebase. Clarifying questions before coding. Generates entire project structure. 50k+ GitHub stars. Showed LLMs can be full-stack developers.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['gpt-engineer', 'code-generation', 'natural-language', 'viral', 'open-source']
+  },
+
+  // ========================================================================
+  // FUNCTION CALLING & MCP (2023-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-function-calling-2023',
+    title: 'Function Calling in Large Language Models',
+    url: 'https://openai.com/blog/function-calling-and-other-api-updates',
+    source: 'OpenAI Blog',
+    category: 'agents-tools',
+    summary: 'OpenAI (2023). Native function calling in GPT models. JSON schema for function definitions. Model decides when/how to call. Foundation for tool use in production. Changed how we build AI apps.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['function-calling', 'openai', 'tool-use', 'api', 'json-schema']
+  },
+  {
+    id: 'research-mcp-2024',
+    title: 'Model Context Protocol (MCP): Open Standard for AI Tool Integration',
+    url: 'https://modelcontextprotocol.io/',
+    source: 'Anthropic',
+    category: 'agents-tools',
+    summary: 'Anthropic (2024). Open protocol for connecting AI models to tools, data sources, and services. Standardized tool discovery, invocation, and context sharing. Used in Claude Code. Foundation of our coordination hub.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['mcp', 'anthropic', 'protocol', 'tool-integration', 'standard', 'seminal']
+  },
+  {
+    id: 'research-toolllm-2023',
+    title: 'ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs',
+    url: 'https://arxiv.org/abs/2307.16789',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Qin et al. (2023). Tsinghua. ToolBench dataset with 16k+ APIs. DFSDT for multi-step API planning. ToolLLaMA beats ChatGPT on API tasks. Key for scalable tool use.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:26:00.000Z',
+    tags: ['toolllm', 'api-learning', 'toolbench', 'tsinghua', 'dataset']
   }
 ];
 
