@@ -130,6 +130,38 @@ const RESEARCH_CLUSTERS: Record<string, {
     description: 'Vision-language models, image understanding, and cross-modal learning',
     paperPatterns: ['clip', 'llava', 'gpt-4v', 'gemini', 'cogvlm', 'flamingo', 'blip'],
     topics: ['multimodal', 'vision', 'image', 'cross-modal', 'visual-understanding']
+  },
+
+  // Speech & Audio
+  'speech': {
+    name: 'Speech & Audio',
+    description: 'Speech recognition, text-to-speech, audio generation, and music models',
+    paperPatterns: ['whisper', 'valle', 'encodec', 'musicgen', 'speech', 'audio', 'tts'],
+    topics: ['speech', 'audio', 'asr', 'tts', 'music', 'voice']
+  },
+
+  // Reinforcement Learning
+  'rl': {
+    name: 'Reinforcement Learning',
+    description: 'Policy optimization, Q-learning, decision transformers, and RLHF foundations',
+    paperPatterns: ['ppo', 'dqn', 'decision-transformer', 'grpo', 'reinforcement', 'policy', 'q-learning'],
+    topics: ['reinforcement-learning', 'rl', 'policy', 'reward', 'rlhf']
+  },
+
+  // Scientific AI
+  'science': {
+    name: 'Scientific AI',
+    description: 'AI for science - protein folding, molecular modeling, scientific discovery',
+    paperPatterns: ['alphafold', 'galactica', 'esm', 'protein', 'molecular', 'scientific'],
+    topics: ['science', 'biology', 'chemistry', 'protein', 'scientific-ai']
+  },
+
+  // World Models
+  'worldmodels': {
+    name: 'World Models & Simulation',
+    description: 'Learning world models, imagination-based learning, and video generation',
+    paperPatterns: ['world-model', 'dreamer', 'genie', 'sora', 'video-generation', 'imagination'],
+    topics: ['world-models', 'simulation', 'video', 'imagination', 'generative']
   }
 };
 
