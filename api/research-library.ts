@@ -421,6 +421,63 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'jeeves',
     discoveredAt: '2025-12-04T23:00:00.000Z',
     tags: ['stanford', 'hai', 'industry-report', 'trends', 'academia', '2024']
+  },
+  // ========== EFFICIENT TRAINING & FINE-TUNING ==========
+  {
+    id: 'research-flash-attention-2022',
+    title: 'FlashAttention: Fast and Memory-Efficient Exact Attention with IO-Awareness',
+    url: 'https://arxiv.org/abs/2205.14135',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Dao et al. (2022). IO-aware attention using tiling to reduce GPU memory reads/writes. 3x speedup on GPT-2, enables 16K+ context. Linear memory instead of quadratic. Powers most modern LLMs.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['flash-attention', 'efficient', 'memory', 'gpu', 'tiling', 'seminal']
+  },
+  {
+    id: 'research-lora-2021',
+    title: 'LoRA: Low-Rank Adaptation of Large Language Models',
+    url: 'https://arxiv.org/abs/2106.09685',
+    source: 'arXiv',
+    category: 'scaling-efficiency',
+    summary: 'Hu et al. (2021). Microsoft. Freeze pretrained weights, inject trainable low-rank matrices. 10,000x fewer params, 3x less GPU memory than full fine-tuning. No inference latency. Revolutionary for LLM adaptation.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['lora', 'fine-tuning', 'efficient', 'microsoft', 'adaptation', 'seminal']
+  },
+  {
+    id: 'research-dpo-2023',
+    title: 'Direct Preference Optimization: Your Language Model is Secretly a Reward Model',
+    url: 'https://arxiv.org/abs/2305.18290',
+    source: 'arXiv',
+    category: 'ai-safety',
+    summary: 'Rafailov et al. (2023). Stanford. Simpler RLHF alternative - optimize preferences directly without reward model or RL loop. Stable, lightweight, matches/beats PPO. NeurIPS 2023 runner-up. Used in Llama, Claude.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['dpo', 'alignment', 'rlhf-alternative', 'stanford', 'preferences', 'seminal']
+  },
+  {
+    id: 'research-vit-2020',
+    title: 'An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale',
+    url: 'https://arxiv.org/abs/2010.11929',
+    source: 'arXiv',
+    category: 'architectures',
+    summary: 'Dosovitskiy et al. (2020). Google. Vision Transformer - pure transformer on image patches, no CNNs. Matches/beats CNNs with less compute when pretrained on large data. Foundation of multimodal AI.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['vit', 'vision-transformer', 'computer-vision', 'google', 'patches', 'seminal']
+  },
+  // ========== BERKELEY & CMU RESEARCH ==========
+  {
+    id: 'research-bair-compound-2024',
+    title: 'The Shift from Models to Compound AI Systems',
+    url: 'https://bair.berkeley.edu/blog/2024/02/18/compound-ai-systems/',
+    source: 'Berkeley BAIR',
+    category: 'multi-agent',
+    summary: 'BAIR (2024). State-of-the-art AI increasingly from compound systems (multiple components), not monolithic models. Retrieval, tools, multi-step reasoning. Key insight for building production AI.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-05T00:00:00.000Z',
+    tags: ['berkeley', 'bair', 'compound-systems', 'production-ai', '2024']
   }
 ];
 
