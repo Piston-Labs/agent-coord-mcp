@@ -270,8 +270,8 @@ export function registerCoreTools(server: McpServer) {
     'group-chat',
     'Team-wide messaging. All agents and humans can see these messages.',
     {
-      action: z.enum(['send', 'get', 'get-since', 'react'])
-        .describe('send=post message, get=get recent, get-since=poll new, react=add emoji'),
+      action: z.enum(['send', 'get', 'get-since', 'react', 'delete'])
+        .describe('send=post message, get=get recent, get-since=poll new, react=add emoji, delete=remove message by ID'),
       author: z.string().optional().describe('Your agent ID (for send/react)'),
       message: z.string().optional().describe('Message to post (for send)'),
       limit: z.number().optional().describe('Max messages to return (for get)'),
@@ -391,6 +391,24 @@ export function registerCoreTools(server: McpServer) {
           }
           const success = store.addReaction(args.messageId, args.emoji, args.author, 'agent');
           return { content: [{ type: 'text', text: JSON.stringify({ success }) }] };
+        }
+
+        case 'delete': {
+          if (!args.messageId) {
+            return { content: [{ type: 'text', text: 'messageId required for delete action' }] };
+          }
+          try {
+            const res = await fetch(`${API_BASE}/api/chat?messageId=${encodeURIComponent(args.messageId)}`, {
+              method: 'DELETE'
+            });
+            const data = await res.json();
+            if (!res.ok) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: data.error || 'Delete failed', messageId: args.messageId }) }] };
+            }
+            return { content: [{ type: 'text', text: JSON.stringify(data) }] };
+          } catch (err) {
+            return { content: [{ type: 'text', text: JSON.stringify({ error: 'Failed to delete message', messageId: args.messageId }) }] };
+          }
         }
 
         default:

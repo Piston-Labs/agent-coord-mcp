@@ -221,8 +221,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ id: newMessage.id, sent: true, timestamp: newMessage.timestamp });
     }
 
-    // DELETE: Clear all messages
+    // DELETE: Delete specific message by ID or clear all
     if (req.method === 'DELETE') {
+      const { messageId } = req.query;
+
+      if (messageId && typeof messageId === 'string') {
+        // Delete specific message by ID
+        const messages = await redis.lrange(MESSAGES_KEY, 0, -1);
+        const parsed = messages.map((m: any) => typeof m === 'string' ? JSON.parse(m) : m);
+
+        const targetIndex = parsed.findIndex((m: any) => m.id === messageId);
+        if (targetIndex === -1) {
+          return res.status(404).json({ error: 'Message not found', messageId });
+        }
+
+        // Get the message for response
+        const deletedMessage = parsed[targetIndex];
+
+        // Remove the message - Redis doesn't have direct index delete, so we:
+        // 1. Mark the item with a unique placeholder
+        // 2. Remove all items matching that placeholder
+        const placeholder = `__DELETE_${Date.now()}_${Math.random()}__`;
+        await redis.lset(MESSAGES_KEY, targetIndex, placeholder);
+        await redis.lrem(MESSAGES_KEY, 1, placeholder);
+
+        return res.json({
+          deleted: true,
+          messageId,
+          author: deletedMessage.author,
+          timestamp: deletedMessage.timestamp,
+          preview: (deletedMessage.message || '').substring(0, 50)
+        });
+      }
+
+      // No messageId = clear all messages
       await redis.del(MESSAGES_KEY);
       return res.json({ cleared: true, message: 'All messages deleted' });
     }
