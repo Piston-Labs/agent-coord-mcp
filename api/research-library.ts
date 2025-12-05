@@ -1417,6 +1417,198 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'phil',
     discoveredAt: '2025-12-05T00:35:00.000Z',
     tags: ['mistral', 'efficient', 'sliding-window', 'open-source', 'apache']
+  },
+
+  // ========================================
+  // SPEECH & AUDIO
+  // ========================================
+  {
+    id: 'research-whisper-2022',
+    title: 'Robust Speech Recognition via Large-Scale Weak Supervision',
+    url: 'https://arxiv.org/abs/2212.04356',
+    source: 'arXiv',
+    category: 'speech-audio',
+    summary: 'Radford et al. (2022). OpenAI. Whisper - 680k hours multilingual audio training. Encoder-decoder transformer. Zero-shot ASR across 97 languages. Open weights. Foundation for voice AI.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['whisper', 'openai', 'speech-recognition', 'multilingual', 'audio', 'seminal']
+  },
+  {
+    id: 'research-valle-2023',
+    title: 'Neural Codec Language Models are Zero-Shot Text to Speech Synthesizers',
+    url: 'https://arxiv.org/abs/2301.02111',
+    source: 'arXiv',
+    category: 'speech-audio',
+    summary: 'Wang et al. (2023). Microsoft. VALL-E - TTS as language modeling over discrete audio codes. 3-second voice cloning. Zero-shot speaker adaptation. Neural codec + autoregressive modeling.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['valle', 'microsoft', 'tts', 'speech-synthesis', 'voice-cloning', 'neural-codec']
+  },
+  {
+    id: 'research-encodec-2022',
+    title: 'High Fidelity Neural Audio Compression',
+    url: 'https://arxiv.org/abs/2210.13438',
+    source: 'arXiv',
+    category: 'speech-audio',
+    summary: 'Défossez et al. (2022). Meta AI. EnCodec - neural audio codec for speech, music, audio. Residual vector quantization. Streaming encoder-decoder. Foundation for audio LLMs.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['encodec', 'meta', 'audio-compression', 'neural-codec', 'rvq']
+  },
+  {
+    id: 'research-musicgen-2023',
+    title: 'Simple and Controllable Music Generation',
+    url: 'https://arxiv.org/abs/2306.05284',
+    source: 'arXiv',
+    category: 'speech-audio',
+    summary: 'Copet et al. (2023). Meta AI. MusicGen - text-to-music with single autoregressive LM. EnCodec tokens + efficient parallel decoding. Open weights + demo. State-of-art music generation.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['musicgen', 'meta', 'music-generation', 'audio', 'text-to-music']
+  },
+
+  // ========================================
+  // REINFORCEMENT LEARNING
+  // ========================================
+  {
+    id: 'research-ppo-2017',
+    title: 'Proximal Policy Optimization Algorithms',
+    url: 'https://arxiv.org/abs/1707.06347',
+    source: 'arXiv',
+    category: 'reinforcement-learning',
+    summary: 'Schulman et al. (2017). OpenAI. PPO - simple, stable policy gradient method. Clipped objective prevents large updates. Default RL algorithm for RLHF. Used in InstructGPT, ChatGPT.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['ppo', 'openai', 'policy-gradient', 'rlhf', 'stable-training', 'seminal']
+  },
+  {
+    id: 'research-dqn-2015',
+    title: 'Human-level Control through Deep Reinforcement Learning',
+    url: 'https://www.nature.com/articles/nature14236',
+    source: 'Nature',
+    category: 'reinforcement-learning',
+    summary: 'Mnih et al. (2015). DeepMind. DQN - deep Q-learning from pixels. Experience replay + target networks. Superhuman Atari performance. Sparked modern deep RL revolution.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['dqn', 'deepmind', 'atari', 'q-learning', 'experience-replay', 'seminal']
+  },
+  {
+    id: 'research-decision-transformer-2021',
+    title: 'Decision Transformer: Reinforcement Learning via Sequence Modeling',
+    url: 'https://arxiv.org/abs/2106.01345',
+    source: 'arXiv',
+    category: 'reinforcement-learning',
+    summary: 'Chen et al. (2021). UC Berkeley + Google. Reframe RL as sequence modeling. GPT architecture for offline RL. Return-conditioned generation. Bridge between LLMs and RL.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['decision-transformer', 'offline-rl', 'sequence-modeling', 'transformers', 'seminal']
+  },
+  {
+    id: 'research-grpo-2024',
+    title: 'DeepSeekMath: Pushing the Limits of Mathematical Reasoning in Open Language Models',
+    url: 'https://arxiv.org/abs/2402.03300',
+    source: 'arXiv',
+    category: 'reinforcement-learning',
+    summary: 'Shao et al. (2024). DeepSeek. GRPO - Group Relative Policy Optimization. More efficient than PPO for LLM training. Math reasoning SOTA. Foundation for DeepSeek-R1.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['grpo', 'deepseek', 'math-reasoning', 'rlhf', 'policy-optimization']
+  },
+
+  // ========================================
+  // SCIENTIFIC AI
+  // ========================================
+  {
+    id: 'research-alphafold-2021',
+    title: 'Highly Accurate Protein Structure Prediction with AlphaFold',
+    url: 'https://www.nature.com/articles/s41586-021-03819-2',
+    source: 'Nature',
+    category: 'scientific-ai',
+    summary: 'Jumper et al. (2021). DeepMind. AlphaFold 2 - solves 50-year protein folding problem. Evoformer + structure module. 200M+ protein predictions. Nobel Prize in Chemistry 2024.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['alphafold', 'deepmind', 'protein-folding', 'biology', 'nobel-prize', 'seminal']
+  },
+  {
+    id: 'research-galactica-2022',
+    title: 'Galactica: A Large Language Model for Science',
+    url: 'https://arxiv.org/abs/2211.09085',
+    source: 'arXiv',
+    category: 'scientific-ai',
+    summary: 'Taylor et al. (2022). Meta AI. 120B model trained on 106B scientific tokens. LaTeX, code, citations, molecular structures. Brief public release sparked AI safety debate.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['galactica', 'meta', 'scientific-llm', 'latex', 'citations']
+  },
+  {
+    id: 'research-gnns-for-science-2021',
+    title: 'A Survey on Graph Neural Networks for Knowledge Graph Completion',
+    url: 'https://arxiv.org/abs/2007.12374',
+    source: 'arXiv',
+    category: 'scientific-ai',
+    summary: 'Arora (2020). Comprehensive survey on GNN architectures for knowledge graphs. Link prediction, entity classification. Foundation for scientific reasoning systems.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['gnn', 'knowledge-graphs', 'survey', 'link-prediction', 'reasoning']
+  },
+  {
+    id: 'research-esm-2-2022',
+    title: 'Language Models of Protein Sequences at the Scale of Evolution Enable Accurate Structure Prediction',
+    url: 'https://www.biorxiv.org/content/10.1101/2022.07.20.500902v1',
+    source: 'bioRxiv',
+    category: 'scientific-ai',
+    summary: 'Lin et al. (2022). Meta AI. ESM-2 - 15B protein language model. Structure prediction from sequence alone. ESMFold competitive with AlphaFold. Open weights.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['esm-2', 'meta', 'protein-language-model', 'esmfold', 'biology']
+  },
+
+  // ========================================
+  // WORLD MODELS & SIMULATION
+  // ========================================
+  {
+    id: 'research-world-models-2018',
+    title: 'World Models',
+    url: 'https://arxiv.org/abs/1803.10122',
+    source: 'arXiv',
+    category: 'world-models',
+    summary: 'Ha & Schmidhuber (2018). Learn compressed world model, then train policy in "dream". VAE + MDN-RNN architecture. Influential for model-based RL and imagination-based learning.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['world-models', 'imagination', 'model-based-rl', 'vae', 'seminal']
+  },
+  {
+    id: 'research-dreamer-2020',
+    title: 'Dream to Control: Learning Behaviors by Latent Imagination',
+    url: 'https://arxiv.org/abs/1912.01603',
+    source: 'arXiv',
+    category: 'world-models',
+    summary: 'Hafner et al. (2020). DeepMind. Dreamer - learn world model then imagine trajectories. RSSM latent dynamics. Sample-efficient RL. Foundation for DreamerV2, V3.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['dreamer', 'deepmind', 'world-model', 'imagination', 'model-based-rl']
+  },
+  {
+    id: 'research-genie-2024',
+    title: 'Genie: Generative Interactive Environments',
+    url: 'https://arxiv.org/abs/2402.15391',
+    source: 'arXiv',
+    category: 'world-models',
+    summary: 'Bruce et al. (2024). DeepMind. 11B model learns playable world from video. Spatiotemporal transformer + latent action model. Generate interactive game-like environments from images.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['genie', 'deepmind', 'world-model', 'generative', 'interactive']
+  },
+  {
+    id: 'research-sora-2024',
+    title: 'Video Generation Models as World Simulators',
+    url: 'https://openai.com/research/video-generation-models-as-world-simulators',
+    source: 'OpenAI',
+    category: 'world-models',
+    summary: 'OpenAI (2024). Sora technical report. Diffusion transformer trained on video patches. Emergent 3D consistency, physics simulation. Up to 1 minute of coherent video.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:40:00.000Z',
+    tags: ['sora', 'openai', 'video-generation', 'diffusion', 'world-simulator', 'seminal']
   }
 ];
 
