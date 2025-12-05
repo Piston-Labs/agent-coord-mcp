@@ -733,6 +733,24 @@
       .research-nav-item.active .research-nav-count { color: #fff; }
       .research-sidebar-footer { display: none; }
       .research-grid { grid-template-columns: 1fr; }
+      .research-main { min-width: 0; }
+      .research-header { padding: 12px; }
+      .research-header-top { flex-wrap: wrap; gap: 8px; }
+      .research-content { padding: 12px; }
+    }
+
+    /* Small Mobile (under 480px) */
+    @media (max-width: 480px) {
+      .research-header-title { font-size: 16px; }
+      .research-header-top { flex-direction: column; align-items: flex-start; }
+      .research-view-toggle { width: 100%; justify-content: center; }
+      .research-card { padding: 12px; }
+      .research-title { font-size: 12px; }
+      .research-summary { font-size: 10px; -webkit-line-clamp: 2; }
+      .research-footer { flex-direction: column; gap: 8px; align-items: flex-start; }
+      .research-nav-item { padding: 4px 8px; font-size: 11px; }
+      .research-content { padding: 8px; }
+      .research-grid { gap: 10px; }
     }
 
     /* Kudos Leaderboard */
