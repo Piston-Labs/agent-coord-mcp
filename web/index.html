@@ -13088,6 +13088,8 @@
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
+      // Close sidebar on mobile after selection
+      closeResearchSidebar();
     }
 
     function filterResearchBySource(source) {
@@ -13098,6 +13100,8 @@
       event.currentTarget.classList.add('active');
       document.getElementById('researchViewTitle').textContent = source + ' Papers';
       renderResearchGrid();
+      // Close sidebar on mobile after selection
+      closeResearchSidebar();
     }
 
     function searchResearch(query) {
