@@ -654,6 +654,205 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'jeeves',
     discoveredAt: '2025-12-05T00:20:00.000Z',
     tags: ['claude', 'anthropic', 'character', 'alignment', 'values', '2024']
+  },
+
+  // ========================================================================
+  // AGENTS & TOOL USE (2022-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-toolformer-2023',
+    title: 'Toolformer: Language Models Can Teach Themselves to Use Tools',
+    url: 'https://arxiv.org/abs/2302.04761',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Schick et al. (2023). Meta AI. LLMs self-learn to use external tools (calculators, search, calendars) via API calls. Self-supervised - no human tool-use examples needed. Foundation of modern agent tool use.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['toolformer', 'tool-use', 'agents', 'meta', 'self-supervised', 'seminal']
+  },
+  {
+    id: 'research-react-2022',
+    title: 'ReAct: Synergizing Reasoning and Acting in Language Models',
+    url: 'https://arxiv.org/abs/2210.03629',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Yao et al. (2022). Google/Princeton. Interleave reasoning traces with actions. "Think-Act-Observe" loop. Outperforms CoT alone on knowledge-intensive tasks. Foundation of LangChain/agent frameworks.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['react', 'reasoning', 'agents', 'tool-use', 'google', 'seminal']
+  },
+  {
+    id: 'research-reflexion-2023',
+    title: 'Reflexion: Language Agents with Verbal Reinforcement Learning',
+    url: 'https://arxiv.org/abs/2303.11366',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Shinn et al. (2023). Agents learn from failures via verbal self-reflection. No weight updates - learns in context. 91% on HumanEval (vs 80% base). Key technique for agent self-improvement.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['reflexion', 'self-improvement', 'agents', 'verbal-rl', 'humaneval']
+  },
+  {
+    id: 'research-voyager-2023',
+    title: 'Voyager: An Open-Ended Embodied Agent with Large Language Models',
+    url: 'https://arxiv.org/abs/2305.16291',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Wang et al. (2023). NVIDIA. LLM agent in Minecraft that writes code, builds skill library, explores autonomously. Learns 3x more skills than baselines. Key example of embodied agents + code generation.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['voyager', 'embodied-agents', 'minecraft', 'nvidia', 'skill-library']
+  },
+  {
+    id: 'research-gorilla-2023',
+    title: 'Gorilla: Large Language Model Connected with Massive APIs',
+    url: 'https://arxiv.org/abs/2305.15334',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Patil et al. (2023). Berkeley. Fine-tuned LLaMA on 1,600+ APIs. Outperforms GPT-4 on API calling accuracy. Self-instruct on API docs. Key for reliable tool use.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['gorilla', 'api-calling', 'berkeley', 'tool-use', 'fine-tuning']
+  },
+  {
+    id: 'research-taskweaver-2023',
+    title: 'TaskWeaver: A Code-First Agent Framework',
+    url: 'https://arxiv.org/abs/2311.17541',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Qiao et al. (2023). Microsoft. Converts user requests to executable Python code. Stateful execution with plugin system. Handles complex data analytics tasks. Production-grade agent framework.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['taskweaver', 'code-first', 'microsoft', 'agents', 'python']
+  },
+  {
+    id: 'research-opendevin-2024',
+    title: 'OpenDevin: An Open Platform for AI Software Developers',
+    url: 'https://arxiv.org/abs/2407.16741',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Wang et al. (2024). Open-source software engineering agent. Sandboxed execution, multi-agent collaboration, benchmarking on SWE-bench. Community-driven Devin alternative.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['opendevin', 'software-engineering', 'swe-bench', 'open-source', '2024']
+  },
+  {
+    id: 'research-swebench-2024',
+    title: 'SWE-bench: Can Language Models Resolve Real-World GitHub Issues?',
+    url: 'https://arxiv.org/abs/2310.06770',
+    source: 'arXiv',
+    category: 'agents-tools',
+    summary: 'Jimenez et al. (2024). Princeton. Benchmark for LLM software engineering - 2,294 real GitHub issues. Models must understand codebase and generate patches. Key benchmark for coding agents.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['swe-bench', 'benchmark', 'software-engineering', 'princeton', 'github']
+  },
+
+  // ========================================================================
+  // CODE MODELS (2021-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-codex-2021',
+    title: 'Evaluating Large Language Models Trained on Code',
+    url: 'https://arxiv.org/abs/2107.03374',
+    source: 'arXiv',
+    category: 'code-models',
+    summary: 'Chen et al. (2021). OpenAI Codex - GPT-3 fine-tuned on code. 28.8% on HumanEval. Powers GitHub Copilot. Introduced HumanEval benchmark. Started the AI coding assistant revolution.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['codex', 'humaneval', 'openai', 'copilot', 'code-generation', 'seminal']
+  },
+  {
+    id: 'research-starcoder-2023',
+    title: 'StarCoder: May the Source Be with You!',
+    url: 'https://arxiv.org/abs/2305.06161',
+    source: 'arXiv',
+    category: 'code-models',
+    summary: 'Li et al. (2023). BigCode/HuggingFace. 15B params, trained on The Stack (permissively licensed code only). Open-source, commercially viable. Strong on HumanEval. Ethical code model.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['starcoder', 'bigcode', 'huggingface', 'open-source', 'ethical-ai']
+  },
+  {
+    id: 'research-codellama-2023',
+    title: 'Code Llama: Open Foundation Models for Code',
+    url: 'https://arxiv.org/abs/2308.12950',
+    source: 'arXiv',
+    category: 'code-models',
+    summary: 'Rozière et al. (2023). Meta. Llama 2 fine-tuned for code. 7B/13B/34B sizes. Fill-in-the-middle, long context (100K). Instruct variants. Top open-source code model family.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['codellama', 'meta', 'llama', 'code-generation', 'open-source']
+  },
+  {
+    id: 'research-deepseekcoder-2024',
+    title: 'DeepSeek-Coder: When the Large Language Model Meets Programming',
+    url: 'https://arxiv.org/abs/2401.14196',
+    source: 'arXiv',
+    category: 'code-models',
+    summary: 'Guo et al. (2024). DeepSeek. 1.3B to 33B code models. Trained on 2T tokens of code. Beats CodeLlama on benchmarks. Fill-in-middle, repo-level completion. Strong open alternative.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['deepseek-coder', 'deepseek', 'code-generation', 'china', '2024']
+  },
+
+  // ========================================================================
+  // LONG CONTEXT (2020-2024) - Added by phil
+  // ========================================================================
+  {
+    id: 'research-longformer-2020',
+    title: 'Longformer: The Long-Document Transformer',
+    url: 'https://arxiv.org/abs/2004.05150',
+    source: 'arXiv',
+    category: 'long-context',
+    summary: 'Beltagy et al. (2020). Allen AI. Sliding window + global attention. O(n) instead of O(n²). Handles 4K+ tokens. Foundation for long-context research. Led to BigBird, LongT5.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['longformer', 'long-context', 'efficient-attention', 'allen-ai', 'seminal']
+  },
+  {
+    id: 'research-rope-2021',
+    title: 'RoFormer: Enhanced Transformer with Rotary Position Embedding',
+    url: 'https://arxiv.org/abs/2104.09864',
+    source: 'arXiv',
+    category: 'long-context',
+    summary: 'Su et al. (2021). Rotary Position Embeddings (RoPE). Relative positions via rotation matrices. Extrapolates to longer sequences. Used in Llama, Mistral, most modern LLMs.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['rope', 'rotary-embeddings', 'position-encoding', 'extrapolation', 'seminal']
+  },
+  {
+    id: 'research-alibi-2022',
+    title: 'Train Short, Test Long: Attention with Linear Biases Enables Input Length Generalization',
+    url: 'https://arxiv.org/abs/2108.12409',
+    source: 'arXiv',
+    category: 'long-context',
+    summary: 'Press et al. (2022). ALiBi - add linear bias to attention. No position embeddings needed. Train on short, extrapolate to long. Used in MPT, BLOOM. Key length generalization technique.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['alibi', 'position-encoding', 'length-generalization', 'efficient']
+  },
+  {
+    id: 'research-yarn-2023',
+    title: 'YaRN: Efficient Context Window Extension of Large Language Models',
+    url: 'https://arxiv.org/abs/2309.00071',
+    source: 'arXiv',
+    category: 'long-context',
+    summary: 'Peng et al. (2023). Yet another RoPE extensioN. Extends RoPE context 10x+ with minimal fine-tuning. NTK-aware interpolation + attention scaling. Key for 100K+ context windows.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['yarn', 'rope-extension', 'long-context', 'context-scaling', '2023']
+  },
+  {
+    id: 'research-longlora-2023',
+    title: 'LongLoRA: Efficient Fine-tuning of Long-Context Large Language Models',
+    url: 'https://arxiv.org/abs/2309.12307',
+    source: 'arXiv',
+    category: 'long-context',
+    summary: 'Chen et al. (2023). MIT/HKU. Extend context with shifted sparse attention during training. Combine with LoRA for efficiency. Extend Llama-2 to 100K context. Practical long-context fine-tuning.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-05T00:22:00.000Z',
+    tags: ['longlora', 'lora', 'long-context', 'efficient-training', 'mit']
   }
 ];
 
