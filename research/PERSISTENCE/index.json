@@ -232,6 +232,13 @@
           "readTime": "15 min",
           "priority": 4,
           "summary": "Data ingestion strategy for Carfax acquisition positioning. TAM expansion 10x."
+        },
+        {
+          "file": "telemetry-architecture.md",
+          "title": "Telemetry Architecture",
+          "readTime": "12 min",
+          "priority": 5,
+          "summary": "GPS/OBD telemetry pipeline for Carfax value proposition. Technical backbone for acquisition."
         }
       ]
     },
