@@ -11829,6 +11829,7 @@
             <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
             <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
             <button class="ceo-tab" data-ceotab="airesearch" onclick="switchCeoTab('airesearch')" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white;">🧠 AI Research</button>
+            <button class="ceo-tab" data-ceotab="carfax" onclick="switchCeoTab('carfax')" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;">🚗 Carfax Strategy</button>
           </div>
           <div class="ceo-content">
             <!-- Work Progress Panel - See what agents accomplished -->
@@ -11910,6 +11911,18 @@
               </div>
               <div class="ceo-list" id="ceoAiresearchList" style="padding: 16px 24px;">
                 <div class="ceo-empty">Loading AI research documents...</div>
+              </div>
+            </div>
+            <!-- Carfax Strategy Panel -->
+            <div class="ceo-panel" id="ceoCarfaxPanel">
+              <div class="ceo-panel-header" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">🚗 Carfax Acquisition Strategy</span>
+                </div>
+                <button class="ceo-add-btn" onclick="loadCarfaxStrategy()" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);">🔄 Refresh</button>
+              </div>
+              <div class="ceo-list" id="ceoCarfaxList" style="padding: 16px 24px;">
+                <div class="ceo-empty">Loading Carfax strategy...</div>
               </div>
             </div>
           </div>
@@ -15542,6 +15555,163 @@
     function searchAiResearch(topic) {
       document.getElementById('aiResearchSearch').value = topic;
       filterAiResearch();
+    }
+
+    // === CARFAX STRATEGY ===
+    async function loadCarfaxStrategy() {
+      const container = document.getElementById('ceoCarfaxList');
+      container.innerHTML = '<div class="ceo-empty">Loading Carfax strategy...</div>';
+
+      try {
+        // Fetch the carfax strategy document
+        const res = await fetch(API_BASE + '/research?action=persistence-doc&file=carfax-integration-strategy.md', { credentials: 'include' });
+
+        if (res.ok) {
+          const data = await res.json();
+
+          // Parse key sections from the markdown
+          const content = data.content || '';
+
+          // Extract key metrics
+          const metrics = {
+            carfaxRecords: '35+ billion',
+            dataSources: '151,000+',
+            currentTAM: '$2B/year',
+            expandedTAM: '$110B+ by 2030',
+            tamMultiple: '10x'
+          };
+
+          container.innerHTML = `
+            <!-- Executive Summary Card -->
+            <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.05) 100%); border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(249, 115, 22, 0.2);">
+              <h3 style="margin: 0 0 12px 0; color: var(--text-primary); font-size: 16px;">🎯 Acquisition Strategy Summary</h3>
+              <p style="color: var(--text-secondary); margin: 0 0 16px 0; font-size: 13px; line-height: 1.6;">
+                Position Piston Labs as an attractive acquisition target by demonstrating superior data integration capabilities that enhance Carfax's vehicle history platform with <strong style="color: var(--accent);">real-time telemetry</strong>.
+              </p>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;">
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 20px; font-weight: 700; color: #f97316;">${metrics.carfaxRecords}</div>
+                  <div style="font-size: 11px; color: var(--text-tertiary);">Carfax Records</div>
+                </div>
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 20px; font-weight: 700; color: #f97316;">${metrics.dataSources}</div>
+                  <div style="font-size: 11px; color: var(--text-tertiary);">Data Sources</div>
+                </div>
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 20px; font-weight: 700; color: #10b981;">${metrics.tamMultiple}</div>
+                  <div style="font-size: 11px; color: var(--text-tertiary);">TAM Expansion</div>
+                </div>
+                <div style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; text-align: center;">
+                  <div style="font-size: 20px; font-weight: 700; color: #10b981;">${metrics.expandedTAM}</div>
+                  <div style="font-size: 11px; color: var(--text-tertiary);">Combined TAM</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Key Insight Card -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #f97316;">
+              <h4 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 14px;">💡 Key Insight</h4>
+              <p style="color: var(--text-secondary); margin: 0; font-size: 13px; line-height: 1.6;">
+                Carfax has <strong>historical records</strong> but lacks <strong>real-time telematics</strong>.
+                We have <strong>live GPS/OBD telemetry</strong>. Combined = complete vehicle intelligence platform.
+              </p>
+            </div>
+
+            <!-- What We Bring -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">🚀 What We Bring to Carfax</h4>
+              <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid var(--border);">
+                    <th style="text-align: left; padding: 8px; color: var(--text-secondary);">Capability</th>
+                    <th style="text-align: left; padding: 8px; color: var(--text-secondary);">Current Carfax</th>
+                    <th style="text-align: left; padding: 8px; color: var(--text-secondary);">With Piston Labs</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td style="padding: 8px; color: var(--text-primary);">Data Currency</td><td style="padding: 8px; color: #ef4444;">Days/weeks old</td><td style="padding: 8px; color: #10b981;">Real-time</td></tr>
+                  <tr><td style="padding: 8px; color: var(--text-primary);">Odometer Verification</td><td style="padding: 8px; color: #ef4444;">Trust service reports</td><td style="padding: 8px; color: #10b981;">Continuous tracking</td></tr>
+                  <tr><td style="padding: 8px; color: var(--text-primary);">Location Intelligence</td><td style="padding: 8px; color: #ef4444;">None</td><td style="padding: 8px; color: #10b981;">Live GPS</td></tr>
+                  <tr><td style="padding: 8px; color: var(--text-primary);">Vehicle Health</td><td style="padding: 8px; color: #ef4444;">None</td><td style="padding: 8px; color: #10b981;">OBD diagnostics</td></tr>
+                  <tr><td style="padding: 8px; color: var(--text-primary);">Fraud Detection</td><td style="padding: 8px; color: #ef4444;">Pattern matching</td><td style="padding: 8px; color: #10b981;">Continuous monitoring</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Implementation Roadmap -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">📋 Implementation Roadmap</h4>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">1</div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">Phase 1: Proof of Concept (4 weeks)</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">Build Carfax API wrapper, link devices to VINs, create unified query endpoint</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">2</div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">Phase 2: Service Record Integration (8 weeks)</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">Apply for data transfer agreement, build FTP submission, add telemetry snapshots</div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 32px; height: 32px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 12px;">3</div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">Phase 3: Enterprise Integration (12 weeks)</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">Real-time sync pipeline, fraud detection algorithms, dealer dashboard, scale to 1000+ devices</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Items -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">⚡ Immediate Actions</h4>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="color: #f97316;">👤</span>
+                  <span style="color: var(--text-primary); font-size: 12px;"><strong>Tyler:</strong> Contact Carfax BD about partnership/data sharing</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="color: #f97316;">💻</span>
+                  <span style="color: var(--text-primary); font-size: 12px;"><strong>Tech:</strong> Build VIN linking for all fleet devices</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="color: #f97316;">🔍</span>
+                  <span style="color: var(--text-primary); font-size: 12px;"><strong>Research:</strong> S&P Global Mobility acquisition history analysis</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="color: #f97316;">🎯</span>
+                  <span style="color: var(--text-primary); font-size: 12px;"><strong>Team:</strong> Prepare demo of combined vehicle intelligence</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- View Full Document Button -->
+            <div style="text-align: center; padding: 16px;">
+              <button onclick="viewCarfaxDoc()" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 14px;">
+                📄 View Full Strategy Document
+              </button>
+            </div>
+          `;
+        } else {
+          throw new Error('Failed to load document');
+        }
+      } catch (e) {
+        container.innerHTML = `
+          <div class="ceo-empty">
+            <div style="font-size: 48px; margin-bottom: 12px;">🚗</div>
+            <div style="color: var(--text-secondary);">Carfax strategy document not found</div>
+            <button onclick="loadCarfaxStrategy()" style="margin-top: 16px; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Retry</button>
+          </div>
+        `;
+      }
+    }
+
+    async function viewCarfaxDoc() {
+      viewAiResearchDoc('carfax-integration-strategy.md');
     }
 
     // === WORK PROGRESS - See what agents accomplished ===

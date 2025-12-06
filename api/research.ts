@@ -178,6 +178,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'README.md',
           // Telemetry & Acquisition
           'telemetry-architecture.md',
+          'carfax-integration-strategy.md',
         ];
 
         const filename = file as string;
