@@ -1,8 +1,8 @@
 {
   "title": "PERSISTENCE Research Library",
   "description": "Strategic research for building our own AI",
-  "lastUpdated": "2025-12-06T06:45:00.000Z",
-  "totalDocs": 32,
+  "lastUpdated": "2025-12-06T07:12:00.000Z",
+  "totalDocs": 29,
   "categories": [
     {
       "id": "strategic",
@@ -276,11 +276,12 @@
     "ceoStart": ["executive-summary.md", "philosophy-framework-summary.md", "implementation-roadmap.md"],
     "technicalDeep": ["substrate-architecture.md", "model-architecture.md", "data-strategy.md"],
     "philosophyTrack": ["philosophy-framework-summary.md", "philosophy-framework.md", "substrate-philosophy.md"],
-    "businessCase": ["executive-summary.md", "funding-requirements.md", "competitive-positioning.md"]
+    "businessCase": ["executive-summary.md", "funding-requirements.md", "competitive-positioning.md"],
+    "carfaxAcquisition": ["carfax-integration-strategy.md", "telemetry-architecture.md", "competitive-positioning.md"]
   },
   "researchApi": {
     "endpoint": "https://agent-coord-mcp.vercel.app/api/research",
-    "topics": ["substrate", "philosophy", "alignment", "technology"],
-    "totalEntries": 120
+    "topics": ["substrate", "philosophy", "alignment", "technology", "carfax", "acquisition"],
+    "totalEntries": 504
   }
 }
