@@ -143,18 +143,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         // Security: Only allow specific files from PERSISTENCE folder
         const allowedFiles = [
+          // Core Strategy
           'executive-summary.md',
-          'philosophy-framework-summary.md',
-          'philosophy-framework.md',
           'implementation-roadmap.md',
-          'multi-agent-coordination.md',
+          'timeline.md',
+          'risk-analysis.md',
+          // Philosophy & Architecture
+          'philosophy-framework.md',
+          'philosophy-framework-summary.md',
+          'substrate-architecture.md',
+          'substrate-philosophy.md',
+          'cross-ai-protocol.md',
+          // Technical
           'model-architecture.md',
+          'multi-agent-coordination.md',
           'data-strategy.md',
-          'responsible-ai.md',
-          'competitive-positioning.md',
           'compute-infrastructure.md',
           'training-pipeline.md',
+          'evaluation.md',
+          // Phases
+          'phase-1-foundation.md',
+          'phase-2-finetuning.md',
+          'phase-3-production.md',
+          // Business
+          'competitive-positioning.md',
           'funding-requirements.md',
+          'industry-applications.md',
+          'team-building.md',
+          // Reference
+          'responsible-ai.md',
+          'compliance.md',
+          'technology-landscape-2025.md',
+          'glossary.md',
+          'README.md',
         ];
 
         const filename = file as string;

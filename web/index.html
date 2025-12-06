@@ -15323,18 +15323,38 @@
     // === AI RESEARCH - Build Our Own AI Documentation ===
     let aiResearchData = null;
     const persistenceDocuments = [
-      { file: 'executive-summary.md', title: '📋 Executive Summary', desc: 'Quick-reference guide - start here', readTime: '3 min', priority: 1 },
-      { file: 'philosophy-framework-summary.md', title: '🧠 Philosophy Framework (1-Pager)', desc: 'CEO summary of Stoic AI alignment', readTime: '3 min', priority: 2 },
-      { file: 'philosophy-framework.md', title: '📚 Philosophy Framework (Full)', desc: 'Complete Stoic AI philosophical synthesis', readTime: '15 min', priority: 3 },
-      { file: 'implementation-roadmap.md', title: '🗺️ Implementation Roadmap', desc: 'Phases 1-3 with costs and milestones', readTime: '8 min', priority: 4 },
-      { file: 'multi-agent-coordination.md', title: '🤝 Multi-Agent Coordination', desc: 'Our unique architecture vs competitors', readTime: '10 min', priority: 5 },
-      { file: 'model-architecture.md', title: '🏗️ Model Architecture', desc: 'How transformers work, scaling laws', readTime: '10 min', priority: 6 },
-      { file: 'data-strategy.md', title: '📊 Data Strategy', desc: 'Training data requirements', readTime: '8 min', priority: 7 },
-      { file: 'responsible-ai.md', title: '⚖️ Responsible AI', desc: 'Safety techniques, RLHF, red teaming', readTime: '15 min', priority: 8 },
-      { file: 'competitive-positioning.md', title: '🎯 Competitive Positioning', desc: 'Market landscape, differentiation', readTime: '12 min', priority: 9 },
-      { file: 'compute-infrastructure.md', title: '💻 Compute Infrastructure', desc: 'GPU requirements, cloud vs on-prem', readTime: '8 min', priority: 10 },
-      { file: 'training-pipeline.md', title: '⚙️ Training Pipeline', desc: 'Pre-training, fine-tuning process', readTime: '10 min', priority: 11 },
-      { file: 'funding-requirements.md', title: '💰 Funding Requirements', desc: 'Cost estimates by tier', readTime: '5 min', priority: 12 }
+      // Strategic (Start Here)
+      { file: 'executive-summary.md', title: '📋 Executive Summary', desc: 'Quick-reference guide - start here', readTime: '5 min', priority: 1, category: 'strategic' },
+      { file: 'philosophy-framework-summary.md', title: '🧠 Philosophy Framework (1-Pager)', desc: 'CEO summary of Stoic AI alignment', readTime: '3 min', priority: 2, category: 'strategic' },
+      { file: 'competitive-positioning.md', title: '🎯 Competitive Positioning', desc: 'Market landscape, agent framework comparison', readTime: '12 min', priority: 3, category: 'strategic' },
+      // Architecture
+      { file: 'substrate-architecture.md', title: '🏗️ Substrate Architecture', desc: '4-layer design for cross-AI collaboration', readTime: '15 min', priority: 4, category: 'architecture' },
+      { file: 'substrate-philosophy.md', title: '🌐 Substrate Philosophy', desc: 'Extended Mind, Enactivism foundations', readTime: '12 min', priority: 5, category: 'architecture' },
+      { file: 'multi-agent-coordination.md', title: '🤝 Multi-Agent Coordination', desc: 'Our architecture vs LangGraph, CrewAI, AutoGen', readTime: '10 min', priority: 6, category: 'architecture' },
+      { file: 'model-architecture.md', title: '⚙️ Model Architecture', desc: 'Transformer variants, attention mechanisms', readTime: '10 min', priority: 7, category: 'architecture' },
+      // Roadmap & Phases
+      { file: 'implementation-roadmap.md', title: '🗺️ Implementation Roadmap', desc: '16-24 week plan with costs ($260K-1.25M)', readTime: '8 min', priority: 8, category: 'roadmap' },
+      { file: 'phase-1-foundation.md', title: '📍 Phase 1: Foundation', desc: 'Weeks 1-4, GraphRAG & memory prototype', readTime: '10 min', priority: 9, category: 'roadmap' },
+      { file: 'phase-2-finetuning.md', title: '📍 Phase 2: Fine-Tuning', desc: 'Weeks 5-12, training infrastructure', readTime: '10 min', priority: 10, category: 'roadmap' },
+      { file: 'phase-3-production.md', title: '📍 Phase 3: Production', desc: 'Weeks 13-24, enterprise features', readTime: '10 min', priority: 11, category: 'roadmap' },
+      { file: 'timeline.md', title: '📅 Timeline', desc: 'Development milestones, MVP to production', readTime: '5 min', priority: 12, category: 'roadmap' },
+      { file: 'risk-analysis.md', title: '⚠️ Risk Analysis', desc: '14 risks with mitigations and Stoic framing', readTime: '8 min', priority: 13, category: 'roadmap' },
+      // Philosophy
+      { file: 'philosophy-framework.md', title: '📚 Philosophy Framework (Full)', desc: 'Complete Stoic AI alignment thesis', readTime: '15 min', priority: 14, category: 'philosophy' },
+      { file: 'responsible-ai.md', title: '⚖️ Responsible AI', desc: 'Safety techniques, RLHF, red teaming', readTime: '15 min', priority: 15, category: 'philosophy' },
+      // Technical
+      { file: 'data-strategy.md', title: '📊 Data Strategy', desc: 'Training datasets, data curation, synthetic data', readTime: '8 min', priority: 16, category: 'technical' },
+      { file: 'compute-infrastructure.md', title: '💻 Compute Infrastructure', desc: 'GPU clusters, TPU requirements, cloud vs on-prem', readTime: '8 min', priority: 17, category: 'technical' },
+      { file: 'training-pipeline.md', title: '🔄 Training Pipeline', desc: 'Pre-training, fine-tuning, RLHF, evaluation', readTime: '10 min', priority: 18, category: 'technical' },
+      { file: 'technology-landscape-2025.md', title: '🌍 Technology Landscape 2025', desc: 'Real-time market intel: 45+ sources', readTime: '20 min', priority: 19, category: 'technical' },
+      // Business
+      { file: 'funding-requirements.md', title: '💰 Funding Requirements', desc: 'Cost estimates by tier ($10M-$500M)', readTime: '5 min', priority: 20, category: 'business' },
+      { file: 'team-building.md', title: '👥 Team Building', desc: 'ML engineers, researchers, infrastructure', readTime: '8 min', priority: 21, category: 'business' },
+      { file: 'compliance.md', title: '📜 Compliance', desc: 'EU AI Act, US regulations, industry-specific', readTime: '10 min', priority: 22, category: 'business' },
+      // Reference
+      { file: 'glossary.md', title: '📖 Glossary', desc: 'Plain-English explanations of 60+ terms', readTime: '10 min', priority: 23, category: 'reference' },
+      { file: 'industry-applications.md', title: '🏭 Industry Applications', desc: 'AI across 15+ industries with market data', readTime: '15 min', priority: 24, category: 'reference' },
+      { file: 'evaluation.md', title: '📏 Evaluation', desc: 'Benchmarking, capability assessment', readTime: '8 min', priority: 25, category: 'reference' }
     ];
 
     async function loadAiResearch() {
