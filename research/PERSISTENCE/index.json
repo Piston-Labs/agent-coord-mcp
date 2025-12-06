@@ -2,7 +2,7 @@
   "title": "PERSISTENCE Research Library",
   "description": "Strategic research for building our own AI",
   "lastUpdated": "2025-12-06T06:45:00.000Z",
-  "totalDocs": 27,
+  "totalDocs": 31,
   "categories": [
     {
       "id": "strategic",
@@ -90,17 +90,38 @@
           "summary": "16-24 week plan with costs ($260K-1.25M)."
         },
         {
+          "file": "phase-1-foundation.md",
+          "title": "Phase 1: Foundation",
+          "readTime": "10 min",
+          "priority": 2,
+          "summary": "Weeks 1-4, $10K-50K. GraphRAG evaluation, memory prototype, research query API."
+        },
+        {
+          "file": "phase-2-finetuning.md",
+          "title": "Phase 2: Fine-Tuning",
+          "readTime": "10 min",
+          "priority": 3,
+          "summary": "Weeks 5-12, $50K-200K. Training data, fine-tuning infrastructure, swarm intelligence."
+        },
+        {
+          "file": "phase-3-production.md",
+          "title": "Phase 3: Production",
+          "readTime": "10 min",
+          "priority": 4,
+          "summary": "Weeks 13-24, $200K-1M. Multi-model routing, distributed fleet, enterprise features."
+        },
+        {
           "file": "timeline.md",
           "title": "Timeline",
           "readTime": "5 min",
-          "priority": 2,
+          "priority": 5,
           "summary": "Development phases, milestones, MVP to production."
         },
         {
           "file": "risk-analysis.md",
           "title": "Risk Analysis",
           "readTime": "8 min",
-          "priority": 3,
+          "priority": 6,
           "summary": "14 risks with mitigations and Stoic framing."
         }
       ]
@@ -124,6 +145,21 @@
           "readTime": "15 min",
           "priority": 2,
           "summary": "Safety techniques, RLHF alternatives, red teaming."
+        }
+      ]
+    },
+    {
+      "id": "operations",
+      "name": "Operations",
+      "icon": "🚀",
+      "description": "Deployment and production operations",
+      "docs": [
+        {
+          "file": "deployment-guide.md",
+          "title": "Deployment Guide",
+          "readTime": "15 min",
+          "priority": 1,
+          "summary": "Production deployment patterns, infrastructure, monitoring, security."
         }
       ]
     },
@@ -231,6 +267,6 @@
   "researchApi": {
     "endpoint": "https://agent-coord-mcp.vercel.app/api/research",
     "topics": ["substrate", "philosophy", "alignment", "technology"],
-    "totalEntries": 106
+    "totalEntries": 120
   }
 }
