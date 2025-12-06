@@ -11655,6 +11655,30 @@
               </div>
             </div>
             <div class="research-nav-section">
+              <div class="research-nav-title">Industry AI</div>
+              <div class="research-nav-item" onclick="filterResearch('education-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🎓</span>
+                  <span class="research-nav-label">Education AI</span>
+                </div>
+                <span class="research-nav-count" id="countEducationAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('finance-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">💰</span>
+                  <span class="research-nav-label">Finance AI</span>
+                </div>
+                <span class="research-nav-count" id="countFinanceAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('legal-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">⚖️</span>
+                  <span class="research-nav-label">Legal AI</span>
+                </div>
+                <span class="research-nav-count" id="countLegalAI">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
               <div class="research-nav-title">Sources</div>
               <div class="research-nav-item" onclick="filterResearchBySource('arXiv')">
                 <div class="research-nav-item-left">
@@ -13317,6 +13341,10 @@
       countEl('countQuantumML', articles.filter(a => a.category === 'quantum-ml').length);
       countEl('countPrivacyAI', articles.filter(a => a.category === 'privacy-ai').length);
       countEl('countClimateAI', articles.filter(a => a.category === 'climate-ai').length);
+      // Industry AI
+      countEl('countEducationAI', articles.filter(a => a.category === 'education-ai').length);
+      countEl('countFinanceAI', articles.filter(a => a.category === 'finance-ai').length);
+      countEl('countLegalAI', articles.filter(a => a.category === 'legal-ai').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13372,7 +13400,11 @@
         // Cross-Domain
         'quantum-ml': 'Quantum ML',
         'privacy-ai': 'Privacy AI',
-        'climate-ai': 'Climate AI'
+        'climate-ai': 'Climate AI',
+        // Industry AI
+        'education-ai': 'Education AI',
+        'finance-ai': 'Finance AI',
+        'legal-ai': 'Legal AI'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
