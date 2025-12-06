@@ -10108,6 +10108,206 @@
     }
     /* ===== END MOBILE RESPONSIVENESS FIX ===== */
 
+    /* ===== ENHANCED MOBILE EXPERIENCE ===== */
+    @media (max-width: 768px) {
+      /* Pull-to-refresh visual indicator */
+      .messages, .ceo-list, .research-content {
+        overscroll-behavior-y: contain;
+      }
+
+      /* Better touch ripple effect */
+      .touch-ripple {
+        position: relative;
+        overflow: hidden;
+      }
+      .touch-ripple::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 50%;
+        transform: translate(-50%, -50%);
+        transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .touch-ripple:active::after {
+        width: 200%;
+        height: 200%;
+        opacity: 1;
+      }
+
+      /* Floating action button for quick actions */
+      .mobile-fab {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        z-index: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+      .mobile-fab:active {
+        transform: scale(0.92);
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      /* Bottom sheet for modals on mobile */
+      .ceo-modal, .modal, .learning-modal {
+        max-height: 90vh !important;
+        max-height: 90dvh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        border-radius: 16px 16px 0 0 !important;
+        margin: 0 !important;
+        position: fixed !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        top: auto !important;
+        animation: slideUp 0.3s ease !important;
+      }
+
+      @keyframes slideUp {
+        from {
+          transform: translateY(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+
+      /* Modal drag handle for dismissal hint */
+      .ceo-modal::before, .modal::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--border);
+        border-radius: 2px;
+        margin: 8px auto 16px;
+      }
+
+      /* Improved header on mobile */
+      header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 100 !important;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        background: rgba(13, 17, 23, 0.95) !important;
+      }
+
+      /* Swipe hint animation for tabs */
+      .ceo-tabs::after, .tabs::after {
+        content: '';
+        position: absolute;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 30px;
+        background: linear-gradient(90deg, transparent, var(--bg-secondary));
+        pointer-events: none;
+        opacity: 0.8;
+      }
+
+      /* Card press effect */
+      .ceo-contact-card, .ceo-idea-card, .ceo-note-card, .ceo-task-card,
+      .device-card, .agent-card, .message, .task-item {
+        -webkit-tap-highlight-color: transparent;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      /* Smooth momentum scrolling everywhere */
+      * {
+        -webkit-overflow-scrolling: touch;
+      }
+
+      /* Fix for iOS rubber-banding */
+      body {
+        overscroll-behavior: none;
+      }
+
+      /* Larger close buttons on mobile */
+      .ceo-modal-close, .modal-close, .close-btn {
+        min-width: 44px !important;
+        min-height: 44px !important;
+        font-size: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+      }
+
+      /* Status bar safe area for notched phones */
+      .tabs, .ceo-tabs {
+        padding-top: max(10px, env(safe-area-inset-top)) !important;
+      }
+
+      /* Better focus states for accessibility */
+      button:focus-visible,
+      input:focus-visible,
+      select:focus-visible,
+      .tab-btn:focus-visible,
+      .ceo-tab:focus-visible {
+        outline: 3px solid var(--accent) !important;
+        outline-offset: 2px !important;
+      }
+
+      /* Loading skeleton animation */
+      .skeleton {
+        background: linear-gradient(90deg,
+          var(--bg-tertiary) 25%,
+          var(--bg-secondary) 50%,
+          var(--bg-tertiary) 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.5s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+      }
+    }
+
+    /* Extra polish for very small screens */
+    @media (max-width: 375px) {
+      /* Even more compact on iPhone SE */
+      .ceo-modal::before, .modal::before {
+        margin: 6px auto 12px;
+      }
+
+      .mobile-fab {
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+        right: 16px;
+      }
+
+      /* Tighter spacing */
+      .ceo-header, .panel-header {
+        padding: 10px !important;
+      }
+    }
+    /* ===== END ENHANCED MOBILE EXPERIENCE ===== */
+
   </style>
   </div>
 
