@@ -681,4 +681,69 @@ export function registerContextTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // RESEARCH-QUERY TOOL - Search internal philosophy and research library
+  // ============================================================================
+
+  server.tool(
+    'research-query',
+    'Search internal philosophy library and research corpus. Query our Stoic AI framework, alignment research, consciousness discussions, and technical articles. Returns scored results from both research library and memory.',
+    {
+      query: z.string().describe('Search query (e.g., "stoic virtue ethics", "alignment corrigibility", "consciousness IIT")'),
+      type: z.enum(['all', 'research', 'memory', 'philosophy']).optional()
+        .describe('Filter by type: all (default), research, memory, or philosophy'),
+      category: z.string().optional().describe('Filter by category (e.g., philosophy, ai-safety, multi-agent)'),
+      limit: z.number().optional().describe('Max results to return (default 20, max 100)'),
+      minScore: z.number().optional().describe('Minimum relevance score 0-1 (default 0.3)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { query, type = 'all', category, limit = 20, minScore = 0.3, agentId } = args;
+
+      try {
+        const params = new URLSearchParams({
+          q: query,
+          type: type,
+          limit: String(Math.min(limit, 100)),
+          minScore: String(minScore)
+        });
+        if (category) params.append('category', category);
+
+        const res = await fetch(`${API_BASE}/api/research-query?${params}`);
+        const data = await res.json();
+
+        // Format for agent consumption
+        if (data.results && data.results.length > 0) {
+          const formatted = {
+            query: data.query,
+            found: data.total,
+            shown: data.shown,
+            breakdown: data.breakdown,
+            results: data.results.map((r: any) => ({
+              type: r.type,
+              title: r.title,
+              score: r.score.toFixed(2),
+              category: r.category,
+              tags: r.tags.slice(0, 5),
+              content: r.content.substring(0, 300) + (r.content.length > 300 ? '...' : ''),
+              url: r.url || null,
+              source: r.source
+            })),
+            searchTime: `${data.searchTime}ms`
+          };
+          return { content: [{ type: 'text', text: JSON.stringify(formatted, null, 2) }] };
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify({
+          query: data.query,
+          found: 0,
+          hint: 'Try broader search terms or different category',
+          searchTime: `${data.searchTime}ms`
+        }, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }
