@@ -6,8 +6,8 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
-const RESEARCH_KEY = 'agent-coord:research-library';
-const RESEARCH_INDEX_KEY = 'agent-coord:research-index';
+const RESEARCH_KEY = 'agent-coord:research-findings';  // Different from research-library which stores paper articles
+const RESEARCH_INDEX_KEY = 'agent-coord:research-findings-index';
 
 interface ResearchSource {
   url: string;
