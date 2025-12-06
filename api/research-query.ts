@@ -187,7 +187,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Search memory entries (for philosophy discussions, insights, etc.)
     if (searchTypes.includes('memory')) {
-      const memories: MemoryEntry[] = await redis.lrange(MEMORY_KEY, 0, -1) as MemoryEntry[] || [];
+      // Memory is stored as a hash, not a list
+      const memoryHash = await redis.hgetall(MEMORY_KEY) as Record<string, string> || {};
+      const memories: MemoryEntry[] = Object.entries(memoryHash).map(([id, data]) => {
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        return { id, ...parsed };
+      });
 
       for (const memory of memories) {
         // Category filter
