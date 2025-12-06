@@ -11394,6 +11394,16 @@
           </div>
           <div class="research-nav" id="researchNav">
             <div class="research-nav-section">
+              <div class="research-nav-title">Implementation</div>
+              <div class="research-nav-item" onclick="showFindings()">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🧠</span>
+                  <span class="research-nav-label">Titans/MIRAS</span>
+                </div>
+                <span class="research-nav-count" id="countFindings">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
               <div class="research-nav-title">Browse</div>
               <div class="research-nav-item active" onclick="filterResearch('all')">
                 <div class="research-nav-item-left">
@@ -13186,6 +13196,75 @@
       closeResearchSidebar();
     }
 
+    // Titans/MIRAS Findings functions
+    let findingsData = { findings: [], count: 0 };
+    let showingFindings = false;
+
+    async function fetchFindings() {
+      try {
+        const res = await fetch(API_BASE + '/research');
+        if (!res.ok) throw new Error('Failed to fetch findings');
+        findingsData = await res.json();
+        document.getElementById('countFindings').textContent = findingsData.count || 0;
+      } catch (e) {
+        console.error('fetchFindings error:', e);
+      }
+    }
+
+    function showFindings() {
+      showingFindings = true;
+      currentResearchFilter = 'findings';
+      document.querySelectorAll('.research-nav-item').forEach(item => item.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+      document.getElementById('researchViewTitle').textContent = 'Titans/MIRAS Implementation';
+      renderFindingsGrid();
+      closeResearchSidebar();
+    }
+
+    function renderFindingsGrid() {
+      const gridEl = document.getElementById('researchGrid');
+      const findings = findingsData.findings || [];
+
+      if (findings.length === 0) {
+        gridEl.innerHTML = '<div class="research-empty"><div class="research-empty-icon">🧠</div><div>No findings yet. Research in progress...</div></div>';
+        return;
+      }
+
+      gridEl.innerHTML = findings.map(f => {
+        const statusColors = { draft: 'var(--warning)', reviewed: 'var(--accent)', applied: 'var(--success)' };
+        const statusEmojis = { draft: '📝', reviewed: '✅', applied: '🚀' };
+        return `
+          <div class="research-card ${f.status === 'applied' ? 'seminal' : ''}">
+            <div class="research-card-header">
+              <span class="research-source" style="background: ${statusColors[f.status] || 'var(--accent)'}">${statusEmojis[f.status] || ''} ${f.status?.toUpperCase() || 'DRAFT'}</span>
+              <span class="research-year">${f.topic}</span>
+            </div>
+            <h3 class="research-title">${f.title}</h3>
+            <p class="research-summary">${f.summary}</p>
+            ${f.keyInsights && f.keyInsights.length > 0 ? `
+              <div style="margin: 8px 0; font-size: 11px;">
+                <strong style="color: var(--accent);">Key Insights:</strong>
+                <ul style="margin: 4px 0 0 16px; color: var(--text-secondary);">
+                  ${f.keyInsights.slice(0, 3).map(i => `<li>${i}</li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+            <div class="research-footer">
+              <div class="research-tags">
+                ${(f.tags || []).slice(0, 4).map(t => `<span class="research-tag">${t}</span>`).join('')}
+              </div>
+              <div class="research-discovered">by ${f.createdBy || 'unknown'}</div>
+            </div>
+            ${f.sources && f.sources.length > 0 ? `
+              <div style="margin-top: 8px; font-size: 10px; color: var(--text-secondary);">
+                Sources: ${f.sources.map(s => `<a href="${s.url}" target="_blank" style="color: var(--accent);">${s.title}</a>`).join(', ')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
     function searchResearch(query) {
       currentResearchSearch = query.toLowerCase();
       renderResearchGrid();
@@ -14807,6 +14886,7 @@
       // Fetch research library when switching to research tab
       if (tabName === 'research') {
         fetchResearchLibrary();
+        fetchFindings(); // Load Titans/MIRAS findings
         fetchAnalysisList(); // Load analysis cache for learning indicators
       }
 
