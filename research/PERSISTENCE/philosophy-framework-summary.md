@@ -1,3 +1,12 @@
+---
+cluster: [philosophy, strategic]
+complexity: L1
+ai_summary: One-pager on Stoic AI alignment. Critiques RLHF/Constitutional AI, proposes virtue-based intrinsic motivation as defensible moat. Key differentiator from OpenAI/Anthropic approaches.
+dependencies: [philosophy-framework.md, substrate-philosophy.md, responsible-ai.md]
+last_updated: 2025-12-06
+tags: [philosophy, stoic, alignment, virtue-ethics, differentiation]
+---
+
 # Philosophy Framework Summary: One-Pager for Strategic Decisions
 
 > TL;DR: Why Stoic virtue ethics gives us a defensible moat in AI alignment

@@ -1,3 +1,12 @@
+---
+cluster: [strategic, technical]
+complexity: L2
+ai_summary: Carfax acquisition positioning playbook. Details 151K data sources, VIN linking, fraud detection, TAM expansion from $2B to $110B. Implementation roadmap with 3 phases.
+dependencies: [telemetry-architecture.md, competitive-positioning.md, executive-summary.md]
+last_updated: 2025-12-06
+tags: [carfax, acquisition, integration, telemetry, fraud-detection, tam-expansion]
+---
+
 # Carfax Integration Strategy: Data Ingestion for Acquisition Positioning
 
 > How Piston Labs can consume Carfax data to create compelling acquisition value

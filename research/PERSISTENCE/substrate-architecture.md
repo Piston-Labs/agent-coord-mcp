@@ -1,3 +1,12 @@
+---
+cluster: [architecture, technical]
+complexity: L2
+ai_summary: 4-layer substrate design enabling cross-model memory, externalized rules, runtime capability injection. Core technical differentiator - makes any model more capable without retraining.
+dependencies: [substrate-philosophy.md, cross-ai-protocol.md, multi-agent-coordination.md]
+last_updated: 2025-12-06
+tags: [substrate, architecture, cross-ai, capability-injection, memory-sharing]
+---
+
 # Substrate Architecture: Post-Training Capability Injection
 
 > Infrastructure for cross-AI collaboration and runtime capability expansion

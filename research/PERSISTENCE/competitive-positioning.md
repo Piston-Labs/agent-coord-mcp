@@ -1,3 +1,12 @@
+---
+cluster: [strategic, competitive]
+complexity: L2
+ai_summary: Market landscape analysis of OpenAI, Anthropic, Google, Meta. Identifies substrate/coordination as unique differentiator. Agent framework comparison (LangGraph, CrewAI, AutoGen).
+dependencies: [executive-summary.md, substrate-architecture.md, multi-agent-coordination.md]
+last_updated: 2025-12-06
+tags: [competitive, market-landscape, differentiation, openai, anthropic, agent-frameworks]
+---
+
 # Competitive Positioning for AI Development
 
 > How to differentiate from OpenAI, Anthropic, Google, and Meta

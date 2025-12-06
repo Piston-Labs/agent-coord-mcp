@@ -1,3 +1,14 @@
+---
+cluster: [technical]
+complexity: L2
+ai_summary: "Training data acquisition strategies including Common Crawl, FineWeb, synthetic data generation, and quality filtering. Covers data licensing, curation pipelines, and scale requirements."
+dependencies:
+  - training-pipeline.md
+  - compliance.md
+tags: [training-data, datasets, synthetic-data, data-curation, FineWeb]
+last_updated: 2025-12-06
+---
+
 # Data Strategy for Training Frontier AI
 
 > How to acquire and curate the massive datasets needed for training

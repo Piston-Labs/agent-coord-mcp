@@ -1,3 +1,15 @@
+---
+cluster: [technical]
+complexity: L3
+ai_summary: "Comprehensive guide to LLM architectures including transformers, attention mechanisms, MoE, parameter scaling laws, and architectural innovations like RoPE, GQA, SwiGLU."
+dependencies:
+  - compute-infrastructure.md
+  - training-pipeline.md
+  - data-strategy.md
+tags: [architecture, transformers, attention, MoE, scaling-laws]
+last_updated: 2025-12-06
+---
+
 # Model Architecture for Frontier AI
 
 > Transformer variants, attention mechanisms, and architectural innovations

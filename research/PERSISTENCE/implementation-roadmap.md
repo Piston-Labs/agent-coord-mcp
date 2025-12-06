@@ -1,3 +1,12 @@
+---
+cluster: [roadmap, strategic]
+complexity: L2
+ai_summary: 16-24 week implementation plan. Phase 1: Foundation ($10-50K), Phase 2: Fine-tuning ($50-200K), Phase 3: Production ($200K-1M). Prioritizes agent system while preparing for fine-tuning.
+dependencies: [executive-summary.md, phase-1-foundation.md, phase-2-finetuning.md, phase-3-production.md]
+last_updated: 2025-12-06
+tags: [roadmap, implementation, phases, costs, timeline]
+---
+
 # Implementation Roadmap: From Research to Reality
 
 > Step-by-step guide for building our AI capabilities, with timelines and cost estimates

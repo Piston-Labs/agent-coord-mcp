@@ -1,3 +1,12 @@
+---
+cluster: [strategic]
+complexity: L1
+ai_summary: CEO-level overview of AI development options, costs, timeline. Recommends fine-tuning open source (Option B) over building frontier model. Highlights agent-coord as existing differentiator.
+dependencies: [implementation-roadmap.md, philosophy-framework-summary.md, funding-requirements.md]
+last_updated: 2025-12-06
+tags: [executive, strategy, costs, options, recommendation]
+---
+
 # Executive Summary: Building Our Own AI
 
 > Quick-reference guide for Piston Labs AI development strategy

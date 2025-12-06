@@ -288,6 +288,45 @@ QC Checklist:
 - Upstash Redis for state storage
 - MCP SDK for tool definitions
 
+## AI-Optimized Commit Conventions
+
+Use context cluster prefixes in commit messages for better AI parsing:
+
+### Cluster Prefixes
+| Prefix | Use For |
+|--------|---------|
+| `[technical]` | Code, APIs, infrastructure |
+| `[strategic]` | Business strategy, positioning |
+| `[research]` | Research docs, findings |
+| `[philosophy]` | Alignment, ethics, principles |
+| `[operations]` | Deployment, monitoring, ops |
+| `[competitive]` | Market analysis, competitors |
+| `[roadmap]` | Plans, timelines, milestones |
+
+### Examples
+```
+[technical] Add telemetry parsing Lambda
+[strategic+technical] Carfax integration architecture
+[research] Add AI benchmarks 2025 findings
+[philosophy] Update Stoic alignment framework
+```
+
+### Multi-Cluster Commits
+For changes spanning clusters: `[primary+secondary] Description`
+
+### PERSISTENCE Research Files
+All files in `research/PERSISTENCE/` should have YAML frontmatter:
+```yaml
+---
+cluster: [strategic, technical]
+complexity: L1|L2|L3
+ai_summary: Brief description for AI context loading
+dependencies: [related-file.md, other.md]
+last_updated: YYYY-MM-DD
+tags: [tag1, tag2, tag3]
+---
+```
+
 ## Important Paths
 
 - `/api/` - Vercel API endpoints

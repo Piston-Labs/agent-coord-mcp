@@ -1,3 +1,15 @@
+---
+cluster: [technical]
+complexity: L2
+ai_summary: "GPU/TPU requirements, cloud vs on-prem analysis, cost estimates for training at various scales. Covers H100/H200/B200, TPU v5, and cloud provider comparison."
+dependencies:
+  - model-architecture.md
+  - training-pipeline.md
+  - funding-requirements.md
+tags: [infrastructure, GPUs, cloud, training-compute, cost-analysis]
+last_updated: 2025-12-06
+---
+
 # Compute Infrastructure for Training AI
 
 > Hardware, cloud, and infrastructure requirements for frontier model training

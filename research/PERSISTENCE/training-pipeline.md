@@ -1,3 +1,16 @@
+---
+cluster: [technical]
+complexity: L3
+ai_summary: "Complete training pipeline from pre-training through RLHF/DPO alignment. Covers data prep, distributed training, fine-tuning strategies, and evaluation frameworks."
+dependencies:
+  - data-strategy.md
+  - model-architecture.md
+  - compute-infrastructure.md
+  - evaluation.md
+tags: [training, RLHF, DPO, fine-tuning, pre-training, alignment]
+last_updated: 2025-12-06
+---
+
 # Training Pipeline for Frontier AI
 
 > Pre-training, fine-tuning, RLHF, and evaluation frameworks
