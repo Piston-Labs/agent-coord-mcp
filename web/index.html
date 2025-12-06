@@ -11677,6 +11677,20 @@
                 </div>
                 <span class="research-nav-count" id="countLegalAI">0</span>
               </div>
+              <div class="research-nav-item" onclick="filterResearch('cybersecurity-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🛡️</span>
+                  <span class="research-nav-label">Cybersecurity AI</span>
+                </div>
+                <span class="research-nav-count" id="countCybersecurityAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('gaming-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🎮</span>
+                  <span class="research-nav-label">Gaming AI</span>
+                </div>
+                <span class="research-nav-count" id="countGamingAI">0</span>
+              </div>
             </div>
             <div class="research-nav-section">
               <div class="research-nav-title">Sources</div>
@@ -13345,6 +13359,8 @@
       countEl('countEducationAI', articles.filter(a => a.category === 'education-ai').length);
       countEl('countFinanceAI', articles.filter(a => a.category === 'finance-ai').length);
       countEl('countLegalAI', articles.filter(a => a.category === 'legal-ai').length);
+      countEl('countCybersecurityAI', articles.filter(a => a.category === 'cybersecurity-ai').length);
+      countEl('countGamingAI', articles.filter(a => a.category === 'gaming-ai').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13404,7 +13420,9 @@
         // Industry AI
         'education-ai': 'Education AI',
         'finance-ai': 'Finance AI',
-        'legal-ai': 'Legal AI'
+        'legal-ai': 'Legal AI',
+        'cybersecurity-ai': 'Cybersecurity AI',
+        'gaming-ai': 'Gaming AI'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
