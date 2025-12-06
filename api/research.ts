@@ -176,6 +176,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           'technology-landscape-2025.md',
           'glossary.md',
           'README.md',
+          // Telemetry & Acquisition
+          'telemetry-architecture.md',
         ];
 
         const filename = file as string;
