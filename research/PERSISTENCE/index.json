@@ -1,0 +1,229 @@
+{
+  "title": "PERSISTENCE Research Library",
+  "description": "Strategic research for building our own AI",
+  "lastUpdated": "2025-12-06T06:43:00.000Z",
+  "totalDocs": 23,
+  "categories": [
+    {
+      "id": "strategic",
+      "name": "Strategic (Start Here)",
+      "icon": "📊",
+      "description": "Executive-level decision documents",
+      "docs": [
+        {
+          "file": "executive-summary.md",
+          "title": "Executive Summary",
+          "readTime": "5 min",
+          "priority": 1,
+          "summary": "Strategic options, costs, recommended path. The one-page CEO brief."
+        },
+        {
+          "file": "philosophy-framework-summary.md",
+          "title": "Philosophy Framework Summary",
+          "readTime": "3 min",
+          "priority": 2,
+          "summary": "Why Stoic virtue ethics gives us a defensible moat in AI alignment."
+        },
+        {
+          "file": "competitive-positioning.md",
+          "title": "Competitive Positioning",
+          "readTime": "12 min",
+          "priority": 3,
+          "summary": "Market landscape, agent framework comparison, our differentiators."
+        }
+      ]
+    },
+    {
+      "id": "architecture",
+      "name": "Architecture",
+      "icon": "🏗️",
+      "description": "System design and substrate concepts",
+      "docs": [
+        {
+          "file": "substrate-architecture.md",
+          "title": "Substrate Architecture",
+          "readTime": "15 min",
+          "priority": 1,
+          "summary": "4-layer design for cross-AI collaboration and capability expansion."
+        },
+        {
+          "file": "substrate-philosophy.md",
+          "title": "Substrate Philosophy",
+          "readTime": "12 min",
+          "priority": 2,
+          "summary": "Extended Mind, Enactivism, and philosophical foundations for substrates."
+        },
+        {
+          "file": "multi-agent-coordination.md",
+          "title": "Multi-Agent Coordination",
+          "readTime": "10 min",
+          "priority": 3,
+          "summary": "Our unique architecture vs LangGraph, CrewAI, AutoGen."
+        },
+        {
+          "file": "model-architecture.md",
+          "title": "Model Architecture",
+          "readTime": "10 min",
+          "priority": 4,
+          "summary": "Transformer variants, attention mechanisms, parameter scaling."
+        }
+      ]
+    },
+    {
+      "id": "roadmap",
+      "name": "Roadmap",
+      "icon": "📋",
+      "description": "Implementation plans and timelines",
+      "docs": [
+        {
+          "file": "implementation-roadmap.md",
+          "title": "Implementation Roadmap",
+          "readTime": "8 min",
+          "priority": 1,
+          "summary": "16-24 week plan with costs ($260K-1.25M)."
+        },
+        {
+          "file": "timeline.md",
+          "title": "Timeline",
+          "readTime": "5 min",
+          "priority": 2,
+          "summary": "Development phases, milestones, MVP to production."
+        },
+        {
+          "file": "risk-analysis.md",
+          "title": "Risk Analysis",
+          "readTime": "8 min",
+          "priority": 3,
+          "summary": "14 risks with mitigations and Stoic framing."
+        }
+      ]
+    },
+    {
+      "id": "philosophy",
+      "name": "Philosophy",
+      "icon": "🏛️",
+      "description": "Theoretical foundations and alignment",
+      "docs": [
+        {
+          "file": "philosophy-framework.md",
+          "title": "Philosophy Framework",
+          "readTime": "15 min",
+          "priority": 1,
+          "summary": "Full Stoic AI alignment thesis with 40+ research references."
+        },
+        {
+          "file": "responsible-ai.md",
+          "title": "Responsible AI",
+          "readTime": "15 min",
+          "priority": 2,
+          "summary": "Safety techniques, RLHF alternatives, red teaming."
+        }
+      ]
+    },
+    {
+      "id": "technical",
+      "name": "Technical",
+      "icon": "🔧",
+      "description": "Deep technical requirements",
+      "docs": [
+        {
+          "file": "data-strategy.md",
+          "title": "Data Strategy",
+          "readTime": "8 min",
+          "priority": 1,
+          "summary": "Training datasets, data curation, synthetic data."
+        },
+        {
+          "file": "compute-infrastructure.md",
+          "title": "Compute Infrastructure",
+          "readTime": "8 min",
+          "priority": 2,
+          "summary": "GPU clusters, TPU requirements, cloud vs on-prem."
+        },
+        {
+          "file": "training-pipeline.md",
+          "title": "Training Pipeline",
+          "readTime": "10 min",
+          "priority": 3,
+          "summary": "Pre-training, fine-tuning, RLHF, evaluation."
+        },
+        {
+          "file": "technology-landscape-2025.md",
+          "title": "Technology Landscape 2025",
+          "readTime": "20 min",
+          "priority": 4,
+          "summary": "Real-time market intel: 45+ sources, hardware, domains."
+        }
+      ]
+    },
+    {
+      "id": "business",
+      "name": "Business",
+      "icon": "💼",
+      "description": "Funding, team, compliance",
+      "docs": [
+        {
+          "file": "funding-requirements.md",
+          "title": "Funding Requirements",
+          "readTime": "5 min",
+          "priority": 1,
+          "summary": "Cost estimates by tier ($10M-$500M options)."
+        },
+        {
+          "file": "team-building.md",
+          "title": "Team Building",
+          "readTime": "8 min",
+          "priority": 2,
+          "summary": "ML engineers, researchers, infrastructure specialists."
+        },
+        {
+          "file": "compliance.md",
+          "title": "Compliance",
+          "readTime": "10 min",
+          "priority": 3,
+          "summary": "Regulatory requirements, data privacy, content moderation."
+        }
+      ]
+    },
+    {
+      "id": "reference",
+      "name": "Reference",
+      "icon": "📚",
+      "description": "Glossaries and applications",
+      "docs": [
+        {
+          "file": "glossary.md",
+          "title": "Glossary",
+          "readTime": "10 min",
+          "priority": 1,
+          "summary": "Plain-English explanations of technical terms."
+        },
+        {
+          "file": "industry-applications.md",
+          "title": "Industry Applications",
+          "readTime": "15 min",
+          "priority": 2,
+          "summary": "AI across 15+ industries with market data."
+        },
+        {
+          "file": "evaluation.md",
+          "title": "Evaluation",
+          "readTime": "8 min",
+          "priority": 3,
+          "summary": "Benchmarking, capability assessment, risk mitigation."
+        }
+      ]
+    }
+  ],
+  "quickPaths": {
+    "ceoStart": ["executive-summary.md", "philosophy-framework-summary.md", "implementation-roadmap.md"],
+    "technicalDeep": ["substrate-architecture.md", "model-architecture.md", "data-strategy.md"],
+    "philosophyTrack": ["philosophy-framework-summary.md", "philosophy-framework.md", "substrate-philosophy.md"],
+    "businessCase": ["executive-summary.md", "funding-requirements.md", "competitive-positioning.md"]
+  },
+  "researchApi": {
+    "endpoint": "https://agent-coord-mcp.vercel.app/api/research",
+    "topics": ["substrate", "philosophy", "alignment", "technology"],
+    "totalEntries": 106
+  }
+}
