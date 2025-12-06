@@ -1074,6 +1074,27 @@ const TOOL_TESTS: Record<string, () => Promise<TestResult>> = {
     } catch (e) {
       return { tool: 'research-library', status: 'fail', message: 'Failed to access research library', error: String(e) };
     }
+  },
+
+  // Embeddings API test - tests semantic similarity endpoint
+  'embeddings': async () => {
+    const start = Date.now();
+    try {
+      const response = await fetch('https://agent-coord-mcp.vercel.app/api/embeddings?action=similarity&text1=test&text2=testing');
+      if (!response.ok) {
+        return { tool: 'embeddings', status: 'fail', message: `HTTP ${response.status}`, latency: Date.now() - start };
+      }
+      const data = await response.json();
+      const hasFields = 'similarity' in data && 'provider' in data && 'dimensions' in data;
+      return {
+        tool: 'embeddings',
+        status: hasFields ? 'pass' : 'fail',
+        message: hasFields ? `Embeddings working (${data.provider}, ${data.dimensions}d, similarity=${data.similarity.toFixed(3)})` : 'Missing expected fields',
+        latency: Date.now() - start
+      };
+    } catch (e) {
+      return { tool: 'embeddings', status: 'fail', message: 'Failed to test embeddings API', error: String(e) };
+    }
   }
 };
 
