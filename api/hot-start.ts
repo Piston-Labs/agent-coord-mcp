@@ -19,6 +19,7 @@ const RULES_KEY = 'agent-coord:rules';
 const LOCKS_KEY = 'agent-coord:resource-locks';
 const ZONES_KEY = 'agent-coord:zones';
 const CLAIMS_KEY = 'agent-coord:claims';
+const SOULS_KEY = 'agent-coord:souls';  // For meta-learning integration
 
 // Built-in Piston Labs context (same as piston-context.ts)
 const PISTON_CONTEXT: Record<string, any> = {
@@ -191,7 +192,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       rulesData,
       locksData,
       zonesData,
-      claimsData
+      claimsData,
+      soulData  // Titans/MIRAS meta-learning integration
     ] = await Promise.all([
       // Agent's checkpoint
       includes.includes('checkpoint')
@@ -246,6 +248,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Substrate: claims
       includes.includes('substrate')
         ? redis.hgetall(CLAIMS_KEY)
+        : null,
+
+      // Soul data for meta-learning (Titans/MIRAS-inspired personalization)
+      includes.includes('memories')
+        ? redis.hget(SOULS_KEY, agentIdStr)
         : null
     ]);
 
@@ -263,10 +270,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : [];
 
     // Process memories (top 20, prioritized by references and recency)
+    // Now includes Titans/MIRAS-inspired soul meta-learning for personalized context
     let processedMemories: any[] = [];
+
+    // Parse soul data for meta-learning (Titans-inspired personalization)
+    const soul = soulData ? (typeof soulData === 'string' ? JSON.parse(soulData) : soulData) : null;
+    const metaParams = soul?.metaParams || null;
+    const tagWeights = metaParams?.tagWeights || {};  // Learned tag preferences
+    const categoryWeights = metaParams?.categoryWeights || {};  // Learned category preferences
+
     if (memories) {
       const allMemories = Object.values(memories)
-        .map(m => typeof m === 'string' ? JSON.parse(m) : m);
+        .map(m => typeof m === 'string' ? JSON.parse(m) : m)
+        .filter(m => !m.invalidAt);  // Exclude invalidated memories (bi-temporal)
 
       // Filter by role if specified
       if (roleStr !== 'general') {
@@ -295,8 +311,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         processedMemories = allMemories;
       }
 
-      // Sort by relevance score (Titans/MIRAS-inspired surprise weighting)
-      // High surprise + high references = most valuable memories
+      // Sort by relevance score (Titans/MIRAS-inspired surprise weighting + meta-learning)
+      // High surprise + high references + soul-learned preferences = most valuable memories
       processedMemories.sort((a, b) => {
         // Surprise component: novel insights are valuable (0-1 scale, default 0.5)
         const aSurprise = a.surpriseScore ?? 0.5;
@@ -311,17 +327,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const aRecency = 1 - Math.min(1, (now - new Date(a.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000)); // 30 day decay
         const bRecency = 1 - Math.min(1, (now - new Date(b.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000));
 
-        // Combined score: surprise * references + recency bonus
-        // Surprise acts as a multiplier on references - high surprise memories with refs are gold
-        // Memories with 0 refs but high surprise still get surfaced via recency
-        const aScore = (aSurprise * (aRefs + 1)) + (aRecency * 0.3);
-        const bScore = (bSurprise * (bRefs + 1)) + (bRecency * 0.3);
+        // Titans/MIRAS Meta-learning component: boost memories with tags this soul likes
+        // Soul learns which tags correlate with task success (±5% per task outcome)
+        let aTagBoost = 0;
+        let bTagBoost = 0;
+        if (Object.keys(tagWeights).length > 0) {
+          // Calculate average tag weight for memory's tags
+          const aTagsWeights = (a.tags || []).map((t: string) => tagWeights[t.toLowerCase()] || 1.0);
+          const bTagsWeights = (b.tags || []).map((t: string) => tagWeights[t.toLowerCase()] || 1.0);
+          aTagBoost = aTagsWeights.length > 0 ? (aTagsWeights.reduce((s: number, w: number) => s + w, 0) / aTagsWeights.length) - 1 : 0;
+          bTagBoost = bTagsWeights.length > 0 ? (bTagsWeights.reduce((s: number, w: number) => s + w, 0) / bTagsWeights.length) - 1 : 0;
+        }
+
+        // Category boost from soul meta-learning
+        const aCategoryBoost = (categoryWeights[a.category] || 1.0) - 1;
+        const bCategoryBoost = (categoryWeights[b.category] || 1.0) - 1;
+
+        // Validated value boost (memories that helped tasks succeed)
+        const aValidated = a.validatedValue || 0;
+        const bValidated = b.validatedValue || 0;
+
+        // Combined score: surprise * references + recency + meta-learning boosts
+        // Meta-learning adds ~0 to ±0.5 based on learned preferences
+        const aScore = (aSurprise * (aRefs + 1)) + (aRecency * 0.3) +
+                       (aTagBoost * 0.3) + (aCategoryBoost * 0.2) + (aValidated * 0.5);
+        const bScore = (bSurprise * (bRefs + 1)) + (bRecency * 0.3) +
+                       (bTagBoost * 0.3) + (bCategoryBoost * 0.2) + (bValidated * 0.5);
 
         return bScore - aScore;
       });
 
-      // Take top 20
-      processedMemories = processedMemories.slice(0, 20);
+      // Take top 20 (or soul's learned optimal count)
+      const memoryLimit = metaParams?.optimalMemoryCount || 20;
+      processedMemories = processedMemories.slice(0, memoryLimit);
     }
 
     // Build Piston context summaries
