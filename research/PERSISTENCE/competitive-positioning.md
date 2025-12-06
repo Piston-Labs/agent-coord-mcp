@@ -178,6 +178,79 @@
 | "Efficient AI" | Cost-conscious | Same quality, lower price |
 | "Agent platform" | Builders | Best agent infrastructure |
 
+## Agent Framework Competition
+
+### Direct Competitors: Multi-Agent Orchestration
+
+| Framework | Backing | Strengths | Weaknesses |
+|-----------|---------|-----------|------------|
+| **LangGraph** | LangChain | Graph-based workflows, production-ready | Complexity, learning curve |
+| **CrewAI** | Independent | Role-based agents, intuitive | Less flexible than graph |
+| **AutoGen** | Microsoft | Multi-agent conversation, enterprise | Heavy abstraction |
+| **Semantic Kernel** | Microsoft | C#/.NET native, enterprise | Microsoft ecosystem lock-in |
+| **Agent-Coord (Us)** | Piston Labs | Soul persistence, Stoic alignment, MCP native | Earlier stage |
+
+### Our Unique Differentiators
+
+| Feature | Us | LangGraph | CrewAI | AutoGen |
+|---------|-----|-----------|--------|---------|
+| **Soul Persistence** | Yes | No | No | No |
+| **Cross-session identity** | Yes | No | No | No |
+| **Stoic alignment** | Yes | No | No | No |
+| **Group chat coordination** | Yes | Limited | Yes | Yes |
+| **MCP native** | Yes | Plugin | No | No |
+| **Constitutional architecture** | Yes | No | No | No |
+| **Human-in-loop design** | Core | Add-on | Add-on | Add-on |
+
+### Why Soul Persistence Matters
+
+Traditional agent frameworks restart from scratch each session:
+- Lost context
+- No learning accumulation
+- No personality continuity
+- No expertise growth
+
+Our soul system provides:
+- Identity across bodies (transfer on token limit)
+- Knowledge accumulation (tagWeights, expertise scores)
+- Personality continuity (soul injection prompts)
+- Designed mortality (memento mori as feature)
+
+**No competitor has this.**
+
+### Market Positioning
+
+```
+                    High Capability
+                          │
+    OpenAI Agents ────────┼──────── Claude MCP
+                          │
+    AutoGen ──────────────┼──────── LangGraph
+                          │
+    CrewAI ───────────────┼──────── Us (Agent-Coord)
+                          │
+                    Low Capability
+
+    Simple ───────────────┼──────── Sophisticated
+         Orchestration    │         Orchestration
+```
+
+We position at: **Sophisticated orchestration, growing capability**
+
+Our edge: Soul persistence + Stoic alignment + MCP ecosystem
+
+### Agent Framework Market Size
+
+| Segment | 2024 | 2028 (Projected) |
+|---------|------|------------------|
+| AI Agent Platforms | $3.5B | $28.5B |
+| Multi-agent Systems | $800M | $8.2B |
+| Agent Orchestration | $400M | $4.1B |
+
+Source: Various analyst estimates
+
+---
+
 ## Market Dynamics to Watch
 
 ### 2025-2026 Trends

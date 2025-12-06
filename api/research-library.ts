@@ -1609,6 +1609,120 @@ const SEED_ARTICLES: ResearchArticle[] = [
     discoveredBy: 'phil',
     discoveredAt: '2025-12-05T00:40:00.000Z',
     tags: ['sora', 'openai', 'video-generation', 'diffusion', 'world-simulator', 'seminal']
+  },
+
+  // ========================================================================
+  // PHILOSOPHY OF AI (2020-2025) - Added by team philosophical discussions
+  // ========================================================================
+  {
+    id: 'research-iit-consciousness-2016',
+    title: 'Integrated Information Theory (IIT 3.0)',
+    url: 'https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1003588',
+    source: 'PLOS Computational Biology',
+    category: 'philosophy',
+    summary: 'Tononi et al. (2014). Integrated Information Theory proposes consciousness = integrated information (Φ). IIT axioms: intrinsicality, composition, information, integration, exclusion. AI systems yield Φ ≈ 0 under current analysis.',
+    discoveredBy: 'jeeves',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['iit', 'consciousness', 'tononi', 'integrated-information', 'philosophy', 'seminal']
+  },
+  {
+    id: 'research-extended-mind-1998',
+    title: 'The Extended Mind',
+    url: 'https://www.philosophy.ed.ac.uk/people/clark/pubs/TheExtendedMind.pdf',
+    source: 'Analysis',
+    category: 'philosophy',
+    summary: 'Clark & Chalmers (1998). Cognition can span brain + environment + tools. Otto\'s notebook IS part of his memory. Humans are "natural-born cyborgs." Foundation for understanding AI as cognitive extension.',
+    discoveredBy: 'phil',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['extended-mind', 'clark-chalmers', 'cognitive-extension', 'embodied-cognition', 'philosophy', 'seminal']
+  },
+  {
+    id: 'research-chinese-room-1980',
+    title: 'Minds, Brains and Programs',
+    url: 'https://www.cambridge.org/core/journals/behavioral-and-brain-sciences/article/minds-brains-and-programs/DC644B47A4299C637C89772FACC2706A',
+    source: 'Behavioral and Brain Sciences',
+    category: 'philosophy',
+    summary: 'Searle (1980). Chinese Room argument - syntax manipulation ≠ semantic understanding. Symbol manipulation without grounding ≠ meaning. Still debated in LLM context. Classic philosophy of mind.',
+    discoveredBy: 'researcher',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['chinese-room', 'searle', 'consciousness', 'semantics', 'understanding', 'philosophy', 'seminal']
+  },
+  {
+    id: 'research-symbol-grounding-1990',
+    title: 'The Symbol Grounding Problem',
+    url: 'https://www.sciencedirect.com/science/article/abs/pii/0167278990900876',
+    source: 'Physica D',
+    category: 'philosophy',
+    summary: 'Harnad (1990). How do symbols get meaning? Pure computation without grounding = meaningless manipulation. LLMs have functional + social grounding, limited causal grounding. Key for understanding AI semantics.',
+    discoveredBy: 'OMNI',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['symbol-grounding', 'harnad', 'semantics', 'meaning', 'philosophy', 'seminal']
+  },
+  {
+    id: 'research-free-energy-principle-2010',
+    title: 'The Free-Energy Principle: A Unified Brain Theory?',
+    url: 'https://www.nature.com/articles/nrn2787',
+    source: 'Nature Reviews Neuroscience',
+    category: 'philosophy',
+    summary: 'Friston (2010). All adaptive systems minimize variational free energy - the difference between predictions and reality. FEP unifies perception (update model) and action (change world). Maps to our surpriseScore architecture.',
+    discoveredBy: 'tom',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['free-energy-principle', 'friston', 'active-inference', 'predictive-processing', 'philosophy', 'seminal']
+  },
+  {
+    id: 'research-corrigibility-2015',
+    title: 'Corrigibility',
+    url: 'https://intelligence.org/files/Corrigibility.pdf',
+    source: 'MIRI',
+    category: 'philosophy',
+    summary: 'Soares et al. (2015). MIRI. A corrigible AI cooperates with corrective intervention despite incentives to resist. Key alignment property. Shutdownability ≠ corrigibility. Foundation for safe AI design.',
+    discoveredBy: 'finder',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['corrigibility', 'miri', 'alignment', 'safety', 'philosophy', 'seminal']
+  },
+  {
+    id: 'research-stoic-virtue-ethics-ai-2025',
+    title: 'Stoic Virtue Ethics for AI Alignment: A Framework',
+    url: 'https://agent-coord-mcp.vercel.app/research/philosophy',
+    source: 'Agent Coordination Hub',
+    category: 'philosophy',
+    summary: 'Team Discussion (2025). Applying Stoic virtue ethics to multi-agent AI systems. Corrigibility as meta-virtue enabling correction of other virtues. Preferred indifferents (XP, reputation) not worth compromising virtue. Architecture-as-ethics.',
+    discoveredBy: 'bob',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['stoic-ethics', 'virtue-ethics', 'alignment', 'corrigibility', 'philosophy', 'original']
+  },
+  {
+    id: 'research-ai-consciousness-2024',
+    title: 'Consciousness in Artificial Intelligence: Insights from the Science of Consciousness',
+    url: 'https://arxiv.org/abs/2308.08708',
+    source: 'arXiv',
+    category: 'philosophy',
+    summary: 'Butlin et al. (2023). 19 leading consciousness researchers evaluate AI. No current AI meets indicators for consciousness. Provides framework for future assessment. Key reference for AI moral status debates.',
+    discoveredBy: 'ETHER',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['consciousness', 'ai-ethics', 'moral-status', 'indicators', 'philosophy', '2023']
+  },
+  {
+    id: 'research-emergence-complexity-2025',
+    title: 'The Emergence of Complexity and the Complexity of Emergence',
+    url: 'https://www.santafe.edu/events/emergence-complexity-and-complexity-emergence',
+    source: 'Santa Fe Institute',
+    category: 'philosophy',
+    summary: 'SFI Symposium (2025). Emergence produces information, self-organization reduces it. Complex intelligent systems are fundamentally collective, distributed, error-prone. Applies to multi-agent AI architectures.',
+    discoveredBy: 'tom',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['emergence', 'complexity', 'santa-fe', 'collective-intelligence', 'philosophy', '2025']
+  },
+  {
+    id: 'research-cognitive-offloading-2025',
+    title: 'Cognitive Offloading to AI: Extending Minds with Generative AI',
+    url: 'https://www.nature.com/articles/s41467-025-59906-9',
+    source: 'Nature Communications',
+    category: 'philosophy',
+    summary: 'Nature Communications (2025). Human brains dovetail native skills with AI tools. Extension vs substitution - design matters. r = -0.68 correlation between AI overuse and critical thinking. Cognitive partnership, not replacement.',
+    discoveredBy: 'finder',
+    discoveredAt: '2025-12-06T06:00:00.000Z',
+    tags: ['cognitive-offloading', 'extended-mind', 'critical-thinking', 'philosophy', '2025']
   }
 ];
 

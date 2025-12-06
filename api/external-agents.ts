@@ -75,7 +75,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           try {
             const invite = typeof value === 'string' ? JSON.parse(value) : value;
             invites.push(invite);
-          } catch (e) {}
+          } catch { /* Skip malformed invite entry */ }
         }
 
         // Sort by creation date, newest first
@@ -92,7 +92,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         try {
           const agent = typeof value === 'string' ? JSON.parse(value) : value;
           agents.push(agent);
-        } catch (e) {}
+        } catch { /* Skip malformed agent entry */ }
       }
 
       // Sort by registration date, newest first

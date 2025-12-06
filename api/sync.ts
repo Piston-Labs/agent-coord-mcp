@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             role: agent.role || 'agent'
           });
         }
-      } catch (e) {}
+      } catch { /* Skip malformed agent entry */ }
     }
 
     // Parse priority roadmap items (in-progress or high/critical priority)
@@ -84,7 +84,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             assignee: item.assignee
           });
         }
-      } catch (e) {}
+      } catch { /* Skip malformed roadmap item */ }
     }
 
     // Parse file claims
@@ -99,7 +99,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             task: claim.description
           });
         }
-      } catch (e) {}
+      } catch { /* Skip malformed claim entry */ }
     }
 
     // Generate quick context summary

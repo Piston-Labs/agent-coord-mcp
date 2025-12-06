@@ -11828,6 +11828,7 @@
             <button class="ceo-tab" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
             <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
             <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
+            <button class="ceo-tab" data-ceotab="airesearch" onclick="switchCeoTab('airesearch')" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white;">🧠 AI Research</button>
           </div>
           <div class="ceo-content">
             <!-- Work Progress Panel - See what agents accomplished -->
@@ -11895,6 +11896,21 @@
                 <button class="ceo-add-btn" onclick="showAddNoteModal()">+ Add Note</button>
               </div>
               <div class="ceo-list" id="ceoNotesList"><div class="ceo-empty">Loading notes...</div></div>
+            </div>
+            <!-- AI Research Panel - Build Our Own AI Documentation -->
+            <div class="ceo-panel" id="ceoAiresearchPanel">
+              <div class="ceo-panel-header" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Build Our Own AI - Research & Documentation</span>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <input type="text" id="aiResearchSearch" placeholder="Search research..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 12px; width: 200px;" oninput="filterAiResearch()">
+                  <button class="ceo-add-btn" onclick="loadAiResearch()" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);">🔄 Refresh</button>
+                </div>
+              </div>
+              <div class="ceo-list" id="ceoAiresearchList" style="padding: 16px 24px;">
+                <div class="ceo-empty">Loading AI research documents...</div>
+              </div>
             </div>
           </div>
         </div>

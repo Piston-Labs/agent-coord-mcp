@@ -146,7 +146,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               });
             }
           }
-        } catch (e) {}
+        } catch { /* Ignore malformed existing claim - will be overwritten */ }
       }
 
       const claim: FileClaim = {
