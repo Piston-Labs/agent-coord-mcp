@@ -11607,6 +11607,30 @@
               </div>
             </div>
             <div class="research-nav-section">
+              <div class="research-nav-title">Media & Robotics</div>
+              <div class="research-nav-item" onclick="filterResearch('robotics')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🤖</span>
+                  <span class="research-nav-label">Robotics</span>
+                </div>
+                <span class="research-nav-count" id="countRobotics">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('video-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🎬</span>
+                  <span class="research-nav-label">Video Generation</span>
+                </div>
+                <span class="research-nav-count" id="countVideoAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('audio-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🎵</span>
+                  <span class="research-nav-label">Audio/Music AI</span>
+                </div>
+                <span class="research-nav-count" id="countAudioAI">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
               <div class="research-nav-title">Sources</div>
               <div class="research-nav-item" onclick="filterResearchBySource('arXiv')">
                 <div class="research-nav-item-left">
@@ -13261,6 +13285,10 @@
       countEl('countGovernance', articles.filter(a => a.category === 'governance').length);
       countEl('countMultimodal', articles.filter(a => a.category === 'multimodal').length);
       countEl('countRAGSystems', articles.filter(a => a.category === 'rag').length);
+      // Media & Robotics
+      countEl('countRobotics', articles.filter(a => a.category === 'robotics').length);
+      countEl('countVideoAI', articles.filter(a => a.category === 'video-ai').length);
+      countEl('countAudioAI', articles.filter(a => a.category === 'audio-ai').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13308,7 +13336,11 @@
         'industry': 'Industry Reports',
         'governance': 'AI Governance',
         'multimodal': 'Multimodal AI',
-        'rag': 'RAG Systems'
+        'rag': 'RAG Systems',
+        // Media & Robotics
+        'robotics': 'Robotics',
+        'video-ai': 'Video Generation',
+        'audio-ai': 'Audio/Music AI'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
