@@ -15325,12 +15325,21 @@
           tab.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)';
           tab.style.color = 'white';
         }
+        if (tab.dataset.ceotab === 'carfax' && !isActive) {
+          tab.style.background = 'transparent';
+          tab.style.color = 'var(--text-secondary)';
+        } else if (tab.dataset.ceotab === 'carfax' && isActive) {
+          tab.style.background = 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)';
+          tab.style.color = 'white';
+        }
       });
       document.querySelectorAll('.ceo-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'ceo' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Panel'));
       // Load work progress when tab is shown
       if (tabName === 'progress') loadWorkProgress();
       // Load AI research when tab is shown
       if (tabName === 'airesearch') loadAiResearch();
+      // Load Carfax strategy when tab is shown
+      if (tabName === 'carfax') loadCarfaxStrategy();
     }
 
     // === AI RESEARCH - Build Our Own AI Documentation ===
@@ -15608,6 +15617,105 @@
               </div>
             </div>
 
+            <!-- Carfax Company Deep Dive -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">🏢 Carfax Company Profile</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Parent Company</div>
+                  <div style="font-size: 13px; color: var(--text-primary); font-weight: 600;">S&P Global Mobility (IHS Markit)</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Founded</div>
+                  <div style="font-size: 13px; color: var(--text-primary); font-weight: 600;">1984 (Columbia, MO)</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Annual Revenue</div>
+                  <div style="font-size: 13px; color: var(--text-primary); font-weight: 600;">~$900M (estimated)</div>
+                </div>
+                <div>
+                  <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Market Position</div>
+                  <div style="font-size: 13px; color: var(--text-primary); font-weight: 600;">#1 Vehicle History Provider</div>
+                </div>
+              </div>
+              <div style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px;">
+                <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Corporate Strategy</div>
+                <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+                  S&P Global acquired IHS Markit (Carfax parent) for <strong style="color: #f97316;">$44B</strong> in 2022. They're aggressively expanding into connected car data and mobility intelligence. <strong>They are active acquirers.</strong>
+                </div>
+              </div>
+            </div>
+
+            <!-- Carfax Data Architecture -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">📊 How Carfax Operates</h4>
+              <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <div style="width: 28px; height: 28px; background: #3b82f6; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: 12px;">📥</span>
+                  </div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 12px;">Data Sources (151,000+)</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">DMVs (all 50 states), insurance companies, auctions (Manheim, Copart), 139K+ service shops, fleet/rental companies, OEMs</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <div style="width: 28px; height: 28px; background: #8b5cf6; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: 12px;">🔄</span>
+                  </div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 12px;">Data Ingestion</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">FTP/SFTP (legacy XML), REST APIs (JSON), CSV batch feeds, flat files. Requires signed Service Data Transfer Facilitation Agreement.</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <div style="width: 28px; height: 28px; background: #10b981; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: 12px;">💾</span>
+                  </div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 12px;">Data Storage</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">35+ billion records, VIN-indexed, event-sourced timeline per vehicle. Proprietary graph database for relationship mapping.</div>
+                  </div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <div style="width: 28px; height: 28px; background: #f97316; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                    <span style="font-size: 12px;">📤</span>
+                  </div>
+                  <div style="flex: 1;">
+                    <div style="font-weight: 600; color: var(--text-primary); font-size: 12px;">Output Products</div>
+                    <div style="color: var(--text-secondary); font-size: 11px;">Consumer VHRs ($39.99), Dealer APIs, Insurance risk scoring, Lemon law verification, Auction condition reports</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Their Gap / Our Opportunity -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
+              <h4 style="margin: 0 0 12px 0; color: var(--text-primary); font-size: 14px;">⚠️ Carfax's Critical Gap</h4>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px;">
+                  <div style="font-size: 11px; color: #ef4444; font-weight: 600; margin-bottom: 4px;">WHAT THEY HAVE</div>
+                  <ul style="margin: 0; padding-left: 16px; color: var(--text-secondary); font-size: 11px; line-height: 1.6;">
+                    <li>Historical snapshots (days/weeks old)</li>
+                    <li>Service shop self-reported mileage</li>
+                    <li>Point-in-time accident records</li>
+                    <li>No location data</li>
+                    <li>No real-time vehicle health</li>
+                  </ul>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.1); padding: 12px; border-radius: 8px;">
+                  <div style="font-size: 11px; color: #10b981; font-weight: 600; margin-bottom: 4px;">WHAT WE ADD</div>
+                  <ul style="margin: 0; padding-left: 16px; color: var(--text-secondary); font-size: 11px; line-height: 1.6;">
+                    <li>Real-time telemetry (60-second intervals)</li>
+                    <li>Continuous odometer verification</li>
+                    <li>Live GPS location tracking</li>
+                    <li>OBD-II diagnostics & DTC codes</li>
+                    <li>Tamper-proof fraud detection</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             <!-- Key Insight Card -->
             <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #f97316;">
               <h4 style="margin: 0 0 8px 0; color: var(--text-primary); font-size: 14px;">💡 Key Insight</h4>
@@ -15615,6 +15723,38 @@
                 Carfax has <strong>historical records</strong> but lacks <strong>real-time telematics</strong>.
                 We have <strong>live GPS/OBD telemetry</strong>. Combined = complete vehicle intelligence platform.
               </p>
+            </div>
+
+            <!-- TAM Expansion Analysis -->
+            <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+              <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">📈 Market Expansion Opportunity</h4>
+              <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">Current Carfax TAM (VHRs)</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #ef4444;">$2B/year</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">+ Connected Car Services</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #10b981;">+$50B by 2030</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">+ Fleet Management</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #10b981;">+$35B by 2028</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">+ Insurance Telematics</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #10b981;">+$10B by 2027</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--bg-tertiary); border-radius: 6px;">
+                  <span style="font-size: 12px; color: var(--text-secondary);">+ Predictive Maintenance</span>
+                  <span style="font-size: 12px; font-weight: 600; color: #10b981;">+$15B by 2028</span>
+                </div>
+              </div>
+              <div style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(234, 88, 12, 0.1) 100%); padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 11px; color: var(--text-tertiary);">Combined TAM with Real-Time Telemetry</div>
+                <div style="font-size: 24px; font-weight: 700; color: #f97316;">$110B+ by 2030</div>
+                <div style="font-size: 12px; color: #10b981; font-weight: 600;">10x expansion from current</div>
+              </div>
             </div>
 
             <!-- What We Bring -->
