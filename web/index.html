@@ -15482,8 +15482,10 @@
       const searchTerm = document.getElementById('aiResearchSearch').value.toLowerCase();
       const docs = document.querySelectorAll('.ai-research-doc');
       docs.forEach(doc => {
-        const title = doc.querySelector('div[style*="font-weight: 600"]')?.textContent.toLowerCase() || '';
-        const desc = doc.querySelector('div[style*="font-size: 12px"]')?.textContent.toLowerCase() || '';
+        // Get title from the flex container's first child (not the badge)
+        const flexContainer = doc.querySelector('div[style*="flex: 1"]');
+        const title = flexContainer?.querySelector('div[style*="font-weight: 600"]')?.textContent.toLowerCase() || '';
+        const desc = flexContainer?.querySelector('div[style*="font-size: 12px"]')?.textContent.toLowerCase() || '';
         const matches = title.includes(searchTerm) || desc.includes(searchTerm);
         doc.style.display = matches ? 'flex' : 'none';
       });
