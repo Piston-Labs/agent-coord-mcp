@@ -45,6 +45,14 @@ This folder contains comprehensive research on what it takes to build a frontier
 - **[phase-1-foundation.md](./phase-1-foundation.md)** - Foundation model development
 - **[phase-2-finetuning.md](./phase-2-finetuning.md)** - Fine-tuning and specialization
 - **[phase-3-production.md](./phase-3-production.md)** - Production deployment and scaling
+- **[deployment-guide.md](./deployment-guide.md)** - Production deployment patterns
+
+### 5. Strategic Acquisitions
+- **[carfax-integration-strategy.md](./carfax-integration-strategy.md)** - Carfax acquisition playbook and integration
+- **[telemetry-architecture.md](./telemetry-architecture.md)** - Vehicle telemetry technical architecture
+
+### 6. Cross-Platform
+- **[cross-ai-protocol.md](./cross-ai-protocol.md)** - Multi-model compatibility and protocols
 
 ## Quick Stats (2025)
 
