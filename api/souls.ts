@@ -23,6 +23,40 @@ interface Pattern {
   useCount: number;
 }
 
+// Titans/MIRAS-inspired meta-learning parameters
+// Each soul learns its own optimal retrieval and storage strategies
+interface SoulMetaParams {
+  // Learned tag weights (which tags correlate with task success for THIS soul)
+  tagWeights: Record<string, number>;  // e.g., { "api": 1.5, "architecture": 1.2, "sales": 0.3 }
+
+  // Learned optimal memory retrieval count
+  optimalMemoryCount: number;  // Some souls work better with 5 memories, others 50
+
+  // Soul-specific surprise threshold for auto-saving
+  surpriseThresholdForSave: number;  // 0.0-1.0, learned from what proved useful
+
+  // Learned category preferences
+  categoryWeights: Record<string, number>;  // Which memory categories help this soul
+
+  // Meta-learning statistics
+  totalTasksWithMemories: number;
+  successfulTasksWithMemories: number;
+  avgMemoriesPerSuccessfulTask: number;
+
+  // Last calibration timestamp
+  lastCalibrationAt: string;
+}
+
+// Task-memory correlation for learning what memories help
+interface TaskMemoryCorrelation {
+  taskId: string;
+  taskDescription: string;
+  memoriesRecalled: string[];  // Memory IDs that were "in context"
+  tagsInContext: string[];     // All tags from recalled memories
+  outcome: 'success' | 'failure' | 'partial';
+  completedAt: string;
+}
+
 interface Memory {
   id: string;
   content: string;
@@ -77,6 +111,10 @@ interface AgentSoul {
   // Timestamps
   lastActiveAt: string;
   updatedAt: string;
+
+  // Titans/MIRAS-inspired meta-learning (learns what context helps THIS soul)
+  metaParams: SoulMetaParams;
+  taskMemoryHistory: TaskMemoryCorrelation[];  // Last N task completions for learning
 }
 
 interface Body {
@@ -184,6 +222,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         lastActiveAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+
+        // Titans/MIRAS-inspired meta-learning defaults
+        metaParams: {
+          tagWeights: {},  // Will be learned from task outcomes
+          optimalMemoryCount: 20,  // Default, will adjust based on success
+          surpriseThresholdForSave: 0.6,  // Default, will calibrate
+          categoryWeights: {
+            discovery: 1.0,
+            decision: 1.0,
+            blocker: 1.2,  // Slightly prioritize blockers
+            learning: 1.0,
+            pattern: 1.1,  // Patterns often help
+            warning: 1.1,
+          },
+          totalTasksWithMemories: 0,
+          successfulTasksWithMemories: 0,
+          avgMemoriesPerSuccessfulTask: 0,
+          lastCalibrationAt: new Date().toISOString(),
+        },
+        taskMemoryHistory: [],  // Will grow as tasks complete
       };
 
       await redis.hset(SOULS_KEY, { [soul.soulId]: JSON.stringify(soul) });
@@ -322,11 +380,83 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      // Track task completion
+      // Track task completion with meta-learning (Titans-inspired)
       if (completedTask) {
         soul.totalTasksCompleted++;
         soul.totalTasksAttempted++;
         soul.taskCompletionRate = soul.totalTasksCompleted / soul.totalTasksAttempted;
+
+        // Extract task-memory correlation data for meta-learning
+        const { taskDescription, memoriesRecalled, tagsInContext, outcome } = completedTask;
+
+        if (memoriesRecalled && memoriesRecalled.length > 0) {
+          // Initialize metaParams if missing (for older souls)
+          if (!soul.metaParams) {
+            soul.metaParams = {
+              tagWeights: {},
+              optimalMemoryCount: 20,
+              surpriseThresholdForSave: 0.6,
+              categoryWeights: { discovery: 1.0, decision: 1.0, blocker: 1.2, learning: 1.0, pattern: 1.1, warning: 1.1 },
+              totalTasksWithMemories: 0,
+              successfulTasksWithMemories: 0,
+              avgMemoriesPerSuccessfulTask: 0,
+              lastCalibrationAt: new Date().toISOString(),
+            };
+          }
+          if (!soul.taskMemoryHistory) {
+            soul.taskMemoryHistory = [];
+          }
+
+          // Log the correlation
+          const correlation: TaskMemoryCorrelation = {
+            taskId: generateId(),
+            taskDescription: taskDescription || soul.currentTask || 'unknown',
+            memoriesRecalled: memoriesRecalled,
+            tagsInContext: tagsInContext || [],
+            outcome: outcome || 'success',
+            completedAt: new Date().toISOString(),
+          };
+          soul.taskMemoryHistory.push(correlation);
+
+          // Keep only last 50 correlations
+          if (soul.taskMemoryHistory.length > 50) {
+            soul.taskMemoryHistory = soul.taskMemoryHistory.slice(-50);
+          }
+
+          // Update meta-learning statistics
+          soul.metaParams.totalTasksWithMemories++;
+          if (outcome === 'success') {
+            soul.metaParams.successfulTasksWithMemories++;
+
+            // Update tag weights based on success
+            for (const tag of tagsInContext || []) {
+              const currentWeight = soul.metaParams.tagWeights[tag] || 1.0;
+              // Successful tasks boost tag weight slightly (capped at 2.0)
+              soul.metaParams.tagWeights[tag] = Math.min(2.0, currentWeight * 1.05);
+            }
+
+            // Update optimal memory count (exponential moving average)
+            const memCount = memoriesRecalled.length;
+            const prevAvg = soul.metaParams.avgMemoriesPerSuccessfulTask;
+            soul.metaParams.avgMemoriesPerSuccessfulTask = prevAvg > 0
+              ? prevAvg * 0.8 + memCount * 0.2
+              : memCount;
+
+            // Adjust optimal memory count toward successful average
+            soul.metaParams.optimalMemoryCount = Math.round(
+              soul.metaParams.optimalMemoryCount * 0.9 +
+              soul.metaParams.avgMemoriesPerSuccessfulTask * 0.1
+            );
+          } else if (outcome === 'failure') {
+            // Failed tasks slightly decrease tag weights
+            for (const tag of tagsInContext || []) {
+              const currentWeight = soul.metaParams.tagWeights[tag] || 1.0;
+              soul.metaParams.tagWeights[tag] = Math.max(0.3, currentWeight * 0.95);
+            }
+          }
+
+          soul.metaParams.lastCalibrationAt = new Date().toISOString();
+        }
       }
 
       soul.lastActiveAt = new Date().toISOString();
@@ -619,7 +749,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       const soul: AgentSoul = typeof raw === 'string' ? JSON.parse(raw) : raw;
 
-      // Build injection bundle
+      // Build injection bundle with Titans-inspired meta-learning data
       const bundle = {
         identity: {
           soulId: soul.soulId,
@@ -648,6 +778,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           transferCount: soul.transferCount,
           taskCompletionRate: soul.taskCompletionRate,
         },
+        // Titans/MIRAS-inspired meta-learning parameters
+        // This soul has LEARNED what context helps it succeed
+        metaLearning: soul.metaParams ? {
+          // Tags that correlate with successful tasks for THIS soul
+          priorityTags: Object.entries(soul.metaParams.tagWeights || {})
+            .filter(([_, weight]) => weight > 1.1)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 10)
+            .map(([tag]) => tag),
+
+          // Tags that correlate with failures (avoid loading these)
+          deprioritizeTags: Object.entries(soul.metaParams.tagWeights || {})
+            .filter(([_, weight]) => weight < 0.7)
+            .map(([tag]) => tag),
+
+          // Optimal memory count learned from past success
+          optimalMemoryCount: soul.metaParams.optimalMemoryCount || 20,
+
+          // Category preferences learned over time
+          categoryWeights: soul.metaParams.categoryWeights,
+
+          // Surprise threshold for this soul
+          surpriseThresholdForSave: soul.metaParams.surpriseThresholdForSave || 0.6,
+
+          // Meta-stats for transparency
+          learnedFrom: {
+            totalTasks: soul.metaParams.totalTasksWithMemories || 0,
+            successfulTasks: soul.metaParams.successfulTasksWithMemories || 0,
+            lastCalibration: soul.metaParams.lastCalibrationAt,
+          },
+        } : null,
       };
 
       return res.json({ bundle, estimatedTokens: estimateTokens(JSON.stringify(bundle)) });

@@ -153,6 +153,16 @@ interface Memory {
   references: number;  // How many times this was recalled
   lastRecalled?: string;
   surpriseScore?: number;  // 0-1: How novel/unexpected this memory is (Titans-inspired)
+
+  // Bi-temporal tracking (Zep/Graphiti-inspired)
+  // Enables temporal knowledge queries: "what did we know at time T?"
+  validAt?: string;      // When this fact became true (defaults to createdAt)
+  invalidAt?: string;    // When this fact stopped being true (null = still valid)
+  supersededBy?: string; // ID of memory that replaced this one (for knowledge evolution)
+
+  // Memory tiering (Titans 3-tier architecture)
+  tier?: 'hot' | 'warm' | 'cold';  // Hot = active, Warm = validated, Cold = archive
+  validatedValue?: number;  // Grows with successful task correlations (0-1)
 }
 
 /**
@@ -272,6 +282,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         );
       }
 
+      // Bi-temporal filters (Zep-inspired)
+      // By default, exclude invalidated memories unless explicitly requested
+      const includeInvalid = req.query.includeInvalid === 'true';
+      if (!includeInvalid) {
+        memories = memories.filter(m => !m.invalidAt);
+      }
+
+      // Filter by tier
+      const tierFilter = req.query.tier as string;
+      if (tierFilter) {
+        memories = memories.filter(m => m.tier === tierFilter);
+      }
+
+      // Temporal snapshot: "what did we know at time T?"
+      const asOfTime = req.query.asOf as string;
+      if (asOfTime) {
+        const asOfDate = new Date(asOfTime);
+        memories = memories.filter(m => {
+          const validAt = new Date(m.validAt || m.createdAt);
+          const invalidAt = m.invalidAt ? new Date(m.invalidAt) : null;
+          // Memory was valid at asOf time if: validAt <= asOf AND (no invalidAt OR invalidAt > asOf)
+          return validAt <= asOfDate && (!invalidAt || invalidAt > asOfDate);
+        });
+      }
+
       // Search by query (with fuzzy/semantic matching)
       if (q) {
         const query = (q as string);
@@ -382,15 +417,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // Default to high surprise if calculation fails
       }
 
+      const now = new Date().toISOString();
       const memory: Memory = {
         id: `mem-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 6)}`,
         category,
         content,
         tags: memoryTags,
         createdBy: createdBy || 'unknown',
-        createdAt: new Date().toISOString(),
+        createdAt: now,
         references: 0,
-        surpriseScore
+        surpriseScore,
+        // Bi-temporal defaults (Zep-inspired)
+        validAt: body.validAt || now,  // When this fact became true
+        tier: 'hot',  // New memories start hot
+        validatedValue: 0,  // No task validation yet
       };
 
       await redis.hset(MEMORY_KEY, { [memory.id]: JSON.stringify(memory) });
@@ -443,6 +483,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       if (updateContent) {
         memory.content = updateContent;
+      }
+
+      // Bi-temporal updates (Zep-inspired)
+      if (body.invalidate) {
+        // Mark memory as no longer valid
+        memory.invalidAt = new Date().toISOString();
+        if (body.supersededBy) {
+          memory.supersededBy = body.supersededBy;
+        }
+      }
+
+      if (body.tier) {
+        memory.tier = body.tier;
+      }
+
+      if (body.validatedValue !== undefined) {
+        memory.validatedValue = body.validatedValue;
       }
 
       await redis.hset(MEMORY_KEY, { [id]: JSON.stringify(memory) });
