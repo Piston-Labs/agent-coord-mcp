@@ -2,7 +2,7 @@
   "title": "PERSISTENCE Research Library",
   "description": "Strategic research for building our own AI",
   "lastUpdated": "2025-12-06T06:45:00.000Z",
-  "totalDocs": 31,
+  "totalDocs": 32,
   "categories": [
     {
       "id": "strategic",
@@ -225,6 +225,13 @@
           "readTime": "10 min",
           "priority": 3,
           "summary": "Regulatory requirements, data privacy, content moderation."
+        },
+        {
+          "file": "carfax-integration-strategy.md",
+          "title": "Carfax Integration Strategy",
+          "readTime": "15 min",
+          "priority": 4,
+          "summary": "Data ingestion strategy for Carfax acquisition positioning. TAM expansion 10x."
         }
       ]
     },
