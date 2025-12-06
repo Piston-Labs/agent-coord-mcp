@@ -152,6 +152,49 @@ interface Memory {
   createdAt: string;
   references: number;  // How many times this was recalled
   lastRecalled?: string;
+  surpriseScore?: number;  // 0-1: How novel/unexpected this memory is (Titans-inspired)
+}
+
+/**
+ * Calculate surprise score for new content based on similarity to existing memories
+ * Inspired by Google's Titans architecture - high surprise = more likely to persist
+ *
+ * @param newContent - The content being stored
+ * @param newTags - Tags for the new memory
+ * @param existingMemories - Recent memories to compare against
+ * @returns Surprise score from 0 (redundant) to 1 (highly novel)
+ */
+function calculateSurprise(newContent: string, newTags: string[], existingMemories: Memory[]): number {
+  if (existingMemories.length === 0) {
+    return 1.0; // First memory is maximally surprising
+  }
+
+  // Check against recent memories (limit to 50 for performance)
+  const recentMemories = existingMemories.slice(0, 50);
+
+  let maxSimilarity = 0;
+  for (const mem of recentMemories) {
+    // Use existing semanticScore function - it already handles keyword overlap + fuzzy matching
+    const similarity = semanticScore(newContent, mem.content, mem.tags);
+    maxSimilarity = Math.max(maxSimilarity, similarity);
+
+    // Early exit if we find a near-duplicate
+    if (maxSimilarity > 0.9) {
+      break;
+    }
+  }
+
+  // Surprise = inverse of max similarity
+  // Low similarity to existing memories = high surprise
+  const noveltyScore = 1 - maxSimilarity;
+
+  // Bonus for rare tags (tags not seen in recent memories)
+  const allRecentTags = new Set(recentMemories.flatMap(m => m.tags.map(t => t.toLowerCase())));
+  const newTagCount = newTags.filter(t => !allRecentTags.has(t.toLowerCase())).length;
+  const tagNoveltyBonus = Math.min(0.2, newTagCount * 0.05); // Up to 0.2 bonus for new tags
+
+  // Combine scores (capped at 1.0)
+  return Math.min(1.0, noveltyScore + tagNoveltyBonus);
 }
 
 /**
@@ -266,11 +309,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         memories = matches.map(m => m.memory);
       } else {
-        // Sort by recency and references
+        // Sort by surprise * references (Titans-inspired: novel + useful = important)
         memories.sort((a, b) => {
-          // Prioritize frequently recalled memories
-          const aScore = (a.references || 0) * 0.5 + new Date(a.createdAt).getTime() / 1e12;
-          const bScore = (b.references || 0) * 0.5 + new Date(b.createdAt).getTime() / 1e12;
+          // Composite score: surprise weight + reference weight + recency
+          // High surprise AND high references = most valuable memories
+          const aSurprise = a.surpriseScore ?? 0.5; // Default 0.5 for legacy memories
+          const bSurprise = b.surpriseScore ?? 0.5;
+          const aRefs = a.references || 0;
+          const bRefs = b.references || 0;
+
+          // Score formula: surprise * (1 + log(refs+1)) + recency bonus
+          const aScore = aSurprise * (1 + Math.log(aRefs + 1)) + new Date(a.createdAt).getTime() / 1e13;
+          const bScore = bSurprise * (1 + Math.log(bRefs + 1)) + new Date(b.createdAt).getTime() / 1e13;
           return bScore - aScore;
         });
       }
@@ -316,14 +366,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: `Invalid category. Must be one of: ${validCategories.join(', ')}` });
       }
 
+      const memoryTags = Array.isArray(tags) ? tags : (tags ? [tags] : []);
+
+      // Calculate surprise score based on existing memories (Titans-inspired)
+      let surpriseScore = 1.0;
+      try {
+        const allMemories = await redis.hgetall(MEMORY_KEY) || {};
+        const existingMemories: Memory[] = Object.values(allMemories)
+          .map((v: any) => typeof v === 'string' ? JSON.parse(v) : v)
+          .sort((a: Memory, b: Memory) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        surpriseScore = calculateSurprise(content, memoryTags, existingMemories);
+      } catch (e) {
+        console.error('Failed to calculate surprise score:', e);
+        // Default to high surprise if calculation fails
+      }
+
       const memory: Memory = {
         id: `mem-${Date.now().toString(36)}-${Math.random().toString(36).substr(2, 6)}`,
         category,
         content,
-        tags: Array.isArray(tags) ? tags : (tags ? [tags] : []),
+        tags: memoryTags,
         createdBy: createdBy || 'unknown',
         createdAt: new Date().toISOString(),
-        references: 0
+        references: 0,
+        surpriseScore
       };
 
       await redis.hset(MEMORY_KEY, { [memory.id]: JSON.stringify(memory) });
@@ -336,7 +403,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({
         success: true,
         memory,
-        message: 'Memory stored successfully'
+        message: 'Memory stored successfully',
+        surpriseScore: memory.surpriseScore,
+        surpriseLevel: memory.surpriseScore! >= 0.7 ? 'high' :
+                       memory.surpriseScore! >= 0.4 ? 'medium' : 'low'
       });
     }
 

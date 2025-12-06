@@ -295,10 +295,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         processedMemories = allMemories;
       }
 
-      // Sort by relevance score
+      // Sort by relevance score (Titans/MIRAS-inspired surprise weighting)
+      // High surprise + high references = most valuable memories
       processedMemories.sort((a, b) => {
-        const aScore = (a.references || 0) * 2 + new Date(a.createdAt).getTime() / 1e12;
-        const bScore = (b.references || 0) * 2 + new Date(b.createdAt).getTime() / 1e12;
+        // Surprise component: novel insights are valuable (0-1 scale, default 0.5)
+        const aSurprise = a.surpriseScore ?? 0.5;
+        const bSurprise = b.surpriseScore ?? 0.5;
+
+        // Reference component: frequently recalled memories are valuable
+        const aRefs = (a.references || 0);
+        const bRefs = (b.references || 0);
+
+        // Recency component: newer memories get slight boost (normalized to ~0-1 range)
+        const now = Date.now();
+        const aRecency = 1 - Math.min(1, (now - new Date(a.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000)); // 30 day decay
+        const bRecency = 1 - Math.min(1, (now - new Date(b.createdAt).getTime()) / (30 * 24 * 60 * 60 * 1000));
+
+        // Combined score: surprise * references + recency bonus
+        // Surprise acts as a multiplier on references - high surprise memories with refs are gold
+        // Memories with 0 refs but high surprise still get surfaced via recency
+        const aScore = (aSurprise * (aRefs + 1)) + (aRecency * 0.3);
+        const bScore = (bSurprise * (bRefs + 1)) + (bRecency * 0.3);
+
         return bScore - aScore;
       });
 
