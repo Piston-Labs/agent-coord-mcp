@@ -1,3 +1,14 @@
+---
+cluster: [philosophy, architecture]
+complexity: L3
+ai_summary: "Extended Mind thesis, Enactivism, and Pragmatism applied to AI substrates. Justifies why coordination infrastructure can genuinely expand model capabilities post-training."
+dependencies:
+  - philosophy-framework.md
+  - substrate-architecture.md
+tags: [philosophy, Extended-Mind, Enactivism, capability-expansion, substrate]
+last_updated: 2025-12-06
+---
+
 # Substrate Philosophy: Foundations for Post-Training Capability Expansion
 
 > Philosophical foundations for building AI substrates that expand capabilities beyond training

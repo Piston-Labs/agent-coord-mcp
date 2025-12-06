@@ -1,3 +1,15 @@
+---
+cluster: [technical, architecture]
+complexity: L2
+ai_summary: "Comparison of our multi-agent architecture vs LangGraph, CrewAI, AutoGen. Highlights unique differentiators: soul persistence, constitutional constraints, cross-model memory sharing."
+dependencies:
+  - substrate-architecture.md
+  - substrate-philosophy.md
+  - competitive-positioning.md
+tags: [multi-agent, coordination, LangGraph, CrewAI, AutoGen, differentiators]
+last_updated: 2025-12-06
+---
+
 # Multi-Agent Coordination: Our Unique Architecture
 
 > What makes agent-coord different from existing frameworks

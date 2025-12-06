@@ -8777,8 +8777,10 @@
     .ceo-stat-value { font-size: 24px; font-weight: 700; color: var(--accent); transition: transform 0.2s ease; }
     .ceo-stat:hover .ceo-stat-value { transform: scale(1.05); }
     .ceo-stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-    .ceo-tabs { display: flex; gap: 4px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    .ceo-tabs { display: flex; gap: 4px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; position: relative; }
     .ceo-tabs::-webkit-scrollbar { display: none; }
+    .ceo-tabs::after { content: '→'; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--accent); opacity: 0.7; pointer-events: none; animation: scrollHint 1.5s ease-in-out infinite; }
+    @keyframes scrollHint { 0%, 100% { opacity: 0.3; transform: translateY(-50%) translateX(0); } 50% { opacity: 0.9; transform: translateY(-50%) translateX(5px); } }
     .ceo-tab { background: transparent; border: none; padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-radius: 6px; transition: all 0.2s ease; white-space: nowrap; position: relative; }
     .ceo-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); transform: translateY(-1px); }
     .ceo-tab:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -12049,14 +12051,14 @@
             </div>
           </div>
           <div class="ceo-tabs">
-            <button class="ceo-tab active" data-ceotab="progress" onclick="switchCeoTab('progress')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">📊 Work Progress</button>
+            <button class="ceo-tab active" data-ceotab="progress" onclick="switchCeoTab('progress')" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white;">📊 Progress</button>
+            <button class="ceo-tab" data-ceotab="carfax" onclick="switchCeoTab('carfax')" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;">🚗 Carfax</button>
+            <button class="ceo-tab" data-ceotab="airesearch" onclick="switchCeoTab('airesearch')" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white;">🧠 Research</button>
             <button class="ceo-tab" data-ceotab="blockers" onclick="switchCeoTab('blockers')">🚨 Blockers</button>
             <button class="ceo-tab" data-ceotab="tasks" onclick="switchCeoTab('tasks')">Tasks</button>
             <button class="ceo-tab" data-ceotab="contacts" onclick="switchCeoTab('contacts')">Contacts</button>
-            <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas & Names</button>
+            <button class="ceo-tab" data-ceotab="ideas" onclick="switchCeoTab('ideas')">Ideas</button>
             <button class="ceo-tab" data-ceotab="notes" onclick="switchCeoTab('notes')">Notes</button>
-            <button class="ceo-tab" data-ceotab="airesearch" onclick="switchCeoTab('airesearch')" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white;">🧠 AI Research</button>
-            <button class="ceo-tab" data-ceotab="carfax" onclick="switchCeoTab('carfax')" style="background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: white;">🚗 Carfax Strategy</button>
           </div>
           <div class="ceo-content">
             <!-- Work Progress Panel - See what agents accomplished -->

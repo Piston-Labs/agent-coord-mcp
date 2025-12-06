@@ -1,3 +1,15 @@
+---
+cluster: [philosophy]
+complexity: L3
+ai_summary: "Stoic virtue ethics applied to AI alignment. Covers consciousness theories (IIT, GWT), Extended Mind thesis, virtue architecture, and how philosophy grounds our technical choices."
+dependencies:
+  - philosophy-framework-summary.md
+  - substrate-philosophy.md
+  - responsible-ai.md
+tags: [philosophy, Stoicism, virtue-ethics, consciousness, alignment-theory]
+last_updated: 2025-12-06
+---
+
 # Philosophy Framework: Stoic AI Alignment
 
 > Theoretical foundations for virtuous AI systems

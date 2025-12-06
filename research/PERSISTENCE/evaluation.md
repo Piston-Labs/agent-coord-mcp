@@ -1,3 +1,14 @@
+---
+cluster: [technical, safety]
+complexity: L2
+ai_summary: "AI evaluation benchmarks (MMLU, ARC-AGI, HLE, SWE-bench), capability assessment frameworks, and progress measurement. Covers benchmark saturation and newer evaluation approaches."
+dependencies:
+  - training-pipeline.md
+  - responsible-ai.md
+tags: [evaluation, benchmarks, MMLU, ARC-AGI, capability-assessment]
+last_updated: 2025-12-06
+---
+
 # Evaluation Framework for AI Development
 
 > Benchmarking, capability assessment, and measuring progress

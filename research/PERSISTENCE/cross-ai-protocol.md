@@ -1,3 +1,14 @@
+---
+cluster: [technical, architecture]
+complexity: L3
+ai_summary: "Protocol specification for cross-model communication. Defines message formats, capability negotiation, memory sharing APIs, and constitutional constraint propagation between Claude/GPT/Llama."
+dependencies:
+  - substrate-architecture.md
+  - multi-agent-coordination.md
+tags: [protocol, cross-ai, interoperability, API-spec, multi-model]
+last_updated: 2025-12-06
+---
+
 # Cross-AI Protocol Specification
 
 > Enabling collaboration between heterogeneous AI models through shared substrate

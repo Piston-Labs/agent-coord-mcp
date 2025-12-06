@@ -1,3 +1,14 @@
+---
+cluster: [strategic, safety]
+complexity: L1
+ai_summary: "Comprehensive risk matrix covering technical (GraphRAG, fine-tuning), business (vendor lock-in, costs), alignment (goal drift, coordination), and external (regulation, security) risks. Includes Stoic risk philosophy."
+dependencies:
+  - responsible-ai.md
+  - compliance.md
+tags: [risk-analysis, mitigation, technical-risks, business-risks, safety]
+last_updated: 2025-12-06
+---
+
 # Risk Analysis: Building AI Capabilities
 
 > What could go wrong and how we mitigate it

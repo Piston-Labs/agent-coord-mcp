@@ -1,3 +1,15 @@
+---
+cluster: [safety, philosophy]
+complexity: L2
+ai_summary: "AI safety techniques including RLHF alignment, Constitutional AI, red teaming practices, and risk mitigation. Covers current safety landscape and our virtue-based approach."
+dependencies:
+  - philosophy-framework.md
+  - training-pipeline.md
+  - evaluation.md
+tags: [safety, alignment, red-teaming, Constitutional-AI, RLHF]
+last_updated: 2025-12-06
+---
+
 # Responsible AI & Safety Research
 
 > Safety techniques, alignment methods, and red teaming practices
