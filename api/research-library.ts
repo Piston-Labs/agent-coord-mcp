@@ -1751,7 +1751,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // GET - List articles
     if (req.method === 'GET') {
-      const { category, tag, limit = '500' } = req.query;
+      const { category, tag, limit = '2000' } = req.query;
 
       let articles: ResearchArticle[] = await redis.lrange(RESEARCH_KEY, 0, -1) as ResearchArticle[] || [];
 
