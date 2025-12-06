@@ -1,8 +1,8 @@
 {
   "title": "PERSISTENCE Research Library",
   "description": "Strategic research for building our own AI",
-  "lastUpdated": "2025-12-06T06:43:00.000Z",
-  "totalDocs": 23,
+  "lastUpdated": "2025-12-06T06:45:00.000Z",
+  "totalDocs": 27,
   "categories": [
     {
       "id": "strategic",
@@ -61,10 +61,17 @@
           "summary": "Our unique architecture vs LangGraph, CrewAI, AutoGen."
         },
         {
+          "file": "cross-ai-protocol.md",
+          "title": "Cross-AI Protocol Specification",
+          "readTime": "15 min",
+          "priority": 4,
+          "summary": "Formal protocol for multi-model collaboration: Soul, Message, Memory, Tool, Task, Constitution layers."
+        },
+        {
           "file": "model-architecture.md",
           "title": "Model Architecture",
           "readTime": "10 min",
-          "priority": 4,
+          "priority": 5,
           "summary": "Transformer variants, attention mechanisms, parameter scaling."
         }
       ]
