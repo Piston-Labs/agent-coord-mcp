@@ -22,6 +22,7 @@ This folder contains comprehensive research on what it takes to build a frontier
 - **[technology-landscape-2025.md](./technology-landscape-2025.md)** - Real-time market intel (45+ sources, hardware, domains)
 - **[industry-applications.md](./industry-applications.md)** - AI across 15+ industries with market data
 - **[glossary.md](./glossary.md)** - Plain-English explanations of technical terms
+- **[risk-analysis.md](./risk-analysis.md)** - What could go wrong and mitigations
 
 ### 1. Technical Requirements
 - **[data-strategy.md](./data-strategy.md)** - Training datasets, data curation, synthetic data
