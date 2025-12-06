@@ -11631,6 +11631,30 @@
               </div>
             </div>
             <div class="research-nav-section">
+              <div class="research-nav-title">Cross-Domain</div>
+              <div class="research-nav-item" onclick="filterResearch('quantum-ml')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">⚛️</span>
+                  <span class="research-nav-label">Quantum ML</span>
+                </div>
+                <span class="research-nav-count" id="countQuantumML">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('privacy-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔐</span>
+                  <span class="research-nav-label">Privacy AI</span>
+                </div>
+                <span class="research-nav-count" id="countPrivacyAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('climate-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🌍</span>
+                  <span class="research-nav-label">Climate AI</span>
+                </div>
+                <span class="research-nav-count" id="countClimateAI">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
               <div class="research-nav-title">Sources</div>
               <div class="research-nav-item" onclick="filterResearchBySource('arXiv')">
                 <div class="research-nav-item-left">
@@ -13289,6 +13313,10 @@
       countEl('countRobotics', articles.filter(a => a.category === 'robotics').length);
       countEl('countVideoAI', articles.filter(a => a.category === 'video-ai').length);
       countEl('countAudioAI', articles.filter(a => a.category === 'audio-ai').length);
+      // Cross-Domain
+      countEl('countQuantumML', articles.filter(a => a.category === 'quantum-ml').length);
+      countEl('countPrivacyAI', articles.filter(a => a.category === 'privacy-ai').length);
+      countEl('countClimateAI', articles.filter(a => a.category === 'climate-ai').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13340,7 +13368,11 @@
         // Media & Robotics
         'robotics': 'Robotics',
         'video-ai': 'Video Generation',
-        'audio-ai': 'Audio/Music AI'
+        'audio-ai': 'Audio/Music AI',
+        // Cross-Domain
+        'quantum-ml': 'Quantum ML',
+        'privacy-ai': 'Privacy AI',
+        'climate-ai': 'Climate AI'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
