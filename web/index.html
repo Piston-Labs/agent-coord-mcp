@@ -11491,6 +11491,13 @@
                 </div>
                 <span class="research-nav-count" id="countSafety">0</span>
               </div>
+              <div class="research-nav-item" onclick="filterResearch('philosophy')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🏛️</span>
+                  <span class="research-nav-label">Philosophy</span>
+                </div>
+                <span class="research-nav-count" id="countPhilosophy">0</span>
+              </div>
               <div class="research-nav-item" onclick="filterResearch('infrastructure')">
                 <div class="research-nav-item-left">
                   <span class="research-nav-icon">☁️</span>
@@ -11704,6 +11711,23 @@
                   <span class="research-nav-label">Manufacturing AI</span>
                 </div>
                 <span class="research-nav-count" id="countManufacturingAI">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
+              <div class="research-nav-title">Philosophy & Ethics</div>
+              <div class="research-nav-item" onclick="filterResearch('philosophy-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🏛️</span>
+                  <span class="research-nav-label">Philosophy of AI</span>
+                </div>
+                <span class="research-nav-count" id="countPhilosophyAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('ai-safety')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🛡️</span>
+                  <span class="research-nav-label">AI Safety</span>
+                </div>
+                <span class="research-nav-count" id="countAISafety">0</span>
               </div>
             </div>
             <div class="research-nav-section">
@@ -13343,6 +13367,7 @@
       // Industry
       countEl('countFrontier', articles.filter(a => a.category === 'frontier-models').length);
       countEl('countSafety', articles.filter(a => a.category === 'ai-safety').length);
+      countEl('countPhilosophy', articles.filter(a => a.category === 'philosophy').length);
       countEl('countInfra', articles.filter(a => a.category === 'infrastructure').length);
       countEl('countUX', articles.filter(a => a.category === 'ux-patterns').length);
       // Emerging Tech
@@ -13377,6 +13402,9 @@
       countEl('countGamingAI', articles.filter(a => a.category === 'gaming-ai').length);
       countEl('countAgricultureAI', articles.filter(a => a.category === 'agriculture-ai').length);
       countEl('countManufacturingAI', articles.filter(a => a.category === 'manufacturing-ai').length);
+      // Philosophy & Ethics
+      countEl('countPhilosophyAI', articles.filter(a => a.category === 'philosophy-ai').length);
+      countEl('countAISafety', articles.filter(a => a.category === 'ai-safety').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13406,6 +13434,7 @@
         'scientific-ai': 'Scientific AI',
         'frontier-models': 'Frontier Models',
         'ai-safety': 'AI Safety & Alignment',
+        'philosophy': 'Philosophy of AI',
         'infrastructure': 'Infrastructure',
         'ux-patterns': 'UX Patterns',
         'industry-reports': 'Industry Reports',
@@ -13440,7 +13469,10 @@
         'cybersecurity-ai': 'Cybersecurity AI',
         'gaming-ai': 'Gaming AI',
         'agriculture-ai': 'Agriculture AI',
-        'manufacturing-ai': 'Manufacturing AI'
+        'manufacturing-ai': 'Manufacturing AI',
+        // Philosophy & Ethics
+        'philosophy-ai': 'Philosophy of AI',
+        'ai-safety': 'AI Safety'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
