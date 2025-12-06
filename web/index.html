@@ -8860,19 +8860,21 @@
 
     /* CEO Portal Mobile Responsiveness */
     @media (max-width: 768px) {
-      .ceo-header { flex-direction: column; gap: 16px; padding: 16px; }
+      .ceo-portal { height: auto; min-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+      .ceo-header { flex-direction: column; gap: 12px; padding: 12px 16px; }
       .ceo-header-left { align-items: center; text-align: center; }
-      .ceo-stats { flex-wrap: wrap; justify-content: center; gap: 12px; }
-      .ceo-stat { min-width: 70px; padding: 10px 14px; }
-      .ceo-stat-value { font-size: 22px; }
-      .ceo-tabs { padding: 10px 12px; gap: 6px; overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
+      .ceo-stats { flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .ceo-stat { min-width: 60px; padding: 8px 12px; }
+      .ceo-stat-value { font-size: 20px; }
+      .ceo-tabs { padding: 10px 12px; gap: 6px; overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; position: sticky; top: 0; z-index: 10; }
       .ceo-tab { padding: 10px 16px; font-size: 13px; min-height: 44px; scroll-snap-align: start; flex-shrink: 0; }
       .ceo-panel-header { flex-direction: column; gap: 12px; padding: 12px 16px; }
       .ceo-filters { flex-wrap: wrap; gap: 8px; }
       .ceo-filters select, .ceo-filters input { min-height: 44px; font-size: 16px; }
       .ceo-filters input { min-width: 100%; }
       .ceo-add-btn { min-height: 44px; width: 100%; font-size: 14px; }
-      .ceo-list { padding: 12px 16px; -webkit-overflow-scrolling: touch; }
+      .ceo-content { flex: none; min-height: 60vh; }
+      .ceo-list { padding: 12px 16px; -webkit-overflow-scrolling: touch; max-height: none; overflow-y: visible; }
       .ceo-contact-card { flex-direction: column; gap: 12px; padding: 14px 16px; }
       .ceo-contact-card:hover { transform: none; }
       .ceo-contact-card:active { transform: scale(0.98); background: var(--bg-tertiary); }
@@ -8881,24 +8883,28 @@
       .ceo-idea-card:hover, .ceo-note-card:hover, .ceo-task-card:hover { transform: none; }
       .ceo-idea-card:active, .ceo-note-card:active, .ceo-task-card:active { transform: scale(0.98); background: var(--bg-tertiary); }
       .ceo-form-row { grid-template-columns: 1fr; }
-      #ceoExecSummary { margin: 12px; padding: 14px 16px; }
-      #execSummaryContent { grid-template-columns: 1fr; gap: 12px; }
+      #ceoExecSummary { margin: 8px 12px; padding: 10px 12px; display: none; }
+      #ceoExecSummary.expanded { display: block; }
+      #execSummaryContent { grid-template-columns: 1fr; gap: 8px; }
+      #execSummaryToggle { display: block !important; }
       .ceo-modal { max-width: 100%; margin: 10px; border-radius: 12px; }
       .ceo-form-group input, .ceo-form-group select, .ceo-form-group textarea { font-size: 16px; min-height: 44px; }
     }
     @media (max-width: 480px) {
-      .ceo-header { padding: 12px; }
-      .ceo-stats { gap: 8px; }
-      .ceo-stat { min-width: 60px; padding: 8px 10px; }
-      .ceo-stat-value { font-size: 18px; }
-      .ceo-stat-label { font-size: 9px; }
-      .ceo-tabs { padding: 8px; gap: 4px; }
-      .ceo-tab { padding: 8px 12px; font-size: 12px; min-height: 40px; }
+      .ceo-header { padding: 10px 12px; gap: 8px; }
+      .ceo-header-left h2 { font-size: 16px !important; }
+      .ceo-stats { gap: 6px; display: none; }
+      .ceo-stat { min-width: 50px; padding: 6px 8px; }
+      .ceo-stat-value { font-size: 16px; }
+      .ceo-stat-label { font-size: 8px; }
+      .ceo-tabs { padding: 6px 8px; gap: 4px; }
+      .ceo-tab { padding: 8px 10px; font-size: 11px; min-height: 38px; }
       .ceo-list { padding: 8px 12px; }
       .ceo-contact-card, .ceo-idea-card, .ceo-note-card, .ceo-task-card { padding: 12px; border-radius: 10px; }
       .contact-name, .idea-title, .note-title { font-size: 14px; }
       .contact-company, .idea-description, .note-content { font-size: 12px; }
       .contact-badge { font-size: 10px; padding: 3px 8px; }
+      #execSummaryToggle { font-size: 12px !important; padding: 8px 12px !important; }
     }
     /* iOS safe area support for CEO Portal */
     @supports (padding: env(safe-area-inset-bottom)) {
@@ -12029,6 +12035,10 @@
               <div class="ceo-stat"><span class="ceo-stat-value" id="ceoNoteCount">0</span><span class="ceo-stat-label">Notes</span></div>
             </div>
           </div>
+          <!-- Executive Summary Toggle (Mobile Only) -->
+          <button id="execSummaryToggle" onclick="toggleExecSummary()" style="display: none; width: calc(100% - 24px); margin: 8px 12px; padding: 10px 16px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%); border: 1px solid rgba(102, 126, 234, 0.3); border-radius: 8px; color: var(--text-primary); font-size: 13px; font-weight: 600; cursor: pointer; text-align: left;">
+            📊 Executive Summary <span style="float: right; opacity: 0.6;">▼</span>
+          </button>
           <!-- Executive Summary Panel -->
           <div id="ceoExecSummary" style="margin: 16px 0; padding: 16px 20px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%); border-radius: 12px; border: 1px solid rgba(102, 126, 234, 0.2);">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
@@ -15547,6 +15557,15 @@
       } catch (e) {
         console.error('Failed to load exec summary:', e);
       }
+    }
+
+    function toggleExecSummary() {
+      const summary = document.getElementById('ceoExecSummary');
+      const toggle = document.getElementById('execSummaryToggle');
+      const isExpanded = summary.classList.toggle('expanded');
+      toggle.innerHTML = isExpanded
+        ? '📊 Executive Summary <span style="float: right; opacity: 0.6;">▲</span>'
+        : '📊 Executive Summary <span style="float: right; opacity: 0.6;">▼</span>';
     }
 
     function switchCeoTab(tabName) {
