@@ -11691,6 +11691,20 @@
                 </div>
                 <span class="research-nav-count" id="countGamingAI">0</span>
               </div>
+              <div class="research-nav-item" onclick="filterResearch('agriculture-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🌾</span>
+                  <span class="research-nav-label">Agriculture AI</span>
+                </div>
+                <span class="research-nav-count" id="countAgricultureAI">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('manufacturing-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🏭</span>
+                  <span class="research-nav-label">Manufacturing AI</span>
+                </div>
+                <span class="research-nav-count" id="countManufacturingAI">0</span>
+              </div>
             </div>
             <div class="research-nav-section">
               <div class="research-nav-title">Sources</div>
@@ -13361,6 +13375,8 @@
       countEl('countLegalAI', articles.filter(a => a.category === 'legal-ai').length);
       countEl('countCybersecurityAI', articles.filter(a => a.category === 'cybersecurity-ai').length);
       countEl('countGamingAI', articles.filter(a => a.category === 'gaming-ai').length);
+      countEl('countAgricultureAI', articles.filter(a => a.category === 'agriculture-ai').length);
+      countEl('countManufacturingAI', articles.filter(a => a.category === 'manufacturing-ai').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13422,7 +13438,9 @@
         'finance-ai': 'Finance AI',
         'legal-ai': 'Legal AI',
         'cybersecurity-ai': 'Cybersecurity AI',
-        'gaming-ai': 'Gaming AI'
+        'gaming-ai': 'Gaming AI',
+        'agriculture-ai': 'Agriculture AI',
+        'manufacturing-ai': 'Manufacturing AI'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
