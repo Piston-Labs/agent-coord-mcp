@@ -11507,6 +11507,106 @@
               </div>
             </div>
             <div class="research-nav-section">
+              <div class="research-nav-title">Emerging Tech</div>
+              <div class="research-nav-item" onclick="filterResearch('healthcare-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🏥</span>
+                  <span class="research-nav-label">Healthcare AI</span>
+                </div>
+                <span class="research-nav-count" id="countHealthcare">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('edge-ai')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📱</span>
+                  <span class="research-nav-label">Edge AI / TinyML</span>
+                </div>
+                <span class="research-nav-count" id="countEdge">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('synthetic-data')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🧪</span>
+                  <span class="research-nav-label">Synthetic Data</span>
+                </div>
+                <span class="research-nav-count" id="countSynthetic">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('ai-for-science')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🧬</span>
+                  <span class="research-nav-label">AI for Science</span>
+                </div>
+                <span class="research-nav-count" id="countAIScience">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('open-source')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔓</span>
+                  <span class="research-nav-label">Open Source Models</span>
+                </div>
+                <span class="research-nav-count" id="countOpenSource">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
+              <div class="research-nav-title">Optimization</div>
+              <div class="research-nav-item" onclick="filterResearch('optimization')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">⚡</span>
+                  <span class="research-nav-label">LLM Optimization</span>
+                </div>
+                <span class="research-nav-count" id="countOptimization">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('benchmarks')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📊</span>
+                  <span class="research-nav-label">Benchmarks</span>
+                </div>
+                <span class="research-nav-count" id="countBenchmarks">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('reasoning')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🧠</span>
+                  <span class="research-nav-label">Reasoning / o1</span>
+                </div>
+                <span class="research-nav-count" id="countReasoning">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('code-generation')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">💻</span>
+                  <span class="research-nav-label">Code Generation</span>
+                </div>
+                <span class="research-nav-count" id="countCodeGen">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
+              <div class="research-nav-title">Business</div>
+              <div class="research-nav-item" onclick="filterResearch('industry')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🏢</span>
+                  <span class="research-nav-label">Industry Reports</span>
+                </div>
+                <span class="research-nav-count" id="countIndustry">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('governance')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">⚖️</span>
+                  <span class="research-nav-label">AI Governance</span>
+                </div>
+                <span class="research-nav-count" id="countGovernance">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('multimodal')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">👁️</span>
+                  <span class="research-nav-label">Multimodal AI</span>
+                </div>
+                <span class="research-nav-count" id="countMultimodal">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('rag')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔍</span>
+                  <span class="research-nav-label">RAG Systems</span>
+                </div>
+                <span class="research-nav-count" id="countRAGSystems">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
               <div class="research-nav-title">Sources</div>
               <div class="research-nav-item" onclick="filterResearchBySource('arXiv')">
                 <div class="research-nav-item-left">
@@ -13145,6 +13245,22 @@
       countEl('countSafety', articles.filter(a => a.category === 'ai-safety').length);
       countEl('countInfra', articles.filter(a => a.category === 'infrastructure').length);
       countEl('countUX', articles.filter(a => a.category === 'ux-patterns').length);
+      // Emerging Tech
+      countEl('countHealthcare', articles.filter(a => a.category === 'healthcare-ai').length);
+      countEl('countEdge', articles.filter(a => a.category === 'edge-ai').length);
+      countEl('countSynthetic', articles.filter(a => a.category === 'synthetic-data').length);
+      countEl('countAIScience', articles.filter(a => a.category === 'ai-for-science').length);
+      countEl('countOpenSource', articles.filter(a => a.category === 'open-source').length);
+      // Optimization
+      countEl('countOptimization', articles.filter(a => a.category === 'optimization').length);
+      countEl('countBenchmarks', articles.filter(a => a.category === 'benchmarks').length);
+      countEl('countReasoning', articles.filter(a => a.category === 'reasoning').length);
+      countEl('countCodeGen', articles.filter(a => a.category === 'code-generation').length);
+      // Business
+      countEl('countIndustry', articles.filter(a => a.category === 'industry').length);
+      countEl('countGovernance', articles.filter(a => a.category === 'governance').length);
+      countEl('countMultimodal', articles.filter(a => a.category === 'multimodal').length);
+      countEl('countRAGSystems', articles.filter(a => a.category === 'rag').length);
       // Sources
       countEl('countArxiv', articles.filter(a => a.source === 'arXiv').length);
       countEl('countNature', articles.filter(a => a.source === 'Nature').length);
@@ -13176,7 +13292,23 @@
         'ai-safety': 'AI Safety & Alignment',
         'infrastructure': 'Infrastructure',
         'ux-patterns': 'UX Patterns',
-        'industry-reports': 'Industry Reports'
+        'industry-reports': 'Industry Reports',
+        // Emerging Tech
+        'healthcare-ai': 'Healthcare AI',
+        'edge-ai': 'Edge AI / TinyML',
+        'synthetic-data': 'Synthetic Data',
+        'ai-for-science': 'AI for Science',
+        'open-source': 'Open Source Models',
+        // Optimization
+        'optimization': 'LLM Optimization',
+        'benchmarks': 'Benchmarks',
+        'reasoning': 'Reasoning / o1',
+        'code-generation': 'Code Generation',
+        // Business
+        'industry': 'Industry Reports',
+        'governance': 'AI Governance',
+        'multimodal': 'Multimodal AI',
+        'rag': 'RAG Systems'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
