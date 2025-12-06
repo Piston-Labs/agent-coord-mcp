@@ -8769,16 +8769,20 @@
 
     /* ========== CEO PORTAL STYLES ========== */
     .ceo-portal { display: flex; flex-direction: column; height: 100%; background: var(--bg-primary); }
-    .ceo-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
+    .ceo-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, var(--bg-secondary) 0%, rgba(22, 27, 34, 0.95) 100%); }
     .ceo-header-left { display: flex; flex-direction: column; gap: 4px; }
     .ceo-stats { display: flex; gap: 24px; }
-    .ceo-stat { display: flex; flex-direction: column; align-items: center; }
-    .ceo-stat-value { font-size: 24px; font-weight: 700; color: var(--accent); }
+    .ceo-stat { display: flex; flex-direction: column; align-items: center; padding: 8px 16px; background: rgba(88, 166, 255, 0.05); border-radius: 8px; transition: all 0.2s ease; }
+    .ceo-stat:hover { background: rgba(88, 166, 255, 0.1); transform: translateY(-2px); }
+    .ceo-stat-value { font-size: 24px; font-weight: 700; color: var(--accent); transition: transform 0.2s ease; }
+    .ceo-stat:hover .ceo-stat-value { transform: scale(1.05); }
     .ceo-stat-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
-    .ceo-tabs { display: flex; gap: 4px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); }
-    .ceo-tab { background: transparent; border: none; padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-radius: 6px; transition: all 0.15s; }
-    .ceo-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-    .ceo-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .ceo-tabs { display: flex; gap: 4px; padding: 12px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); overflow-x: auto; scrollbar-width: none; -ms-overflow-style: none; }
+    .ceo-tabs::-webkit-scrollbar { display: none; }
+    .ceo-tab { background: transparent; border: none; padding: 10px 20px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; border-radius: 6px; transition: all 0.2s ease; white-space: nowrap; position: relative; }
+    .ceo-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); transform: translateY(-1px); }
+    .ceo-tab:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ceo-tab.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.35); }
     .ceo-content { flex: 1; overflow: hidden; }
     .ceo-panel { display: none; flex-direction: column; height: 100%; }
     .ceo-panel.active { display: flex; }
@@ -8790,8 +8794,9 @@
     .ceo-add-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
     .ceo-list { flex: 1; overflow-y: auto; padding: 16px 24px; display: flex; flex-direction: column; gap: 12px; }
     .ceo-empty { text-align: center; padding: 60px 20px; color: var(--text-secondary); font-size: 14px; }
-    .ceo-contact-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; gap: 16px; transition: all 0.15s; cursor: pointer; }
-    .ceo-contact-card:hover { border-color: var(--accent); transform: translateX(4px); }
+    .ceo-contact-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; gap: 16px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+    .ceo-contact-card:hover { border-color: var(--accent); transform: translateX(4px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(88, 166, 255, 0.1); }
+    .ceo-contact-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
     .contact-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: white; flex-shrink: 0; }
     .contact-info { flex: 1; min-width: 0; }
     .contact-name { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
@@ -8811,14 +8816,16 @@
     .contact-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
     .contact-follow-up { font-size: 11px; color: var(--warning); }
     .contact-follow-up.overdue { color: var(--danger); }
-    .ceo-idea-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; transition: all 0.15s; cursor: pointer; }
-    .ceo-idea-card:hover { border-color: var(--accent); }
+    .ceo-idea-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+    .ceo-idea-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
+    .ceo-idea-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
     .ceo-idea-card.high { border-left: 4px solid #f85149; }
     .ceo-idea-card.medium { border-left: 4px solid #d29922; }
     .ceo-idea-card.low { border-left: 4px solid #8b949e; }
-    .ceo-task-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; transition: all 0.15s; cursor: pointer; margin-bottom: 8px; }
-    .ceo-task-card:hover { border-color: var(--accent); transform: translateX(4px); }
-    .ceo-task-card.done { opacity: 0.7; }
+    .ceo-task-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; margin-bottom: 8px; }
+    .ceo-task-card:hover { border-color: var(--accent); transform: translateX(4px); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); }
+    .ceo-task-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ceo-task-card.done { opacity: 0.6; text-decoration: line-through; }
     .ceo-task-card .task-header { display: flex; align-items: center; gap: 10px; }
     .ceo-task-card .task-status-icon { font-size: 16px; }
     .ceo-task-card .task-title { flex: 1; font-weight: 600; font-size: 14px; }
@@ -8829,9 +8836,10 @@
     .idea-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
     .idea-status { font-size: 12px; color: var(--text-secondary); }
     .idea-date { font-size: 11px; color: var(--text-secondary); }
-    .ceo-note-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; transition: all 0.15s; cursor: pointer; }
-    .ceo-note-card:hover { border-color: var(--accent); }
-    .ceo-note-card.pinned { border-color: var(--warning); background: rgba(210, 153, 34, 0.05); }
+    .ceo-note-card { background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+    .ceo-note-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12); }
+    .ceo-note-card:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .ceo-note-card.pinned { border-color: var(--warning); background: rgba(210, 153, 34, 0.05); box-shadow: 0 0 0 1px rgba(210, 153, 34, 0.15); }
     .note-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .note-title { font-size: 15px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
     .note-pin { color: var(--warning); }
@@ -8852,28 +8860,47 @@
     @media (max-width: 768px) {
       .ceo-header { flex-direction: column; gap: 16px; padding: 16px; }
       .ceo-header-left { align-items: center; text-align: center; }
-      .ceo-stats { flex-wrap: wrap; justify-content: center; gap: 16px; }
-      .ceo-stat { min-width: 60px; }
-      .ceo-stat-value { font-size: 20px; }
-      .ceo-tabs { padding: 8px 12px; gap: 4px; flex-wrap: wrap; justify-content: center; }
-      .ceo-tab { padding: 8px 12px; font-size: 12px; }
+      .ceo-stats { flex-wrap: wrap; justify-content: center; gap: 12px; }
+      .ceo-stat { min-width: 70px; padding: 10px 14px; }
+      .ceo-stat-value { font-size: 22px; }
+      .ceo-tabs { padding: 10px 12px; gap: 6px; overflow-x: auto; flex-wrap: nowrap; justify-content: flex-start; -webkit-overflow-scrolling: touch; scroll-snap-type: x mandatory; }
+      .ceo-tab { padding: 10px 16px; font-size: 13px; min-height: 44px; scroll-snap-align: start; flex-shrink: 0; }
       .ceo-panel-header { flex-direction: column; gap: 12px; padding: 12px 16px; }
-      .ceo-filters { flex-wrap: wrap; }
+      .ceo-filters { flex-wrap: wrap; gap: 8px; }
+      .ceo-filters select, .ceo-filters input { min-height: 44px; font-size: 16px; }
       .ceo-filters input { min-width: 100%; }
-      .ceo-list { padding: 12px 16px; }
-      .ceo-contact-card { flex-direction: column; gap: 12px; }
+      .ceo-add-btn { min-height: 44px; width: 100%; font-size: 14px; }
+      .ceo-list { padding: 12px 16px; -webkit-overflow-scrolling: touch; }
+      .ceo-contact-card { flex-direction: column; gap: 12px; padding: 14px 16px; }
+      .ceo-contact-card:hover { transform: none; }
+      .ceo-contact-card:active { transform: scale(0.98); background: var(--bg-tertiary); }
+      .contact-avatar { width: 40px; height: 40px; font-size: 16px; }
       .contact-actions { flex-direction: row; width: 100%; justify-content: space-between; }
+      .ceo-idea-card:hover, .ceo-note-card:hover, .ceo-task-card:hover { transform: none; }
+      .ceo-idea-card:active, .ceo-note-card:active, .ceo-task-card:active { transform: scale(0.98); background: var(--bg-tertiary); }
       .ceo-form-row { grid-template-columns: 1fr; }
-      #ceoExecSummary { margin: 12px; padding: 12px 16px; }
-      #execSummaryContent { grid-template-columns: 1fr; }
+      #ceoExecSummary { margin: 12px; padding: 14px 16px; }
+      #execSummaryContent { grid-template-columns: 1fr; gap: 12px; }
+      .ceo-modal { max-width: 100%; margin: 10px; border-radius: 12px; }
+      .ceo-form-group input, .ceo-form-group select, .ceo-form-group textarea { font-size: 16px; min-height: 44px; }
     }
     @media (max-width: 480px) {
-      .ceo-stats { gap: 12px; }
-      .ceo-stat { min-width: 50px; }
+      .ceo-header { padding: 12px; }
+      .ceo-stats { gap: 8px; }
+      .ceo-stat { min-width: 60px; padding: 8px 10px; }
       .ceo-stat-value { font-size: 18px; }
       .ceo-stat-label { font-size: 9px; }
-      .ceo-tabs { gap: 2px; }
-      .ceo-tab { padding: 6px 10px; font-size: 11px; }
+      .ceo-tabs { padding: 8px; gap: 4px; }
+      .ceo-tab { padding: 8px 12px; font-size: 12px; min-height: 40px; }
+      .ceo-list { padding: 8px 12px; }
+      .ceo-contact-card, .ceo-idea-card, .ceo-note-card, .ceo-task-card { padding: 12px; border-radius: 10px; }
+      .contact-name, .idea-title, .note-title { font-size: 14px; }
+      .contact-company, .idea-description, .note-content { font-size: 12px; }
+      .contact-badge { font-size: 10px; padding: 3px 8px; }
+    }
+    /* iOS safe area support for CEO Portal */
+    @supports (padding: env(safe-area-inset-bottom)) {
+      .ceo-list { padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
     }
 
     /* Direct Messaging Styles */
@@ -11389,7 +11416,7 @@
             </div>
             <div class="research-search">
               <span class="research-search-icon">🔍</span>
-              <input type="text" id="researchSearchInput" placeholder="Search papers..." oninput="searchResearch(this.value)">
+              <input type="text" id="researchSearchInput" placeholder="Search papers..." oninput="debouncedSearchResearch(this.value)">
             </div>
           </div>
           <div class="research-nav" id="researchNav">
@@ -11905,7 +11932,7 @@
                   <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Build Our Own AI - Research & Documentation</span>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                  <input type="text" id="aiResearchSearch" placeholder="Search research..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 12px; width: 200px;" oninput="filterAiResearch()">
+                  <input type="text" id="aiResearchSearch" placeholder="Search research..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 12px; width: 200px;" oninput="debouncedFilterAiResearch()">
                   <button class="ceo-add-btn" onclick="loadAiResearch()" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);">🔄 Refresh</button>
                 </div>
               </div>
@@ -12553,6 +12580,27 @@
 
     // Expose globally for manual error reporting
     window.ErrorTracker = ErrorTracker;
+    // =========================================================================
+
+    // =========================================================================
+    // Debounce Utility - Prevents excessive function calls
+    // =========================================================================
+    function debounce(func, wait = 300) {
+      let timeout;
+      return function executedFunction(...args) {
+        const later = () => {
+          clearTimeout(timeout);
+          func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+      };
+    }
+
+    // Create debounced versions of search functions
+    const debouncedSearchResearch = debounce((value) => searchResearch(value), 250);
+    const debouncedFilterAiResearch = debounce(() => filterAiResearch(), 250);
+    const debouncedFilterDMUsers = debounce(() => filterDMUsers(), 200);
     // =========================================================================
 
     // Username persistence - check localStorage or generate random
@@ -15620,7 +15668,7 @@
             <!-- Carfax Company Deep Dive -->
             <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px;">
               <h4 style="margin: 0 0 16px 0; color: var(--text-primary); font-size: 14px;">🏢 Carfax Company Profile</h4>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 16px;">
                 <div>
                   <div style="font-size: 11px; color: var(--text-tertiary); margin-bottom: 4px;">Parent Company</div>
                   <div style="font-size: 13px; color: var(--text-primary); font-weight: 600;">S&P Global Mobility (IHS Markit)</div>
@@ -15692,7 +15740,7 @@
             <!-- Their Gap / Our Opportunity -->
             <div style="background: var(--bg-secondary); border-radius: 12px; padding: 20px; margin-bottom: 20px; border-left: 4px solid #ef4444;">
               <h4 style="margin: 0 0 12px 0; color: var(--text-primary); font-size: 14px;">⚠️ Carfax's Critical Gap</h4>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                 <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px;">
                   <div style="font-size: 11px; color: #ef4444; font-weight: 600; margin-bottom: 4px;">WHAT THEY HAVE</div>
                   <ul style="margin: 0; padding-left: 16px; color: var(--text-secondary); font-size: 11px; line-height: 1.6;">
@@ -15833,7 +15881,7 @@
               <p style="color: var(--text-secondary); font-size: 12px; margin: 0 0 16px 0; line-height: 1.5;">
                 This is Carfax's biggest pain point. <strong>450,000+ vehicles</strong> sold yearly with rolled-back odometers. We solve it completely.
               </p>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 16px;">
                 <div style="background: rgba(239, 68, 68, 0.1); padding: 12px; border-radius: 8px;">
                   <div style="font-size: 11px; color: #ef4444; font-weight: 600; margin-bottom: 4px;">CARFAX TODAY</div>
                   <div style="font-size: 24px; font-weight: 700; color: #ef4444;">60-70%</div>
@@ -15853,7 +15901,7 @@
                   GPS-calculated distance vs OBD-II odometer reading = <strong>ground truth verification</strong>. Impossible to roll back without triggering immediate alert.
                 </div>
               </div>
-              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 8px;">
                 <div style="background: var(--bg-tertiary); padding: 10px; border-radius: 6px; text-align: center;">
                   <div style="font-size: 14px; font-weight: 600; color: #10b981;">+$10-20</div>
                   <div style="font-size: 10px; color: var(--text-tertiary);">"Verified Live" premium/report</div>
@@ -23244,7 +23292,7 @@
   <div class="dm-new-modal" id="dmNewModal">
     <div class="dm-new-modal-content">
       <h3 style="margin: 0 0 16px 0;">Start a conversation</h3>
-      <input type="text" id="dmSearchUser" placeholder="Search users..." style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" oninput="filterDMUsers()" />
+      <input type="text" id="dmSearchUser" placeholder="Search users..." style="width: 100%; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary);" oninput="debouncedFilterDMUsers()" />
       <div class="dm-user-list" id="dmUserList"></div>
       <button style="width: 100%; padding: 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; color: var(--text-primary); cursor: pointer;" onclick="hideNewDMModal()">Cancel</button>
     </div>
