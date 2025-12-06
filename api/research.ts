@@ -134,6 +134,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      // Serve PERSISTENCE folder documents for CEO Portal AI Research tab
+      if (action === 'persistence-doc') {
+        const { file } = req.query;
+        if (!file) {
+          return res.status(400).json({ error: 'file parameter required' });
+        }
+
+        // Security: Only allow specific files from PERSISTENCE folder
+        const allowedFiles = [
+          'executive-summary.md',
+          'philosophy-framework-summary.md',
+          'philosophy-framework.md',
+          'implementation-roadmap.md',
+          'multi-agent-coordination.md',
+          'model-architecture.md',
+          'data-strategy.md',
+          'responsible-ai.md',
+          'competitive-positioning.md',
+          'compute-infrastructure.md',
+          'training-pipeline.md',
+          'funding-requirements.md',
+        ];
+
+        const filename = file as string;
+        if (!allowedFiles.includes(filename)) {
+          return res.status(403).json({ error: 'File not in allowed list' });
+        }
+
+        // Try to read from GitHub (for serverless environments)
+        try {
+          const repoUrl = 'https://raw.githubusercontent.com/Piston-Labs/agent-coord-mcp/main/research/PERSISTENCE/';
+          const response = await fetch(repoUrl + encodeURIComponent(filename));
+
+          if (response.ok) {
+            const content = await response.text();
+            // Convert markdown to basic HTML
+            const html = content
+              .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+              .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+              .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+              .replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>')
+              .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+              .replace(/\*(.*)\*/gim, '<em>$1</em>')
+              .replace(/^\- (.*$)/gim, '<li>$1</li>')
+              .replace(/^\| (.*) \|$/gim, (match, content) => {
+                const cells = content.split(' | ').map((cell: string) => `<td style="padding: 8px; border: 1px solid var(--border);">${cell.trim()}</td>`).join('');
+                return `<tr>${cells}</tr>`;
+              })
+              .replace(/\n\n/g, '</p><p>')
+              .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre style="background: var(--bg-tertiary); padding: 12px; border-radius: 6px; overflow-x: auto;"><code>$2</code></pre>');
+
+            return res.json({
+              file: filename,
+              content,
+              html: `<div style="max-width: 800px;">${html}</div>`,
+            });
+          }
+        } catch (e) {
+          console.error('Failed to fetch from GitHub:', e);
+        }
+
+        return res.status(404).json({ error: 'Document not found' });
+      }
+
       // Generate executive summary for a topic
       if (action === 'summary' && topic) {
         const all = await redis.hgetall(RESEARCH_KEY) || {};

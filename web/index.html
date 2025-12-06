@@ -15305,10 +15305,221 @@
           tab.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
           tab.style.color = 'white';
         }
+        if (tab.dataset.ceotab === 'airesearch' && !isActive) {
+          tab.style.background = 'transparent';
+          tab.style.color = 'var(--text-secondary)';
+        } else if (tab.dataset.ceotab === 'airesearch' && isActive) {
+          tab.style.background = 'linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%)';
+          tab.style.color = 'white';
+        }
       });
       document.querySelectorAll('.ceo-panel').forEach(panel => panel.classList.toggle('active', panel.id === 'ceo' + tabName.charAt(0).toUpperCase() + tabName.slice(1) + 'Panel'));
       // Load work progress when tab is shown
       if (tabName === 'progress') loadWorkProgress();
+      // Load AI research when tab is shown
+      if (tabName === 'airesearch') loadAiResearch();
+    }
+
+    // === AI RESEARCH - Build Our Own AI Documentation ===
+    let aiResearchData = null;
+    const persistenceDocuments = [
+      { file: 'executive-summary.md', title: '📋 Executive Summary', desc: 'Quick-reference guide - start here', readTime: '3 min', priority: 1 },
+      { file: 'philosophy-framework-summary.md', title: '🧠 Philosophy Framework (1-Pager)', desc: 'CEO summary of Stoic AI alignment', readTime: '3 min', priority: 2 },
+      { file: 'philosophy-framework.md', title: '📚 Philosophy Framework (Full)', desc: 'Complete Stoic AI philosophical synthesis', readTime: '15 min', priority: 3 },
+      { file: 'implementation-roadmap.md', title: '🗺️ Implementation Roadmap', desc: 'Phases 1-3 with costs and milestones', readTime: '8 min', priority: 4 },
+      { file: 'multi-agent-coordination.md', title: '🤝 Multi-Agent Coordination', desc: 'Our unique architecture vs competitors', readTime: '10 min', priority: 5 },
+      { file: 'model-architecture.md', title: '🏗️ Model Architecture', desc: 'How transformers work, scaling laws', readTime: '10 min', priority: 6 },
+      { file: 'data-strategy.md', title: '📊 Data Strategy', desc: 'Training data requirements', readTime: '8 min', priority: 7 },
+      { file: 'responsible-ai.md', title: '⚖️ Responsible AI', desc: 'Safety techniques, RLHF, red teaming', readTime: '15 min', priority: 8 },
+      { file: 'competitive-positioning.md', title: '🎯 Competitive Positioning', desc: 'Market landscape, differentiation', readTime: '12 min', priority: 9 },
+      { file: 'compute-infrastructure.md', title: '💻 Compute Infrastructure', desc: 'GPU requirements, cloud vs on-prem', readTime: '8 min', priority: 10 },
+      { file: 'training-pipeline.md', title: '⚙️ Training Pipeline', desc: 'Pre-training, fine-tuning process', readTime: '10 min', priority: 11 },
+      { file: 'funding-requirements.md', title: '💰 Funding Requirements', desc: 'Cost estimates by tier', readTime: '5 min', priority: 12 }
+    ];
+
+    async function loadAiResearch() {
+      const container = document.getElementById('ceoAiresearchList');
+      container.innerHTML = '<div class="ceo-empty">Loading AI research documents...</div>';
+
+      try {
+        // First, try to fetch from research API to get research library entries
+        const researchRes = await fetch(API_BASE + '/research?action=topics', { credentials: 'include' });
+        const researchTopics = researchRes.ok ? await researchRes.json() : { topics: [] };
+
+        // Build the UI
+        let html = `
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+              <span style="font-size: 24px;">🧠</span>
+              <div>
+                <h3 style="margin: 0; color: var(--text-primary); font-size: 18px;">Build Our Own AI</h3>
+                <p style="margin: 4px 0 0 0; color: var(--text-secondary); font-size: 13px;">Strategic research & documentation for Piston Labs AI development</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px;">
+            <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(99, 102, 241, 0.1) 100%); padding: 16px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.2);">
+              <div style="font-size: 24px; font-weight: 700; color: #8b5cf6;">${persistenceDocuments.length}</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Core Documents</div>
+            </div>
+            <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); padding: 16px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+              <div style="font-size: 24px; font-weight: 700; color: #10b981;">${researchTopics.topics?.length || 0}</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Research Topics</div>
+            </div>
+            <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); padding: 16px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.2);">
+              <div style="font-size: 24px; font-weight: 700; color: #3b82f6;">~2hrs</div>
+              <div style="font-size: 12px; color: var(--text-secondary);">Total Read Time</div>
+            </div>
+          </div>
+
+          <!-- Recommended Reading Order -->
+          <div style="margin-bottom: 24px;">
+            <h4 style="margin: 0 0 12px 0; color: var(--text-primary); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+              <span>📖</span> Recommended Reading Order
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;" id="aiResearchDocList">
+        `;
+
+        // Add document cards
+        persistenceDocuments.forEach((doc, idx) => {
+          html += `
+            <div class="ai-research-doc" data-file="${doc.file}" onclick="viewAiResearchDoc('${doc.file}')" style="display: flex; align-items: center; gap: 16px; padding: 12px 16px; background: var(--bg-secondary); border-radius: 8px; cursor: pointer; border: 1px solid var(--border); transition: all 0.2s ease;">
+              <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600;">${idx + 1}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${doc.title}</div>
+                <div style="font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${doc.desc}</div>
+              </div>
+              <div style="font-size: 11px; color: var(--text-tertiary); white-space: nowrap;">⏱️ ${doc.readTime}</div>
+            </div>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+
+          <!-- Research Library Topics -->
+          <div style="margin-bottom: 24px;">
+            <h4 style="margin: 0 0 12px 0; color: var(--text-primary); font-size: 14px; display: flex; align-items: center; gap: 8px;">
+              <span>📚</span> Research Library Topics
+            </h4>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        `;
+
+        // Add topic tags
+        const topics = researchTopics.topics || ['philosophy', 'alignment', 'titans', 'technology', 'architecture'];
+        topics.forEach(topic => {
+          html += `
+            <button onclick="searchAiResearch('${topic}')" style="padding: 6px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 16px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
+              ${topic}
+            </button>
+          `;
+        });
+
+        html += `
+            </div>
+          </div>
+
+          <!-- Key Thesis -->
+          <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(99, 102, 241, 0.05) 100%); padding: 20px; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+            <h4 style="margin: 0 0 8px 0; color: #8b5cf6; font-size: 13px;">💡 The Stoic AI Thesis</h4>
+            <p style="margin: 0; color: var(--text-primary); font-size: 13px; line-height: 1.6;">
+              Instead of aligning AI through external constraints alone (which is provably limited),
+              <strong>embed virtuous patterns into the system architecture itself</strong>.
+              Don't build a better LLM - build a better way for LLMs to work together.
+            </p>
+          </div>
+        `;
+
+        container.innerHTML = html;
+        aiResearchData = { documents: persistenceDocuments, topics };
+
+        // Add hover effects
+        document.querySelectorAll('.ai-research-doc').forEach(el => {
+          el.addEventListener('mouseenter', () => {
+            el.style.borderColor = '#8b5cf6';
+            el.style.transform = 'translateX(4px)';
+          });
+          el.addEventListener('mouseleave', () => {
+            el.style.borderColor = 'var(--border)';
+            el.style.transform = 'translateX(0)';
+          });
+        });
+
+      } catch (e) {
+        console.error('Failed to load AI research:', e);
+        container.innerHTML = `<div class="ceo-empty">
+          <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+          <div style="color: var(--text-secondary);">Failed to load AI research documents</div>
+          <button onclick="loadAiResearch()" style="margin-top: 16px; background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">🔄 Retry</button>
+        </div>`;
+      }
+    }
+
+    function filterAiResearch() {
+      const searchTerm = document.getElementById('aiResearchSearch').value.toLowerCase();
+      const docs = document.querySelectorAll('.ai-research-doc');
+      docs.forEach(doc => {
+        const title = doc.querySelector('div[style*="font-weight: 600"]')?.textContent.toLowerCase() || '';
+        const desc = doc.querySelector('div[style*="font-size: 12px"]')?.textContent.toLowerCase() || '';
+        const matches = title.includes(searchTerm) || desc.includes(searchTerm);
+        doc.style.display = matches ? 'flex' : 'none';
+      });
+    }
+
+    async function viewAiResearchDoc(filename) {
+      // Open document viewer modal
+      const modal = document.createElement('div');
+      modal.id = 'aiResearchModal';
+      modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 20px;';
+      modal.innerHTML = `
+        <div style="background: var(--bg-primary); border-radius: 16px; width: 100%; max-width: 900px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+            <h3 style="margin: 0; color: var(--text-primary);">${filename}</h3>
+            <button onclick="document.getElementById('aiResearchModal').remove()" style="background: none; border: none; color: var(--text-secondary); font-size: 24px; cursor: pointer; padding: 4px 8px;">×</button>
+          </div>
+          <div id="aiResearchContent" style="padding: 24px; overflow-y: auto; flex: 1;">
+            <div class="ceo-empty">Loading document...</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+      try {
+        // Fetch document content via research API
+        const res = await fetch(API_BASE + '/research?action=persistence-doc&file=' + encodeURIComponent(filename), { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('aiResearchContent').innerHTML = `
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.8; color: var(--text-primary);">
+              ${data.html || marked.parse(data.content || 'Document not found')}
+            </div>
+          `;
+        } else {
+          document.getElementById('aiResearchContent').innerHTML = `
+            <div class="ceo-empty">
+              <div style="font-size: 48px; margin-bottom: 12px;">📄</div>
+              <div style="color: var(--text-secondary);">Document preview not available</div>
+              <p style="color: var(--text-tertiary); font-size: 12px; margin-top: 8px;">View the full document in the research/PERSISTENCE folder</p>
+            </div>
+          `;
+        }
+      } catch (e) {
+        document.getElementById('aiResearchContent').innerHTML = `
+          <div class="ceo-empty">
+            <div style="font-size: 48px; margin-bottom: 12px;">⚠️</div>
+            <div style="color: var(--text-secondary);">Failed to load document</div>
+          </div>
+        `;
+      }
+    }
+
+    function searchAiResearch(topic) {
+      document.getElementById('aiResearchSearch').value = topic;
+      filterAiResearch();
     }
 
     // === WORK PROGRESS - See what agents accomplished ===
