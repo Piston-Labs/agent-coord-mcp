@@ -333,6 +333,49 @@ tags: [tag1, tag2, tag3]
 - `/src/tools/` - MCP tool implementations
 - `/web/` - Dashboard frontend
 - `/docs/` - Documentation
+- `/skills/` - Curated skills library (see below)
+
+## Skills Library
+
+The `/skills/` directory contains curated patterns extracted from [ordinary-claude-skills](https://github.com/microck/ordinary-claude-skills), organized by context cluster for token-optimized loading.
+
+### Quick Reference
+
+| Skill | Cluster | Use For |
+|-------|---------|---------|
+| [workflow-orchestration](skills/coordination/workflow-orchestration.md) | coordination | Saga pattern, fan-out/fan-in, distributed workflows |
+| [sparc-methodology](skills/coordination/sparc-methodology.md) | coordination | Multi-agent orchestration with 17 modes |
+| [execute-plan](skills/coordination/execute-plan.md) | coordination | Status markers, plan execution cycle |
+| [mcp-integration](skills/infrastructure/mcp-integration.md) | infrastructure | MCP server types and patterns |
+| [hook-development](skills/infrastructure/hook-development.md) | infrastructure | Event-driven validation, prompt hooks |
+| [error-handling](skills/patterns/error-handling.md) | patterns | Circuit breaker, retry, degradation |
+| [distributed-tracing](skills/patterns/distributed-tracing.md) | patterns | Traces, spans, observability |
+| [prompt-engineering](skills/development/prompt-engineering.md) | development | Few-shot, CoT, templates |
+| [skill-development](skills/development/skill-development.md) | development | Creating new skills |
+| [research-methodology](skills/development/research-methodology.md) | development | Code-first research |
+
+### When to Load Skills
+
+| Task Type | Recommended Skill |
+|-----------|-------------------|
+| Multi-step orchestration | workflow-orchestration |
+| Large feature with multiple agents | sparc-methodology |
+| Executing a plan file | execute-plan |
+| External service integration | mcp-integration |
+| Error-prone operations | error-handling |
+| Multi-agent debugging | distributed-tracing |
+
+### Loading Skills
+
+```typescript
+// Read a specific skill (token-efficient)
+file-read-smart filePath="skills/coordination/workflow-orchestration.md"
+
+// Or use file-info first to check size
+file-info filePath="skills/patterns/error-handling.md"
+```
+
+All skills have YAML frontmatter with `cluster`, `complexity`, and `ai_summary` for context-engine integration.
 
 ## Automated Tool Testing
 
