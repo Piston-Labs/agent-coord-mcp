@@ -9046,6 +9046,270 @@
       font-size: 12px;
     }
 
+    /* PERSISTENCE Documents Browser */
+    .persistence-docs-filters {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .persistence-docs-filters select {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .persistence-docs-count {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+    .persistence-docs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+    .persistence-doc-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .persistence-doc-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #8b5cf6);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .persistence-doc-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(139, 92, 246, 0.4);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    }
+    .persistence-doc-card:hover::before {
+      opacity: 1;
+    }
+    .persistence-doc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      gap: 12px;
+    }
+    .persistence-doc-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+      flex: 1;
+    }
+    .persistence-doc-complexity {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .persistence-doc-complexity.L1 { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+    .persistence-doc-complexity.L2 { background: rgba(251, 191, 36, 0.2); color: #fbbf24; }
+    .persistence-doc-complexity.L3 { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .persistence-doc-summary {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 16px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .persistence-doc-clusters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .persistence-doc-cluster {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+
+    /* Document Viewer Modal */
+    .doc-viewer-modal {
+      max-width: 900px;
+      width: 95%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #1a1f2e 0%, #161b22 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .doc-viewer-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .doc-viewer-title-area {
+      flex: 1;
+    }
+    .doc-viewer-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 8px 0;
+      line-height: 1.3;
+    }
+    .doc-viewer-meta {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .doc-viewer-complexity {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+    .doc-viewer-clusters {
+      display: flex;
+      gap: 6px;
+    }
+    .doc-viewer-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 32px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.2s;
+      margin-left: 16px;
+    }
+    .doc-viewer-close:hover {
+      color: var(--text-primary);
+    }
+    .doc-viewer-content {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 15px;
+      line-height: 1.8;
+      color: var(--text-secondary);
+      padding-right: 8px;
+    }
+    .doc-viewer-content h1 {
+      font-size: 28px;
+      color: var(--text-primary);
+      margin: 32px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid rgba(139, 92, 246, 0.3);
+    }
+    .doc-viewer-content h1:first-child { margin-top: 0; }
+    .doc-viewer-content h2 {
+      font-size: 22px;
+      color: var(--text-primary);
+      margin: 28px 0 12px 0;
+    }
+    .doc-viewer-content h3 {
+      font-size: 18px;
+      color: var(--text-primary);
+      margin: 24px 0 10px 0;
+    }
+    .doc-viewer-content p {
+      margin-bottom: 16px;
+    }
+    .doc-viewer-content strong {
+      color: var(--text-primary);
+    }
+    .doc-viewer-content blockquote {
+      border-left: 4px solid #8b5cf6;
+      padding: 16px 20px;
+      margin: 20px 0;
+      background: rgba(139, 92, 246, 0.1);
+      border-radius: 0 8px 8px 0;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+    .doc-viewer-content code {
+      background: rgba(139, 92, 246, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: #c4b5fd;
+    }
+    .doc-viewer-content pre {
+      background: #0d1117;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      overflow-x: auto;
+      margin: 16px 0;
+    }
+    .doc-viewer-content pre code {
+      background: none;
+      padding: 0;
+      font-size: 13px;
+      color: #e6edf3;
+    }
+    .doc-viewer-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    .doc-viewer-content th {
+      background: rgba(139, 92, 246, 0.15);
+      color: var(--text-primary);
+      font-weight: 600;
+      text-align: left;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+    }
+    .doc-viewer-content td {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+    }
+    .doc-viewer-content tr:hover td {
+      background: rgba(139, 92, 246, 0.05);
+    }
+    .doc-viewer-content ul, .doc-viewer-content ol {
+      margin: 12px 0 16px 0;
+      padding-left: 24px;
+    }
+    .doc-viewer-content li {
+      margin-bottom: 8px;
+    }
+    .doc-viewer-content hr {
+      border: none;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent);
+      margin: 32px 0;
+    }
+    .doc-viewer-content a {
+      color: #8b5cf6;
+      text-decoration: none;
+    }
+    .doc-viewer-content a:hover {
+      text-decoration: underline;
+    }
+
     /* Philosophy Portal Mobile Responsive */
     @media (max-width: 768px) {
       .philosophy-portal { padding-bottom: 80px; }
@@ -9140,6 +9404,21 @@
       .paper-section pre { padding: 12px; font-size: 11px; }
       .paper-section table { font-size: 11px; display: block; overflow-x: auto; }
       .paper-section th, .paper-section td { padding: 8px 10px; white-space: nowrap; }
+
+      /* Documents section mobile */
+      .persistence-docs-filters { flex-direction: column; align-items: stretch; gap: 10px; }
+      .persistence-docs-filters select { padding: 12px 14px; font-size: 14px; }
+      .persistence-docs-grid { grid-template-columns: 1fr; gap: 12px; }
+      .persistence-doc-card { padding: 16px; }
+      .persistence-doc-title { font-size: 15px; }
+      .persistence-doc-summary { font-size: 12px; -webkit-line-clamp: 2; }
+      .doc-viewer-modal { width: 100%; max-height: 100vh; height: 100%; border-radius: 0; padding: 16px; }
+      .doc-viewer-title { font-size: 18px; }
+      .doc-viewer-content { font-size: 14px; line-height: 1.6; }
+      .doc-viewer-content h1 { font-size: 20px; }
+      .doc-viewer-content h2 { font-size: 17px; }
+      .doc-viewer-content h3 { font-size: 15px; }
+      .doc-viewer-content table { font-size: 12px; display: block; overflow-x: auto; }
 
       /* Library mobile */
       .philosophy-library-filters { flex-direction: column; gap: 10px; }
@@ -12559,6 +12838,7 @@
               <button class="philosophy-pill" onclick="showPhilosophySection('virtues')">Four Virtues</button>
               <button class="philosophy-pill" onclick="showPhilosophySection('theories')">Theories</button>
               <button class="philosophy-pill" onclick="showPhilosophySection('paper')">Full Paper</button>
+              <button class="philosophy-pill" onclick="showPhilosophySection('documents')">AI Documents</button>
               <button class="philosophy-pill" onclick="showPhilosophySection('library')">Library</button>
             </div>
           </div>
@@ -12816,6 +13096,28 @@
               </div>
             </div>
 
+            <!-- AI Documents Section -->
+            <div class="philosophy-section" id="philosophyDocuments">
+              <h2 class="philosophy-section-title">AI-Generated Research Documents</h2>
+              <p class="philosophy-section-desc">Full research papers and strategic documents created by our AI agents</p>
+
+              <div class="persistence-docs-filters">
+                <select id="persistenceClusterFilter" onchange="filterPersistenceDocs(this.value)">
+                  <option value="all">All Clusters</option>
+                  <option value="philosophy">Philosophy</option>
+                  <option value="strategic">Strategic</option>
+                  <option value="technical">Technical</option>
+                  <option value="architecture">Architecture</option>
+                  <option value="operations">Operations</option>
+                </select>
+                <div class="persistence-docs-count" id="persistenceDocsCount">Loading...</div>
+              </div>
+
+              <div class="persistence-docs-grid" id="persistenceDocsGrid">
+                <div class="philosophy-library-loading">Loading AI documents...</div>
+              </div>
+            </div>
+
             <!-- Library Section -->
             <div class="philosophy-section" id="philosophyLibrary">
               <h2 class="philosophy-section-title">Philosophy Research Library</h2>
@@ -12875,6 +13177,25 @@
           <div class="philosophy-entry-footer">
             <div class="philosophy-entry-tags" id="philosophyEntryTags"></div>
             <a href="#" id="philosophyEntryLink" class="philosophy-entry-source" target="_blank" style="display:none;">View Source</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Document Viewer Modal -->
+      <div class="modal-overlay" id="docViewerModal" onclick="if(event.target === this) closeDocViewer()">
+        <div class="modal doc-viewer-modal">
+          <div class="doc-viewer-header">
+            <div class="doc-viewer-title-area">
+              <h2 class="doc-viewer-title" id="docViewerTitle">Document Title</h2>
+              <div class="doc-viewer-meta">
+                <span class="doc-viewer-complexity persistence-doc-complexity" id="docViewerComplexity">L1</span>
+                <div class="doc-viewer-clusters" id="docViewerClusters"></div>
+              </div>
+            </div>
+            <button class="doc-viewer-close" onclick="closeDocViewer()">&times;</button>
+          </div>
+          <div class="doc-viewer-content" id="docViewerContent">
+            Loading document...
           </div>
         </div>
       </div>
@@ -16440,11 +16761,17 @@
         'virtues': 'philosophyVirtues',
         'theories': 'philosophyTheories',
         'paper': 'philosophyPaper',
+        'documents': 'philosophyDocuments',
         'library': 'philosophyLibrary'
       };
       const targetId = sectionMap[sectionId];
       if (targetId) {
         document.getElementById(targetId).classList.add('active');
+      }
+
+      // Lazy load documents when that section is shown
+      if (sectionId === 'documents') {
+        loadPersistenceDocs();
       }
     }
 
@@ -16796,6 +17123,100 @@
         element.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       return false;
+    }
+
+    // === PERSISTENCE DOCUMENTS FUNCTIONS ===
+    let persistenceDocsData = [];
+    let persistenceDocsInitialized = false;
+
+    async function loadPersistenceDocs() {
+      if (persistenceDocsInitialized) return;
+      persistenceDocsInitialized = true;
+
+      const grid = document.getElementById('persistenceDocsGrid');
+      const countEl = document.getElementById('persistenceDocsCount');
+
+      try {
+        const res = await fetch(API_BASE + '/persistence-docs');
+        const data = await res.json();
+        persistenceDocsData = data.documents || [];
+        countEl.textContent = `${persistenceDocsData.length} documents`;
+        renderPersistenceDocs(persistenceDocsData);
+      } catch (e) {
+        console.error('Failed to load persistence docs:', e);
+        grid.innerHTML = '<div class="philosophy-library-loading">Failed to load documents</div>';
+      }
+    }
+
+    function renderPersistenceDocs(docs) {
+      const grid = document.getElementById('persistenceDocsGrid');
+      if (!docs || docs.length === 0) {
+        grid.innerHTML = '<div class="philosophy-library-loading">No documents found</div>';
+        return;
+      }
+
+      grid.innerHTML = docs.map(doc => `
+        <div class="persistence-doc-card" onclick="openDocViewer('${doc.id}')">
+          <div class="persistence-doc-header">
+            <span class="persistence-doc-title">${escapeHtml(doc.title)}</span>
+            ${doc.metadata.complexity ? `<span class="persistence-doc-complexity ${doc.metadata.complexity}">${doc.metadata.complexity}</span>` : ''}
+          </div>
+          <div class="persistence-doc-summary">${escapeHtml(doc.preview || '')}</div>
+          <div class="persistence-doc-clusters">
+            ${(doc.metadata.cluster || []).map(c => `<span class="persistence-doc-cluster">${escapeHtml(c)}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function filterPersistenceDocs(cluster) {
+      const countEl = document.getElementById('persistenceDocsCount');
+      if (cluster === 'all') {
+        renderPersistenceDocs(persistenceDocsData);
+        countEl.textContent = `${persistenceDocsData.length} documents`;
+        return;
+      }
+      const filtered = persistenceDocsData.filter(doc =>
+        doc.metadata.cluster?.some(c => c.toLowerCase().includes(cluster.toLowerCase()))
+      );
+      renderPersistenceDocs(filtered);
+      countEl.textContent = `${filtered.length} of ${persistenceDocsData.length} documents`;
+    }
+
+    async function openDocViewer(docId) {
+      const modal = document.getElementById('docViewerModal');
+      const titleEl = document.getElementById('docViewerTitle');
+      const complexityEl = document.getElementById('docViewerComplexity');
+      const clustersEl = document.getElementById('docViewerClusters');
+      const contentEl = document.getElementById('docViewerContent');
+
+      // Show loading
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      contentEl.innerHTML = '<div class="philosophy-library-loading">Loading document...</div>';
+
+      try {
+        const res = await fetch(API_BASE + '/persistence-docs?id=' + encodeURIComponent(docId));
+        const doc = await res.json();
+
+        titleEl.textContent = doc.title;
+        complexityEl.textContent = doc.metadata.complexity || 'L2';
+        complexityEl.className = 'doc-viewer-complexity persistence-doc-complexity ' + (doc.metadata.complexity || 'L2');
+        clustersEl.innerHTML = (doc.metadata.cluster || []).map(c =>
+          `<span class="persistence-doc-cluster">${escapeHtml(c)}</span>`
+        ).join('');
+
+        contentEl.innerHTML = doc.htmlContent || '<p>No content available</p>';
+      } catch (e) {
+        console.error('Failed to load document:', e);
+        contentEl.innerHTML = '<div class="philosophy-library-loading">Failed to load document</div>';
+      }
+    }
+
+    function closeDocViewer() {
+      const modal = document.getElementById('docViewerModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     // === CEO PORTAL FUNCTIONS ===
