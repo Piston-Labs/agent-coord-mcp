@@ -5281,17 +5281,24 @@
         padding: 14px;
         width: 100%;
         box-sizing: border-box;
-        min-height: 180px; /* Ensure cards aren't squashed */
+        min-height: auto; /* Allow cards to size naturally based on content */
+        height: auto;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: visible;
       }
 
-      /* Make device card content visible on mobile */
-      .device-card .device-metrics,
+      /* Make device card content visible on mobile with correct display types */
+      .device-card .device-metrics {
+        display: grid !important;
+      }
+
       .device-card .device-metrics-row2,
       .device-card .device-location,
       .device-card .device-health,
-      .device-card .device-mini-chart,
       .device-card .device-live-indicator {
-        display: grid !important;
+        display: flex !important;
       }
 
       .device-card .device-mini-chart {
@@ -5898,6 +5905,8 @@
 
       .device-card {
         padding: 12px;
+        height: auto;
+        min-height: auto;
       }
 
       .device-name {
@@ -5954,9 +5963,10 @@
         min-height: 44px;
       }
 
-      /* Device cards need larger touch targets for comfortable mobile use */
+      /* Device cards - ensure proper touch targets while allowing natural height */
       .device-card {
-        min-height: 80px;
+        min-height: auto;
+        height: auto;
         padding: 14px;
       }
       
@@ -10736,6 +10746,8 @@
       /* Device cards on mobile */
       .device-card {
         padding: 16px !important;
+        height: auto !important;
+        min-height: auto !important;
       }
 
       .device-metric {
