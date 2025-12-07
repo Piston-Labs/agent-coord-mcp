@@ -781,55 +781,60 @@
     }
     .research-overlay.active { display: block; }
 
-    /* Research Phone (768px) - Slide-out drawer */
+    /* Research Phone (768px) - Native dropdown replaces broken drawer */
     @media (max-width: 768px) {
-      .research-view { flex-direction: row !important; }
+      .research-view { flex-direction: column !important; }
+      /* Hide the sidebar completely on mobile - use native dropdown instead */
       .research-sidebar {
-        position: fixed !important;
-        top: 0;
-        left: 0;
-        width: 85% !important;
-        max-width: 320px;
-        height: 100vh !important;
-        min-width: auto !important;
-        max-height: 100vh !important;
-        z-index: 1002;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        box-shadow: 2px 0 12px rgba(0,0,0,0.2);
-        border-right: 1px solid var(--border) !important;
-        border-bottom: none !important;
-        flex-direction: column !important;
-        pointer-events: auto;
+        display: none !important;
       }
-      .research-sidebar.mobile-open {
-        transform: translateX(0);
+      /* Hide the toggle button - no longer needed */
+      .research-mobile-toggle {
+        display: none !important;
       }
-      /* Toggle visibility controlled by JS with .visible class */
-      .research-nav {
-        display: flex;
-        flex-direction: column;
-        flex-wrap: nowrap;
-        padding: 8px;
-        gap: 4px;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
+      /* Hide the overlay - no longer needed */
+      .research-overlay {
+        display: none !important;
       }
-      .research-nav-section { display: block; }
-      .research-nav-title { display: block; }
-      .research-nav-item {
-        padding: 12px 14px;
-        border-radius: 6px;
-        border-left: none;
-        background: transparent;
-        cursor: pointer;
-        -webkit-tap-highlight-color: rgba(88, 166, 255, 0.3);
+      /* Show the mobile filter dropdown */
+      .research-mobile-filter {
+        display: block !important;
       }
-      .research-nav-item:active {
-        background: rgba(88, 166, 255, 0.2);
-      }
-      .research-nav-item.active { background: var(--accent); }
-      .research-sidebar-footer { display: block; }
+    }
+
+    /* Mobile Filter Dropdown (replaces broken drawer) */
+    .research-mobile-filter {
+      display: none;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border-bottom: 1px solid var(--border);
+    }
+    .research-mobile-filter select {
+      width: 100%;
+      padding: 12px 16px;
+      font-size: 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2358a6ff' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+    }
+    .research-mobile-filter select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(88, 166, 255, 0.2);
+    }
+    .research-mobile-filter select optgroup {
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .research-mobile-filter select option {
+      padding: 8px;
     }
 
     /* Small Mobile (under 480px) */
@@ -844,7 +849,6 @@
       .research-nav-item { padding: 4px 8px; font-size: 11px; }
       .research-content { padding: 8px; }
       .research-grid { gap: 10px; }
-      .research-sidebar { width: 100% !important; max-width: 100%; }
     }
 
     /* ===========================================
@@ -12322,6 +12326,43 @@
 
       <!-- Research Library View -->
       <div class="tab-content research-view" id="researchView">
+        <!-- Mobile Category Selector (shown only on mobile) -->
+        <div class="research-mobile-filter" id="researchMobileFilter">
+          <select id="researchMobileSelect" onchange="handleMobileResearchFilter(this.value)">
+            <option value="all">All Papers</option>
+            <optgroup label="Browse">
+              <option value="seminal">Seminal Works</option>
+            </optgroup>
+            <optgroup label="Automotive & Telemetry">
+              <option value="telematics">Telematics</option>
+              <option value="carfax">Carfax Research</option>
+              <option value="connected-car">Connected Car</option>
+              <option value="fleet">Fleet Management</option>
+              <option value="ev-telematics">EV & Battery</option>
+              <option value="vehicle-data">Vehicle Data</option>
+            </optgroup>
+            <optgroup label="Core ML">
+              <option value="foundational-ml">Foundational ML</option>
+              <option value="scaling-efficiency">Scaling Laws</option>
+              <option value="architectures">Model Architectures</option>
+            </optgroup>
+            <optgroup label="Applications">
+              <option value="prompting-reasoning">Prompting & Reasoning</option>
+              <option value="retrieval-augmented">RAG Systems</option>
+              <option value="multi-agent">Multi-Agent Systems</option>
+              <option value="agents-tools">Agents & Tools</option>
+              <option value="code-models">Code Models</option>
+              <option value="long-context">Long Context</option>
+            </optgroup>
+            <optgroup label="Industry">
+              <option value="frontier-models">Frontier Models</option>
+              <option value="ai-safety">AI Safety</option>
+              <option value="philosophy">Philosophy</option>
+              <option value="infrastructure">Infrastructure</option>
+            </optgroup>
+          </select>
+        </div>
+
         <!-- Library Sidebar -->
         <div class="research-sidebar">
           <div class="research-sidebar-header">
@@ -14994,6 +15035,49 @@
       renderResearchGrid();
       // Close sidebar on mobile after selection
       closeResearchSidebar();
+    }
+
+    // Mobile dropdown filter handler
+    function handleMobileResearchFilter(category) {
+      currentResearchFilter = category;
+      currentResearchSearch = '';
+      const searchInput = document.getElementById('researchSearchInput');
+      if (searchInput) searchInput.value = '';
+
+      // Update active nav item in sidebar (for consistency)
+      document.querySelectorAll('.research-nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('onclick')?.includes(`'${category}'`)) {
+          item.classList.add('active');
+        }
+      });
+
+      // Update title
+      const titles = {
+        'all': 'All Papers',
+        'seminal': 'Seminal Works',
+        'telematics': 'Telematics',
+        'carfax': 'Carfax Research',
+        'connected-car': 'Connected Car',
+        'fleet': 'Fleet Management',
+        'ev-telematics': 'EV & Battery',
+        'vehicle-data': 'Vehicle Data',
+        'foundational-ml': 'Foundational ML',
+        'scaling-efficiency': 'Scaling Laws',
+        'architectures': 'Model Architectures',
+        'prompting-reasoning': 'Prompting & Reasoning',
+        'retrieval-augmented': 'RAG Systems',
+        'multi-agent': 'Multi-Agent Systems',
+        'agents-tools': 'Agents & Tools',
+        'code-models': 'Code Models',
+        'long-context': 'Long Context',
+        'frontier-models': 'Frontier Models',
+        'ai-safety': 'AI Safety & Alignment',
+        'philosophy': 'Philosophy of AI',
+        'infrastructure': 'Infrastructure'
+      };
+      document.getElementById('researchViewTitle').textContent = titles[category] || category;
+      renderResearchGrid();
     }
 
     function filterResearchBySource(source) {
