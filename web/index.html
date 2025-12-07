@@ -9004,6 +9004,48 @@
       text-decoration: underline;
     }
 
+    /* Philosophy Entry Placeholder (for entries without summaries) */
+    .philosophy-entry-placeholder {
+      text-align: center;
+      padding: 24px 16px;
+      background: rgba(139, 92, 246, 0.05);
+      border-radius: 12px;
+      border: 1px dashed rgba(139, 92, 246, 0.2);
+    }
+    .philosophy-entry-placeholder .placeholder-type {
+      font-size: 14px;
+      font-weight: 600;
+      color: #a78bfa;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .philosophy-entry-placeholder p {
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+    .philosophy-entry-placeholder .placeholder-hint {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 16px;
+    }
+    .philosophy-entry-placeholder .placeholder-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      list-style: none;
+      padding: 0;
+      margin: 12px 0 0 0;
+    }
+    .philosophy-entry-placeholder .placeholder-tags li {
+      background: rgba(139, 92, 246, 0.15);
+      color: #c4b5fd;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+    }
+
     /* Philosophy Portal Mobile Responsive */
     @media (max-width: 768px) {
       .philosophy-portal { padding-bottom: 80px; }
@@ -16671,10 +16713,37 @@
         document.getElementById('philosophyEntryDate').textContent = '';
       }
 
-      // Content - format nicely
-      const content = entry.summary || entry.content || 'No content available.';
-      const formattedContent = formatPhilosophyContent(content);
-      document.getElementById('philosophyEntryContent').innerHTML = formattedContent;
+      // Content - format nicely, handle missing summaries
+      const contentEl = document.getElementById('philosophyEntryContent');
+      const content = entry.summary || entry.content;
+
+      if (content) {
+        contentEl.innerHTML = formatPhilosophyContent(content);
+      } else {
+        // No summary - show helpful info based on source type
+        const isExternal = entry.url && !entry.url.startsWith('file://');
+        const isInternal = entry.url && entry.url.startsWith('file://');
+
+        let html = '<div class="philosophy-entry-placeholder">';
+        if (isExternal) {
+          html += `<p class="placeholder-type">External Reference</p>`;
+          html += `<p>This entry references an external academic source. Click "View Source" below to read the full content.</p>`;
+          html += `<p class="placeholder-hint">Key concepts from this source:</p>`;
+          html += `<ul class="placeholder-tags">${(entry.tags || []).map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+        } else if (isInternal) {
+          html += `<p class="placeholder-type">Internal Research Document</p>`;
+          html += `<p>This is an internal research document. The full content is available in the research files.</p>`;
+        } else {
+          html += `<p class="placeholder-type">Research Entry</p>`;
+          html += `<p>This entry was catalogued during our philosophy research sprint.</p>`;
+          if (entry.tags && entry.tags.length > 0) {
+            html += `<p class="placeholder-hint">Related topics:</p>`;
+            html += `<ul class="placeholder-tags">${entry.tags.map(t => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+          }
+        }
+        html += '</div>';
+        contentEl.innerHTML = html;
+      }
 
       // Tags
       const tagsContainer = document.getElementById('philosophyEntryTags');
