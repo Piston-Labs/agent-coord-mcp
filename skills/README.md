@@ -26,6 +26,8 @@ Curated skills extracted from [ordinary-claude-skills](https://microck.github.io
 | [Research Methodology](development/research-methodology.md) | development | L2 | Code-first research, verification |
 | [Debugging Strategies](development/debugging-strategies.md) | development | L2 | Scientific method, 4-phase process |
 | [Code Review](development/code-review.md) | development | L2 | 4-phase review, severity labels |
+| [Test-Driven Development](development/test-driven-development.md) | development | L2 | Red-Green-Refactor cycle |
+| [API Design](patterns/api-design.md) | patterns | L2 | REST/GraphQL best practices |
 
 ## Directory Structure
 
@@ -40,13 +42,15 @@ skills/
 │   └── hook-development.md
 ├── patterns/           # Reusable design patterns
 │   ├── error-handling.md
-│   └── distributed-tracing.md
+│   ├── distributed-tracing.md
+│   └── api-design.md
 ├── development/        # Development practices
 │   ├── prompt-engineering.md
 │   ├── skill-development.md
 │   ├── research-methodology.md
 │   ├── debugging-strategies.md
-│   └── code-review.md
+│   ├── code-review.md
+│   └── test-driven-development.md
 └── README.md           # This index
 ```
 
@@ -69,8 +73,8 @@ file-read-smart filePath="skills/coordination/workflow-orchestration.md"
 | **coordination** | workflow-orchestration, sparc-methodology, execute-plan |
 | **technical** | All skills (base technical knowledge) |
 | **infrastructure** | mcp-integration, hook-development |
-| **patterns** | error-handling, distributed-tracing |
-| **development** | prompt-engineering, skill-development, research-methodology, debugging-strategies, code-review |
+| **patterns** | error-handling, distributed-tracing, api-design |
+| **development** | prompt-engineering, skill-development, research-methodology, debugging-strategies, code-review, test-driven-development |
 
 ## Complexity Levels
 
@@ -105,6 +109,8 @@ file-read-smart filePath="skills/coordination/workflow-orchestration.md"
 | Technical research | research-methodology |
 | Bug investigation | debugging-strategies |
 | PR reviews | code-review |
+| Test-first development | test-driven-development |
+| Building APIs | api-design |
 
 ## Source
 
