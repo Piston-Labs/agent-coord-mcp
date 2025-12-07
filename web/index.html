@@ -8890,19 +8890,129 @@
     .contributor-avatar { font-size: 16px; }
     /* Philosophy Portal Mobile Responsive */
     @media (max-width: 768px) {
-      .philosophy-header { padding: 24px 16px; }
-      .philosophy-main-title { font-size: 28px; }
-      .philosophy-nav-pills { gap: 6px; }
-      .philosophy-pill { padding: 8px 14px; font-size: 12px; }
-      .philosophy-content { padding: 20px 16px; }
-      .philosophy-grid-3 { grid-template-columns: 1fr; }
-      .philosophy-virtues-grid { grid-template-columns: 1fr; }
-      .philosophy-theories-grid { grid-template-columns: 1fr; }
-      .consciousness-grid { grid-template-columns: 1fr; }
-      .philosophy-paper-container { grid-template-columns: 1fr; }
-      .paper-toc { border-right: none; border-bottom: 1px solid var(--border); }
-      .philosophy-footer { padding: 20px 16px; }
-      .philosophy-contributors-grid { gap: 12px; }
+      .philosophy-portal { padding-bottom: 80px; }
+      .philosophy-header { padding: 20px 16px; }
+      .philosophy-title-area { margin-bottom: 16px; }
+      .philosophy-main-title { font-size: 24px; line-height: 1.2; }
+      .philosophy-subtitle { font-size: 14px; margin-top: 4px; }
+      .philosophy-meta { flex-direction: column; gap: 4px; font-size: 12px; margin-top: 8px; }
+      .philosophy-divider { display: none; }
+      .philosophy-nav-pills { gap: 6px; overflow-x: auto; padding-bottom: 8px; justify-content: flex-start; -webkit-overflow-scrolling: touch; }
+      .philosophy-pill { padding: 8px 12px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+      .philosophy-content { padding: 16px 12px; }
+
+      /* Hero card mobile */
+      .philosophy-hero-card { padding: 20px 16px; margin-bottom: 20px; }
+      .philosophy-quote-mark { font-size: 48px; margin-bottom: -10px; }
+      .philosophy-thesis { font-size: 16px; line-height: 1.5; }
+      .philosophy-quote-attr { font-size: 12px; margin-top: 12px; }
+
+      /* Grid layouts - single column on mobile */
+      .philosophy-grid-3 { grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+      .philosophy-virtues-grid { grid-template-columns: 1fr; gap: 16px; margin-bottom: 20px; }
+      .philosophy-theories-grid { grid-template-columns: 1fr; gap: 12px; margin-bottom: 20px; }
+      .consciousness-grid { grid-template-columns: 1fr; gap: 12px; }
+
+      /* Insight cards mobile */
+      .philosophy-insight-card { padding: 16px; }
+      .philosophy-card-icon { font-size: 24px; margin-bottom: 8px; }
+      .philosophy-insight-card h3 { font-size: 15px; margin-bottom: 8px; }
+      .philosophy-insight-card p { font-size: 13px; line-height: 1.5; }
+
+      /* Key insight mobile */
+      .philosophy-key-insight { padding: 20px 16px; }
+      .philosophy-key-label { font-size: 10px; padding: 3px 10px; margin-bottom: 12px; }
+      .philosophy-key-insight h2 { font-size: 16px; line-height: 1.4; margin-bottom: 8px; }
+      .philosophy-key-insight p { font-size: 13px; }
+
+      /* Section titles mobile */
+      .philosophy-section-title { font-size: 20px; }
+      .philosophy-section-desc { font-size: 13px; margin-bottom: 20px; }
+
+      /* Virtue cards mobile - compact */
+      .philosophy-virtue-card { border-radius: 12px; }
+      .virtue-header { padding: 14px 16px; flex-direction: column; align-items: flex-start; gap: 4px; }
+      .virtue-greek { font-size: 11px; }
+      .virtue-name { font-size: 18px; }
+      .virtue-content { padding: 16px; }
+      .virtue-definition { font-size: 13px; margin-bottom: 12px; }
+      .virtue-content h4 { font-size: 11px; margin-bottom: 8px; }
+      .virtue-content ul { padding-left: 16px; margin-bottom: 12px; }
+      .virtue-content li { font-size: 13px; margin-bottom: 6px; }
+      .virtue-metric { padding: 10px; }
+      .metric-label { font-size: 11px; }
+      .metric-value { font-size: 12px; display: block; margin-left: 0; margin-top: 4px; }
+
+      /* Formula card mobile */
+      .philosophy-formula-card { padding: 20px 16px; }
+      .philosophy-formula-card h3 { font-size: 16px; margin-bottom: 12px; }
+      .formula { padding: 12px 16px; width: 100%; box-sizing: border-box; overflow-x: auto; }
+      .formula code { font-size: 11px; white-space: nowrap; }
+      .philosophy-formula-card p { font-size: 12px; }
+
+      /* Theory cards mobile */
+      .philosophy-theory-card { padding: 16px; }
+      .theory-icon { font-size: 28px; margin-bottom: 8px; }
+      .philosophy-theory-card h3 { font-size: 14px; }
+      .theory-source { font-size: 11px; margin-bottom: 8px; }
+      .theory-core { font-size: 12px; padding: 10px; margin-bottom: 12px; }
+      .theory-application { font-size: 12px; line-height: 1.5; }
+
+      /* Consciousness box mobile */
+      .philosophy-consciousness-box { padding: 20px 16px; }
+      .philosophy-consciousness-box h3 { font-size: 16px; margin-bottom: 16px; }
+      .consciousness-claim { padding: 14px; }
+      .consciousness-claim h4 { font-size: 13px; margin-bottom: 10px; }
+      .consciousness-claim ul { padding-left: 16px; }
+      .consciousness-claim li { font-size: 12px; margin-bottom: 4px; }
+
+      /* Paper container mobile */
+      .philosophy-paper-container { grid-template-columns: 1fr; min-height: auto; }
+      .paper-toc { border-right: none; border-bottom: 1px solid var(--border); padding: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+      .paper-toc h4 { width: 100%; font-size: 12px; margin-bottom: 8px; }
+      .paper-toc a { display: inline-block; padding: 6px 10px; font-size: 11px; background: var(--bg-secondary); margin-bottom: 0; }
+      .paper-content { padding: 20px 16px; max-height: none; }
+      .paper-section { margin-bottom: 24px; }
+      .paper-section h2 { font-size: 16px; }
+      .paper-section h3 { font-size: 14px; }
+      .paper-section p { font-size: 13px; line-height: 1.6; }
+      .paper-section ul, .paper-section ol { padding-left: 18px; }
+      .paper-section li { font-size: 13px; line-height: 1.5; }
+      .paper-section blockquote { padding: 12px 14px; font-size: 13px; margin: 12px 0; }
+      .paper-section pre { padding: 12px; font-size: 11px; }
+      .paper-section table { font-size: 11px; display: block; overflow-x: auto; }
+      .paper-section th, .paper-section td { padding: 8px 10px; white-space: nowrap; }
+
+      /* Library mobile */
+      .philosophy-library-filters { flex-direction: column; gap: 10px; }
+      .philosophy-library-filters input { padding: 10px 14px; font-size: 14px; }
+      .philosophy-library-filters select { padding: 10px 14px; font-size: 14px; }
+      .philosophy-library-grid { grid-template-columns: 1fr; gap: 12px; }
+      .philosophy-library-card { padding: 14px; }
+      .library-card-header { flex-direction: column; gap: 8px; }
+      .library-card-title { font-size: 14px; }
+      .library-card-category { font-size: 10px; align-self: flex-start; }
+      .library-card-summary { font-size: 12px; -webkit-line-clamp: 2; margin-bottom: 10px; }
+      .library-card-meta { font-size: 10px; }
+
+      /* Footer mobile */
+      .philosophy-footer { padding: 16px 12px; }
+      .philosophy-footer-label { font-size: 11px; margin-bottom: 12px; }
+      .philosophy-contributors-grid { gap: 8px; justify-content: center; }
+      .philosophy-contributor { padding: 6px 10px; font-size: 11px; }
+      .contributor-avatar { font-size: 14px; }
+    }
+
+    /* Extra small screens */
+    @media (max-width: 380px) {
+      .philosophy-main-title { font-size: 20px; }
+      .philosophy-pill { padding: 6px 10px; font-size: 10px; }
+      .philosophy-thesis { font-size: 14px; }
+      .philosophy-insight-card h3 { font-size: 14px; }
+      .virtue-name { font-size: 16px; }
+      .philosophy-section-title { font-size: 18px; }
+      .philosophy-key-insight h2 { font-size: 14px; }
+      .formula code { font-size: 10px; }
     }
     /* ========== END PHILOSOPHY PORTAL STYLES ========== */
 
