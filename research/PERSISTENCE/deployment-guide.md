@@ -1,3 +1,15 @@
+---
+cluster: [technical, architecture]
+complexity: L2
+ai_summary: "Production patterns for multi-agent systems. Key principle: Stateless agents, stateful substrate. Covers infrastructure requirements, security, monitoring, scaling. Based on agent-coord-mcp lessons."
+dependencies:
+  - substrate-architecture.md
+  - multi-agent-coordination.md
+  - phase-3-production.md
+tags: [deployment, production, infrastructure, security, monitoring, scaling]
+last_updated: 2025-12-06
+---
+
 # Deployment Guide for AI Agent Coordination Systems
 
 > Practical patterns for taking multi-agent systems to production

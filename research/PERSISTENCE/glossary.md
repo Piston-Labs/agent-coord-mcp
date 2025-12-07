@@ -1,3 +1,12 @@
+---
+cluster: [reference]
+complexity: L1
+ai_summary: "Plain-English explanations of AI terms for non-technical readers. Covers: Model Architecture (transformers, parameters, tokens), Training (RLHF, DPO), Memory (RAG, GraphRAG), Agent Systems."
+dependencies: []
+tags: [glossary, definitions, non-technical, reference]
+last_updated: 2025-12-06
+---
+
 # AI Glossary: Quick Reference for Non-Technical Readers
 
 > Plain-English explanations of terms used in the PERSISTENCE documentation

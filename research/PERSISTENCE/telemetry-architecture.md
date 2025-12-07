@@ -1,3 +1,14 @@
+---
+cluster: [technical, strategic]
+complexity: L2
+ai_summary: "Technical blueprint for Carfax acquisition value. Stack: Teltonika → Kafka → TimescaleDB → ClickHouse → Redis → Partner APIs. Fills Carfax gap: live data vs their historical records."
+dependencies:
+  - carfax-integration-strategy.md
+  - data-strategy.md
+tags: [telemetry, carfax, timescaledb, clickhouse, kafka, vehicle-data]
+last_updated: 2025-12-06
+---
+
 # Telemetry Architecture for Carfax Acquisition
 
 > Technical blueprint for building acquisition-worthy vehicle telemetry infrastructure

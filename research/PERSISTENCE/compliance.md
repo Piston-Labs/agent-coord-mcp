@@ -1,3 +1,14 @@
+---
+cluster: [strategic, safety]
+complexity: L2
+ai_summary: "Global AI regulatory landscape Dec 2025. EU AI Act deep dive (risk categories, timeline, prohibited practices). US Executive Order 14110. GPAI Code of Practice. 75 countries with AI laws."
+dependencies:
+  - responsible-ai.md
+  - risk-analysis.md
+tags: [compliance, eu-ai-act, regulation, gdpr, risk-categories]
+last_updated: 2025-12-06
+---
+
 # AI Compliance & Regulatory Requirements
 
 > What you need to know about AI regulations for building and deploying AI systems

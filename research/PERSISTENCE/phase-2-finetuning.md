@@ -1,3 +1,15 @@
+---
+cluster: [roadmap, technical]
+complexity: L2
+ai_summary: "Weeks 5-12 implementation plan ($50-200K). Fine-tuning data curation (10K+ examples from chat/checkpoints). Training coordination-specialized Llama model. Swarm intelligence patterns."
+dependencies:
+  - phase-1-foundation.md
+  - training-pipeline.md
+  - implementation-roadmap.md
+tags: [phase-2, fine-tuning, data-curation, swarm-intelligence]
+last_updated: 2025-12-06
+---
+
 # Phase 2: Fine-tuning & Intelligence Amplification (Weeks 5-12)
 
 > Training our own coordination-specialized model and implementing swarm intelligence

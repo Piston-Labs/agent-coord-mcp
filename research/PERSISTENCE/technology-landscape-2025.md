@@ -1,3 +1,15 @@
+---
+cluster: [market-research, technical]
+complexity: L2
+ai_summary: "Real-time AI market intelligence: $243B global market (+38% YoY), $10.41B agents market (56% CAGR). Model comparisons (GPT-5, Claude 4, Llama 4, DeepSeek-V3). Open/closed gap: 1.70%."
+dependencies:
+  - model-architecture.md
+  - compute-infrastructure.md
+  - competitive-positioning.md
+tags: [market-intelligence, models, hardware, nvidia, open-source-ai]
+last_updated: 2025-12-06
+---
+
 # AI Technology Landscape: December 2025
 
 > Real-time market intelligence from tonight's research sprint (45+ articles analyzed)

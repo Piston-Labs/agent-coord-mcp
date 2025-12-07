@@ -1,3 +1,16 @@
+---
+cluster: [strategic, roadmap]
+complexity: L1
+ai_summary: "Realistic AI development phases: Foundation (6-12 months, $5-20M), Competitive (12-18 months, $20-100M), Frontier (24-36 months, $100M-1B). Week-by-week milestones for each phase."
+dependencies:
+  - phase-1-foundation.md
+  - phase-2-finetuning.md
+  - phase-3-production.md
+  - funding-requirements.md
+tags: [timeline, phases, milestones, development-schedule]
+last_updated: 2025-12-06
+---
+
 # Development Timeline for Building AI
 
 > Realistic phases, milestones, and what to expect at each stage

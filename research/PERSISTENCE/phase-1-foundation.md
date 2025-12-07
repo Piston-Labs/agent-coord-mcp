@@ -1,3 +1,14 @@
+---
+cluster: [roadmap, technical]
+complexity: L2
+ai_summary: "Weeks 1-4 implementation plan ($10-50K). Goals: Graph memory upgrade (Neo4j/LightRAG/Zep evaluation), research infrastructure, constitutional self-critique, monitoring baselines."
+dependencies:
+  - implementation-roadmap.md
+  - timeline.md
+tags: [phase-1, foundation, neo4j, memory-architecture, infrastructure]
+last_updated: 2025-12-06
+---
+
 # Phase 1: Foundation (Weeks 1-4)
 
 > Building the base infrastructure for enhanced AI capabilities

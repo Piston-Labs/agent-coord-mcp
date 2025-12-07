@@ -1,3 +1,14 @@
+---
+cluster: [market-research, strategic]
+complexity: L2
+ai_summary: "Comprehensive market analysis across 15+ industries. Tier 1 ($50B+ markets): Healthcare (90% cancer detection), Drug Discovery (80-90% Phase I success), Automotive. Synthesizes 33 research entries."
+dependencies:
+  - technology-landscape-2025.md
+  - competitive-positioning.md
+tags: [market-analysis, healthcare-ai, pharma, automotive, industry-applications]
+last_updated: 2025-12-06
+---
+
 # AI Industry Applications: December 2025 Landscape
 
 > Comprehensive market analysis across 15+ industries based on tonight's research sprint

@@ -1,3 +1,15 @@
+---
+cluster: [strategic, business]
+complexity: L1
+ai_summary: "Cost estimates for AI development tiers: $20-60M for Llama-class, $100-300M for GPT-4 class, $500M-2B for frontier. Covers funding stages from seed to Series C and investor landscape."
+dependencies:
+  - executive-summary.md
+  - team-building.md
+  - timeline.md
+tags: [funding, costs, investment, seed, series-a, compute-costs]
+last_updated: 2025-12-06
+---
+
 # Funding Requirements for Building AI
 
 > Cost estimates, funding stages, and investor landscape

@@ -1,3 +1,14 @@
+---
+cluster: [strategic, business]
+complexity: L1
+ai_summary: "AI team composition and hiring strategy. Minimum viable team (7B model): 8-12 people at $3-5M/year. Competitive team (70B): 35-55 people at $15-25M/year. Key roles and salary ranges."
+dependencies:
+  - funding-requirements.md
+  - executive-summary.md
+tags: [team, hiring, salaries, roles, organization]
+last_updated: 2025-12-06
+---
+
 # Team Building for AI Development
 
 > Roles, hiring strategy, and organizational structure
