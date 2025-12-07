@@ -2240,7 +2240,7 @@
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         padding: 4px;
-        margin: 0 -12px;
+        margin: 0;
         padding-left: 12px;
         padding-right: 12px;
         scrollbar-width: none; /* Firefox */
@@ -5175,7 +5175,8 @@
         gap: 8px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
-        padding: 4px 0;
+        padding: 4px 8px;
+        margin: 0; /* Reset negative margin from earlier rule */
         scrollbar-width: none; /* Firefox */
         -ms-overflow-style: none; /* IE/Edge */
       }
