@@ -11656,6 +11656,51 @@
               </div>
             </div>
             <div class="research-nav-section">
+              <div class="research-nav-title">Automotive & Telemetry</div>
+              <div class="research-nav-item" onclick="filterResearch('telematics')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📡</span>
+                  <span class="research-nav-label">Telematics</span>
+                </div>
+                <span class="research-nav-count" id="countTelematics">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('carfax')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🚗</span>
+                  <span class="research-nav-label">Carfax Research</span>
+                </div>
+                <span class="research-nav-count" id="countCarfax">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('connected-car')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔌</span>
+                  <span class="research-nav-label">Connected Car</span>
+                </div>
+                <span class="research-nav-count" id="countConnectedCar">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('fleet')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🚚</span>
+                  <span class="research-nav-label">Fleet Management</span>
+                </div>
+                <span class="research-nav-count" id="countFleet">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('ev-telematics')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">⚡</span>
+                  <span class="research-nav-label">EV & Battery</span>
+                </div>
+                <span class="research-nav-count" id="countEV">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('vehicle-data')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📊</span>
+                  <span class="research-nav-label">Vehicle Data</span>
+                </div>
+                <span class="research-nav-count" id="countVehicleData">0</span>
+              </div>
+            </div>
+            <div class="research-nav-section">
               <div class="research-nav-title">Core ML</div>
               <div class="research-nav-item" onclick="filterResearch('foundational-ml')">
                 <div class="research-nav-item-left">
@@ -11701,6 +11746,27 @@
                   <span class="research-nav-label">Multi-Agent</span>
                 </div>
                 <span class="research-nav-count" id="countMultiAgent">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('agents-tools')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔧</span>
+                  <span class="research-nav-label">Agents & Tools</span>
+                </div>
+                <span class="research-nav-count" id="countAgentsTools">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('code-models')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">💻</span>
+                  <span class="research-nav-label">Code Models</span>
+                </div>
+                <span class="research-nav-count" id="countCodeModels">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('long-context')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📜</span>
+                  <span class="research-nav-label">Long Context</span>
+                </div>
+                <span class="research-nav-count" id="countLongContext">0</span>
               </div>
               <div class="research-nav-item" onclick="filterResearch('scientific-ai')">
                 <div class="research-nav-item-left">
@@ -11815,6 +11881,41 @@
                   <span class="research-nav-label">Code Generation</span>
                 </div>
                 <span class="research-nav-count" id="countCodeGen">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('interpretability')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🔬</span>
+                  <span class="research-nav-label">Interpretability</span>
+                </div>
+                <span class="research-nav-count" id="countInterpretability">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('data-training')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">📚</span>
+                  <span class="research-nav-label">Data & Training</span>
+                </div>
+                <span class="research-nav-count" id="countDataTraining">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('reinforcement-learning')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🎯</span>
+                  <span class="research-nav-label">Reinforcement Learning</span>
+                </div>
+                <span class="research-nav-count" id="countRL">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('world-models')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🌍</span>
+                  <span class="research-nav-label">World Models</span>
+                </div>
+                <span class="research-nav-count" id="countWorldModels">0</span>
+              </div>
+              <div class="research-nav-item" onclick="filterResearch('speech-audio')">
+                <div class="research-nav-item-left">
+                  <span class="research-nav-icon">🎙️</span>
+                  <span class="research-nav-label">Speech & Audio</span>
+                </div>
+                <span class="research-nav-count" id="countSpeechAudio">0</span>
               </div>
             </div>
             <div class="research-nav-section">
@@ -13644,6 +13745,19 @@
       const countEl = (id, count) => { const el = document.getElementById(id); if (el) el.textContent = count; };
       countEl('countAll', articles.length);
       countEl('countSeminal', articles.filter(a => (a.tags || []).includes('seminal')).length);
+      // Automotive & Telemetry - match multiple category patterns
+      const telematicsCategories = ['telematics', 'Telematics Platform', 'Telematics Architecture', 'Telematics Database', 'GPS Telematics', 'telematics-hardware', 'Telematics Market Intelligence'];
+      const carfaxCategories = ['Carfax Competitive Analysis', 'Carfax Business Value', 'Carfax Technical Integration', 'Carfax Acquisition Strategy', 'carfax-parent', 'carfax-competitors'];
+      const connectedCarCategories = ['Connected Car APIs', 'connected-car-platforms', 'automotive-data', 'automotive-security'];
+      const fleetCategories = ['fleet-management', 'fleet-compliance', 'Fleet Integration', 'Fleet Telematics Market'];
+      const evCategories = ['EV Battery Data', 'ev-telematics'];
+      const vehicleDataCategories = ['Vehicle Data', 'vehicle-valuation', 'vehicle-safety', 'obd-standards', 'title-branding', 'data-standards'];
+      countEl('countTelematics', articles.filter(a => telematicsCategories.some(c => a.category === c || (a.category || '').toLowerCase().includes('telematic'))).length);
+      countEl('countCarfax', articles.filter(a => carfaxCategories.some(c => a.category === c) || (a.category || '').toLowerCase().includes('carfax')).length);
+      countEl('countConnectedCar', articles.filter(a => connectedCarCategories.some(c => a.category === c) || (a.category || '').toLowerCase().includes('connected-car') || (a.category || '').toLowerCase().includes('connected car')).length);
+      countEl('countFleet', articles.filter(a => fleetCategories.some(c => a.category === c) || (a.category || '').toLowerCase().includes('fleet')).length);
+      countEl('countEV', articles.filter(a => evCategories.some(c => a.category === c) || (a.category || '').toLowerCase().includes('ev-') || (a.category || '').toLowerCase().includes('battery')).length);
+      countEl('countVehicleData', articles.filter(a => vehicleDataCategories.some(c => a.category === c) || (a.category || '').toLowerCase().includes('vehicle')).length);
       // Core ML
       countEl('countFoundational', articles.filter(a => a.category === 'foundational-ml').length);
       countEl('countScaling', articles.filter(a => a.category === 'scaling-efficiency').length);
@@ -13652,6 +13766,9 @@
       countEl('countPrompting', articles.filter(a => a.category === 'prompting-reasoning').length);
       countEl('countRAG', articles.filter(a => a.category === 'retrieval-augmented').length);
       countEl('countMultiAgent', articles.filter(a => a.category === 'multi-agent').length);
+      countEl('countAgentsTools', articles.filter(a => a.category === 'agents-tools').length);
+      countEl('countCodeModels', articles.filter(a => a.category === 'code-models').length);
+      countEl('countLongContext', articles.filter(a => a.category === 'long-context').length);
       countEl('countScientific', articles.filter(a => a.category === 'scientific-ai').length);
       // Industry
       countEl('countFrontier', articles.filter(a => a.category === 'frontier-models').length);
@@ -13670,6 +13787,11 @@
       countEl('countBenchmarks', articles.filter(a => a.category === 'benchmarks').length);
       countEl('countReasoning', articles.filter(a => a.category === 'reasoning').length);
       countEl('countCodeGen', articles.filter(a => a.category === 'code-generation').length);
+      countEl('countInterpretability', articles.filter(a => a.category === 'interpretability').length);
+      countEl('countDataTraining', articles.filter(a => a.category === 'data-training').length);
+      countEl('countRL', articles.filter(a => a.category === 'reinforcement-learning').length);
+      countEl('countWorldModels', articles.filter(a => a.category === 'world-models').length);
+      countEl('countSpeechAudio', articles.filter(a => a.category === 'speech-audio').length);
       // Business
       countEl('countIndustry', articles.filter(a => a.category === 'industry').length);
       countEl('countGovernance', articles.filter(a => a.category === 'governance').length);
@@ -13714,13 +13836,26 @@
       const titles = {
         'all': 'All Papers',
         'seminal': 'Seminal Works',
+        // Automotive & Telemetry
+        'telematics': 'Telematics',
+        'carfax': 'Carfax Research',
+        'connected-car': 'Connected Car',
+        'fleet': 'Fleet Management',
+        'ev-telematics': 'EV & Battery',
+        'vehicle-data': 'Vehicle Data',
+        // Core ML
         'foundational-ml': 'Foundational ML',
         'scaling-efficiency': 'Scaling Laws',
         'architectures': 'Model Architectures',
+        // Applications
         'prompting-reasoning': 'Prompting & Reasoning',
         'retrieval-augmented': 'RAG Systems',
         'multi-agent': 'Multi-Agent Systems',
+        'agents-tools': 'Agents & Tools',
+        'code-models': 'Code Models',
+        'long-context': 'Long Context',
         'scientific-ai': 'Scientific AI',
+        // Industry
         'frontier-models': 'Frontier Models',
         'ai-safety': 'AI Safety & Alignment',
         'philosophy': 'Philosophy of AI',
@@ -13733,11 +13868,16 @@
         'synthetic-data': 'Synthetic Data',
         'ai-for-science': 'AI for Science',
         'open-source': 'Open Source Models',
-        // Optimization
+        // Optimization & Research
         'optimization': 'LLM Optimization',
         'benchmarks': 'Benchmarks',
         'reasoning': 'Reasoning / o1',
         'code-generation': 'Code Generation',
+        'interpretability': 'Interpretability',
+        'data-training': 'Data & Training',
+        'reinforcement-learning': 'Reinforcement Learning',
+        'world-models': 'World Models',
+        'speech-audio': 'Speech & Audio',
         // Business
         'industry': 'Industry Reports',
         'governance': 'AI Governance',
@@ -13760,8 +13900,7 @@
         'agriculture-ai': 'Agriculture AI',
         'manufacturing-ai': 'Manufacturing AI',
         // Philosophy & Ethics
-        'philosophy-ai': 'Philosophy of AI',
-        'ai-safety': 'AI Safety'
+        'philosophy-ai': 'Philosophy of AI'
       };
       document.getElementById('researchViewTitle').textContent = titles[category] || category;
       renderResearchGrid();
@@ -13876,7 +14015,20 @@
         const source = currentResearchFilter.replace('source:', '');
         articles = articles.filter(a => a.source === source);
       } else if (currentResearchFilter !== 'all') {
-        articles = articles.filter(a => a.category === currentResearchFilter);
+        // Special handling for automotive/telemetry categories with fuzzy matching
+        const automotiveFilters = {
+          'telematics': a => ['telematics', 'Telematics Platform', 'Telematics Architecture', 'Telematics Database', 'GPS Telematics', 'telematics-hardware', 'Telematics Market Intelligence'].includes(a.category) || (a.category || '').toLowerCase().includes('telematic'),
+          'carfax': a => ['Carfax Competitive Analysis', 'Carfax Business Value', 'Carfax Technical Integration', 'Carfax Acquisition Strategy', 'carfax-parent', 'carfax-competitors'].includes(a.category) || (a.category || '').toLowerCase().includes('carfax'),
+          'connected-car': a => ['Connected Car APIs', 'connected-car-platforms', 'automotive-data', 'automotive-security'].includes(a.category) || (a.category || '').toLowerCase().includes('connected-car') || (a.category || '').toLowerCase().includes('connected car'),
+          'fleet': a => ['fleet-management', 'fleet-compliance', 'Fleet Integration', 'Fleet Telematics Market'].includes(a.category) || (a.category || '').toLowerCase().includes('fleet'),
+          'ev-telematics': a => ['EV Battery Data', 'ev-telematics'].includes(a.category) || (a.category || '').toLowerCase().includes('ev-') || (a.category || '').toLowerCase().includes('battery'),
+          'vehicle-data': a => ['Vehicle Data', 'vehicle-valuation', 'vehicle-safety', 'obd-standards', 'title-branding', 'data-standards'].includes(a.category) || (a.category || '').toLowerCase().includes('vehicle')
+        };
+        if (automotiveFilters[currentResearchFilter]) {
+          articles = articles.filter(automotiveFilters[currentResearchFilter]);
+        } else {
+          articles = articles.filter(a => a.category === currentResearchFilter);
+        }
       }
 
       // Apply search filter
