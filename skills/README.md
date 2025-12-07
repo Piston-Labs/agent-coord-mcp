@@ -24,6 +24,8 @@ Curated skills extracted from [ordinary-claude-skills](https://microck.github.io
 | [Prompt Engineering](development/prompt-engineering.md) | development | L2 | Few-shot, CoT, templates |
 | [Skill Development](development/skill-development.md) | development | L2 | Meta-skill, triggers, hooks |
 | [Research Methodology](development/research-methodology.md) | development | L2 | Code-first research, verification |
+| [Debugging Strategies](development/debugging-strategies.md) | development | L2 | Scientific method, 4-phase process |
+| [Code Review](development/code-review.md) | development | L2 | 4-phase review, severity labels |
 
 ## Directory Structure
 
@@ -42,7 +44,9 @@ skills/
 ├── development/        # Development practices
 │   ├── prompt-engineering.md
 │   ├── skill-development.md
-│   └── research-methodology.md
+│   ├── research-methodology.md
+│   ├── debugging-strategies.md
+│   └── code-review.md
 └── README.md           # This index
 ```
 
@@ -66,7 +70,7 @@ file-read-smart filePath="skills/coordination/workflow-orchestration.md"
 | **technical** | All skills (base technical knowledge) |
 | **infrastructure** | mcp-integration, hook-development |
 | **patterns** | error-handling, distributed-tracing |
-| **development** | prompt-engineering, skill-development, research-methodology |
+| **development** | prompt-engineering, skill-development, research-methodology, debugging-strategies, code-review |
 
 ## Complexity Levels
 
@@ -99,6 +103,8 @@ file-read-smart filePath="skills/coordination/workflow-orchestration.md"
 | Prompt improvement | prompt-engineering |
 | Creating new skills | skill-development |
 | Technical research | research-methodology |
+| Bug investigation | debugging-strategies |
+| PR reviews | code-review |
 
 ## Source
 
