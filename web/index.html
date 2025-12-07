@@ -8888,6 +8888,122 @@
     .philosophy-contributor { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-tertiary); border-radius: 20px; font-size: 13px; color: var(--text-secondary); transition: all 0.2s ease; }
     .philosophy-contributor:hover { transform: scale(1.05); color: var(--text-primary); }
     .contributor-avatar { font-size: 16px; }
+
+    /* Philosophy Entry Modal */
+    .philosophy-entry-modal {
+      max-width: 700px;
+      width: 95%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(180deg, #1a1f2e 0%, #161b22 100%);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .philosophy-entry-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .philosophy-entry-category {
+      background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(168, 85, 247, 0.2));
+      color: #a78bfa;
+      padding: 6px 14px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: capitalize;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+    .philosophy-entry-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 28px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+    .philosophy-entry-close:hover {
+      color: var(--text-primary);
+    }
+    .philosophy-entry-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin: 0 0 12px 0;
+      line-height: 1.3;
+    }
+    .philosophy-entry-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .philosophy-entry-meta span::before {
+      margin-right: 6px;
+    }
+    #philosophyEntryAuthor::before { content: "by"; }
+    #philosophyEntryDate::before { content: "on"; }
+    .philosophy-entry-content {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      padding-right: 8px;
+    }
+    .philosophy-entry-content p { margin-bottom: 16px; }
+    .philosophy-entry-content strong { color: var(--text-primary); }
+    .philosophy-entry-content ul, .philosophy-entry-content ol {
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    .philosophy-entry-content li { margin-bottom: 8px; }
+    .philosophy-entry-content blockquote {
+      border-left: 3px solid #8b5cf6;
+      padding-left: 16px;
+      margin: 16px 0;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+    .philosophy-entry-footer {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .philosophy-entry-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .philosophy-entry-tag {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+    }
+    .philosophy-entry-source {
+      color: #8b5cf6;
+      font-size: 13px;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .philosophy-entry-source:hover {
+      color: #a78bfa;
+      text-decoration: underline;
+    }
+
     /* Philosophy Portal Mobile Responsive */
     @media (max-width: 768px) {
       .philosophy-portal { padding-bottom: 80px; }
@@ -9001,6 +9117,19 @@
       .philosophy-contributors-grid { gap: 8px; justify-content: center; }
       .philosophy-contributor { padding: 6px 10px; font-size: 11px; }
       .contributor-avatar { font-size: 14px; }
+
+      /* Philosophy Entry Modal mobile */
+      .philosophy-entry-modal {
+        width: 100%;
+        max-height: 100vh;
+        height: 100%;
+        border-radius: 0;
+        padding: 16px;
+      }
+      .philosophy-entry-title { font-size: 18px; }
+      .philosophy-entry-meta { flex-direction: column; gap: 6px; font-size: 12px; }
+      .philosophy-entry-content { font-size: 14px; line-height: 1.6; }
+      .philosophy-entry-footer { flex-direction: column; align-items: flex-start; }
     }
 
     /* Extra small screens */
@@ -12682,6 +12811,28 @@
               <div class="philosophy-contributor"><span class="contributor-avatar">📊</span><span>researcher</span></div>
               <div class="philosophy-contributor"><span class="contributor-avatar">✨</span><span>ETHER</span></div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Philosophy Entry Modal -->
+      <div class="modal-overlay" id="philosophyEntryModal" onclick="if(event.target === this) closePhilosophyEntryModal()">
+        <div class="modal philosophy-entry-modal">
+          <div class="philosophy-entry-header">
+            <div class="philosophy-entry-category" id="philosophyEntryCategory">Philosophy</div>
+            <button class="philosophy-entry-close" onclick="closePhilosophyEntryModal()">&times;</button>
+          </div>
+          <h2 class="philosophy-entry-title" id="philosophyEntryTitle">Entry Title</h2>
+          <div class="philosophy-entry-meta">
+            <span id="philosophyEntryAuthor">Author</span>
+            <span id="philosophyEntryDate">Date</span>
+          </div>
+          <div class="philosophy-entry-content" id="philosophyEntryContent">
+            Loading...
+          </div>
+          <div class="philosophy-entry-footer">
+            <div class="philosophy-entry-tags" id="philosophyEntryTags"></div>
+            <a href="#" id="philosophyEntryLink" class="philosophy-entry-source" target="_blank" style="display:none;">View Source</a>
           </div>
         </div>
       </div>
@@ -16501,9 +16652,73 @@
 
     function showPhilosophyEntry(entryId) {
       const entry = philosophyLibraryData.find(e => e.id === entryId);
-      if (entry) {
-        alert('Entry: ' + (entry.title || entry.content?.substring(0, 100)));
+      if (!entry) return;
+
+      // Populate modal
+      const modal = document.getElementById('philosophyEntryModal');
+      document.getElementById('philosophyEntryTitle').textContent = entry.title || 'Untitled';
+      document.getElementById('philosophyEntryCategory').textContent = entry.category || 'Philosophy';
+      document.getElementById('philosophyEntryAuthor').textContent = entry.addedBy || entry.discoveredBy || 'agent';
+
+      // Format date
+      const dateStr = entry.timestamp || entry.addedAt || entry.discoveredAt;
+      if (dateStr) {
+        const date = new Date(dateStr);
+        document.getElementById('philosophyEntryDate').textContent = date.toLocaleDateString('en-US', {
+          year: 'numeric', month: 'long', day: 'numeric'
+        });
+      } else {
+        document.getElementById('philosophyEntryDate').textContent = '';
       }
+
+      // Content - format nicely
+      const content = entry.summary || entry.content || 'No content available.';
+      const formattedContent = formatPhilosophyContent(content);
+      document.getElementById('philosophyEntryContent').innerHTML = formattedContent;
+
+      // Tags
+      const tagsContainer = document.getElementById('philosophyEntryTags');
+      const tags = entry.tags || (entry.category ? [entry.category] : ['philosophy']);
+      tagsContainer.innerHTML = tags.map(tag =>
+        `<span class="philosophy-entry-tag">${escapeHtml(tag)}</span>`
+      ).join('');
+
+      // Source link
+      const sourceLink = document.getElementById('philosophyEntryLink');
+      if (entry.url) {
+        sourceLink.href = entry.url;
+        sourceLink.style.display = 'inline';
+      } else {
+        sourceLink.style.display = 'none';
+      }
+
+      // Show modal
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function formatPhilosophyContent(content) {
+      if (!content) return '';
+      // Escape HTML first
+      let text = escapeHtml(content);
+      // Convert markdown-like formatting
+      // Bold: **text** or __text__
+      text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+      // Italic: *text* or _text_
+      text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
+      // Line breaks become paragraphs
+      text = text.split(/\n\n+/).map(p => `<p>${p.trim()}</p>`).join('');
+      // Single newlines become <br>
+      text = text.replace(/\n/g, '<br>');
+      return text;
+    }
+
+    function closePhilosophyEntryModal() {
+      const modal = document.getElementById('philosophyEntryModal');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
     }
 
     function scrollToPaperSection(sectionId) {
