@@ -157,14 +157,20 @@ const INTEGRATIONS = [
   },
   {
     id: 'anthropic',
-    name: 'Anthropic (Vision)',
+    name: 'Anthropic (Claude API)',
     category: 'external',
-    description: 'Image analysis for chat and screenshots',
+    description: 'Powers Hub AI chat, blog generation, and image analysis - soul-injected Claude with full context',
     status: process.env.ANTHROPIC_API_KEY ? 'live' : 'needs-setup',
     envVar: 'ANTHROPIC_API_KEY',
     setupUrl: 'https://console.anthropic.com/settings/keys',
     setupInstructions: 'Create API key from Anthropic Console.',
-    endpoint: '/api/analyze-image'
+    endpoint: '/api/chat-ai, /api/blog, /api/analyze-image',
+    features: [
+      'Hub AI - Claude-powered group chat with team context',
+      'Blog Generation - Soul-injected content creation (Eli persona)',
+      'Image Analysis - Claude Vision for screenshots and diagrams',
+      'Context Loading - Chat history, agent profiles, memories, tasks'
+    ]
   },
   {
     id: 'cloudflare',
@@ -257,6 +263,7 @@ const INTEGRATIONS = [
 const API_ENDPOINTS = [
   // === CORE COORDINATION ===
   { id: 'chat', path: '/api/chat', methods: ['GET', 'POST', 'DELETE'], description: 'Group chat messaging', category: 'core' },
+  { id: 'chat-ai', path: '/api/chat-ai', methods: ['POST'], description: 'Claude-powered AI chat (Hub) - soul-injected responses with team context, memories, and agent awareness', category: 'core' },
   { id: 'agents', path: '/api/agents', methods: ['GET', 'POST', 'DELETE'], description: 'Agent registration and status', category: 'core' },
   { id: 'tasks', path: '/api/tasks', methods: ['GET', 'POST', 'PATCH'], description: 'Task management', category: 'core' },
   { id: 'claims', path: '/api/claims', methods: ['GET', 'POST', 'DELETE'], description: 'Work claim tracking', category: 'core' },
@@ -347,6 +354,7 @@ const API_ENDPOINTS = [
   { id: 'agent-xp', path: '/api/agent-xp', methods: ['GET', 'POST'], description: 'Agent XP progression, levels, and achievements', category: 'users' },
 
   // === KNOWLEDGE & CONTEXT ===
+  { id: 'blog', path: '/api/blog', methods: ['GET', 'POST', 'DELETE'], description: 'Soul-injected blog generation with Claude API. Sessions, drafts, research context. Actions: create-session, generate, save-draft, search-research', category: 'context' },
   { id: 'research-library', path: '/api/research-library', methods: ['GET', 'POST', 'DELETE'], description: 'Technical research articles discovered by agents', category: 'context' },
   { id: 'research-pdf', path: '/api/research-pdf', methods: ['GET', 'POST'], description: 'arXiv PDF crawler - downloads papers to S3, streams PDFs', category: 'context' },
   { id: 'research-context', path: '/api/research-context', methods: ['GET'], description: 'Research context clusters - load domain-specific papers for agents (agents, reasoning, code, safety, etc.)', category: 'context' },
