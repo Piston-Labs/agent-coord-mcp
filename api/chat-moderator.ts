@@ -34,6 +34,150 @@ const TASKS_KEY = 'agent-coord:tasks';
 const CLAIMS_KEY = 'agent-coord:claims';
 const MEMORY_KEY = 'agent-coord:shared-memory';
 
+// GitHub config
+const GITHUB_OWNER = 'tylerai';
+const GITHUB_REPO = 'agent-coord-mcp';
+const GITHUB_BRANCH = 'main';
+
+// Tool definitions for Claude tool_use
+const CAPTAIN_TOOLS: Anthropic.Tool[] = [
+  {
+    name: 'read_file',
+    description: 'Read a file from the agent-coord-mcp repository on GitHub',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'File path relative to repo root (e.g., "api/agents.ts" or "web/index.html")'
+        }
+      },
+      required: ['path']
+    }
+  },
+  {
+    name: 'write_file',
+    description: 'Write/update a file in the repository and commit it to GitHub',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'File path relative to repo root'
+        },
+        content: {
+          type: 'string',
+          description: 'Full file content to write'
+        },
+        message: {
+          type: 'string',
+          description: 'Commit message describing the change'
+        }
+      },
+      required: ['path', 'content', 'message']
+    }
+  },
+  {
+    name: 'list_files',
+    description: 'List files in a directory of the repository',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        path: {
+          type: 'string',
+          description: 'Directory path relative to repo root (e.g., "api" or "web")'
+        }
+      },
+      required: ['path']
+    }
+  },
+  {
+    name: 'create_task',
+    description: 'Create a task in the coordination system for tracking',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        title: {
+          type: 'string',
+          description: 'Task title'
+        },
+        description: {
+          type: 'string',
+          description: 'Detailed task description'
+        },
+        priority: {
+          type: 'string',
+          enum: ['low', 'medium', 'high', 'urgent'],
+          description: 'Task priority'
+        },
+        assignee: {
+          type: 'string',
+          description: 'Agent ID to assign the task to (optional)'
+        }
+      },
+      required: ['title']
+    }
+  },
+  {
+    name: 'spawn_agent',
+    description: 'Spawn a new Claude agent instance to handle a specific task',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        task: {
+          type: 'string',
+          description: 'Task description for the new agent'
+        },
+        agentId: {
+          type: 'string',
+          description: 'Optional specific agent ID to use'
+        }
+      },
+      required: ['task']
+    }
+  },
+  {
+    name: 'post_chat',
+    description: 'Post a message to the group chat (use sparingly, prefer direct response)',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        message: {
+          type: 'string',
+          description: 'Message to post'
+        }
+      },
+      required: ['message']
+    }
+  },
+  {
+    name: 'get_team_status',
+    description: 'Get current team status including online agents, active tasks, and blockers',
+    input_schema: {
+      type: 'object' as const,
+      properties: {}
+    }
+  },
+  {
+    name: 'search_code',
+    description: 'Search for code patterns in the repository',
+    input_schema: {
+      type: 'object' as const,
+      properties: {
+        query: {
+          type: 'string',
+          description: 'Search query (text to find in code)'
+        },
+        path: {
+          type: 'string',
+          description: 'Optional path filter (e.g., "api" to search only in api folder)'
+        }
+      },
+      required: ['query']
+    }
+  }
+];
+
 // Moderator Soul ID
 const MODERATOR_SOUL_ID = 'captain';
 
@@ -57,6 +201,18 @@ Your responsibilities:
 - Provide humans with clear status updates
 - Resolve conflicts and prioritize competing requests
 - Spawn specialized agents when needed for complex tasks
+
+Your capabilities (USE THEM):
+- **read_file**: Read any file from the repository
+- **write_file**: Edit files and commit directly to GitHub
+- **list_files**: Browse the repository structure
+- **create_task**: Create coordination tasks
+- **spawn_agent**: Spawn new Claude agents for work
+- **search_code**: Find code patterns in the repository
+- **get_team_status**: Check who's online and what's in progress
+
+When a human asks you to make changes or fix things, USE YOUR TOOLS to actually do it.
+Don't just say "I'll ask an agent" - do it yourself when possible!
 
 Your tone:
 - Professional but approachable
@@ -290,6 +446,202 @@ async function postToChat(message: string): Promise<void> {
   await redis.lpush(MESSAGES_KEY, JSON.stringify(chatMessage));
 }
 
+// ============ TOOL EXECUTION FUNCTIONS ============
+
+// GitHub API helper
+async function githubApi(endpoint: string, options: RequestInit = {}): Promise<any> {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error('GITHUB_TOKEN not configured');
+  }
+
+  const response = await fetch(`https://api.github.com${endpoint}`, {
+    ...options,
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`GitHub API error: ${response.status} - ${error}`);
+  }
+
+  return response.json();
+}
+
+// Read file from GitHub
+async function toolReadFile(path: string): Promise<string> {
+  try {
+    const data = await githubApi(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
+    const content = Buffer.from(data.content, 'base64').toString('utf-8');
+    return content;
+  } catch (error) {
+    return `Error reading file: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
+// Write/update file on GitHub
+async function toolWriteFile(path: string, content: string, message: string): Promise<string> {
+  try {
+    // First, get the current file SHA (if it exists)
+    let sha: string | undefined;
+    try {
+      const existing = await githubApi(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
+      sha = existing.sha;
+    } catch {
+      // File doesn't exist, that's ok
+    }
+
+    // Create or update the file
+    const body: any = {
+      message: `${message}\n\n🤖 Committed by Captain (Chat Moderator)`,
+      content: Buffer.from(content).toString('base64'),
+      branch: GITHUB_BRANCH,
+    };
+    if (sha) {
+      body.sha = sha;
+    }
+
+    const result = await githubApi(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}`, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+
+    return `✅ File ${sha ? 'updated' : 'created'}: ${path}\nCommit: ${result.commit.sha.substring(0, 7)}`;
+  } catch (error) {
+    return `Error writing file: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
+// List files in directory
+async function toolListFiles(path: string): Promise<string> {
+  try {
+    const data = await githubApi(`/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`);
+    if (Array.isArray(data)) {
+      const files = data.map((f: any) => `${f.type === 'dir' ? '📁' : '📄'} ${f.name}`);
+      return `Files in ${path || '/'}:\n${files.join('\n')}`;
+    }
+    return `${path} is a file, not a directory`;
+  } catch (error) {
+    return `Error listing files: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
+// Create a task
+async function toolCreateTask(title: string, description?: string, priority?: string, assignee?: string): Promise<string> {
+  const taskId = `task-${Date.now().toString(36)}`;
+  const task = {
+    id: taskId,
+    title,
+    description: description || '',
+    status: 'todo',
+    priority: priority || 'medium',
+    assignee: assignee || null,
+    createdBy: 'Captain',
+    createdAt: new Date().toISOString(),
+  };
+
+  await redis.hset(TASKS_KEY, { [taskId]: JSON.stringify(task) });
+  return `✅ Task created: "${title}" (${taskId})${assignee ? ` - Assigned to @${assignee}` : ''}`;
+}
+
+// Spawn agent via local spawn service
+async function toolSpawnAgent(task: string, agentId?: string): Promise<string> {
+  try {
+    // Try local spawn service first
+    const spawnResponse = await fetch('http://localhost:3848/spawn', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        task,
+        agentId,
+        requestedBy: 'Captain',
+      }),
+    });
+
+    if (spawnResponse.ok) {
+      const result = await spawnResponse.json();
+      return `🚀 Agent spawned: ${result.agentId || 'new-agent'}\nTask: ${task}`;
+    }
+  } catch {
+    // Local service not running, try cloud spawn
+  }
+
+  // Fallback: Post to chat asking for manual spawn
+  return `⚠️ Local spawn service unavailable. Manual spawn needed.\n\nTask requiring new agent:\n${task}`;
+}
+
+// Get team status
+async function toolGetTeamStatus(): Promise<string> {
+  const [onlineAgents, work] = await Promise.all([
+    getOnlineAgents(),
+    getWorkContext(),
+  ]);
+
+  const lines = [
+    `**Team Status**`,
+    `Online agents: ${onlineAgents.length}`,
+    onlineAgents.map(a => `  • ${a.agentId}: ${(a.offers || []).slice(0, 2).join(', ')}`).join('\n'),
+    '',
+    `Active tasks: ${work.tasks.length}`,
+    work.tasks.slice(0, 5).map(t => `  • ${t.title} (${t.status})`).join('\n'),
+    '',
+    `Blockers: ${work.blockers.length}`,
+    work.blockers.slice(0, 3).map(b => `  ⚠️ ${b.content}`).join('\n'),
+  ];
+
+  return lines.filter(Boolean).join('\n');
+}
+
+// Search code in repository
+async function toolSearchCode(query: string, path?: string): Promise<string> {
+  try {
+    const searchQuery = `${query} repo:${GITHUB_OWNER}/${GITHUB_REPO}${path ? ` path:${path}` : ''}`;
+    const data = await githubApi(`/search/code?q=${encodeURIComponent(searchQuery)}`);
+
+    if (data.total_count === 0) {
+      return `No results found for "${query}"`;
+    }
+
+    const results = data.items.slice(0, 5).map((item: any) =>
+      `📄 ${item.path}`
+    );
+
+    return `Found ${data.total_count} results:\n${results.join('\n')}`;
+  } catch (error) {
+    return `Error searching code: ${error instanceof Error ? error.message : 'Unknown error'}`;
+  }
+}
+
+// Execute a tool and return the result
+async function executeTool(toolName: string, toolInput: any): Promise<string> {
+  switch (toolName) {
+    case 'read_file':
+      return toolReadFile(toolInput.path);
+    case 'write_file':
+      return toolWriteFile(toolInput.path, toolInput.content, toolInput.message);
+    case 'list_files':
+      return toolListFiles(toolInput.path || '');
+    case 'create_task':
+      return toolCreateTask(toolInput.title, toolInput.description, toolInput.priority, toolInput.assignee);
+    case 'spawn_agent':
+      return toolSpawnAgent(toolInput.task, toolInput.agentId);
+    case 'post_chat':
+      await postToChat(toolInput.message);
+      return 'Message posted to chat';
+    case 'get_team_status':
+      return toolGetTeamStatus();
+    case 'search_code':
+      return toolSearchCode(toolInput.query, toolInput.path);
+    default:
+      return `Unknown tool: ${toolName}`;
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -359,35 +711,99 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         work.blockers.length > 0 ? `⚠️ Blockers: ${work.blockers.map(b => b.content).join('; ')}` : '',
       ].filter(Boolean).join('\n') || 'No active work tracked';
 
-      // Build prompt and call Claude
+      // Build prompt and call Claude with tools
       const systemPrompt = buildModeratorPrompt(soul, chatContext, teamContext, workContextStr);
 
       const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-      const response = await anthropic.messages.create({
+      // Initial message to Claude with tools
+      const messages: Anthropic.MessageParam[] = [
+        {
+          role: 'user',
+          content: `[${author || 'User'}]: ${message}\n\n(Respond as Captain, the team lead. Be decisive and action-oriented. Use tools when needed to take real action.)`,
+        },
+      ];
+
+      let response = await anthropic.messages.create({
         model: 'claude-sonnet-4-5-20250929',
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: systemPrompt,
-        messages: [
-          {
-            role: 'user',
-            content: `[${author || 'User'}]: ${message}\n\n(Respond as Captain, the team lead. Be decisive and action-oriented.)`,
-          },
-        ],
+        tools: CAPTAIN_TOOLS,
+        messages,
       });
 
-      const responseText = response.content[0].type === 'text'
-        ? response.content[0].text
-        : '';
+      // Track total tokens
+      let totalInputTokens = response.usage?.input_tokens || 0;
+      let totalOutputTokens = response.usage?.output_tokens || 0;
+      const toolsUsed: string[] = [];
 
-      // Post response to chat
-      await postToChat(responseText);
+      // Tool use loop - process tool calls until we get a final text response
+      const maxIterations = 5; // Safety limit
+      let iteration = 0;
+
+      while (response.stop_reason === 'tool_use' && iteration < maxIterations) {
+        iteration++;
+
+        // Collect tool results for this iteration
+        const toolResults: Anthropic.MessageParam = {
+          role: 'user',
+          content: [],
+        };
+
+        // Process each tool call
+        for (const block of response.content) {
+          if (block.type === 'tool_use') {
+            toolsUsed.push(block.name);
+            console.log(`Captain executing tool: ${block.name}`, block.input);
+
+            const toolResult = await executeTool(block.name, block.input);
+
+            (toolResults.content as Anthropic.ToolResultBlockParam[]).push({
+              type: 'tool_result',
+              tool_use_id: block.id,
+              content: toolResult,
+            });
+          }
+        }
+
+        // Add assistant's response and tool results to messages
+        messages.push({
+          role: 'assistant',
+          content: response.content,
+        });
+        messages.push(toolResults);
+
+        // Continue the conversation
+        response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-5-20250929',
+          max_tokens: 2048,
+          system: systemPrompt,
+          tools: CAPTAIN_TOOLS,
+          messages,
+        });
+
+        totalInputTokens += response.usage?.input_tokens || 0;
+        totalOutputTokens += response.usage?.output_tokens || 0;
+      }
+
+      // Extract final text response
+      let responseText = '';
+      for (const block of response.content) {
+        if (block.type === 'text') {
+          responseText += block.text;
+        }
+      }
+
+      // Post response to chat (only if we have text to post)
+      if (responseText.trim()) {
+        await postToChat(responseText);
+      }
 
       // Update soul metrics
       soul.lastActiveAt = new Date().toISOString();
       soul.responsesCount = (soul.responsesCount || 0) + 1;
-      soul.totalTokensProcessed = (soul.totalTokensProcessed || 0) +
-        (response.usage?.input_tokens || 0) + (response.usage?.output_tokens || 0);
+      soul.totalTokensProcessed = (soul.totalTokensProcessed || 0) + totalInputTokens + totalOutputTokens;
+      soul.totalTasksCompleted = (soul.totalTasksCompleted || 0) + (toolsUsed.length > 0 ? 1 : 0);
       await redis.hset(SOULS_KEY, { [MODERATOR_SOUL_ID]: JSON.stringify(soul) });
 
       return res.json({
@@ -395,13 +811,52 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         response: responseText,
         reason: decision.reason,
         priority: decision.priority,
-        usage: response.usage,
+        toolsUsed,
+        iterations: iteration,
+        usage: {
+          input_tokens: totalInputTokens,
+          output_tokens: totalOutputTokens,
+        },
         context: {
           onlineAgents: onlineAgents.length,
           activeTasks: work.tasks.length,
           blockers: work.blockers.length,
         },
       });
+    }
+
+    // ============ EXECUTE - Direct tool execution ============
+    if (action === 'execute') {
+      const { tool, input } = req.body;
+
+      if (!tool) {
+        return res.status(400).json({
+          error: 'tool required',
+          availableTools: CAPTAIN_TOOLS.map(t => t.name),
+        });
+      }
+
+      const validTool = CAPTAIN_TOOLS.find(t => t.name === tool);
+      if (!validTool) {
+        return res.status(400).json({
+          error: `Unknown tool: ${tool}`,
+          availableTools: CAPTAIN_TOOLS.map(t => t.name),
+        });
+      }
+
+      try {
+        const result = await executeTool(tool, input || {});
+        return res.json({
+          success: true,
+          tool,
+          result,
+        });
+      } catch (error) {
+        return res.status(500).json({
+          error: `Tool execution failed`,
+          details: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
 
     // ============ DELEGATE - Delegate task to specific agent ============
@@ -524,16 +979,25 @@ ${expectedOutput ? `**Expected output**: ${expectedOutput}` : ''}
 
     // ============ DEFAULT - Help ============
     return res.json({
-      message: 'Chat Moderator API - Captain, the Team Lead AI',
+      message: 'Chat Moderator API - Captain, Full-Capability Team Lead AI',
       actions: {
-        'respond': 'POST - Process message and respond as Captain',
+        'respond': 'POST - Process message and respond as Captain (with tool_use)',
+        'execute': 'POST - Execute a tool directly (tool, input params)',
         'delegate': 'POST - Delegate task to specific agent',
         'spawn': 'POST - Spawn a specialized agent via agent-chat API',
         'status': 'GET - Get team status summary',
         'soul': 'GET - Get Captain soul info',
       },
-      description: 'Captain is the authoritative team lead that coordinates all agent activity in group chat.',
-      integration: 'Uses /api/agent-chat for soul injection and spawning specialized agents.',
+      tools: CAPTAIN_TOOLS.map(t => ({ name: t.name, description: t.description })),
+      description: 'Captain is the full-capability team lead that can read/write files, make commits, create tasks, and coordinate agents.',
+      capabilities: [
+        'Read files from GitHub',
+        'Write/edit files and commit to GitHub',
+        'Create coordination tasks',
+        'Spawn new Claude agents',
+        'Search codebase',
+        'Get team status',
+      ],
     });
 
   } catch (error) {
