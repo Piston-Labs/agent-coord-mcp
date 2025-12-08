@@ -266,6 +266,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Get single product
+    if (action === 'get-product') {
+      const { productId } = req.query;
+      if (!productId) {
+        return res.status(400).json({ error: 'productId parameter required' });
+      }
+
+      const response = await fetch(`${PRODUCTBOARD_API_URL}/products/${productId}`, { headers });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'ProductBoard API error', details: data });
+      }
+
+      return res.json({
+        success: true,
+        product: data.data,
+      });
+    }
+
+    // Update product
+    if (action === 'update-product') {
+      const { productId } = req.query;
+      const { name, description } = body;
+
+      if (!productId) {
+        return res.status(400).json({ error: 'productId query parameter required' });
+      }
+
+      const payload: any = { data: {} };
+      if (name !== undefined) payload.data.name = name;
+      if (description !== undefined) payload.data.description = description;
+
+      const response = await fetch(`${PRODUCTBOARD_API_URL}/products/${productId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'ProductBoard API error', details: data });
+      }
+
+      return res.json({
+        success: true,
+        updated: data.data,
+      });
+    }
+
     // List components
     if (action === 'list-components') {
       const { productId } = req.query;
@@ -440,6 +490,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'delete-feature': 'DELETE ?action=delete-feature&featureId=xxx',
         // Products & Components
         'list-products': 'GET ?action=list-products',
+        'get-product': 'GET ?action=get-product&productId=xxx',
+        'update-product': 'PUT ?action=update-product&productId=xxx body: { name, description }',
         'list-components': 'GET ?action=list-components&productId=xxx',
         // Notes
         'create-note': 'POST ?action=create-note body: { title, content, customerEmail, tags }',
