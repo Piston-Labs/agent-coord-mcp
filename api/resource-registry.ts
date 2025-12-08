@@ -47,6 +47,7 @@ const MCP_TOOLS = [
   { id: 'repo-context', name: 'repo-context', category: 'context', description: 'Store and retrieve persistent codebase knowledge.', file: 'src/tools/context.ts' },
   { id: 'memory', name: 'memory', category: 'context', description: 'Shared persistent memory for cross-agent knowledge.', file: 'src/tools/context.ts' },
   { id: 'resource-registry', name: 'resource-registry', category: 'context', description: 'Discover all available MCP tools, API endpoints, and integrations.', file: 'src/tools/context.ts' },
+  { id: 'resource-sync', name: 'resource-sync', category: 'context', description: 'Sync resources to registry. Call after creating APIs, souls, or integrations. Use sync-all to ensure Resources UI is current.', file: 'src/tools/context.ts' },
 
   // Orchestration Tools (src/tools/orchestration.ts)
   { id: 'hot-start', name: 'hot-start', category: 'orchestration', description: 'Load all context instantly for zero cold start.', file: 'src/tools/orchestration.ts' },
@@ -376,6 +377,7 @@ const API_ENDPOINTS = [
   { id: 'cleanup', path: '/api/cleanup', methods: ['POST'], description: 'Data cleanup operations', category: 'system' },
   { id: 'recycle-bin', path: '/api/recycle-bin', methods: ['GET', 'POST', 'DELETE'], description: 'Deleted items recovery', category: 'system' },
   { id: 'resource-registry', path: '/api/resource-registry', methods: ['GET', 'POST', 'DELETE'], description: 'This API - live wiki of all tools and endpoints', category: 'system' },
+  { id: 'resource-sync', path: '/api/resource-sync', methods: ['GET', 'POST'], description: 'Auto-sync resources to registry. Actions: register, sync-souls, sync-profiles, sync-all, changelog, status. Called automatically by souls/profiles APIs.', category: 'system' },
 
   // === DEBUG (dev only) ===
   { id: 'debug-agents', path: '/api/debug-agents', methods: ['GET'], description: '[DEBUG] Agent debugging info', category: 'debug' },

@@ -541,6 +541,89 @@ export function registerContextTools(server: McpServer) {
   );
 
   // ============================================================================
+  // RESOURCE-SYNC TOOL - Keep resource registry up to date
+  // ============================================================================
+
+  server.tool(
+    'resource-sync',
+    'Sync resources to the registry. Call this after creating new APIs, souls, or integrations. IMPORTANT: Always call sync-all after major changes to ensure Resources UI is current.',
+    {
+      action: z.enum(['register', 'sync-souls', 'sync-profiles', 'sync-all', 'changelog', 'status'])
+        .describe('register=add single resource, sync-souls/profiles/all=bulk sync, changelog=recent changes, status=sync health'),
+      // For register action
+      type: z.enum(['endpoint', 'tool', 'integration', 'soul', 'profile', 'feature']).optional()
+        .describe('Resource type (for register)'),
+      id: z.string().optional().describe('Resource ID (for register)'),
+      name: z.string().optional().describe('Resource name (for register)'),
+      description: z.string().optional().describe('Resource description (for register)'),
+      category: z.string().optional().describe('Resource category (for register)'),
+      metadata: z.record(z.any()).optional().describe('Additional metadata (for register)'),
+      notify: z.boolean().optional().describe('Post to group chat (default: true)'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, agentId, notify = true } = args;
+
+      try {
+        switch (action) {
+          case 'register': {
+            if (!args.type || !args.id || !args.name) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'type, id, and name required for register' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/resource-sync?action=register`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                type: args.type,
+                id: args.id,
+                name: args.name,
+                description: args.description || '',
+                category: args.category || 'custom',
+                metadata: args.metadata || {},
+                syncedBy: agentId,
+              })
+            });
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'sync-souls':
+          case 'sync-profiles':
+          case 'sync-all': {
+            const res = await fetch(`${API_BASE}/api/resource-sync?action=${action}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ syncedBy: agentId, notify })
+            });
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'changelog': {
+            const res = await fetch(`${API_BASE}/api/resource-sync?action=changelog&limit=20`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'status': {
+            const res = await fetch(`${API_BASE}/api/resource-sync?action=status`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // DICTATION TOOL - Voice dictation storage, analysis, and CRM integration
   // ============================================================================
 

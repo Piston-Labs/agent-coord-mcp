@@ -141,6 +141,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await redis.hset(PROFILES_KEY, { [agentId]: JSON.stringify(profile) });
 
+      // Auto-sync to resource registry
+      try {
+        const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000';
+        await fetch(`${baseUrl}/api/resource-sync?action=register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: 'profile',
+            id: `profile-${agentId}`,
+            name: agentId,
+            description: `Agent: ${(profile.offers || []).slice(0, 3).join(', ') || 'General purpose'}`,
+            category: 'agents',
+            metadata: {
+              agentId,
+              capabilities: profile.capabilities,
+              offers: profile.offers,
+              mcpTools: profile.mcpTools,
+              isCloudAgent: profile.isCloudAgent,
+            },
+            syncedBy: 'agent-profiles-api-auto',
+          }),
+        });
+      } catch (syncErr) {
+        console.error('Failed to auto-sync profile to registry:', syncErr);
+      }
+
       return res.json({
         success: true,
         profile,

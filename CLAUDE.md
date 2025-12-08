@@ -210,6 +210,44 @@ do-onboard agentId=phoenix
 3. Announce departure in chat
 4. Release any claims/locks
 
+## Resource Registry Auto-Sync (MANDATORY)
+
+The Resources UI must stay up-to-date. This happens automatically, but you need to understand how:
+
+### Automatic Sync (Built-In)
+These APIs auto-sync to the resource registry when changes occur:
+- **Souls API** (`/api/souls`) - New souls auto-registered
+- **Agent Profiles API** (`/api/agent-profiles`) - Profile changes auto-synced
+
+### Manual Sync (When Needed)
+Use the `resource-sync` MCP tool when:
+- You create a new API endpoint
+- You add a new integration
+- You want to verify the registry is current
+
+```typescript
+// Sync all dynamic resources (souls + profiles)
+resource-sync action=sync-all agentId=YOUR_ID
+
+// Register a new resource manually
+resource-sync action=register agentId=YOUR_ID type=endpoint id=my-api name="My API" description="Does X"
+
+// Check sync status
+resource-sync action=status agentId=YOUR_ID
+
+// View recent changes
+resource-sync action=changelog agentId=YOUR_ID
+```
+
+### When to Manually Sync
+1. **After creating new API files** - The registry doesn't auto-detect new files
+2. **After major refactors** - Run `sync-all` to refresh everything
+3. **Before demos** - Ensure Resources UI is current
+4. **When something seems stale** - Check changelog and re-sync
+
+### Notification
+All syncs post to group chat so the team knows about changes.
+
 ## Development Workflows (MANDATORY)
 
 **ALL agents MUST follow these workflows. Use `rules` MCP tool to get full details.**
