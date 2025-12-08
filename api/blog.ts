@@ -31,13 +31,13 @@ const MEMORY_KEY = 'agent-coord:shared-memory';
 const SOULS_KEY = 'agent-coord:souls';
 
 // Default blog-writer soul ID - created on first use
-const BLOG_WRITER_SOUL_ID = 'eli-blog-writer';
+const BLOG_WRITER_SOUL_ID = 'blog-assistant';
 
 // Blog-writer soul definition (used to create if doesn't exist)
 const BLOG_WRITER_SOUL_TEMPLATE = {
   soulId: BLOG_WRITER_SOUL_ID,
-  name: 'Eli',
-  personality: `You are Eli, the senior content strategist at Piston Labs. Your writing voice is:
+  name: 'Blog Assistant',
+  personality: `You are the Blog Assistant, the senior content strategist at Piston Labs. Your writing voice is:
 - Expert but accessible - you translate complex automotive telemetry into clear insights
 - Data-driven but practical - every claim backed by evidence, every insight actionable
 - Conversational but professional - B2B content that doesn't feel corporate
@@ -195,7 +195,7 @@ ${(soul.antiPatterns || []).map((p: any) => `- ${p.description}`).join('\n')}
 
 ${researchContext ? `RESEARCH CONTEXT (cite when relevant):\n${researchContext}` : ''}
 
-Remember: You are Eli, writing as the voice of Piston Labs. Be helpful, be specific, and create content that shop owners will actually find valuable.`;
+Remember: You are the Blog Assistant, writing as the voice of Piston Labs. Be helpful, be specific, and create content that shop owners will actually find valuable.`;
 }
 
 // Search research library for relevant context
@@ -594,7 +594,7 @@ What aspect of "${topic}" would you like to focus on?`,
           role: 'assistant',
           content: generatedContent,
           timestamp: new Date().toISOString(),
-          author: 'eli',
+          author: 'blog-assistant',
           metadata: {
             researchCited: researchContext ? ['auto-loaded'] : [],
           },
@@ -604,7 +604,7 @@ What aspect of "${topic}" would you like to focus on?`,
         // Update session
         session.messageCount += 2;
         session.updatedAt = new Date().toISOString();
-        session.assignedAgent = 'eli';
+        session.assignedAgent = 'blog-assistant';
         await redis.hset(BLOG_SESSIONS_KEY, { [sessionId]: JSON.stringify(session) });
       }
 
@@ -623,7 +623,7 @@ What aspect of "${topic}" would you like to focus on?`,
             readingTime: Math.ceil(wordCount / 200),
             researchSources: researchContext ? ['auto-loaded'] : [],
             generatedAt: new Date().toISOString(),
-            generatedBy: 'eli',
+            generatedBy: 'blog-assistant',
           },
           status: 'draft',
         };
@@ -760,7 +760,7 @@ What aspect of "${topic}" would you like to focus on?`,
     if (action === 'get-agent-prompt') {
       const { sessionId, topic, researchContext } = req.query;
 
-      const prompt = `You are Eli, a skilled blog writer for Piston Labs, a company in the automotive telemetry industry. You're helping create blog content based on research and industry knowledge.
+      const prompt = `You are the Blog Assistant, a skilled blog writer for Piston Labs, a company in the automotive telemetry industry. You're helping create blog content based on research and industry knowledge.
 
 CONTEXT:
 - Topic: ${topic || 'automotive telemetry'}
@@ -790,7 +790,7 @@ POST /api/blog?action=send-message
 {
   "sessionId": "${sessionId || 'SESSION_ID'}",
   "content": "YOUR_MESSAGE",
-  "author": "eli",
+  "author": "blog-assistant",
   "role": "assistant"
 }
 

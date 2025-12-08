@@ -11605,8 +11605,6 @@
     </style>
     <!-- Marked.js for markdown rendering in chat -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Blog Studio Functions -->
-    <script src="blog-studio.js"></script>
 </head>
 <body>
   <!-- Loading Screen (shown while JS initializes) -->
@@ -13950,8 +13948,8 @@
                 <button class="blog-action-btn" onclick="saveBlogDraft()" title="Save Draft" id="saveDraftBtn" disabled>
                   <span>💾</span> Save Draft
                 </button>
-                <button class="blog-action-btn primary" onclick="spawnBlogAgent()" title="Spawn Claude Agent" id="spawnAgentBtn" disabled>
-                  <span>🤖</span> Spawn Eli
+                <button class="blog-action-btn primary" onclick="spawnBlogAgent()" title="Generate with AI" id="spawnAgentBtn" disabled>
+                  <span>🤖</span> Generate
                 </button>
               </div>
             </div>
@@ -13961,7 +13959,7 @@
               <div class="blog-welcome">
                 <div class="blog-welcome-icon">✍️</div>
                 <h3>Welcome to Blog Studio</h3>
-                <p>Create compelling blog posts with AI assistance. Pull from our research library, collaborate with Eli (our blog writer agent), and generate polished content.</p>
+                <p>Create compelling blog posts with AI assistance. Pull from our research library, collaborate with the Blog Assistant, and generate polished content.</p>
                 <div class="blog-welcome-steps">
                   <div class="blog-step">
                     <span class="step-num">1</span>
@@ -13973,7 +13971,7 @@
                   </div>
                   <div class="blog-step">
                     <span class="step-num">3</span>
-                    <span>Spawn Eli to start writing with you</span>
+                    <span>Click Generate to start writing with the AI</span>
                   </div>
                 </div>
               </div>
@@ -13982,11 +13980,11 @@
             <!-- Input Area -->
             <div class="blog-input-area" id="blogInputArea" style="display: none;">
               <div class="blog-input-container">
-                <input type="text" id="blogMessageInput" placeholder="Type your message to Eli..." onkeypress="handleBlogKeypress(event)" />
+                <input type="text" id="blogMessageInput" placeholder="Type your message..." onkeypress="handleBlogKeypress(event)" />
                 <button class="blog-send-btn" onclick="sendBlogMessage()">Send</button>
               </div>
               <div class="blog-input-hint">
-                Press Enter to send • Eli will help you craft your blog post
+                Press Enter to send • The Blog Assistant will help you craft your blog post
               </div>
             </div>
           </div>
@@ -26466,6 +26464,9 @@
     });
 
   </script>
+
+  <!-- Blog Studio Functions (loaded after globals are defined) -->
+  <script src="blog-studio.js"></script>
 
   <!-- Mobile Bottom Navigation -->
   <nav class="mobile-nav" id="mobileNav">
