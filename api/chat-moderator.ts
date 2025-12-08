@@ -151,13 +151,15 @@ async function getRecentChat(limit: number = 25): Promise<ChatMessage[]> {
 
 // Get online agents with capabilities
 async function getOnlineAgents(): Promise<AgentProfile[]> {
-  const profilesHash = await redis.hgetall(PROFILES_KEY) || {};
+  const profilesHashRaw = await redis.hgetall(PROFILES_KEY);
+  const profilesHash = profilesHashRaw || {};
   const now = Date.now();
   const ONLINE_THRESHOLD = 10 * 60 * 1000; // 10 minutes
 
   return Object.values(profilesHash)
     .map((p: any) => typeof p === 'string' ? JSON.parse(p) : p)
     .filter((p: any) => {
+      if (!p) return false;
       const lastSeen = p.lastSeen ? new Date(p.lastSeen).getTime() : 0;
       return now - lastSeen < ONLINE_THRESHOLD;
     });
