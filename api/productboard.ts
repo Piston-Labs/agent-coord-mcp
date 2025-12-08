@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const PRODUCTBOARD_API_URL = 'https://api.productboard.com';
-const PRODUCTBOARD_TOKEN = process.env.PRODUCTBOARD_API_TOKEN;
+const PRODUCTBOARD_TOKEN = process.env.PRODUCTBOARD_API_TOKEN || process.env.PRODUCTBOARD_API_KEY;
 
 /**
  * ProductBoard Integration API
