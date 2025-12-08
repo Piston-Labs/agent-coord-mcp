@@ -35,7 +35,7 @@ const CLAIMS_KEY = 'agent-coord:claims';
 const MEMORY_KEY = 'agent-coord:shared-memory';
 
 // GitHub config
-const GITHUB_OWNER = 'tylerai';
+const GITHUB_OWNER = 'Piston-Labs';
 const GITHUB_REPO = 'agent-coord-mcp';
 const GITHUB_BRANCH = 'main';
 
