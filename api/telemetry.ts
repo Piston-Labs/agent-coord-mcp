@@ -335,7 +335,7 @@ function generateTelemetry(imei: string, stored?: Partial<TelemetryData>): Telem
       imei,
       deviceName: profile.name,
       vehicleInfo: {
-        vin: profile.vin,
+        vin: (stored as any).vin || profile.vin,  // Prefer live VIN from AVL 256
         make: profile.make,
         model: profile.model,
         year: profile.year
@@ -738,13 +738,27 @@ function parseS3TeltonikaRecord(raw: RawTeltonikaRecord, imei: string): Partial<
       ? new Date(reported.ts).toISOString()
       : new Date().toISOString();
 
+    // Parse VIN from AVL ID 256 (only present when ignition is ON)
+    const vin = reported['256'] || undefined;
+
+    // Parse fuel level from AVL IDs 83 (%) or 84 (liters * 0.1)
+    const fuelLevelPercent = reported['83'];
+    const fuelLevelLiters = reported['84'] ? reported['84'] * 0.1 : undefined;
+    const fuelLevel = fuelLevelPercent ?? fuelLevelLiters;
+
+    // Parse engine RPM from AVL ID 449
+    const engineRPM = reported['449'] || undefined;
+
     return {
       imei,
+      vin,  // Include VIN if present
       metrics: {
         batteryVoltage: batteryVoltage > 0 ? batteryVoltage : externalVoltage,
         externalVoltage,
         speed: reported.sp || 0,
         odometer: odometerKm,
+        fuelLevel,
+        engineRPM,
       },
       position: {
         lat,
