@@ -17550,8 +17550,9 @@
             <div style="display: flex; flex-wrap: wrap; gap: 8px;">
         `;
 
-        // Add topic tags
-        const topics = researchTopics.topics || ['philosophy', 'alignment', 'titans', 'technology', 'architecture'];
+        // Add topic tags - topics from API are objects with {topic, findingsCount, ...}, extract topic name
+        const topicsRaw = researchTopics.topics || ['philosophy', 'alignment', 'titans', 'technology', 'architecture'];
+        const topics = topicsRaw.map(t => typeof t === 'object' ? t.topic : t);
         topics.forEach(topic => {
           html += `
             <button onclick="searchAiResearch('${topic}')" style="padding: 6px 12px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 16px; color: var(--text-secondary); font-size: 12px; cursor: pointer; transition: all 0.2s ease;">
