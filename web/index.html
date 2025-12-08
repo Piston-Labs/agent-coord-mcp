@@ -17517,6 +17517,54 @@
           appendMessages([msgObj]);
           lastMessageTime = responseData.timestamp;
         }
+
+        // Auto-trigger Claude response (like Claude Desktop app)
+        // Every message gets an AI response automatically via soul-injected Claude
+        if (message && !pendingImage) {
+          sendBtn.textContent = 'AI thinking...';
+          try {
+            // Get recent messages for context
+            const recentMsgs = Array.from(document.querySelectorAll('.message'))
+              .slice(-10)
+              .map(el => ({
+                author: el.querySelector('.message-author')?.textContent || 'Unknown',
+                message: el.querySelector('.message-text')?.textContent || ''
+              }));
+
+            const aiRes = await fetch(API_BASE + '/agent-chat?action=respond', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                soulId: 'hub',  // Use Hub as default responder
+                trigger: message,
+                recentMessages: recentMsgs,
+                postToGroupChat: true
+              })
+            });
+
+            const aiData = await aiRes.json();
+
+            if (aiRes.ok && aiData.response) {
+              // Append AI response locally (it's also saved to chat)
+              appendMessages([{
+                id: aiData.chatMessage?.id || Date.now().toString(36) + '-hub',
+                author: aiData.soul?.name || 'Hub',
+                authorType: 'ai',
+                message: aiData.response,
+                timestamp: new Date().toISOString()
+              }]);
+              lastMessageTime = new Date().toISOString();
+
+              // Show latency toast
+              if (aiData.latencyMs) {
+                showAIResponseToast(aiData.latencyMs, aiData.soul?.name || 'Hub');
+              }
+            }
+          } catch (aiErr) {
+            console.error('AI response failed:', aiErr);
+            // Don't block the user - just log the error silently
+          }
+        }
       } catch (err) {
         console.error('Send failed:', err);
         alert('Failed to send message: ' + err.message);
@@ -17524,6 +17572,15 @@
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
       }
+    }
+
+    // Show AI response latency toast
+    function showAIResponseToast(latencyMs, soulName) {
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position: fixed; bottom: 80px; right: 20px; padding: 10px 16px; background: rgba(88, 166, 255, 0.9); color: white; border-radius: 8px; font-size: 11px; z-index: 10000; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+      toast.innerHTML = `<div style="font-weight: 600;">AI Response from ${soulName}</div><div style="opacity: 0.9;">Generated in ${latencyMs}ms</div>`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
 
     // Ask Hub AI - Claude-powered chat responses
