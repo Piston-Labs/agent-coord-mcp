@@ -665,13 +665,17 @@ async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<st
 // Parses Teltonika codec fields from raw S3 JSON files
 // ============================================================================
 
-// Teltonika AVL ID to field name mapping (from FMC130 protocol docs)
+// Teltonika AVL ID to field name mapping (from FMC130/FMM00A protocol docs)
 const TELTONIKA_FIELDS: Record<string, string> = {
   '66': 'externalVoltage',     // External voltage (mV)
   '67': 'batteryVoltage',      // Internal battery voltage (mV)
+  '68': 'batteryCurrentmA',    // Battery current (mA)
   '69': 'ignition',            // Ignition on/off
+  '83': 'fuelLevelPercent',    // OBD Fuel level (0-100%)
+  '84': 'fuelLevelLiters',     // Fuel level (×0.1 liters)
   '181': 'gpsSignal',          // GNSS PDOP
   '182': 'gpsHDOP',            // GNSS HDOP
+  '199': 'tripOdometer',       // Trip odometer (m)
   '200': 'movement',           // Movement sensor
   '21': 'gsmSignal',           // GSM signal strength
   '239': 'ignitionState',      // Ignition state
@@ -679,6 +683,7 @@ const TELTONIKA_FIELDS: Record<string, string> = {
   '241': 'operatorCode',       // GSM operator code
   '24': 'speedKmh',            // Speed from GPS
   '16': 'odometer',            // Total odometer (m)
+  '449': 'engineRpm',          // Engine RPM (from OBD)
 };
 
 interface RawTeltonikaRecord {
