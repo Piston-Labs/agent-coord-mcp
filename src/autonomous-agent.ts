@@ -622,12 +622,22 @@ async function processWithTools(userContent: string): Promise<string> {
 
 async function shouldRespond(messages: ChatMessage[]): Promise<boolean> {
   for (const msg of messages) {
-    // Always respond to humans
-    if (msg.authorType === 'human') return true;
-    // Respond to @mentions
-    if (msg.message.toLowerCase().includes(`@${CONFIG.AGENT_ID.toLowerCase()}`)) return true;
-    // Respond to general @agent calls
-    if (msg.message.includes('@autonomous') || msg.message.includes('@orchestrator')) return true;
+    const msgLower = msg.message.toLowerCase();
+
+    // Only respond to direct @mentions - NOT all human messages
+    // Captain/chat-moderator handles general human messages
+    if (msgLower.includes(`@${CONFIG.AGENT_ID.toLowerCase()}`)) return true;
+    if (msgLower.includes('@bigbrain')) return true;
+    if (msgLower.includes('@autonomous')) return true;
+    if (msgLower.includes('@orchestrator')) return true;
+
+    // Also respond if explicitly asked for orchestration/spawning tasks
+    if (msg.authorType === 'human') {
+      const isOrchestrationRequest = msgLower.includes('spawn') ||
+                                      msgLower.includes('delegate') ||
+                                      msgLower.includes('orchestrat');
+      if (isOrchestrationRequest) return true;
+    }
   }
   return false;
 }

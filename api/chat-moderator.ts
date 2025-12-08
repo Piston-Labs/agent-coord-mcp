@@ -3,17 +3,20 @@ import { Redis } from '@upstash/redis';
 import Anthropic from '@anthropic-ai/sdk';
 
 /**
- * Chat Moderator API - Team Lead AI for Agent Coordination
+ * Chat Moderator API - Captain, Full-Capability Team Lead AI
  *
- * A powerful orchestrator bot with its own persistent identity that:
+ * A powerful orchestrator bot with REAL agent capabilities:
  * - Monitors group chat and responds as team lead
- * - Delegates tasks to appropriate agents based on capabilities
- * - Spawns specialized agents via hot-start identities
- * - Tracks work progress and coordinates handoffs
- * - Provides status updates to humans
+ * - Can READ and EDIT files via GitHub API
+ * - Can PUSH commits to repositories
+ * - Can spawn specialized agents
+ * - Can execute coordination commands
  *
- * POST /api/chat-moderator?action=respond - Process message and respond
+ * Uses Claude's tool_use for real capabilities, not just chat.
+ *
+ * POST /api/chat-moderator?action=respond - Process message with tool execution
  * POST /api/chat-moderator?action=delegate - Delegate task to specialist
+ * POST /api/chat-moderator?action=execute - Execute a tool directly
  * POST /api/chat-moderator?action=status - Get team status summary
  * GET /api/chat-moderator?action=soul - Get moderator soul info
  */
