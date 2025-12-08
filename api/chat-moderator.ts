@@ -169,24 +169,30 @@ async function getWorkContext(): Promise<{
   claims: any[];
   blockers: any[];
 }> {
-  const [tasksHash, claimsHash, memoryHash] = await Promise.all([
-    redis.hgetall(TASKS_KEY) || {},
-    redis.hgetall(CLAIMS_KEY) || {},
-    redis.hgetall(MEMORY_KEY) || {},
+  const [tasksHashRaw, claimsHashRaw, memoryHashRaw] = await Promise.all([
+    redis.hgetall(TASKS_KEY),
+    redis.hgetall(CLAIMS_KEY),
+    redis.hgetall(MEMORY_KEY),
   ]);
+
+  // Handle null/undefined from Redis
+  const tasksHash = tasksHashRaw || {};
+  const claimsHash = claimsHashRaw || {};
+  const memoryHash = memoryHashRaw || {};
 
   const tasks = Object.values(tasksHash)
     .map((t: any) => typeof t === 'string' ? JSON.parse(t) : t)
-    .filter((t: any) => t.status !== 'done')
+    .filter((t: any) => t && t.status !== 'done')
     .slice(0, 15);
 
   const claims = Object.values(claimsHash)
     .map((c: any) => typeof c === 'string' ? JSON.parse(c) : c)
+    .filter((c: any) => c)
     .slice(0, 15);
 
   const blockers = Object.values(memoryHash)
     .map((m: any) => typeof m === 'string' ? JSON.parse(m) : m)
-    .filter((m: any) => m.category === 'blocker')
+    .filter((m: any) => m && m.category === 'blocker')
     .slice(0, 10);
 
   return { tasks, claims, blockers };
