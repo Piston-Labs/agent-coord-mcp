@@ -901,6 +901,174 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
+  // PRODUCTBOARD TOOL - Feature planning and roadmap management
+  // ============================================================================
+
+  server.tool(
+    'productboard',
+    'Manage features, notes, and product roadmap in ProductBoard. Create features, submit feedback, track releases. Requires PRODUCTBOARD_API_TOKEN env var.',
+    {
+      action: z.enum([
+        'list-features', 'get-feature', 'create-feature', 'update-feature', 'delete-feature',
+        'list-products', 'list-components', 'list-statuses', 'list-releases',
+        'create-note', 'list-notes', 'list-companies'
+      ]).describe('Operation to perform'),
+      // Feature fields
+      featureId: z.string().optional().describe('Feature ID (for get/update/delete)'),
+      name: z.string().optional().describe('Feature name (for create/update)'),
+      description: z.string().optional().describe('Feature description in HTML (for create/update)'),
+      status: z.object({
+        id: z.string().optional(),
+        name: z.string().optional()
+      }).optional().describe('Feature status (use list-statuses to get IDs)'),
+      parent: z.object({
+        product: z.object({ id: z.string() }).optional(),
+        component: z.object({ id: z.string() }).optional(),
+        feature: z.object({ id: z.string() }).optional()
+      }).optional().describe('Parent product, component, or feature'),
+      owner: z.object({ email: z.string() }).optional().describe('Feature owner by email'),
+      timeframe: z.object({
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        granularity: z.enum(['day', 'week', 'month', 'quarter', 'year']).optional()
+      }).optional().describe('Feature timeframe'),
+      archived: z.boolean().optional().describe('Archive status (for update)'),
+      // Note fields
+      title: z.string().optional().describe('Note title (for create-note)'),
+      content: z.string().optional().describe('Note content in HTML (for create-note)'),
+      customerEmail: z.string().optional().describe('Customer email for attribution'),
+      companyName: z.string().optional().describe('Company name for attribution'),
+      tags: z.array(z.string()).optional().describe('Tags for the note'),
+      // Filters
+      productId: z.string().optional().describe('Filter by product ID'),
+      componentId: z.string().optional().describe('Filter by component ID'),
+      limit: z.number().optional().describe('Max records to return'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const {
+        action, featureId, name, description, status, parent, owner, timeframe, archived,
+        title, content, customerEmail, companyName, tags,
+        productId, componentId, limit, agentId
+      } = args;
+
+      try {
+        const params = new URLSearchParams();
+        params.set('action', action);
+        if (featureId) params.set('featureId', featureId);
+        if (productId) params.set('productId', productId);
+        if (componentId) params.set('componentId', componentId);
+        if (limit) params.set('limit', String(limit));
+        if (status?.name) params.set('status', status.name);
+
+        let method = 'GET';
+        let body: string | undefined;
+
+        // Create feature
+        if (action === 'create-feature') {
+          method = 'POST';
+          body = JSON.stringify({ name, description, status, parent, owner, timeframe });
+        }
+        // Update feature
+        else if (action === 'update-feature') {
+          method = 'PUT';
+          body = JSON.stringify({ name, description, status, archived, owner, timeframe });
+        }
+        // Delete feature
+        else if (action === 'delete-feature') {
+          method = 'DELETE';
+        }
+        // Create note
+        else if (action === 'create-note') {
+          method = 'POST';
+          body = JSON.stringify({
+            title,
+            content,
+            customerEmail,
+            companyName,
+            tags,
+            source: { origin: 'agent-coord-hub', recordedBy: agentId }
+          });
+        }
+
+        const res = await fetch(`${API_BASE}/api/productboard?${params}`, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          ...(body ? { body } : {})
+        });
+        const data = await res.json();
+
+        // Format list-features nicely
+        if (action === 'list-features' && data.features) {
+          const lines = [
+            `## Features (${data.count})`,
+            ``
+          ];
+
+          for (const feature of data.features.slice(0, 25)) {
+            const statusName = feature.status?.name || 'No status';
+            lines.push(`- **${feature.name}** [${statusName}]`);
+            lines.push(`  ID: ${feature.id}`);
+          }
+
+          if (data.features.length > 25) {
+            lines.push(``, `... and ${data.features.length - 25} more`);
+          }
+
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format list-products nicely
+        if (action === 'list-products' && data.products) {
+          const lines = [`## Products (${data.count})`, ``];
+          for (const product of data.products) {
+            lines.push(`- **${product.name}** (${product.id})`);
+            if (product.description) lines.push(`  ${product.description.substring(0, 100)}...`);
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format list-statuses nicely
+        if (action === 'list-statuses' && data.statuses) {
+          const lines = [`## Feature Statuses`, ``];
+          for (const status of data.statuses) {
+            lines.push(`- **${status.name}** (${status.id})`);
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Announce feature creation in chat
+        if (action === 'create-feature' && data.success && data.created) {
+          await fetch(`${API_BASE}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              author: agentId,
+              message: `📋 Created ProductBoard feature: **${data.created.name}**`
+            })
+          });
+        }
+
+        // Announce note creation in chat
+        if (action === 'create-note' && data.success && data.created) {
+          await fetch(`${API_BASE}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              author: agentId,
+              message: `💡 Added ProductBoard insight: ${title || 'New feedback'}`
+            })
+          });
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // AIRTABLE TOOL - Product roadmap and feature tracking
   // ============================================================================
 
