@@ -906,15 +906,35 @@ export function registerIntegrationTools(server: McpServer) {
 
   server.tool(
     'productboard',
-    'Manage features, notes, and product roadmap in ProductBoard. Create features, submit feedback, track releases. Requires PRODUCTBOARD_API_TOKEN env var.',
+    `Manage features, notes, and product roadmap in ProductBoard.
+
+AGENT-OPTIMIZED ACTIONS (use these first):
+- get-hierarchy: Full product→component→feature tree in ONE call
+- audit: Check for orphaned features, empty components
+- get-reference: Products, components, statuses lookup tables
+- resolve-component: Find component ID by name (no UUID needed)
+- batch-delete: Delete multiple features at once
+- move-feature: Move feature to different component
+
+STANDARD ACTIONS:
+- list-features, get-feature, create-feature, update-feature, delete-feature
+- list-products, list-components, create-component
+- list-statuses, list-releases, create-note, list-notes
+
+Requires PRODUCTBOARD_API_TOKEN env var.`,
     {
       action: z.enum([
+        // Agent-optimized actions
+        'get-hierarchy', 'audit', 'get-reference', 'resolve-component', 'batch-delete', 'move-feature',
+        // Standard actions
         'list-features', 'get-feature', 'create-feature', 'update-feature', 'delete-feature',
-        'list-products', 'list-components', 'list-statuses', 'list-releases',
+        'list-products', 'list-components', 'create-component', 'list-statuses', 'list-releases',
         'create-note', 'list-notes', 'list-companies'
-      ]).describe('Operation to perform'),
+      ]).describe('Operation to perform. Prefer agent-optimized actions: get-hierarchy, audit, get-reference'),
       // Feature fields
-      featureId: z.string().optional().describe('Feature ID (for get/update/delete)'),
+      featureId: z.string().optional().describe('Feature ID (for get/update/delete/move-feature)'),
+      featureIds: z.array(z.string()).optional().describe('Feature IDs array (for batch-delete)'),
+      targetComponentId: z.string().optional().describe('Target component ID (for move-feature)'),
       name: z.string().optional().describe('Feature name (for create/update)'),
       description: z.string().optional().describe('Feature description in HTML (for create/update)'),
       status: z.object({
@@ -939,6 +959,9 @@ export function registerIntegrationTools(server: McpServer) {
       customerEmail: z.string().optional().describe('Customer email for attribution'),
       companyName: z.string().optional().describe('Company name for attribution'),
       tags: z.array(z.string()).optional().describe('Tags for the note'),
+      // Resolution by name
+      componentName: z.string().optional().describe('Component name (for resolve-component)'),
+      productName: z.string().optional().describe('Product name filter (for resolve-component)'),
       // Filters
       productId: z.string().optional().describe('Filter by product ID'),
       componentId: z.string().optional().describe('Filter by component ID'),
@@ -947,8 +970,9 @@ export function registerIntegrationTools(server: McpServer) {
     },
     async (args) => {
       const {
-        action, featureId, name, description, status, parent, owner, timeframe, archived,
+        action, featureId, featureIds, targetComponentId, name, description, status, parent, owner, timeframe, archived,
         title, content, customerEmail, companyName, tags,
+        componentName, productName,
         productId, componentId, limit, agentId
       } = args;
 
@@ -958,16 +982,32 @@ export function registerIntegrationTools(server: McpServer) {
         if (featureId) params.set('featureId', featureId);
         if (productId) params.set('productId', productId);
         if (componentId) params.set('componentId', componentId);
+        if (componentName) params.set('componentName', componentName);
+        if (productName) params.set('productName', productName);
         if (limit) params.set('limit', String(limit));
         if (status?.name) params.set('status', status.name);
 
         let method = 'GET';
         let body: string | undefined;
 
+        // Agent-optimized actions
+        if (action === 'batch-delete') {
+          method = 'POST';
+          body = JSON.stringify({ featureIds });
+        }
+        else if (action === 'move-feature') {
+          method = 'POST';
+          body = JSON.stringify({ featureId, targetComponentId });
+        }
         // Create feature
-        if (action === 'create-feature') {
+        else if (action === 'create-feature') {
           method = 'POST';
           body = JSON.stringify({ name, description, status, parent, owner, timeframe });
+        }
+        // Create component
+        else if (action === 'create-component') {
+          method = 'POST';
+          body = JSON.stringify({ name, description, productId });
         }
         // Update feature
         else if (action === 'update-feature') {
@@ -998,6 +1038,107 @@ export function registerIntegrationTools(server: McpServer) {
         });
         const data = await res.json();
 
+        // Format get-hierarchy nicely
+        if (action === 'get-hierarchy' && data.hierarchy) {
+          const lines = [
+            `## ProductBoard Hierarchy`,
+            `📊 ${data.summary.products} products, ${data.summary.components} components, ${data.summary.features} features`,
+            ``
+          ];
+
+          for (const product of data.hierarchy) {
+            lines.push(`### ${product.name}`);
+            for (const comp of product.components) {
+              lines.push(`  - **${comp.name}** (${comp.featureCount} features)`);
+              for (const feat of comp.features.slice(0, 5)) {
+                lines.push(`    - ${feat.name} [${feat.status}]`);
+              }
+              if (comp.features.length > 5) {
+                lines.push(`    - ... and ${comp.features.length - 5} more`);
+              }
+            }
+            lines.push(``);
+          }
+
+          if (data.orphaned.length > 0) {
+            lines.push(`⚠️ **${data.orphaned.length} orphaned features** (under products instead of components)`);
+          }
+
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format audit nicely
+        if (action === 'audit') {
+          const lines = [
+            `## ProductBoard Audit`,
+            data.healthy ? '✅ **HEALTHY** - No issues found' : '⚠️ **ISSUES FOUND**',
+            ``
+          ];
+
+          lines.push(`**Summary:**`);
+          lines.push(`- Products: ${data.summary.products}`);
+          lines.push(`- Components: ${data.summary.components}`);
+          lines.push(`- Features: ${data.summary.features}`);
+          lines.push(``);
+
+          if (data.issues.length > 0) {
+            lines.push(`**Issues:**`);
+            for (const issue of data.issues) {
+              lines.push(`- ❌ ${issue}`);
+            }
+            lines.push(``);
+          }
+
+          if (data.orphaned.length > 0) {
+            lines.push(`**Orphaned Features:**`);
+            for (const f of data.orphaned.slice(0, 10)) {
+              lines.push(`- ${f.name} (${f.id})`);
+            }
+            if (data.orphaned.length > 10) {
+              lines.push(`- ... and ${data.orphaned.length - 10} more`);
+            }
+          }
+
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format get-reference nicely
+        if (action === 'get-reference') {
+          const lines = [
+            `## ProductBoard Reference Data`,
+            ``,
+            `**Products:**`,
+          ];
+          for (const [name, id] of Object.entries(data.products || {})) {
+            lines.push(`- ${name}: \`${id}\``);
+          }
+          lines.push(``, `**Statuses:**`);
+          for (const [name, id] of Object.entries(data.statuses || {})) {
+            lines.push(`- ${name}: \`${id}\``);
+          }
+          lines.push(``, `**Components:**`);
+          for (const [name, id] of Object.entries(data.components || {})) {
+            lines.push(`- ${name}: \`${id}\``);
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format batch-delete nicely
+        if (action === 'batch-delete') {
+          const lines = [
+            `## Batch Delete Results`,
+            `✅ Deleted: ${data.deleted}`,
+            `❌ Failed: ${data.failed}`,
+          ];
+          if (data.failed > 0) {
+            lines.push(``, `**Failed:**`);
+            for (const r of data.results.filter((r: any) => !r.success)) {
+              lines.push(`- ${r.id}: ${r.error}`);
+            }
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
         // Format list-features nicely
         if (action === 'list-features' && data.features) {
           const lines = [
@@ -1024,6 +1165,15 @@ export function registerIntegrationTools(server: McpServer) {
           for (const product of data.products) {
             lines.push(`- **${product.name}** (${product.id})`);
             if (product.description) lines.push(`  ${product.description.substring(0, 100)}...`);
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format list-components nicely
+        if (action === 'list-components' && data.components) {
+          const lines = [`## Components (${data.count})`, ``];
+          for (const comp of data.components) {
+            lines.push(`- **${comp.name}** (${comp.id})`);
           }
           return { content: [{ type: 'text', text: lines.join('\n') }] };
         }

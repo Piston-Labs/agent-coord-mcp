@@ -531,6 +531,355 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // =========================================================================
+    // AGENT-OPTIMIZED ACTIONS
+    // =========================================================================
+
+    // Get full hierarchy - products → components → features in one call
+    if (action === 'get-hierarchy') {
+      const [productsRes, componentsRes, featuresRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers }),
+      ]);
+
+      const [productsData, componentsData, featuresData] = await Promise.all([
+        productsRes.json(),
+        componentsRes.json(),
+        featuresRes.json(),
+      ]);
+
+      if (!productsRes.ok || !componentsRes.ok || !featuresRes.ok) {
+        return res.status(500).json({ error: 'Failed to fetch hierarchy data' });
+      }
+
+      const products = productsData.data || [];
+      const components = componentsData.data || [];
+      const features = featuresData.data || [];
+
+      // Build hierarchy
+      const hierarchy = products.map((product: any) => {
+        const productComponents = components.filter((c: any) =>
+          c.parent?.product?.id === product.id
+        );
+
+        return {
+          id: product.id,
+          name: product.name,
+          components: productComponents.map((comp: any) => {
+            const compFeatures = features.filter((f: any) =>
+              f.parent?.component?.id === comp.id
+            );
+            return {
+              id: comp.id,
+              name: comp.name,
+              featureCount: compFeatures.length,
+              features: compFeatures.map((f: any) => ({
+                id: f.id,
+                name: f.name,
+                status: f.status?.name || 'No status',
+              })),
+            };
+          }),
+        };
+      });
+
+      // Find orphaned features (under product, not component)
+      const orphaned = features.filter((f: any) =>
+        f.parent?.product && !f.parent?.component
+      );
+
+      return res.json({
+        success: true,
+        hierarchy,
+        summary: {
+          products: products.length,
+          components: components.length,
+          features: features.length,
+          orphanedFeatures: orphaned.length,
+        },
+        orphaned: orphaned.map((f: any) => ({
+          id: f.id,
+          name: f.name,
+          parentProduct: f.parent?.product?.id,
+        })),
+      });
+    }
+
+    // Audit - check for orphaned features and organization issues
+    if (action === 'audit') {
+      const [productsRes, componentsRes, featuresRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers }),
+      ]);
+
+      const [productsData, componentsData, featuresData] = await Promise.all([
+        productsRes.json(),
+        componentsRes.json(),
+        featuresRes.json(),
+      ]);
+
+      const products = productsData.data || [];
+      const components = componentsData.data || [];
+      const features = featuresData.data || [];
+
+      // Find issues
+      const orphaned = features.filter((f: any) =>
+        f.parent?.product && !f.parent?.component
+      );
+
+      const noParent = features.filter((f: any) =>
+        !f.parent?.product && !f.parent?.component
+      );
+
+      // Group by component for balance check
+      const componentFeatureCounts: Record<string, number> = {};
+      for (const f of features) {
+        const compId = f.parent?.component?.id;
+        if (compId) {
+          componentFeatureCounts[compId] = (componentFeatureCounts[compId] || 0) + 1;
+        }
+      }
+
+      // Find empty components
+      const emptyComponents = components.filter((c: any) =>
+        !componentFeatureCounts[c.id]
+      );
+
+      const issues: string[] = [];
+      if (orphaned.length > 0) {
+        issues.push(`${orphaned.length} features under products instead of components`);
+      }
+      if (noParent.length > 0) {
+        issues.push(`${noParent.length} features with no parent`);
+      }
+      if (emptyComponents.length > 0) {
+        issues.push(`${emptyComponents.length} empty components`);
+      }
+
+      return res.json({
+        success: true,
+        healthy: issues.length === 0,
+        issues,
+        summary: {
+          products: products.length,
+          components: components.length,
+          features: features.length,
+          orphanedFeatures: orphaned.length,
+          noParentFeatures: noParent.length,
+          emptyComponents: emptyComponents.length,
+        },
+        orphaned: orphaned.map((f: any) => ({ id: f.id, name: f.name })),
+        emptyComponents: emptyComponents.map((c: any) => ({ id: c.id, name: c.name })),
+      });
+    }
+
+    // Batch delete features
+    if (action === 'batch-delete') {
+      const { featureIds } = body;
+
+      if (!featureIds || !Array.isArray(featureIds) || featureIds.length === 0) {
+        return res.status(400).json({
+          error: 'featureIds array required',
+          example: { featureIds: ['id1', 'id2', 'id3'] }
+        });
+      }
+
+      const results: { id: string; success: boolean; error?: string }[] = [];
+
+      // Delete in sequence with small delay to avoid rate limiting
+      for (const id of featureIds) {
+        try {
+          const response = await fetch(`${PRODUCTBOARD_API_URL}/features/${id}`, {
+            method: 'DELETE',
+            headers,
+          });
+
+          if (response.ok) {
+            results.push({ id, success: true });
+          } else {
+            const data = await response.json();
+            results.push({ id, success: false, error: data.message || 'Delete failed' });
+          }
+        } catch (err) {
+          results.push({ id, success: false, error: String(err) });
+        }
+
+        // Small delay between requests
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      const succeeded = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+
+      return res.json({
+        success: failed === 0,
+        deleted: succeeded,
+        failed,
+        results,
+      });
+    }
+
+    // Move feature (delete + recreate under new component)
+    if (action === 'move-feature') {
+      const { featureId, targetComponentId } = body;
+
+      if (!featureId || !targetComponentId) {
+        return res.status(400).json({
+          error: 'featureId and targetComponentId required',
+          example: { featureId: 'xxx', targetComponentId: 'yyy' }
+        });
+      }
+
+      // Get existing feature
+      const getRes = await fetch(`${PRODUCTBOARD_API_URL}/features/${featureId}`, { headers });
+      if (!getRes.ok) {
+        return res.status(404).json({ error: 'Feature not found' });
+      }
+      const existing = (await getRes.json()).data;
+
+      // Delete old feature
+      const deleteRes = await fetch(`${PRODUCTBOARD_API_URL}/features/${featureId}`, {
+        method: 'DELETE',
+        headers,
+      });
+      if (!deleteRes.ok) {
+        return res.status(500).json({ error: 'Failed to delete original feature' });
+      }
+
+      // Recreate under new component
+      const createPayload = {
+        data: {
+          name: existing.name,
+          description: existing.description,
+          type: existing.type || 'feature',
+          status: existing.status,
+          parent: { component: { id: targetComponentId } },
+        }
+      };
+
+      const createRes = await fetch(`${PRODUCTBOARD_API_URL}/features`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(createPayload),
+      });
+      const created = await createRes.json();
+
+      if (!createRes.ok) {
+        return res.status(500).json({
+          error: 'Deleted original but failed to create new',
+          deletedId: featureId,
+          createError: created,
+        });
+      }
+
+      return res.json({
+        success: true,
+        movedFrom: featureId,
+        movedTo: created.data.id,
+        feature: created.data,
+      });
+    }
+
+    // Resolve component by name - find component ID from name
+    if (action === 'resolve-component') {
+      const { componentName, productName } = req.query;
+
+      if (!componentName) {
+        return res.status(400).json({ error: 'componentName parameter required' });
+      }
+
+      const [productsRes, componentsRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+      ]);
+
+      const products = (await productsRes.json()).data || [];
+      const components = (await componentsRes.json()).data || [];
+
+      // Filter by product if specified
+      let filtered = components;
+      if (productName) {
+        const product = products.find((p: any) =>
+          p.name.toLowerCase() === (productName as string).toLowerCase()
+        );
+        if (product) {
+          filtered = components.filter((c: any) =>
+            c.parent?.product?.id === product.id
+          );
+        }
+      }
+
+      // Find matching component
+      const match = filtered.find((c: any) =>
+        c.name.toLowerCase() === (componentName as string).toLowerCase()
+      );
+
+      if (!match) {
+        return res.json({
+          success: false,
+          error: 'Component not found',
+          available: filtered.map((c: any) => c.name),
+        });
+      }
+
+      return res.json({
+        success: true,
+        component: {
+          id: match.id,
+          name: match.name,
+          productId: match.parent?.product?.id,
+        },
+      });
+    }
+
+    // Get reference data - products, components, statuses in one call
+    if (action === 'get-reference') {
+      const [productsRes, componentsRes, statusesRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/feature-statuses`, { headers }),
+      ]);
+
+      const [productsData, componentsData, statusesData] = await Promise.all([
+        productsRes.json(),
+        componentsRes.json(),
+        statusesRes.json(),
+      ]);
+
+      const products = productsData.data || [];
+      const components = componentsData.data || [];
+      const statuses = statusesData.data || [];
+
+      // Build lookup tables
+      const productLookup: Record<string, string> = {};
+      const componentLookup: Record<string, string> = {};
+      const statusLookup: Record<string, string> = {};
+
+      for (const p of products) {
+        productLookup[p.name] = p.id;
+      }
+      for (const c of components) {
+        componentLookup[c.name] = c.id;
+      }
+      for (const s of statuses) {
+        statusLookup[s.name] = s.id;
+      }
+
+      return res.json({
+        success: true,
+        products: productLookup,
+        components: componentLookup,
+        statuses: statusLookup,
+        raw: {
+          products,
+          components,
+          statuses,
+        },
+      });
+    }
+
+    // =========================================================================
     // DEFAULT: Show usage
     // =========================================================================
 
@@ -556,6 +905,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'list-statuses': 'GET ?action=list-statuses',
         'list-releases': 'GET ?action=list-releases',
         'list-companies': 'GET ?action=list-companies',
+        // Agent-optimized
+        'get-hierarchy': 'GET ?action=get-hierarchy (full product→component→feature tree)',
+        'audit': 'GET ?action=audit (check for orphaned features)',
+        'batch-delete': 'POST ?action=batch-delete body: { featureIds: [...] }',
+        'move-feature': 'POST ?action=move-feature body: { featureId, targetComponentId }',
+        'resolve-component': 'GET ?action=resolve-component&componentName=xxx&productName=yyy',
+        'get-reference': 'GET ?action=get-reference (products, components, statuses lookup)',
       },
       configured: !!PRODUCTBOARD_TOKEN,
       docs: 'https://developer.productboard.com/reference/introduction',
