@@ -13,7 +13,7 @@ async function initBlogStudio() {
 
 async function fetchBlogSessions() {
   try {
-    const res = await fetch(`${API_BASE}/api/blog?action=list-sessions`);
+    const res = await fetch(`${API_BASE}/blog?action=list-sessions`);
     const data = await res.json();
     blogSessions = data.sessions || [];
     renderBlogSessionsList();
@@ -48,7 +48,7 @@ function renderBlogSessionsList() {
 
 async function selectBlogSession(sessionId) {
   try {
-    const res = await fetch(`${API_BASE}/api/blog?action=get-session&sessionId=${sessionId}`);
+    const res = await fetch(`${API_BASE}/blog?action=get-session&sessionId=${sessionId}`);
     const data = await res.json();
     currentBlogSession = data.session;
 
@@ -171,7 +171,7 @@ async function submitBlogSession() {
   }
 
   try {
-    const res = await fetch(`${API_BASE}/api/blog?action=create-session`, {
+    const res = await fetch(`${API_BASE}/blog?action=create-session`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -214,7 +214,7 @@ async function sendBlogMessage() {
   input.value = '';
 
   try {
-    await fetch(`${API_BASE}/api/blog?action=send-message`, {
+    await fetch(`${API_BASE}/blog?action=send-message`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -270,7 +270,7 @@ async function executeBlogSearch() {
 
   try {
     const sessionParam = currentBlogSession ? `&sessionId=${currentBlogSession.id}` : '';
-    const res = await fetch(`${API_BASE}/api/blog?action=search-research&query=${encodeURIComponent(query)}&limit=10${sessionParam}`);
+    const res = await fetch(`${API_BASE}/blog?action=search-research&query=${encodeURIComponent(query)}&limit=10${sessionParam}`);
     const data = await res.json();
 
     if (!data.results || data.results.length === 0) {
@@ -315,7 +315,7 @@ async function saveBlogDraft() {
     return;
   }
 
-  const res = await fetch(`${API_BASE}/api/blog?action=get-session&sessionId=${currentBlogSession.id}`);
+  const res = await fetch(`${API_BASE}/blog?action=get-session&sessionId=${currentBlogSession.id}`);
   const data = await res.json();
 
   const assistantMessages = (data.messages || [])
@@ -329,7 +329,7 @@ async function saveBlogDraft() {
   }
 
   try {
-    const saveRes = await fetch(`${API_BASE}/api/blog?action=save-draft`, {
+    const saveRes = await fetch(`${API_BASE}/blog?action=save-draft`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -366,12 +366,12 @@ async function spawnBlogAgent() {
 
   try {
     // Get the last few messages for context
-    const sessionRes = await fetch(`${API_BASE}/api/blog?action=get-session&sessionId=${currentBlogSession.id}`);
+    const sessionRes = await fetch(`${API_BASE}/blog?action=get-session&sessionId=${currentBlogSession.id}`);
     const sessionData = await sessionRes.json();
     const recentMessages = (sessionData.messages || []).slice(-10);
 
     // Call the generate endpoint with soul-injected Claude
-    const res = await fetch(`${API_BASE}/api/blog?action=generate`, {
+    const res = await fetch(`${API_BASE}/blog?action=generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -385,7 +385,7 @@ async function spawnBlogAgent() {
 
     if (data.success && data.response) {
       // Add the response as an assistant message
-      await fetch(`${API_BASE}/api/blog?action=send-message`, {
+      await fetch(`${API_BASE}/blog?action=send-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
