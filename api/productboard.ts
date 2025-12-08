@@ -130,7 +130,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Create feature
     if (action === 'create-feature') {
-      const { name, description, status, parent, owner, timeframe } = body;
+      const { name, description, status, parent, owner, timeframe, type = 'feature' } = body;
 
       if (!name) {
         return res.status(400).json({
@@ -138,21 +138,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           example: {
             name: 'Feature name',
             description: '<p>Feature description</p>',
-            status: { id: 'status-uuid' },
+            type: 'feature', // or 'subfeature'
+            status: { id: 'status-uuid' }, // Use list-statuses to get IDs
             parent: { product: { id: 'product-uuid' } },
             owner: { email: 'owner@example.com' }
           }
         });
       }
 
+      // Default status to "New idea" if not provided
+      const defaultStatusId = 'dedf0732-362a-4aca-b226-04e341893e92';
+
       const payload: any = {
         data: {
           name,
+          type,
+          status: status || { id: defaultStatusId },
         }
       };
 
       if (description) payload.data.description = description;
-      if (status) payload.data.status = status;
       if (parent) payload.data.parent = parent;
       if (owner) payload.data.owner = owner;
       if (timeframe) payload.data.timeframe = timeframe;
