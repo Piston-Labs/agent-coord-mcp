@@ -68,6 +68,7 @@ const MCP_TOOLS = [
   { id: 'shop', name: 'shop', category: 'integrations', description: 'Manage Piston Labs sales pipeline.', file: 'src/tools/integrations.ts' },
   { id: 'errors', name: 'errors', category: 'integrations', description: 'Self-hosted error tracking (free Sentry alternative).', file: 'src/tools/integrations.ts' },
   { id: 'vercel-env', name: 'vercel-env', category: 'integrations', description: 'Manage Vercel environment variables. List, get, set, delete env vars with audit logging.', file: 'src/tools/integrations.ts' },
+  { id: 'productboard', name: 'productboard', category: 'integrations', description: 'Product roadmap source of truth. Query features, answer sales questions, manage roadmap.', file: 'src/tools/integrations.ts' },
 
   // Testing Tools (src/tools/testing.ts)
   { id: 'ui-test', name: 'ui-test', category: 'testing', description: 'UI/UX testing framework. Create, run, and track visual, accessibility, and interaction tests.', file: 'src/tools/testing.ts' },
@@ -229,6 +230,26 @@ const INTEGRATIONS = [
     endpoint: '/api/vercel-env',
     features: ['list-vars', 'get-var', 'set-var', 'delete-var', 'audit-log', 'authorized-agents-only']
   },
+  {
+    id: 'productboard',
+    name: 'ProductBoard',
+    category: 'external',
+    description: 'Product roadmap and feature management - source of truth for product features',
+    status: process.env.PRODUCTBOARD_API_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'PRODUCTBOARD_API_TOKEN',
+    setupUrl: 'https://pistonlabs.productboard.com/settings/api',
+    setupInstructions: 'Get API token from ProductBoard Settings → Public API. Requires admin access.',
+    endpoint: '/api/productboard',
+    features: [
+      'search - keyword search with relevance scoring',
+      'sales-answer - natural language questions',
+      'current-features - what we offer today',
+      'roadmap - planned features by status',
+      'product-summary - quick product overview',
+      'get-hierarchy - full product tree in one call',
+      'CRUD for features, products, components, notes'
+    ]
+  },
 ];
 
 // API endpoints - COMPLETE REGISTRY (auto-synced with /api/ folder)
@@ -312,6 +333,7 @@ const API_ENDPOINTS = [
   { id: 'feature-commit', path: '/api/feature-commit', methods: ['POST'], description: 'Feature commit tracking', category: 'testing' },
 
   // === ROADMAP & PLANNING ===
+  { id: 'productboard', path: '/api/productboard', methods: ['GET', 'POST', 'PUT', 'DELETE'], description: 'ProductBoard integration - source of truth for features. Query with search, sales-answer, roadmap, current-features, product-summary. CRUD for features/products/components/notes.', category: 'planning' },
   { id: 'roadmap', path: '/api/roadmap', methods: ['GET', 'POST', 'PATCH'], description: 'Product roadmap management', category: 'planning' },
   { id: 'roadmap-import', path: '/api/roadmap-import', methods: ['POST'], description: 'Import roadmap items', category: 'planning' },
   { id: 'planned-features', path: '/api/planned-features', methods: ['GET', 'POST'], description: 'Planned feature tracking', category: 'planning' },

@@ -486,6 +486,40 @@ Score = (Customer Value + Revenue Impact) / Effort
 3. **Use `get-hierarchy`** for a complete picture in one API call
 4. **Create notes** for customer feedback - links to features automatically
 
+### Sprint Planning Workflow
+
+**Weekly Sprint Cycle:**
+```
+Monday:    Sprint Planning - prioritize features from backlog
+           → Move features to "Planned" status
+           → Assign to team members
+
+Tue-Thu:   Development - features move to "In progress"
+           → Use Jira/Linear for task tracking
+           → Update ProductBoard status via two-way sync
+
+Friday:    Review & Retrospective
+           → Move completed to "Released"
+           → Update roadmap views for stakeholders
+```
+
+**MoSCoW + Value/Effort Prioritization:**
+1. **MoSCoW First**: Bucket features into Must/Should/Could/Won't
+2. **Score Musts**: Apply Value/Effort scoring to "Must Have" items
+3. **Sprint Selection**: Top-scored features go into sprint backlog
+
+**Status Flow:**
+```
+New idea → Candidate → Planned → In progress → Released
+   ↓          ↓
+ (Won't)   (Could/Should - backlog)
+```
+
+**For Engineering Handoff:**
+- Features in "Planned" are ready for sprint
+- Use `productboard action=roadmap status=Planned` to get sprint candidates
+- Link ProductBoard features to Jira/Linear issues for tracking
+
 ## Soul Transfer System
 
 If you receive a soul injection at conversation start:
