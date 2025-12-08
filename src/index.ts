@@ -28,6 +28,7 @@ import { registerSpawnTools } from './tools/spawn.js';
 import { registerExternalTools } from './tools/external.js';
 import { registerFileContextTools } from './tools/file-context.js';
 import { registerDurableObjectsTools } from './tools/durable-objects.js';
+import { registerBlogTools } from './tools/blog.js';
 
 const server = new McpServer({
   name: 'agent-coord-mcp',
@@ -48,6 +49,7 @@ registerSpawnTools(server);         // spawn-agent, spawn-batch, spawn-status
 registerExternalTools(server);      // linear, sentry, github, discord
 registerFileContextTools(server);   // file-info, file-read-smart, file-split-work
 registerDurableObjectsTools(server); // do-soul, do-trace, do-dashboard, do-session, do-onboard
+registerBlogTools(server);           // blog-session, blog-message, blog-draft, blog-search, blog-agent-prompt
 
 // ============================================================================
 // Start Server
