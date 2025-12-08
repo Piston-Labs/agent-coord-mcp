@@ -683,6 +683,7 @@ const TELTONIKA_FIELDS: Record<string, string> = {
   '241': 'operatorCode',       // GSM operator code
   '24': 'speedKmh',            // Speed from GPS
   '16': 'odometer',            // Total odometer (m)
+  '256': 'vin',                // Vehicle Identification Number (OBD)
   '449': 'engineRpm',          // Engine RPM (from OBD)
 };
 
