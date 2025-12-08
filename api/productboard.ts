@@ -72,18 +72,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // =========================================================================
 
     // List features
+    // Note: Productboard API v1 doesn't support filtering by product.id or component.id
+    // We fetch all features and filter client-side if needed
     if (action === 'list-features') {
-      const { status, productId, componentId, limit = '100', cursor } = req.query;
+      const { status, productId, limit = '100', cursor } = req.query;
       const params = new URLSearchParams();
 
       if (limit) params.append('pageLimit', limit as string);
       if (cursor) params.append('pageCursor', cursor as string);
 
-      // Build filter if needed
+      // Only status filter is supported server-side
       const filters: string[] = [];
       if (status) filters.push(`status.name=${encodeURIComponent(status as string)}`);
-      if (productId) filters.push(`product.id=${productId}`);
-      if (componentId) filters.push(`component.id=${componentId}`);
 
       let url = `${PRODUCTBOARD_API_URL}/features`;
       if (filters.length > 0) {
@@ -100,11 +100,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(response.status).json({ error: 'ProductBoard API error', details: data });
       }
 
+      // Filter by productId client-side if provided
+      let features = data.data || [];
+      if (productId) {
+        features = features.filter((f: any) =>
+          f.parent?.product?.id === productId ||
+          f.parent?.component?.product?.id === productId
+        );
+      }
+
       return res.json({
         success: true,
-        features: data.data,
+        features,
         links: data.links, // pagination
-        count: data.data?.length || 0,
+        count: features.length,
+        note: productId ? 'Filtered client-side by product' : undefined,
       });
     }
 
