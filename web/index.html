@@ -1566,7 +1566,257 @@
 
     /* Roadmap View */
 
-    
+    /* Roadmap Source Toggle */
+    .roadmap-source-toggle {
+      display: flex;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 2px;
+    }
+
+    .source-btn {
+      display: flex;
+      align-items: center;
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .source-btn:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .source-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .source-btn svg {
+      flex-shrink: 0;
+    }
+
+    /* Productboard View Styles */
+    .productboard-view {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .pb-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-secondary);
+      flex-shrink: 0;
+    }
+
+    .pb-products-nav {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .pb-product-btn {
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .pb-product-btn:hover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+    }
+
+    .pb-product-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .pb-sync-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .pb-sync-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .pb-sync-indicator.syncing {
+      background: var(--warning);
+      animation: pulse 1s infinite;
+    }
+
+    .pb-sync-indicator.synced {
+      background: var(--success);
+    }
+
+    .pb-sync-indicator.error {
+      background: var(--danger);
+    }
+
+    .pb-sync-btn {
+      padding: 4px 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      font-size: 11px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .pb-sync-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .pb-features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 16px;
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .pb-feature-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+
+    .pb-feature-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .pb-feature-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .pb-feature-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 1.3;
+    }
+
+    .pb-feature-status {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .pb-feature-status.planned { background: rgba(88, 166, 255, 0.2); color: #58a6ff; }
+    .pb-feature-status.in-progress { background: rgba(163, 113, 247, 0.2); color: #a371f7; }
+    .pb-feature-status.done { background: rgba(63, 185, 80, 0.2); color: #3fb950; }
+    .pb-feature-status.candidate { background: rgba(139, 148, 158, 0.2); color: #8b949e; }
+
+    .pb-feature-description {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .pb-feature-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .pb-feature-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .pb-loading-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--text-secondary);
+      grid-column: 1 / -1;
+    }
+
+    .pb-loading-state .spinner {
+      animation: spin 1s linear infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .pb-empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: var(--text-secondary);
+      grid-column: 1 / -1;
+      text-align: center;
+    }
+
+    .pb-error-state {
+      padding: 20px;
+      background: rgba(248, 81, 73, 0.1);
+      border: 1px solid var(--danger);
+      border-radius: 8px;
+      color: var(--danger);
+      grid-column: 1 / -1;
+      text-align: center;
+    }
+
+    .pb-loading {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
     /* Metrics View - Enhanced UI */
     .metrics-header {
       display: flex;
@@ -11291,6 +11541,15 @@
           </div>
         </div>
         <div class="roadmap-filters">
+          <div class="roadmap-source-toggle">
+            <button class="source-btn active" id="internalSourceBtn" onclick="setRoadmapSource('internal')">Internal</button>
+            <button class="source-btn" id="productboardSourceBtn" onclick="setRoadmapSource('productboard')">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 4px;">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              </svg>
+              Productboard
+            </button>
+          </div>
           <select id="projectFilter" onchange="fetchRoadmap()">
             <option value="">All Projects</option>
             <option value="piston-dashboard">Piston Dashboard</option>
@@ -11311,7 +11570,7 @@
           <select id="cycleFilter" onchange="fetchRoadmap()">
             <option value="">All Sprints</option>
           </select>
-          <button class="add-item-btn" onclick="showAddRoadmapItem()">+ Add Item</button>
+          <button class="add-item-btn" onclick="showAddRoadmapItem()" id="addItemBtn">+ Add Item</button>
         </div>
         <div class="workload-bar" id="workloadBar">
           <!-- Populated by JS -->
@@ -11332,6 +11591,32 @@
           <div class="roadmap-column" data-status="done">
             <div class="column-header">Done</div>
             <div class="column-items" id="doneItems"></div>
+          </div>
+        </div>
+
+        <!-- Productboard View (hidden by default) -->
+        <div class="productboard-view" id="productboardView" style="display: none;">
+          <div class="pb-header">
+            <div class="pb-products-nav" id="pbProductsNav">
+              <!-- Products loaded dynamically -->
+              <span class="pb-loading">Loading products...</span>
+            </div>
+            <div class="pb-sync-status">
+              <span class="pb-sync-indicator" id="pbSyncIndicator"></span>
+              <span id="pbLastSync">Never synced</span>
+              <button class="pb-sync-btn" onclick="syncProductboard()" title="Sync from Productboard">↻ Sync</button>
+            </div>
+          </div>
+          <div class="pb-features-grid" id="pbFeaturesGrid">
+            <div class="pb-loading-state">
+              <svg class="spinner" viewBox="0 0 24 24" width="32" height="32">
+                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="31.4" stroke-dashoffset="10"/>
+              </svg>
+              <p>Loading Productboard features...</p>
+            </div>
+          </div>
+          <div class="pb-feature-detail" id="pbFeatureDetail" style="display: none;">
+            <!-- Feature detail panel -->
           </div>
         </div>
       </div>
@@ -23239,6 +23524,313 @@
 
     // ============================================
     // END SALES ENGINEERING FUNCTIONALITY
+    // ============================================
+
+    // ============================================
+    // PRODUCTBOARD INTEGRATION
+    // ============================================
+
+    let productboardData = {
+      products: [],
+      features: [],
+      statuses: [],
+      currentProduct: null,
+      lastSync: null
+    };
+
+    // Toggle between Internal and Productboard views
+    function setRoadmapSource(source) {
+      const internalBtn = document.getElementById('internalSourceBtn');
+      const productboardBtn = document.getElementById('productboardSourceBtn');
+      const internalView = document.getElementById('roadmapBoard');
+      const productboardView = document.getElementById('productboardView');
+
+      if (source === 'productboard') {
+        internalBtn?.classList.remove('active');
+        productboardBtn?.classList.add('active');
+        if (internalView) internalView.style.display = 'none';
+        if (productboardView) productboardView.style.display = 'block';
+        // Load Productboard data if not already loaded
+        if (productboardData.products.length === 0) {
+          fetchProductboardProducts();
+        }
+      } else {
+        productboardBtn?.classList.remove('active');
+        internalBtn?.classList.add('active');
+        if (productboardView) productboardView.style.display = 'none';
+        if (internalView) internalView.style.display = 'grid';
+      }
+    }
+
+    // Fetch products from Productboard
+    async function fetchProductboardProducts() {
+      try {
+        updatePbSyncStatus('loading');
+        const res = await fetch(API_BASE + '/productboard?action=list-products');
+        const data = await res.json();
+
+        if (data.error) {
+          showPbError(data.error, data.setup);
+          return;
+        }
+
+        productboardData.products = data.products || [];
+        renderProductboardNav();
+
+        // Also fetch statuses for reference
+        fetchProductboardStatuses();
+
+        // Load features for first product or all
+        if (productboardData.products.length > 0) {
+          selectProduct(productboardData.products[0].id);
+        } else {
+          fetchProductboardFeatures();
+        }
+      } catch (err) {
+        console.error('Failed to fetch Productboard products:', err);
+        showPbError('Failed to connect to Productboard API');
+      }
+    }
+
+    // Fetch feature statuses
+    async function fetchProductboardStatuses() {
+      try {
+        const res = await fetch(API_BASE + '/productboard?action=list-statuses');
+        const data = await res.json();
+        productboardData.statuses = data.statuses || [];
+      } catch (err) {
+        console.error('Failed to fetch statuses:', err);
+      }
+    }
+
+    // Fetch features from Productboard
+    async function fetchProductboardFeatures(productId = null) {
+      try {
+        updatePbSyncStatus('loading');
+        let url = API_BASE + '/productboard?action=list-features&limit=100';
+        if (productId) {
+          url += '&productId=' + encodeURIComponent(productId);
+        }
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.error) {
+          showPbError(data.error);
+          return;
+        }
+
+        productboardData.features = data.features || [];
+        productboardData.lastSync = new Date();
+        renderProductboardFeatures();
+        updatePbSyncStatus('synced');
+      } catch (err) {
+        console.error('Failed to fetch Productboard features:', err);
+        updatePbSyncStatus('error');
+      }
+    }
+
+    // Select a product to view
+    function selectProduct(productId) {
+      productboardData.currentProduct = productId;
+
+      // Update nav active state
+      document.querySelectorAll('.pb-product-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.productId === productId);
+      });
+
+      fetchProductboardFeatures(productId);
+    }
+
+    // Render product navigation
+    function renderProductboardNav() {
+      const nav = document.getElementById('pbProductsNav');
+      if (!nav) return;
+
+      if (productboardData.products.length === 0) {
+        nav.innerHTML = '<span style="color:var(--text-muted)">No products found</span>';
+        return;
+      }
+
+      nav.innerHTML = productboardData.products.map(product => `
+        <button class="pb-product-btn ${product.id === productboardData.currentProduct ? 'active' : ''}"
+                data-product-id="${product.id}"
+                onclick="selectProduct('${product.id}')">
+          ${escapeHtml(product.name)}
+        </button>
+      `).join('');
+    }
+
+    // Render features grid
+    function renderProductboardFeatures() {
+      const grid = document.getElementById('pbFeaturesGrid');
+      if (!grid) return;
+
+      const features = productboardData.features;
+
+      if (features.length === 0) {
+        grid.innerHTML = `
+          <div class="pb-empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            <p>No features found</p>
+            <span>Features from Productboard will appear here</span>
+          </div>
+        `;
+        return;
+      }
+
+      // Group features by status
+      const statusGroups = {};
+      features.forEach(feature => {
+        const statusName = feature.status?.name || 'No Status';
+        if (!statusGroups[statusName]) {
+          statusGroups[statusName] = [];
+        }
+        statusGroups[statusName].push(feature);
+      });
+
+      // Define status order and colors
+      const statusOrder = ['Candidate', 'Planned', 'In Progress', 'Released', 'Won\'t Do'];
+      const statusColors = {
+        'Candidate': '#6366f1',
+        'Planned': '#f59e0b',
+        'In Progress': '#3b82f6',
+        'Released': '#10b981',
+        'Won\'t Do': '#6b7280',
+        'default': '#8b5cf6'
+      };
+
+      // Sort groups by status order
+      const sortedGroups = Object.entries(statusGroups).sort((a, b) => {
+        const aIdx = statusOrder.indexOf(a[0]);
+        const bIdx = statusOrder.indexOf(b[0]);
+        if (aIdx === -1 && bIdx === -1) return a[0].localeCompare(b[0]);
+        if (aIdx === -1) return 1;
+        if (bIdx === -1) return -1;
+        return aIdx - bIdx;
+      });
+
+      grid.innerHTML = sortedGroups.map(([status, items]) => {
+        const color = statusColors[status] || statusColors.default;
+        return `
+          <div class="pb-status-group">
+            <div class="pb-status-header" style="border-left-color: ${color}">
+              <span class="pb-status-name">${escapeHtml(status)}</span>
+              <span class="pb-status-count">${items.length}</span>
+            </div>
+            <div class="pb-features-list">
+              ${items.map(feature => renderFeatureCard(feature, color)).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Render individual feature card
+    function renderFeatureCard(feature, statusColor) {
+      const description = feature.description
+        ? feature.description.replace(/<[^>]*>/g, '').substring(0, 150) + (feature.description.length > 150 ? '...' : '')
+        : 'No description';
+
+      const timeframe = feature.timeframe?.name || '';
+      const owner = feature.owner?.email || '';
+
+      return `
+        <div class="pb-feature-card" onclick="showFeatureDetail('${feature.id}')">
+          <div class="pb-feature-name">${escapeHtml(feature.name)}</div>
+          <div class="pb-feature-desc">${escapeHtml(description)}</div>
+          <div class="pb-feature-meta">
+            ${timeframe ? `<span class="pb-timeframe">${escapeHtml(timeframe)}</span>` : ''}
+            ${owner ? `<span class="pb-owner">${escapeHtml(owner.split('@')[0])}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Show feature detail modal
+    function showFeatureDetail(featureId) {
+      const feature = productboardData.features.find(f => f.id === featureId);
+      if (!feature) return;
+
+      // For now just log - could expand to a modal
+      console.log('Feature detail:', feature);
+
+      // Could open Productboard in new tab
+      if (feature.links?.html) {
+        window.open(feature.links.html, '_blank');
+      }
+    }
+
+    // Sync button handler
+    async function syncProductboard() {
+      await fetchProductboardFeatures(productboardData.currentProduct);
+    }
+
+    // Update sync status indicator
+    function updatePbSyncStatus(status) {
+      const indicator = document.getElementById('pbSyncIndicator');
+      const lastSyncEl = document.getElementById('pbLastSync');
+
+      if (indicator) {
+        indicator.className = 'pb-sync-indicator ' + status;
+      }
+
+      if (lastSyncEl && productboardData.lastSync) {
+        const ago = getTimeAgo(productboardData.lastSync);
+        lastSyncEl.textContent = 'Synced ' + ago;
+      } else if (lastSyncEl && status === 'loading') {
+        lastSyncEl.textContent = 'Syncing...';
+      }
+    }
+
+    // Show Productboard error
+    function showPbError(message, setup = null) {
+      const grid = document.getElementById('pbFeaturesGrid');
+      if (!grid) return;
+
+      let setupHtml = '';
+      if (setup?.steps) {
+        setupHtml = `
+          <div class="pb-setup-steps">
+            <strong>Setup Required:</strong>
+            <ol>
+              ${setup.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}
+            </ol>
+            ${setup.docs ? `<a href="${setup.docs}" target="_blank">View Documentation</a>` : ''}
+          </div>
+        `;
+      }
+
+      grid.innerHTML = `
+        <div class="pb-error-state">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p>${escapeHtml(message)}</p>
+          ${setupHtml}
+        </div>
+      `;
+
+      updatePbSyncStatus('error');
+    }
+
+    // Helper: time ago
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 60) return 'just now';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes + 'm ago';
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours + 'h ago';
+      return Math.floor(hours / 24) + 'd ago';
+    }
+
+    // ============================================
+    // END PRODUCTBOARD INTEGRATION
     // ============================================
 
 
