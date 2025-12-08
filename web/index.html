@@ -1607,8 +1607,11 @@
     .productboard-view {
       display: flex;
       flex-direction: column;
-      height: 100%;
+      height: calc(100vh - 200px);
+      min-height: 400px;
+      max-height: 800px;
       overflow: hidden;
+      background: var(--bg-primary);
     }
 
     .pb-header {
@@ -1619,29 +1622,34 @@
       border-bottom: 1px solid var(--border);
       background: var(--bg-secondary);
       flex-shrink: 0;
+      gap: 12px;
     }
 
     .pb-products-nav {
       display: flex;
-      gap: 8px;
+      gap: 6px;
       flex-wrap: wrap;
+      flex: 1;
+      min-width: 0;
     }
 
     .pb-product-btn {
-      padding: 6px 12px;
+      padding: 6px 14px;
       border: 1px solid var(--border);
       background: var(--bg-tertiary);
       color: var(--text-secondary);
       font-size: 12px;
       font-weight: 500;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.15s ease;
+      white-space: nowrap;
     }
 
     .pb-product-btn:hover {
       border-color: var(--accent);
       color: var(--text-primary);
+      background: var(--bg-secondary);
     }
 
     .pb-product-btn.active {
@@ -1656,6 +1664,7 @@
       gap: 8px;
       font-size: 11px;
       color: var(--text-secondary);
+      flex-shrink: 0;
     }
 
     .pb-sync-indicator {
@@ -1679,12 +1688,12 @@
     }
 
     .pb-sync-btn {
-      padding: 4px 10px;
+      padding: 6px 12px;
       border: 1px solid var(--border);
       background: var(--bg-tertiary);
       color: var(--text-secondary);
       font-size: 11px;
-      border-radius: 4px;
+      border-radius: 6px;
       cursor: pointer;
       transition: all 0.15s ease;
     }
@@ -1692,67 +1701,124 @@
     .pb-sync-btn:hover {
       border-color: var(--accent);
       color: var(--accent);
+      background: var(--bg-secondary);
     }
 
     .pb-features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
       padding: 16px;
       overflow-y: auto;
       flex: 1;
+      align-content: start;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    .pb-features-grid::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .pb-features-grid::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .pb-features-grid::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .pb-features-grid::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
+
+    .pb-status-group {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+      margin-bottom: 4px;
+    }
+
+    .pb-status-group:first-child {
+      margin-top: 0;
+    }
+
+    .pb-status-group-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .pb-status-group-count {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg-tertiary);
+      padding: 2px 8px;
+      border-radius: 10px;
     }
 
     .pb-feature-card {
       background: var(--bg-secondary);
       border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 16px;
+      padding: 14px;
       transition: all 0.15s ease;
       cursor: pointer;
+      height: fit-content;
     }
 
     .pb-feature-card:hover {
       border-color: var(--accent);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
     .pb-feature-header {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
+      gap: 8px;
       margin-bottom: 8px;
     }
 
     .pb-feature-name {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       color: var(--text-primary);
-      line-height: 1.3;
+      line-height: 1.4;
+      flex: 1;
+      min-width: 0;
     }
 
     .pb-feature-status {
-      padding: 2px 8px;
+      padding: 3px 8px;
       border-radius: 4px;
       font-size: 10px;
       font-weight: 600;
       text-transform: uppercase;
       white-space: nowrap;
+      flex-shrink: 0;
     }
 
-    .pb-feature-status.planned { background: rgba(88, 166, 255, 0.2); color: #58a6ff; }
-    .pb-feature-status.in-progress { background: rgba(163, 113, 247, 0.2); color: #a371f7; }
-    .pb-feature-status.done { background: rgba(63, 185, 80, 0.2); color: #3fb950; }
-    .pb-feature-status.candidate { background: rgba(139, 148, 158, 0.2); color: #8b949e; }
+    .pb-feature-status.new-idea { background: rgba(163, 113, 247, 0.15); color: #a371f7; }
+    .pb-feature-status.candidate { background: rgba(139, 148, 158, 0.15); color: #8b949e; }
+    .pb-feature-status.planned { background: rgba(88, 166, 255, 0.15); color: #58a6ff; }
+    .pb-feature-status.in-progress { background: rgba(210, 153, 34, 0.15); color: #d29922; }
+    .pb-feature-status.released { background: rgba(63, 185, 80, 0.15); color: #3fb950; }
 
     .pb-feature-description {
       font-size: 12px;
       color: var(--text-secondary);
       line-height: 1.5;
-      margin-bottom: 12px;
+      margin-bottom: 10px;
       display: -webkit-box;
-      -webkit-line-clamp: 3;
+      -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
@@ -1771,12 +1837,29 @@
       gap: 4px;
     }
 
+    .pb-feature-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      opacity: 0.8;
+      transition: opacity 0.15s ease;
+    }
+
+    .pb-feature-link:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+
     .pb-loading-state {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 200px;
+      min-height: 200px;
       color: var(--text-secondary);
       grid-column: 1 / -1;
     }
@@ -1796,25 +1879,91 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 200px;
+      min-height: 200px;
       color: var(--text-secondary);
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .pb-empty-state svg {
+      opacity: 0.5;
+      margin-bottom: 12px;
+    }
+
+    .pb-empty-state p {
+      margin: 0 0 4px 0;
+      font-weight: 500;
+    }
+
+    .pb-empty-state span {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pb-error-state {
+      padding: 24px;
+      background: rgba(248, 81, 73, 0.08);
+      border: 1px solid rgba(248, 81, 73, 0.3);
+      border-radius: 8px;
+      color: var(--text-primary);
       grid-column: 1 / -1;
       text-align: center;
     }
 
-    .pb-error-state {
-      padding: 20px;
-      background: rgba(248, 81, 73, 0.1);
-      border: 1px solid var(--danger);
-      border-radius: 8px;
+    .pb-error-state svg {
       color: var(--danger);
-      grid-column: 1 / -1;
-      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .pb-error-state p {
+      color: var(--danger);
+      margin: 0 0 12px 0;
+      font-weight: 500;
+    }
+
+    .pb-setup-steps {
+      text-align: left;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      padding: 12px 16px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .pb-setup-steps strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .pb-setup-steps ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .pb-setup-steps li {
+      margin-bottom: 4px;
+    }
+
+    .pb-setup-steps a {
+      color: var(--accent);
+      display: inline-block;
+      margin-top: 8px;
     }
 
     .pb-loading {
       color: var(--text-muted);
       font-size: 12px;
+    }
+
+    .pb-feature-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-primary);
     }
 
     /* Metrics View - Enhanced UI */
@@ -23681,70 +23830,35 @@
         return;
       }
 
-      // Group features by status
-      const statusGroups = {};
-      features.forEach(feature => {
-        const statusName = feature.status?.name || 'No Status';
-        if (!statusGroups[statusName]) {
-          statusGroups[statusName] = [];
-        }
-        statusGroups[statusName].push(feature);
-      });
-
-      // Define status order and colors
-      const statusOrder = ['Candidate', 'Planned', 'In Progress', 'Released', 'Won\'t Do'];
-      const statusColors = {
-        'Candidate': '#6366f1',
-        'Planned': '#f59e0b',
-        'In Progress': '#3b82f6',
-        'Released': '#10b981',
-        'Won\'t Do': '#6b7280',
-        'default': '#8b5cf6'
+      // Get status CSS class
+      const getStatusClass = (statusName) => {
+        const name = (statusName || '').toLowerCase().replace(/\s+/g, '-');
+        return name || 'default';
       };
 
-      // Sort groups by status order
-      const sortedGroups = Object.entries(statusGroups).sort((a, b) => {
-        const aIdx = statusOrder.indexOf(a[0]);
-        const bIdx = statusOrder.indexOf(b[0]);
-        if (aIdx === -1 && bIdx === -1) return a[0].localeCompare(b[0]);
-        if (aIdx === -1) return 1;
-        if (bIdx === -1) return -1;
-        return aIdx - bIdx;
-      });
-
-      grid.innerHTML = sortedGroups.map(([status, items]) => {
-        const color = statusColors[status] || statusColors.default;
-        return `
-          <div class="pb-status-group">
-            <div class="pb-status-header" style="border-left-color: ${color}">
-              <span class="pb-status-name">${escapeHtml(status)}</span>
-              <span class="pb-status-count">${items.length}</span>
-            </div>
-            <div class="pb-features-list">
-              ${items.map(feature => renderFeatureCard(feature, color)).join('')}
-            </div>
-          </div>
-        `;
-      }).join('');
+      // Render all features as cards in a flat grid
+      grid.innerHTML = features.map(feature => renderFeatureCard(feature, getStatusClass(feature.status?.name))).join('');
     }
 
     // Render individual feature card
-    function renderFeatureCard(feature, statusColor) {
+    function renderFeatureCard(feature, statusClass) {
       const description = feature.description
-        ? feature.description.replace(/<[^>]*>/g, '').substring(0, 150) + (feature.description.length > 150 ? '...' : '')
-        : 'No description';
+        ? feature.description.replace(/<[^>]*>/g, '').trim().substring(0, 120) + (feature.description.length > 120 ? '...' : '')
+        : '';
 
-      const timeframe = feature.timeframe?.name || '';
-      const owner = feature.owner?.email || '';
+      const statusName = feature.status?.name || 'No Status';
+      const pbUrl = feature.links?.html || '#';
 
       return `
-        <div class="pb-feature-card" onclick="showFeatureDetail('${feature.id}')">
-          <div class="pb-feature-name">${escapeHtml(feature.name)}</div>
-          <div class="pb-feature-desc">${escapeHtml(description)}</div>
-          <div class="pb-feature-meta">
-            ${timeframe ? `<span class="pb-timeframe">${escapeHtml(timeframe)}</span>` : ''}
-            ${owner ? `<span class="pb-owner">${escapeHtml(owner.split('@')[0])}</span>` : ''}
+        <div class="pb-feature-card" onclick="window.open('${pbUrl}', '_blank')">
+          <div class="pb-feature-header">
+            <div class="pb-feature-name">${escapeHtml(feature.name)}</div>
+            <span class="pb-feature-status ${statusClass}">${escapeHtml(statusName)}</span>
           </div>
+          ${description ? `<div class="pb-feature-description">${escapeHtml(description)}</div>` : ''}
+          <a href="${pbUrl}" target="_blank" class="pb-feature-link" onclick="event.stopPropagation()">
+            View in Productboard →
+          </a>
         </div>
       `;
     }
