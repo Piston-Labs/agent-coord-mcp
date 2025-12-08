@@ -155,23 +155,26 @@ const DEVICE_PROFILES: Record<string, DeviceProfile> = {
     lastKnownDate: '2025-11-15T00:00:00Z'  // Offline since Nov 15
   },
   '862464068511489': {
-    name: 'Toyota',
+    name: 'Toyota Tacoma',
     description: 'Production deployment vehicle',
+    vin: '5TELU42N88Z495934',  // Verified from AVL 256
     make: 'Toyota',
+    model: 'Tacoma',
     year: 2008,
     baseLat: 33.4484,
     baseLng: -112.0740,
-    isActive: true  // Live - transmitting (verified Dec 4 2025)
+    isActive: true  // Live - transmitting (verified Dec 8 2025)
   },
   '862464068525638': {
-    name: 'Lexus NX',
-    description: 'Production deployment vehicle',
+    name: 'Lexus RX 350',
+    description: 'Production deployment vehicle - 3.5L V6 AWD 270hp',
+    vin: '2T2BK1BA5FC336915',  // Verified from AVL 256, decoded via NHTSA
     make: 'Lexus',
-    model: 'NX',
+    model: 'RX 350',  // Corrected from NX - VIN decodes to RX
     year: 2015,
-    baseLat: 33.4484,
-    baseLng: -112.0740,
-    isActive: true  // Live - transmitting (verified Dec 4 2025)
+    baseLat: 38.590862,  // Updated to actual location (Sacramento area)
+    baseLng: -121.29048,
+    isActive: true  // Live - transmitting (verified Dec 8 2025)
   },
   '862464068597504': {
     name: 'OBD2 Emulator',
@@ -182,12 +185,15 @@ const DEVICE_PROFILES: Record<string, DeviceProfile> = {
     isActive: true,  // Live - transmitting (verified Dec 4 2025)
   },
   '862464068558217': {
-    name: 'Beta Tester (Pug)',
+    name: 'Subaru Legacy (Pug)',
     description: 'Beta testing - real-world driving data collection',
+    make: 'Subaru',
+    model: 'Legacy',
+    year: 1997,
     owner: 'Pug',
     baseLat: 38.567,  // Updated to actual location (Sacramento)
     baseLng: -121.495,
-    isActive: true  // Live - transmitting (verified Dec 4 2025)
+    isActive: true  // Live - transmitting (verified Dec 8 2025) - No VIN (OBD-I era)
   }
 };
 

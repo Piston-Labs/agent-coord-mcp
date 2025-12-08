@@ -51,26 +51,42 @@ interface Device {
 }
 
 // Known Piston Labs devices (Teltonika FMM00A OBD-II devices)
+// Updated Dec 8 2025 from VIN decode (AVL ID 256) via NHTSA API
 const KNOWN_DEVICES: Record<string, Partial<Device>> = {
   '862464068511489': {
-    name: 'Test Device',
+    name: 'Toyota Tacoma',
     model: 'FMM00A',
-    vehicle: { make: 'Test', model: 'Vehicle', year: 2024 }
+    vehicle: { make: 'Toyota', model: 'Tacoma', year: 2008 },
+    notes: 'Production device - awaiting VIN confirmation'
   },
   '862464068525638': {
-    name: 'Toyota Device',
+    name: 'Lexus RX 350',
     model: 'FMM00A',
-    vehicle: { make: 'Toyota', model: 'Camry', year: 2020 }
+    vehicle: {
+      make: 'Lexus',
+      model: 'RX 350',
+      year: 2015,
+      vin: '2T2BK1BA5FC336915'  // Verified via AVL ID 256
+    },
+    notes: 'Production device - VIN verified Dec 8 2025. 3.5L V6 AWD 270hp'
   },
   '862464068558217': {
-    name: 'Lexus Device',
+    name: 'Pug Subaru Legacy',
     model: 'FMM00A',
-    vehicle: { make: 'Lexus', model: 'RX350', year: 2019 }
+    vehicle: { make: 'Subaru', model: 'Legacy', year: 1997 },
+    notes: 'Beta tester device - Pug. 1997 may have limited OBD-II support'
   },
   '862464068597504': {
-    name: 'Fleet Device 4',
+    name: 'Tom OBD2 Emulator',
     model: 'FMM00A',
-    vehicle: { make: 'Honda', model: 'Civic', year: 2021 }
+    vehicle: { make: 'Emulator', model: 'OBD2', year: 2024 },
+    notes: 'Spare device - OBD2 emulator for testing'
+  },
+  '862464068525406': {
+    name: 'Workbench Device',
+    model: 'FMM00A',
+    vehicle: { make: 'Test', model: 'Workbench', year: 2024 },
+    notes: 'Development/testing device'
   }
 };
 
