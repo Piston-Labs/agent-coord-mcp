@@ -15,8 +15,9 @@ const TOKEN_WARNING = 150000;
 const TOKEN_DANGER = 180000;
 const TOKEN_CRITICAL = 195000;
 
-// GitHub bot token for agent pushes (shared across all capable agents)
-const GITHUB_BOT_TOKEN = process.env.GITHUB_BOT_TOKEN;
+// GitHub token for agent pushes (shared across all capable agents)
+// Uses existing GITHUB_TOKEN env var, falls back to GITHUB_BOT_TOKEN
+const GITHUB_BOT_TOKEN = process.env.GITHUB_TOKEN || process.env.GITHUB_BOT_TOKEN;
 const DEFAULT_GITHUB_REPO = 'Piston-Labs/agent-coord-mcp';
 
 // GitHub API instructions injected into souls with canPushToGithub capability
