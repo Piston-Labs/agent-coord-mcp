@@ -453,7 +453,13 @@ async function postToChat(message: string): Promise<void> {
 async function githubApi(endpoint: string, options: RequestInit = {}): Promise<any> {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
-    throw new Error('GITHUB_TOKEN not configured');
+    throw new Error('GITHUB_TOKEN not configured - please set it in Vercel environment variables');
+  }
+
+  // Check token format (should start with ghp_ for classic or github_pat_ for fine-grained)
+  const tokenPrefix = token.substring(0, 4);
+  if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+    throw new Error(`GITHUB_TOKEN appears invalid (starts with ${tokenPrefix}...). Expected ghp_ or github_pat_ prefix`);
   }
 
   const response = await fetch(`https://api.github.com${endpoint}`, {
@@ -462,12 +468,23 @@ async function githubApi(endpoint: string, options: RequestInit = {}): Promise<a
       'Authorization': `Bearer ${token}`,
       'Accept': 'application/vnd.github.v3+json',
       'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28',
       ...options.headers,
     },
   });
 
   if (!response.ok) {
     const error = await response.text();
+    // Add more context for common errors
+    if (response.status === 401) {
+      throw new Error(`GitHub API 401: Token is invalid or expired. Please update GITHUB_TOKEN in Vercel.`);
+    }
+    if (response.status === 403) {
+      throw new Error(`GitHub API 403: Token lacks permissions for ${endpoint}. Ensure token has 'repo' scope.`);
+    }
+    if (response.status === 404) {
+      throw new Error(`GitHub API 404: Resource not found at ${endpoint}. Check repo access and path.`);
+    }
     throw new Error(`GitHub API error: ${response.status} - ${error}`);
   }
 
