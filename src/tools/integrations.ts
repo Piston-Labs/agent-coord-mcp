@@ -901,6 +901,103 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
+  // AIRTABLE TOOL - Product roadmap and feature tracking
+  // ============================================================================
+
+  server.tool(
+    'airtable',
+    'Manage features, tasks, and product roadmap in Airtable. Create records, update status, query by view. Requires AIRTABLE_API_TOKEN and AIRTABLE_BASE_ID env vars.',
+    {
+      action: z.enum(['list-records', 'get-record', 'create-record', 'update-record', 'delete-record', 'list-tables'])
+        .describe('list-records=query table, get-record=single record, create-record=add new, update-record=modify, delete-record=remove, list-tables=show schema'),
+      table: z.string().optional().describe('Table name (e.g., "Features", "Tasks", "Roadmap")'),
+      recordId: z.string().optional().describe('Record ID (starts with "rec...")'),
+      fields: z.record(z.any()).optional().describe('Field values for create/update (e.g., { "Name": "Feature X", "Status": "Planned" })'),
+      records: z.array(z.object({ id: z.string().optional(), fields: z.record(z.any()) })).optional()
+        .describe('Batch create/update multiple records (max 10)'),
+      view: z.string().optional().describe('Airtable view name for filtering (e.g., "Grid view", "Kanban")'),
+      filterByFormula: z.string().optional().describe('Airtable formula filter (e.g., "{Status}=\'In Progress\'")'),
+      maxRecords: z.number().optional().describe('Max records to return (default 100)'),
+      sort: z.string().optional().describe('Sort by field:direction (e.g., "Priority:desc,Created:asc")'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, table, recordId, fields, records, view, filterByFormula, maxRecords, sort, agentId } = args;
+
+      try {
+        const params = new URLSearchParams();
+        params.set('action', action);
+        if (table) params.set('table', table);
+        if (recordId) params.set('recordId', recordId);
+        if (view) params.set('view', view);
+        if (filterByFormula) params.set('filterByFormula', filterByFormula);
+        if (maxRecords) params.set('maxRecords', String(maxRecords));
+        if (sort) params.set('sort', sort);
+
+        let method = 'GET';
+        let body: string | undefined;
+
+        if (action === 'create-record') {
+          method = 'POST';
+          body = JSON.stringify({ fields, records });
+        } else if (action === 'update-record') {
+          method = 'PATCH';
+          body = JSON.stringify({ fields, records, id: recordId });
+        } else if (action === 'delete-record') {
+          method = 'DELETE';
+          if (records) {
+            body = JSON.stringify({ ids: records.map(r => r.id) });
+          }
+        }
+
+        const res = await fetch(`${API_BASE}/api/airtable?${params}`, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          ...(body ? { body } : {})
+        });
+        const data = await res.json();
+
+        // Format list-records nicely
+        if (action === 'list-records' && data.records) {
+          const lines = [
+            `## ${table} (${data.records.length} records)`,
+            ``
+          ];
+
+          for (const record of data.records.slice(0, 20)) {
+            const name = record.fields?.Name || record.fields?.Title || record.id;
+            const status = record.fields?.Status || '';
+            lines.push(`- **${name}** ${status ? `[${status}]` : ''} (${record.id})`);
+          }
+
+          if (data.records.length > 20) {
+            lines.push(``, `... and ${data.records.length - 20} more`);
+          }
+
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Announce record creation in chat
+        if (action === 'create-record' && data.success && data.created) {
+          const createdNames = data.created.map((r: any) => r.fields?.Name || r.fields?.Title || r.id).join(', ');
+          await fetch(`${API_BASE}/api/chat`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              author: agentId,
+              message: `📋 Added to ${table}: ${createdNames}`
+            })
+          });
+        }
+
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // VERCEL-ENV TOOL - Manage Vercel environment variables
   // ============================================================================
 
