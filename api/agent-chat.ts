@@ -35,7 +35,7 @@ const redis = new Redis({
 });
 
 const SOULS_KEY = 'agent-coord:souls';
-const CHAT_KEY = 'agent-coord:chat';
+const CHAT_KEY = 'agent-coord:messages';  // Same key as main chat API
 const MEMORY_KEY = 'agent-coord:shared-memory';
 const AGENT_SESSIONS_KEY = 'agent-coord:agent-sessions';
 
