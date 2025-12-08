@@ -299,7 +299,7 @@ async function submitBlogSession() {
       body: JSON.stringify({
         topic,
         title: title || null,
-        createdBy: currentUsername || 'user'
+        createdBy: USERNAME || 'user'
       })
     });
 
@@ -373,7 +373,7 @@ async function sendBlogMessage() {
       body: JSON.stringify({
         sessionId: currentBlogSession.id,
         content,
-        author: currentUsername || 'user',
+        author: USERNAME || 'user',
         role: 'user'
       })
     });

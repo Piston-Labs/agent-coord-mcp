@@ -15,6 +15,7 @@ const OFFLINE_NOTIFIED_KEY = 'agent-coord:offline-notified';  // Track offline n
 // IMPORTANT: These are the authoritative thresholds. api/digest.ts should use the same values.
 const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000;  // 5 minutes = considered offline (triggers notification)
 const ACTIVE_THRESHOLD_MS = 30 * 60 * 1000;  // 30 minutes = stale (removed from active listing)
+const STALE_CLEANUP_MS = 7 * 24 * 60 * 60 * 1000;  // 7 days = removed from storage entirely
 
 // Post system message to chat
 async function postSystemMessage(message: string) {
@@ -39,8 +40,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   try {
-    // DELETE: Clear all agents (useful for corrupt data)
+    // DELETE: Clear all agents OR cleanup stale agents
     if (req.method === 'DELETE') {
+      const action = req.query.action as string;
+
+      // Cleanup stale agents (older than 7 days)
+      if (action === 'cleanup') {
+        const agents = await redis.hgetall(AGENTS_KEY) || {};
+        const now = Date.now();
+        const staleThreshold = now - STALE_CLEANUP_MS;
+        const toDelete: string[] = [];
+
+        for (const [key, value] of Object.entries(agents)) {
+          try {
+            const agent = typeof value === 'string' ? JSON.parse(value) : value;
+            if (agent && agent.lastSeen) {
+              const lastSeen = new Date(agent.lastSeen).getTime();
+              if (lastSeen < staleThreshold) {
+                toDelete.push(key);
+              }
+            }
+          } catch {
+            // Also clean up invalid entries
+            toDelete.push(key);
+          }
+        }
+
+        if (toDelete.length > 0) {
+          await redis.hdel(AGENTS_KEY, ...toDelete);
+          // Also clean up presence and notification data
+          await redis.hdel(AGENT_STATUS_KEY, ...toDelete);
+          await redis.hdel(OFFLINE_NOTIFIED_KEY, ...toDelete);
+        }
+
+        return res.json({
+          success: true,
+          message: `Cleaned up ${toDelete.length} stale agents`,
+          removed: toDelete
+        });
+      }
+
+      // Clear all agents (danger!)
       await redis.del(AGENTS_KEY);
       return res.json({ success: true, message: 'All agents cleared' });
     }
@@ -65,6 +105,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const now = Date.now();
       const offlineThreshold = now - OFFLINE_THRESHOLD_MS;  // 5 min for offline detection
       const activeThreshold = now - ACTIVE_THRESHOLD_MS;    // 30 min for listing
+      const recentOfflineThreshold = now - (48 * 60 * 60 * 1000);  // 48 hours for offline display
       const activeAgents: any[] = [];
       const offlineAgents: any[] = [];
 
@@ -126,9 +167,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
             if (lastSeen > activeThreshold) {
               activeAgents.push(agent);
-            } else {
+            } else if (lastSeen > recentOfflineThreshold) {
+              // Only include in offline list if seen within 48 hours
               offlineAgents.push(agent);
             }
+            // Agents older than 48 hours are not shown in offline list
           }
         } catch (parseError) {
           // Skip invalid entries and clean them up
