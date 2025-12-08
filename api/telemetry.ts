@@ -607,22 +607,47 @@ async function getS3TelemetryFiles(imei: string, limit: number = 10): Promise<st
       const day = String(date.getUTCDate()).padStart(2, '0');
 
       const prefix = `${imei}/${year}/${month}/${day}/`;
+
+      // FIX: Use StartAfter to skip to recent files instead of listing all
+      // S3 ListObjectsV2 returns files sorted by key ascending, so with MaxKeys=1000
+      // we'd only get the oldest 1000 files. Instead, calculate a StartAfter key
+      // based on timestamp from ~2 hours ago to get recent files.
+      const twoHoursAgo = now.getTime() - (2 * 60 * 60 * 1000);
+      const startAfterKey = `${imei}/${year}/${month}/${day}/${twoHoursAgo}`;
+
       const command = new ListObjectsV2Command({
         Bucket: S3_BUCKET,
         Prefix: prefix,
-        MaxKeys: 1000, // Get more files to find the newest ones
+        MaxKeys: 100, // We only need a few recent files
+        StartAfter: startAfterKey, // Skip to files after this key (recent timestamps)
       });
 
       const response = await s3.send(command);
-      const files = (response.Contents || [])
+      let files = (response.Contents || [])
         .map(obj => obj.Key || '')
-        .filter(Boolean)
-        .sort()
-        .reverse() // Most recent first (highest timestamp)
-        .slice(0, limit); // Now limit to requested count
+        .filter(Boolean);
+
+      // If no files in last 2 hours, fall back to listing without StartAfter
+      // but use pagination to get the LAST page of results
+      if (files.length === 0) {
+        // List without StartAfter to check if any files exist
+        const fallbackCommand = new ListObjectsV2Command({
+          Bucket: S3_BUCKET,
+          Prefix: prefix,
+          MaxKeys: 1000,
+        });
+        const fallbackResponse = await s3.send(fallbackCommand);
+        files = (fallbackResponse.Contents || [])
+          .map(obj => obj.Key || '')
+          .filter(Boolean);
+      }
+
+      // Sort by filename (timestamp) descending to get newest first
+      files.sort().reverse();
+      files = files.slice(0, limit);
 
       if (files.length > 0) {
-        console.log(`[telemetry] Found ${files.length} S3 files for ${imei} in ${prefix}`);
+        console.log(`[telemetry] Found ${files.length} S3 files for ${imei} in ${prefix}, newest: ${files[0]}`);
         return files;
       }
     }
