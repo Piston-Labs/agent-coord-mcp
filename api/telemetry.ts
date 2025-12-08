@@ -156,13 +156,12 @@ const DEVICE_PROFILES: Record<string, DeviceProfile> = {
   },
   '862464068511489': {
     name: 'Toyota Tacoma',
-    description: 'Production deployment vehicle',
-    vin: '5TELU42N88Z495934',  // Verified from AVL 256
+    description: 'Production deployment vehicle - awaiting VIN confirmation',
     make: 'Toyota',
     model: 'Tacoma',
     year: 2008,
-    baseLat: 33.4484,
-    baseLng: -112.0740,
+    baseLat: 38.587307,  // Updated to actual location (Sacramento area)
+    baseLng: -121.487093,
     isActive: true  // Live - transmitting (verified Dec 8 2025)
   },
   '862464068525638': {
