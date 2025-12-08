@@ -880,6 +880,386 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // =========================================================================
+    // SMART QUERY ACTIONS - For sales and engineering questions
+    // =========================================================================
+
+    // Search features by keyword - returns matched features with context
+    if (action === 'search') {
+      const { q, query } = req.query;
+      const searchQuery = (q || query || '') as string;
+
+      if (!searchQuery) {
+        return res.status(400).json({
+          error: 'Search query required',
+          example: '?action=search&q=live tracking'
+        });
+      }
+
+      // Fetch all features
+      const response = await fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers });
+      const data = await response.json();
+      const features = data.data || [];
+
+      // Search in name and description
+      const searchTerms = searchQuery.toLowerCase().split(/\s+/);
+      const matches = features.filter((f: any) => {
+        const name = (f.name || '').toLowerCase();
+        const desc = (f.description || '').toLowerCase();
+        const combined = `${name} ${desc}`;
+        return searchTerms.some(term => combined.includes(term));
+      });
+
+      // Score and sort by relevance (more term matches = higher score)
+      const scored = matches.map((f: any) => {
+        const name = (f.name || '').toLowerCase();
+        const desc = (f.description || '').toLowerCase();
+        let score = 0;
+        for (const term of searchTerms) {
+          if (name.includes(term)) score += 3; // Name matches worth more
+          if (desc.includes(term)) score += 1;
+        }
+        return { ...f, _score: score };
+      });
+
+      scored.sort((a: any, b: any) => b._score - a._score);
+
+      return res.json({
+        success: true,
+        query: searchQuery,
+        count: scored.length,
+        features: scored.slice(0, 20).map((f: any) => ({
+          id: f.id,
+          name: f.name,
+          description: f.description?.replace(/<[^>]*>/g, '').substring(0, 200),
+          status: f.status?.name || 'No status',
+          product: f.parent?.product?.id || f.parent?.component?.product?.id,
+          component: f.parent?.component?.id,
+          relevance: f._score
+        }))
+      });
+    }
+
+    // Current features - what we have today (Released or In progress)
+    if (action === 'current-features') {
+      const { productName } = req.query;
+
+      const [featuresRes, productsRes, componentsRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+      ]);
+
+      const features = (await featuresRes.json()).data || [];
+      const products = (await productsRes.json()).data || [];
+      const components = (await componentsRes.json()).data || [];
+
+      // Build lookups
+      const productMap = new Map(products.map((p: any) => [p.id, p.name]));
+      const componentMap = new Map(components.map((c: any) => [c.id, { name: c.name, productId: c.parent?.product?.id }]));
+
+      // Filter to current features (Released, In progress, or no status = available)
+      const currentStatuses = ['released', 'in progress', 'new idea'];
+      let current = features.filter((f: any) => {
+        const status = (f.status?.name || '').toLowerCase();
+        return currentStatuses.some(s => status.includes(s)) || !f.status;
+      });
+
+      // Filter by product name if provided
+      if (productName) {
+        const targetProduct = products.find((p: any) =>
+          p.name.toLowerCase().includes((productName as string).toLowerCase())
+        );
+        if (targetProduct) {
+          current = current.filter((f: any) =>
+            f.parent?.product?.id === targetProduct.id ||
+            componentMap.get(f.parent?.component?.id)?.productId === targetProduct.id
+          );
+        }
+      }
+
+      // Group by product
+      const byProduct: Record<string, any[]> = {};
+      for (const f of current) {
+        const productId = f.parent?.product?.id || componentMap.get(f.parent?.component?.id)?.productId;
+        const productNameResolved = productMap.get(productId) || 'Uncategorized';
+        if (!byProduct[productNameResolved]) byProduct[productNameResolved] = [];
+        byProduct[productNameResolved].push({
+          name: f.name,
+          status: f.status?.name || 'Available',
+          component: componentMap.get(f.parent?.component?.id)?.name || 'General'
+        });
+      }
+
+      return res.json({
+        success: true,
+        summary: `${current.length} current features across ${Object.keys(byProduct).length} products`,
+        byProduct,
+        note: 'These are features currently available or in active development'
+      });
+    }
+
+    // Roadmap - what's planned
+    if (action === 'roadmap') {
+      const { productName } = req.query;
+
+      const [featuresRes, productsRes, componentsRes, statusesRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/feature-statuses`, { headers }),
+      ]);
+
+      const features = (await featuresRes.json()).data || [];
+      const products = (await productsRes.json()).data || [];
+      const components = (await componentsRes.json()).data || [];
+      const statuses = (await statusesRes.json()).data || [];
+
+      // Build lookups
+      const productMap = new Map(products.map((p: any) => [p.id, p.name]));
+      const componentMap = new Map(components.map((c: any) => [c.id, { name: c.name, productId: c.parent?.product?.id }]));
+
+      // Filter by product if specified
+      let filtered = features;
+      if (productName) {
+        const targetProduct = products.find((p: any) =>
+          p.name.toLowerCase().includes((productName as string).toLowerCase())
+        );
+        if (targetProduct) {
+          filtered = features.filter((f: any) =>
+            f.parent?.product?.id === targetProduct.id ||
+            componentMap.get(f.parent?.component?.id)?.productId === targetProduct.id
+          );
+        }
+      }
+
+      // Group by status
+      const byStatus: Record<string, any[]> = {};
+      for (const f of filtered) {
+        const statusName = f.status?.name || 'No status';
+        if (!byStatus[statusName]) byStatus[statusName] = [];
+        const productId = f.parent?.product?.id || componentMap.get(f.parent?.component?.id)?.productId;
+        byStatus[statusName].push({
+          name: f.name,
+          product: productMap.get(productId) || 'Unknown',
+          component: componentMap.get(f.parent?.component?.id)?.name,
+          timeframe: f.timeframe?.startDate ? `${f.timeframe.startDate} - ${f.timeframe.endDate || 'TBD'}` : null
+        });
+      }
+
+      // Order statuses logically
+      const statusOrder = ['New idea', 'Candidate', 'Planned', 'In progress', 'Released'];
+      const orderedRoadmap: Record<string, any[]> = {};
+      for (const status of statusOrder) {
+        if (byStatus[status]) orderedRoadmap[status] = byStatus[status];
+      }
+      // Add any remaining statuses
+      for (const [status, items] of Object.entries(byStatus)) {
+        if (!orderedRoadmap[status]) orderedRoadmap[status] = items;
+      }
+
+      return res.json({
+        success: true,
+        summary: `${filtered.length} features in roadmap`,
+        statusCounts: Object.fromEntries(
+          Object.entries(orderedRoadmap).map(([k, v]) => [k, v.length])
+        ),
+        roadmap: orderedRoadmap,
+        statuses: statuses.map((s: any) => s.name)
+      });
+    }
+
+    // Answer sales questions - formatted responses for common queries
+    if (action === 'sales-answer') {
+      const { question } = req.query;
+      const q = (question || '') as string;
+
+      if (!q) {
+        return res.status(400).json({
+          error: 'Question required',
+          examples: [
+            '?action=sales-answer&question=what features do we offer',
+            '?action=sales-answer&question=what is on the roadmap',
+            '?action=sales-answer&question=shop dashboard capabilities'
+          ]
+        });
+      }
+
+      // Fetch all data
+      const [featuresRes, productsRes, componentsRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+      ]);
+
+      const features = (await featuresRes.json()).data || [];
+      const products = (await productsRes.json()).data || [];
+      const components = (await componentsRes.json()).data || [];
+
+      const productMap = new Map(products.map((p: any) => [p.id, p.name]));
+      const componentMap = new Map(components.map((c: any) => [c.id, { name: c.name, productId: c.parent?.product?.id }]));
+
+      const qLower = q.toLowerCase();
+
+      // Detect question type and product focus
+      const isRoadmapQuestion = /roadmap|planned|upcoming|future|coming soon|when|timeline/i.test(q);
+      const isCurrentQuestion = /current|now|today|offer|have|available|capabilities/i.test(q);
+
+      // Detect product focus
+      let productFocus: string | null = null;
+      if (/consumer|app|mobile/i.test(q)) productFocus = 'Consumer App';
+      if (/shop|dashboard|portal/i.test(q)) productFocus = 'Shop Dashboard';
+      if (/backend|database|cartel|api/i.test(q)) productFocus = 'CarTelDB';
+
+      // Search for relevant features
+      const searchTerms = qLower.split(/\s+/).filter(t => t.length > 2 && !['what', 'the', 'are', 'does', 'have', 'offer'].includes(t));
+
+      let relevantFeatures = features;
+
+      // Filter by product focus
+      if (productFocus) {
+        const targetProduct = products.find((p: any) => p.name === productFocus);
+        if (targetProduct) {
+          relevantFeatures = features.filter((f: any) =>
+            f.parent?.product?.id === targetProduct.id ||
+            componentMap.get(f.parent?.component?.id)?.productId === targetProduct.id
+          );
+        }
+      }
+
+      // Filter by search terms
+      if (searchTerms.length > 0) {
+        relevantFeatures = relevantFeatures.filter((f: any) => {
+          const name = (f.name || '').toLowerCase();
+          const desc = (f.description || '').toLowerCase();
+          return searchTerms.some(term => name.includes(term) || desc.includes(term));
+        });
+      }
+
+      // Build response
+      const response: any = {
+        success: true,
+        question: q,
+        productFocus,
+        questionType: isRoadmapQuestion ? 'roadmap' : isCurrentQuestion ? 'current' : 'general',
+      };
+
+      if (relevantFeatures.length === 0 && searchTerms.length > 0) {
+        // No specific matches, return product overview
+        response.answer = `No specific features found matching "${searchTerms.join(' ')}". Here's an overview:`;
+        response.products = products.map((p: any) => ({
+          name: p.name,
+          featureCount: features.filter((f: any) =>
+            f.parent?.product?.id === p.id ||
+            componentMap.get(f.parent?.component?.id)?.productId === p.id
+          ).length
+        }));
+      } else {
+        // Group relevant features by component
+        const byComponent: Record<string, any[]> = {};
+        for (const f of relevantFeatures) {
+          const compInfo = componentMap.get(f.parent?.component?.id);
+          const compName = compInfo?.name || 'General';
+          if (!byComponent[compName]) byComponent[compName] = [];
+          byComponent[compName].push({
+            name: f.name,
+            status: f.status?.name || 'Available',
+            description: f.description?.replace(/<[^>]*>/g, '').substring(0, 150)
+          });
+        }
+
+        response.answer = `Found ${relevantFeatures.length} relevant features${productFocus ? ` in ${productFocus}` : ''}`;
+        response.featureCount = relevantFeatures.length;
+        response.byComponent = byComponent;
+      }
+
+      return res.json(response);
+    }
+
+    // Product summary - quick overview for a product
+    if (action === 'product-summary') {
+      const { productName, productId } = req.query;
+
+      if (!productName && !productId) {
+        return res.status(400).json({
+          error: 'productName or productId required',
+          example: '?action=product-summary&productName=Consumer App'
+        });
+      }
+
+      const [featuresRes, productsRes, componentsRes] = await Promise.all([
+        fetch(`${PRODUCTBOARD_API_URL}/features?pageLimit=500`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/products`, { headers }),
+        fetch(`${PRODUCTBOARD_API_URL}/components`, { headers }),
+      ]);
+
+      const features = (await featuresRes.json()).data || [];
+      const products = (await productsRes.json()).data || [];
+      const components = (await componentsRes.json()).data || [];
+
+      // Find target product
+      const targetProduct = productId
+        ? products.find((p: any) => p.id === productId)
+        : products.find((p: any) => p.name.toLowerCase().includes((productName as string).toLowerCase()));
+
+      if (!targetProduct) {
+        return res.status(404).json({
+          error: 'Product not found',
+          availableProducts: products.map((p: any) => p.name)
+        });
+      }
+
+      // Get components for this product
+      const productComponents = components.filter((c: any) => c.parent?.product?.id === targetProduct.id);
+
+      // Get features for this product
+      const productFeatures = features.filter((f: any) =>
+        f.parent?.product?.id === targetProduct.id ||
+        productComponents.some((c: any) => c.id === f.parent?.component?.id)
+      );
+
+      // Group by component and status
+      const byComponent: Record<string, { features: any[], statusCounts: Record<string, number> }> = {};
+
+      for (const comp of productComponents) {
+        const compFeatures = productFeatures.filter((f: any) => f.parent?.component?.id === comp.id);
+        const statusCounts: Record<string, number> = {};
+        for (const f of compFeatures) {
+          const status = f.status?.name || 'No status';
+          statusCounts[status] = (statusCounts[status] || 0) + 1;
+        }
+        byComponent[comp.name] = {
+          features: compFeatures.map((f: any) => ({
+            name: f.name,
+            status: f.status?.name || 'No status'
+          })),
+          statusCounts
+        };
+      }
+
+      // Overall status counts
+      const overallStatusCounts: Record<string, number> = {};
+      for (const f of productFeatures) {
+        const status = f.status?.name || 'No status';
+        overallStatusCounts[status] = (overallStatusCounts[status] || 0) + 1;
+      }
+
+      return res.json({
+        success: true,
+        product: {
+          id: targetProduct.id,
+          name: targetProduct.name,
+          description: targetProduct.description?.replace(/<[^>]*>/g, '')
+        },
+        summary: {
+          totalFeatures: productFeatures.length,
+          components: productComponents.length,
+          statusBreakdown: overallStatusCounts
+        },
+        components: byComponent
+      });
+    }
+
+    // =========================================================================
     // DEFAULT: Show usage
     // =========================================================================
 
@@ -912,6 +1292,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'move-feature': 'POST ?action=move-feature body: { featureId, targetComponentId }',
         'resolve-component': 'GET ?action=resolve-component&componentName=xxx&productName=yyy',
         'get-reference': 'GET ?action=get-reference (products, components, statuses lookup)',
+        // Smart query actions (for sales/engineering questions)
+        'search': 'GET ?action=search&q=live tracking (keyword search with relevance)',
+        'current-features': 'GET ?action=current-features&productName=Consumer App (what we have today)',
+        'roadmap': 'GET ?action=roadmap&productName=Shop Dashboard (planned features by status)',
+        'sales-answer': 'GET ?action=sales-answer&question=what features does shop dashboard have',
+        'product-summary': 'GET ?action=product-summary&productName=Consumer App (quick overview)',
       },
       configured: !!PRODUCTBOARD_TOKEN,
       docs: 'https://developer.productboard.com/reference/introduction',

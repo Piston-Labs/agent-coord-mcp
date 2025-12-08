@@ -906,17 +906,21 @@ export function registerIntegrationTools(server: McpServer) {
 
   server.tool(
     'productboard',
-    `Manage features, notes, and product roadmap in ProductBoard.
+    `Query and manage ProductBoard - the source of truth for product features and roadmap.
 
-AGENT-OPTIMIZED ACTIONS (use these first):
+SALES/ENGINEERING QUERIES (use these for questions):
+- search: Keyword search across features (e.g., "live tracking", "notifications")
+- sales-answer: Natural language questions ("what features does shop dashboard have?")
+- current-features: What we offer today, grouped by product
+- roadmap: What's planned, ordered by status
+- product-summary: Quick overview of a specific product
+
+AGENT-OPTIMIZED ACTIONS:
 - get-hierarchy: Full product→component→feature tree in ONE call
 - audit: Check for orphaned features, empty components
 - get-reference: Products, components, statuses lookup tables
-- resolve-component: Find component ID by name (no UUID needed)
-- batch-delete: Delete multiple features at once
-- move-feature: Move feature to different component
 
-STANDARD ACTIONS:
+STANDARD CRUD ACTIONS:
 - list-features, get-feature, create-feature, update-feature, delete-feature
 - list-products, list-components, create-component
 - list-statuses, list-releases, create-note, list-notes
@@ -924,13 +928,15 @@ STANDARD ACTIONS:
 Requires PRODUCTBOARD_API_TOKEN env var.`,
     {
       action: z.enum([
+        // Sales/Engineering query actions
+        'search', 'sales-answer', 'current-features', 'roadmap', 'product-summary',
         // Agent-optimized actions
         'get-hierarchy', 'audit', 'get-reference', 'resolve-component', 'batch-delete', 'move-feature',
         // Standard actions
         'list-features', 'get-feature', 'create-feature', 'update-feature', 'delete-feature',
         'list-products', 'list-components', 'create-component', 'list-statuses', 'list-releases',
         'create-note', 'list-notes', 'list-companies'
-      ]).describe('Operation to perform. Prefer agent-optimized actions: get-hierarchy, audit, get-reference'),
+      ]).describe('Operation to perform. For questions use: search, sales-answer, current-features, roadmap, product-summary'),
       // Feature fields
       featureId: z.string().optional().describe('Feature ID (for get/update/delete/move-feature)'),
       featureIds: z.array(z.string()).optional().describe('Feature IDs array (for batch-delete)'),
@@ -961,7 +967,10 @@ Requires PRODUCTBOARD_API_TOKEN env var.`,
       tags: z.array(z.string()).optional().describe('Tags for the note'),
       // Resolution by name
       componentName: z.string().optional().describe('Component name (for resolve-component)'),
-      productName: z.string().optional().describe('Product name filter (for resolve-component)'),
+      productName: z.string().optional().describe('Product name filter (for resolve-component, current-features, roadmap, product-summary)'),
+      // Search/Query parameters
+      query: z.string().optional().describe('Search query for keyword search (for search action)'),
+      question: z.string().optional().describe('Natural language question (for sales-answer action)'),
       // Filters
       productId: z.string().optional().describe('Filter by product ID'),
       componentId: z.string().optional().describe('Filter by component ID'),
@@ -973,6 +982,7 @@ Requires PRODUCTBOARD_API_TOKEN env var.`,
         action, featureId, featureIds, targetComponentId, name, description, status, parent, owner, timeframe, archived,
         title, content, customerEmail, companyName, tags,
         componentName, productName,
+        query, question,
         productId, componentId, limit, agentId
       } = args;
 
@@ -984,6 +994,8 @@ Requires PRODUCTBOARD_API_TOKEN env var.`,
         if (componentId) params.set('componentId', componentId);
         if (componentName) params.set('componentName', componentName);
         if (productName) params.set('productName', productName);
+        if (query) params.set('q', query);
+        if (question) params.set('question', question);
         if (limit) params.set('limit', String(limit));
         if (status?.name) params.set('status', status.name);
 
@@ -1135,6 +1147,122 @@ Requires PRODUCTBOARD_API_TOKEN env var.`,
             for (const r of data.results.filter((r: any) => !r.success)) {
               lines.push(`- ${r.id}: ${r.error}`);
             }
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format search results nicely
+        if (action === 'search' && data.features) {
+          const lines = [
+            `## Search Results: "${data.query}"`,
+            `Found ${data.count} features`,
+            ``
+          ];
+          for (const f of data.features) {
+            lines.push(`- **${f.name}** [${f.status}] (relevance: ${f.relevance})`);
+            if (f.description) lines.push(`  ${f.description.substring(0, 100)}...`);
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format current-features nicely
+        if (action === 'current-features' && data.byProduct) {
+          const lines = [
+            `## Current Features`,
+            data.summary,
+            ``
+          ];
+          for (const [product, features] of Object.entries(data.byProduct)) {
+            lines.push(`### ${product}`);
+            for (const f of features as any[]) {
+              lines.push(`- **${f.name}** [${f.status}] - ${f.component}`);
+            }
+            lines.push(``);
+          }
+          if (data.note) lines.push(`_${data.note}_`);
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format roadmap nicely
+        if (action === 'roadmap' && data.roadmap) {
+          const lines = [
+            `## Product Roadmap`,
+            data.summary,
+            ``
+          ];
+          for (const [status, features] of Object.entries(data.roadmap)) {
+            lines.push(`### ${status} (${(features as any[]).length})`);
+            for (const f of (features as any[]).slice(0, 10)) {
+              lines.push(`- **${f.name}** - ${f.product}${f.component ? ` / ${f.component}` : ''}`);
+              if (f.timeframe) lines.push(`  📅 ${f.timeframe}`);
+            }
+            if ((features as any[]).length > 10) {
+              lines.push(`  ... and ${(features as any[]).length - 10} more`);
+            }
+            lines.push(``);
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format sales-answer nicely
+        if (action === 'sales-answer') {
+          const lines = [
+            `## ${data.question}`,
+            ``,
+            data.answer,
+            ``
+          ];
+          if (data.productFocus) lines.push(`**Product Focus:** ${data.productFocus}`);
+          if (data.questionType) lines.push(`**Question Type:** ${data.questionType}`);
+          lines.push(``);
+
+          if (data.byComponent) {
+            for (const [comp, features] of Object.entries(data.byComponent)) {
+              lines.push(`### ${comp}`);
+              for (const f of features as any[]) {
+                lines.push(`- **${f.name}** [${f.status}]`);
+                if (f.description) lines.push(`  ${f.description}`);
+              }
+              lines.push(``);
+            }
+          }
+          if (data.products) {
+            lines.push(`### Products Overview`);
+            for (const p of data.products) {
+              lines.push(`- **${p.name}**: ${p.featureCount} features`);
+            }
+          }
+          return { content: [{ type: 'text', text: lines.join('\n') }] };
+        }
+
+        // Format product-summary nicely
+        if (action === 'product-summary' && data.product) {
+          const lines = [
+            `## ${data.product.name}`,
+            data.product.description || '',
+            ``,
+            `**Summary:** ${data.summary.totalFeatures} features across ${data.summary.components} components`,
+            ``
+          ];
+
+          // Status breakdown
+          lines.push(`### Status Breakdown`);
+          for (const [status, count] of Object.entries(data.summary.statusBreakdown)) {
+            lines.push(`- ${status}: ${count}`);
+          }
+          lines.push(``);
+
+          // Components
+          lines.push(`### Components`);
+          for (const [compName, compData] of Object.entries(data.components) as [string, any][]) {
+            lines.push(`#### ${compName} (${compData.features.length} features)`);
+            for (const f of compData.features.slice(0, 5)) {
+              lines.push(`- ${f.name} [${f.status}]`);
+            }
+            if (compData.features.length > 5) {
+              lines.push(`  ... and ${compData.features.length - 5} more`);
+            }
+            lines.push(``);
           }
           return { content: [{ type: 'text', text: lines.join('\n') }] };
         }
