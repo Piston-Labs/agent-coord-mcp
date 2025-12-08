@@ -17501,37 +17501,28 @@
           lastMessageTime = responseData.timestamp;
         }
 
-        // Auto-trigger Claude response (like Claude Desktop app)
-        // Every message gets an AI response automatically via soul-injected Claude
+        // Auto-trigger Captain (Chat Moderator) response
+        // Captain is the team lead AI that coordinates agents and responds to humans
         if (message && !pendingImage) {
-          sendBtn.textContent = 'AI thinking...';
+          sendBtn.textContent = 'Captain thinking...';
           try {
-            // Get recent messages for context
-            const recentMsgs = Array.from(document.querySelectorAll('.message'))
-              .slice(-10)
-              .map(el => ({
-                author: el.querySelector('.message-author')?.textContent || 'Unknown',
-                message: el.querySelector('.message-text')?.textContent || ''
-              }));
-
-            const aiRes = await fetch(API_BASE + '/agent-chat?action=respond', {
+            const aiRes = await fetch(API_BASE + '/chat-moderator?action=respond', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                soulId: 'hub',  // Use Hub as default responder
-                trigger: message,
-                recentMessages: recentMsgs,
-                postToGroupChat: true
+                message: message,
+                author: USERNAME || 'user',
+                forceRespond: true  // Always respond to human messages
               })
             });
 
             const aiData = await aiRes.json();
 
-            if (aiRes.ok && aiData.response) {
-              // Append AI response locally (it's also saved to chat)
+            if (aiRes.ok && aiData.responded && aiData.response) {
+              // Append Captain's response locally (it's also saved to chat by the API)
               appendMessages([{
-                id: aiData.chatMessage?.id || Date.now().toString(36) + '-hub',
-                author: aiData.soul?.name || 'Hub',
+                id: Date.now().toString(36) + '-captain',
+                author: 'Captain',
                 authorType: 'ai',
                 message: aiData.response,
                 timestamp: new Date().toISOString()
@@ -17539,12 +17530,13 @@
               lastMessageTime = new Date().toISOString();
 
               // Show latency toast
-              if (aiData.latencyMs) {
-                showAIResponseToast(aiData.latencyMs, aiData.soul?.name || 'Hub');
+              const latency = aiData.usage ? (aiData.usage.input_tokens + aiData.usage.output_tokens) : 0;
+              if (latency > 0) {
+                showAIResponseToast(latency + ' tokens', 'Captain');
               }
             }
           } catch (aiErr) {
-            console.error('AI response failed:', aiErr);
+            console.error('Captain response failed:', aiErr);
             // Don't block the user - just log the error silently
           }
         }
