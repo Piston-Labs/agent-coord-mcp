@@ -338,6 +338,60 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // Create component
+    if (action === 'create-component') {
+      const { name, description, productId, parentComponentId } = body;
+
+      if (!name) {
+        return res.status(400).json({
+          error: 'name is required',
+          example: {
+            name: 'Component name',
+            description: '<p>Component description</p>',
+            productId: 'product-uuid (required if no parentComponentId)',
+            parentComponentId: 'component-uuid (for subcomponents)'
+          }
+        });
+      }
+
+      if (!productId && !parentComponentId) {
+        return res.status(400).json({
+          error: 'Either productId or parentComponentId is required'
+        });
+      }
+
+      const payload: any = {
+        data: {
+          name,
+        }
+      };
+
+      if (description) payload.data.description = description;
+
+      // Set parent - either product or component
+      if (parentComponentId) {
+        payload.data.parent = { component: { id: parentComponentId } };
+      } else if (productId) {
+        payload.data.parent = { product: { id: productId } };
+      }
+
+      const response = await fetch(`${PRODUCTBOARD_API_URL}/components`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: 'ProductBoard API error', details: data });
+      }
+
+      return res.json({
+        success: true,
+        created: data.data,
+      });
+    }
+
     // =========================================================================
     // NOTES (Insights/Feedback)
     // =========================================================================
@@ -493,6 +547,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'get-product': 'GET ?action=get-product&productId=xxx',
         'update-product': 'PUT ?action=update-product&productId=xxx body: { name, description }',
         'list-components': 'GET ?action=list-components&productId=xxx',
+        'create-component': 'POST ?action=create-component body: { name, description, productId, parentComponentId }',
         // Notes
         'create-note': 'POST ?action=create-note body: { title, content, customerEmail, tags }',
         'list-notes': 'GET ?action=list-notes&limit=50',
