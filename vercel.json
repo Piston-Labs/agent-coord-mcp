@@ -32,6 +32,10 @@
         {
             "path": "/api/shadow-agents?action=check-stale",
             "schedule": "*/2 * * * *"
+        },
+        {
+            "path": "/api/research-crawler?action=crawl",
+            "schedule": "0 6 * * *"
         }
     ],
     "version": 2

@@ -357,6 +357,7 @@ const API_ENDPOINTS = [
   // === KNOWLEDGE & CONTEXT ===
   { id: 'blog', path: '/api/blog', methods: ['GET', 'POST', 'DELETE'], description: 'Soul-injected blog generation with Claude API. Sessions, drafts, research context. Actions: create-session, generate, save-draft, search-research', category: 'context' },
   { id: 'research-library', path: '/api/research-library', methods: ['GET', 'POST', 'DELETE'], description: 'Technical research articles discovered by agents', category: 'context' },
+  { id: 'research-crawler', path: '/api/research-crawler', methods: ['GET', 'POST'], description: 'Auto-fetch competitive intelligence daily. Searches CarFax, telemetry, fleet, repair shop, automotive data. Runs via cron at 6 AM UTC.', category: 'context' },
   { id: 'research-pdf', path: '/api/research-pdf', methods: ['GET', 'POST'], description: 'arXiv PDF crawler - downloads papers to S3, streams PDFs', category: 'context' },
   { id: 'research-context', path: '/api/research-context', methods: ['GET'], description: 'Research context clusters - load domain-specific papers for agents (agents, reasoning, code, safety, etc.)', category: 'context' },
   { id: 'ui-map', path: '/api/ui-map', methods: ['GET'], description: 'Navigation map for index.html - saves agent tokens', category: 'context' },
