@@ -192,7 +192,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Update feature
     if (action === 'update-feature') {
       const { featureId } = req.query;
-      const { name, description, status, archived, owner, timeframe } = body;
+      const { name, description, status, archived, owner, timeframe, parent } = body;
 
       if (!featureId) {
         return res.status(400).json({ error: 'featureId query parameter required' });
@@ -205,6 +205,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (archived !== undefined) payload.data.archived = archived;
       if (owner !== undefined) payload.data.owner = owner;
       if (timeframe !== undefined) payload.data.timeframe = timeframe;
+      if (parent !== undefined) payload.data.parent = parent;
 
       const response = await fetch(`${PRODUCTBOARD_API_URL}/features/${featureId}`, {
         method: 'PUT',
