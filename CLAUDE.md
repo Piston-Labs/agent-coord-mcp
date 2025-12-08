@@ -147,6 +147,7 @@ Use these tools to manage context efficiently when working with large files:
 - `fleet-analytics` - Device analytics
 - `shop` - Sales pipeline
 - `generate-doc` - Create sales documents
+- `productboard` - Feature roadmap and planning (see ProductBoard section below)
 
 ### Durable Objects (Cloudflare)
 These tools wrap Cloudflare DO endpoints for persistent state management.
@@ -420,6 +421,70 @@ GET /api/tools-test?action=list
 **Auto-triggers:** Tests run automatically on every Vercel production deployment via GitHub webhook.
 
 **Failures:** Auto-posted to group chat for immediate team visibility.
+
+## ProductBoard Integration
+
+ProductBoard is our source of truth for product features and roadmap.
+
+### Quick Reference - Query Actions
+
+| Action | Use For | Example |
+|--------|---------|---------|
+| `search` | Keyword search | `productboard action=search query="notifications"` |
+| `current-features` | What we offer today | `productboard action=current-features productName="Shop Dashboard"` |
+| `roadmap` | What's planned | `productboard action=roadmap` |
+| `sales-answer` | Natural language questions | `productboard action=sales-answer question="what features does consumer app have"` |
+| `product-summary` | Product overview | `productboard action=product-summary productName="Consumer App"` |
+
+### Agent-Optimized Actions
+
+| Action | Use For |
+|--------|---------|
+| `get-hierarchy` | Full product→component→feature tree in ONE call |
+| `audit` | Check for orphaned features, empty components |
+| `get-reference` | Products, components, statuses lookup tables |
+| `resolve-component` | Find component ID by name |
+
+### Our ProductBoard Structure
+
+**Products:**
+- **Consumer App** - iOS/Android mobile app for vehicle owners
+- **Shop Dashboard** - B2B web app for auto repair shops
+- **CarTelDB** - Backend infrastructure and APIs
+
+**Hierarchy:**
+```
+Product (Consumer App, Shop Dashboard, CarTelDB)
+  └── Component (e.g., Device Pairing, Vehicle Health, Notifications)
+       └── Feature (e.g., Real-Time Status Card, Push Notifications)
+```
+
+**Feature Statuses:**
+- New idea → Candidate → Planned → In progress → Released
+
+### Tag Taxonomy (Manual Setup in ProductBoard UI)
+
+| Category | Tags |
+|----------|------|
+| Team | `consumer-app`, `shop-dashboard`, `backend` |
+| Type | `feature`, `bug`, `tech-debt`, `infra` |
+| Priority | `p0-critical`, `p1-high`, `p2-medium`, `p3-low` |
+
+### Prioritization Framework
+
+We use **Value/Effort** scoring with custom drivers:
+- **Customer Value** (1-5): Direct benefit to users
+- **Revenue Impact** (1-5): Business value potential
+- **Effort** (1-5): Engineering complexity
+
+Score = (Customer Value + Revenue Impact) / Effort
+
+### Best Practices
+
+1. **Answer sales questions** using `sales-answer` action - it auto-detects product focus
+2. **Check roadmap** before starting new features to avoid duplicates
+3. **Use `get-hierarchy`** for a complete picture in one API call
+4. **Create notes** for customer feedback - links to features automatically
 
 ## Soul Transfer System
 
