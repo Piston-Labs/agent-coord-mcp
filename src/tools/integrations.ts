@@ -92,6 +92,30 @@ export function registerIntegrationTools(server: McpServer) {
   );
 
   // ============================================================================
+  // VIN-DECODE TOOL - Decode VINs using NHTSA API
+  // ============================================================================
+
+  server.tool(
+    'vin-decode',
+    'Decode a Vehicle Identification Number (VIN) to get make, model, year, engine, and other vehicle details. Uses free NHTSA vPIC API.',
+    {
+      vin: z.string().describe('17-character Vehicle Identification Number to decode'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { vin, agentId } = args;
+
+      try {
+        const res = await fetch(`${API_BASE}/api/vin-decode?vin=${encodeURIComponent(vin)}`);
+        const data = await res.json();
+        return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // AWS-STATUS TOOL - Infrastructure monitoring
   // ============================================================================
 
