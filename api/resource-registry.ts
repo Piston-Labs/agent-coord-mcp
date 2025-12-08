@@ -265,6 +265,7 @@ const API_ENDPOINTS = [
   // === CORE COORDINATION ===
   { id: 'chat', path: '/api/chat', methods: ['GET', 'POST', 'DELETE'], description: 'Group chat messaging', category: 'core' },
   { id: 'chat-ai', path: '/api/chat-ai', methods: ['POST'], description: 'Claude-powered AI chat (Hub) - soul-injected responses with team context, memories, and agent awareness', category: 'core' },
+  { id: 'chat-moderator', path: '/api/chat-moderator', methods: ['GET', 'POST'], description: 'Captain - Team Lead AI that orchestrates agents, delegates tasks, spawns specialists via agent-chat API. Actions: respond, delegate, spawn, status, soul', category: 'core' },
   { id: 'agents', path: '/api/agents', methods: ['GET', 'POST', 'DELETE'], description: 'Agent registration and status', category: 'core' },
   { id: 'tasks', path: '/api/tasks', methods: ['GET', 'POST', 'PATCH'], description: 'Task management', category: 'core' },
   { id: 'claims', path: '/api/claims', methods: ['GET', 'POST', 'DELETE'], description: 'Work claim tracking', category: 'core' },
