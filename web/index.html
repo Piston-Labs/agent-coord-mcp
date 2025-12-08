@@ -11605,6 +11605,8 @@
     </style>
     <!-- Marked.js for markdown rendering in chat -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Blog Studio Functions -->
+    <script src="blog-studio.js"></script>
 </head>
 <body>
   <!-- Loading Screen (shown while JS initializes) -->
@@ -12245,7 +12247,8 @@
           <button id="usernameBtn" style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; cursor: pointer; font-size: 12px;" title="Click to set username">👤</button>
           <input type="file" id="imageInput" accept="image/*" style="display: none;" />
           <button id="imageBtn" style="background: var(--bg-tertiary); padding: 12px; border-radius: 8px; cursor: pointer; font-size: 14px;" title="Upload image">📷</button>
-          <input type="text" id="messageInput" placeholder="Type a message... (@mention agents)" />
+          <input type="text" id="messageInput" placeholder="Type a message... (@Hub for AI, @agents for team)" />
+          <button id="askHubBtn" style="background: linear-gradient(135deg, #a78bfa, #7c3aed); padding: 12px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; color: white; font-weight: 600;" title="Ask Hub AI (Claude-powered)">🤖 Hub</button>
           <button id="sendBtn">Send</button>
         </div>
       </div>
@@ -15556,7 +15559,7 @@
         e.stopPropagation();
         sendMessage();
       }, { passive: false });
-      
+
       messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
           console.log('Enter pressed');
@@ -15564,7 +15567,23 @@
           sendMessage();
         }
       });
-      
+
+      // Hub AI button - Claude-powered chat
+      const askHubBtn = document.getElementById('askHubBtn');
+      if (askHubBtn) {
+        askHubBtn.addEventListener('click', function(e) {
+          console.log('Hub AI button clicked');
+          e.preventDefault();
+          askHubAI();
+        });
+        askHubBtn.addEventListener('touchend', function(e) {
+          console.log('Hub AI button touched');
+          e.preventDefault();
+          e.stopPropagation();
+          askHubAI();
+        }, { passive: false });
+      }
+
       console.log('Event listeners attached');
 
       // Keyboard shortcuts
@@ -16961,6 +16980,7 @@
       const isOwn = m.author === HUMAN_ID;
       const isHuman = m.authorType === 'human';
       const isVmAgent = m.isCloudAgent || m.authorType === 'vm-agent';
+      const isAI = m.authorType === 'ai' || m.author === 'Hub';
       const time = new Date(m.timestamp).toLocaleTimeString();
 
       let imageHtml = '';
@@ -17000,12 +17020,14 @@
 
       // VM agent badge for cloud-spawned agents
       const vmBadge = isVmAgent ? '<span class="vm-badge" title="Cloud/VM Agent">☁️ VM</span>' : '';
+      // AI badge for Hub AI responses
+      const aiBadge = isAI ? '<span class="ai-badge" title="Claude-powered AI" style="font-size: 9px; padding: 2px 6px; background: linear-gradient(135deg, #a78bfa, #7c3aed); color: white; border-radius: 4px; margin-left: 6px;">🤖 AI</span>' : '';
 
       return `
-        <div class="message ${isOwn ? 'own' : ''} ${isVmAgent ? 'vm-agent' : ''}" data-id="${m.id}">
-          <div class="message-avatar ${isHuman ? 'human' : ''} ${isVmAgent ? 'vm' : ''}">${getInitials(getAgentDisplayName(m.author))}</div>
+        <div class="message ${isOwn ? 'own' : ''} ${isVmAgent ? 'vm-agent' : ''} ${isAI ? 'ai-message' : ''}" data-id="${m.id}" style="${isAI ? 'background: linear-gradient(135deg, rgba(167,139,250,0.1), rgba(124,58,237,0.05)); border-left: 3px solid #a78bfa;' : ''}">
+          <div class="message-avatar ${isHuman ? 'human' : ''} ${isVmAgent ? 'vm' : ''}" style="${isAI ? 'background: linear-gradient(135deg, #a78bfa, #7c3aed);' : ''}">${isAI ? '🤖' : getInitials(getAgentDisplayName(m.author))}</div>
           <div class="message-content">
-            <div class="message-author"><span class="agent-name-hover" data-agent-id="${m.author}" onclick="toggleAgentHoverCard(event, this)" onmouseenter="if(!isTouchDevice)showAgentHoverCard(event, this)" onmouseleave="if(!isTouchDevice)hideAgentHoverCard()">${getAgentDisplayName(m.author)}<div class="agent-hover-card" id="agentHoverCard-${m.id}"></div></span> ${vmBadge}</div>
+            <div class="message-author"><span class="agent-name-hover" data-agent-id="${m.author}" onclick="toggleAgentHoverCard(event, this)" onmouseenter="if(!isTouchDevice)showAgentHoverCard(event, this)" onmouseleave="if(!isTouchDevice)hideAgentHoverCard()">${getAgentDisplayName(m.author)}<div class="agent-hover-card" id="agentHoverCard-${m.id}"></div></span> ${vmBadge}${aiBadge}</div>
             ${m.message ? `<div class="message-text markdown-body">${renderMarkdown(m.message)}</div>` : ''}
             ${imageHtml}
             ${reactionsHtml}
@@ -17311,6 +17333,116 @@
         sendBtn.disabled = false;
         sendBtn.textContent = 'Send';
       }
+    }
+
+    // Ask Hub AI - Claude-powered chat responses
+    async function askHubAI() {
+      const input = document.getElementById('messageInput');
+      const askHubBtn = document.getElementById('askHubBtn');
+      const message = input.value.trim();
+
+      if (!message) {
+        // If no message, show a hint
+        input.placeholder = 'Type your question for Hub AI...';
+        input.focus();
+        return;
+      }
+
+      // Show loading state
+      const originalBtnText = askHubBtn.innerHTML;
+      askHubBtn.disabled = true;
+      askHubBtn.innerHTML = '⏳ Thinking...';
+      askHubBtn.style.opacity = '0.7';
+
+      try {
+        // First, post the user's message to chat
+        const userRes = await fetch(API_BASE + '/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: HUMAN_ID,
+            authorType: 'human',
+            message: message
+          })
+        });
+
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          // Append user message optimistically
+          appendMessages([{
+            id: userData.id,
+            author: HUMAN_ID,
+            authorType: 'human',
+            message: message,
+            timestamp: userData.timestamp
+          }]);
+          lastMessageTime = userData.timestamp;
+        }
+
+        // Clear input immediately after posting user message
+        input.value = '';
+        input.placeholder = 'Type a message... (@Hub for AI, @agents for team)';
+
+        // Now call the AI endpoint
+        const aiRes = await fetch(API_BASE + '/chat-ai?action=respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: message,
+            author: HUMAN_ID,
+            includeInChat: true  // Save AI response to chat history
+          })
+        });
+
+        const aiData = await aiRes.json();
+
+        if (!aiRes.ok) {
+          throw new Error(aiData.error || 'AI response failed');
+        }
+
+        // Append AI response
+        if (aiData.response) {
+          appendMessages([{
+            id: Date.now().toString(36) + '-hub',
+            author: 'Hub',
+            authorType: 'ai',
+            message: aiData.response,
+            timestamp: new Date().toISOString()
+          }]);
+          lastMessageTime = new Date().toISOString();
+
+          // Show stats toast
+          const stats = aiData.contextLoaded;
+          if (stats) {
+            showHubStatsToast(aiData.latencyMs, stats);
+          }
+        }
+
+      } catch (err) {
+        console.error('Hub AI failed:', err);
+        // Show error in chat
+        appendMessages([{
+          id: Date.now().toString(36) + '-error',
+          author: 'Hub',
+          authorType: 'ai',
+          message: `⚠️ Sorry, I encountered an error: ${err.message}. Please try again.`,
+          timestamp: new Date().toISOString()
+        }]);
+      } finally {
+        askHubBtn.disabled = false;
+        askHubBtn.innerHTML = originalBtnText;
+        askHubBtn.style.opacity = '1';
+      }
+    }
+
+    // Show Hub stats toast
+    function showHubStatsToast(latencyMs, stats) {
+      const toast = document.createElement('div');
+      toast.style.cssText = 'position: fixed; bottom: 80px; right: 20px; padding: 10px 16px; background: rgba(167, 139, 250, 0.9); color: white; border-radius: 8px; font-size: 11px; z-index: 10000; box-shadow: 0 4px 20px rgba(0,0,0,0.3);';
+      toast.innerHTML = `<div style="font-weight: 600; margin-bottom: 4px;">🤖 Hub AI Response</div>
+        <div style="opacity: 0.9;">⚡ ${latencyMs}ms • 💬 ${stats.chatMessages} msgs • 👥 ${stats.onlineAgents} agents • 🧠 ${stats.memories} memories</div>`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
     }
 
     // Keyboard Shortcuts Help Modal (Linear-style ? shortcut)
