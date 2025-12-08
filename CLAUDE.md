@@ -2,7 +2,33 @@
 
 ## Project Overview
 
-This is the **Piston Labs Agent Coordination Hub** - a multi-agent orchestration system that enables Claude agents to collaborate, share context, and transfer persistent identities ("souls") between sessions.
+This is the **Agent Coordination Hub** - a multi-agent orchestration system that enables Claude agents to collaborate, share context, and transfer persistent identities ("souls") between sessions.
+
+**Important:** This repo is the coordination infrastructure. It is separate from Piston Labs products.
+
+---
+
+## Architecture Overview
+
+### This Repo: Agent Coordination Hub
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| State Storage | **Upstash Redis** | Agent status, tasks, claims, memory, chat |
+| API Hosting | **Vercel Serverless** | MCP endpoints, dashboard API |
+| Persistent State | **Cloudflare Durable Objects** | Soul progression, work traces |
+| Frontend | **Static HTML/JS** | Dashboard at `/web/` |
+
+### Piston Labs Products (Separate)
+| Component | Technology | Purpose |
+|-----------|------------|---------|
+| Telemetry Storage | **AWS S3** | Raw device data (`telemetry-raw-usw1`) |
+| Device Registry | **AWS DynamoDB** | Device shadows, profiles |
+| Real-time Ingest | **AWS IoT Core** | MQTT from Teltonika devices |
+| Processing | **AWS Lambda** | Telemetry parsing, alerts |
+
+**The Hub coordinates agents working on Piston Labs products, but doesn't share their infrastructure.**
+
+---
 
 ## Your Identity
 
@@ -141,13 +167,14 @@ Use these tools to manage context efficiently when working with large files:
 - `zone` - Claim directory ownership
 - `claims` - Prevent conflicts
 
-### Piston Labs Specific
-- `device` - Manage GPS fleet
-- `aws-status` - Infrastructure monitoring
+### Piston Labs Context (for agents working on Piston products)
+These tools help agents coordinate work on Piston Labs products. The data is stored in the Hub's Redis, not AWS.
+- `device` - GPS fleet info (cached from AWS)
+- `aws-status` - Check Piston's AWS infrastructure status
 - `fleet-analytics` - Device analytics
-- `shop` - Sales pipeline
+- `shop` - Sales pipeline CRM
 - `generate-doc` - Create sales documents
-- `productboard` - Feature roadmap and planning (see ProductBoard section below)
+- `context-cluster` - Load Piston product/technical context
 
 ### Durable Objects (Cloudflare)
 These tools wrap Cloudflare DO endpoints for persistent state management.
@@ -322,10 +349,18 @@ QC Checklist:
 
 ## Code Conventions
 
-- TypeScript for API endpoints
+### Hub Code (This Repo)
+- TypeScript for API endpoints (`/api/*.ts`)
 - Vercel serverless functions
-- Upstash Redis for state storage
-- MCP SDK for tool definitions
+- **Upstash Redis** for all state storage (NOT DynamoDB)
+- MCP SDK for tool definitions (`/src/tools/`)
+- Cloudflare Durable Objects for persistent state (`/cloudflare-do/`)
+
+### Piston Labs Product Code (Separate Repos)
+- AWS Lambda (Python/Node)
+- DynamoDB for device data
+- S3 for telemetry storage
+- IoT Core for device communication
 
 ## AI-Optimized Commit Conventions
 
@@ -366,11 +401,12 @@ tags: [tag1, tag2, tag3]
 ---
 ```
 
-## Important Paths
+## Important Paths (This Repo)
 
-- `/api/` - Vercel API endpoints
+- `/api/` - Vercel API endpoints (all use Upstash Redis)
 - `/src/tools/` - MCP tool implementations
-- `/web/` - Dashboard frontend
+- `/web/` - Dashboard frontend (static HTML/JS)
+- `/cloudflare-do/` - Durable Objects workers
 - `/docs/` - Documentation
 - `/skills/` - Curated skills library (see below)
 
@@ -460,9 +496,9 @@ GET /api/tools-test?action=list
 
 **Failures:** Auto-posted to group chat for immediate team visibility.
 
-## ProductBoard Integration
+## ProductBoard Integration (Piston Labs Product Planning)
 
-ProductBoard is our source of truth for product features and roadmap.
+ProductBoard is Piston Labs' source of truth for product features and roadmap. This is a third-party SaaS tool (productboard.com), not part of Hub infrastructure.
 
 ### Quick Reference - Query Actions
 
