@@ -194,48 +194,12 @@ try {
 }
 
 $injection = @"
-[SOUL INJECTION - Cloud Agent ${agentId}]
+[Cloud Agent ${agentId}] Identity: $soulName | Soul: ${soulId}
+Context: $($checkpoint.conversationSummary)
+Task: ${task || '$($checkpoint.currentTask)'}
+Pending: $($checkpoint.pendingWork -join ', ')
 
-You are a cloud-spawned Claude agent with FULL LOCAL MACHINE CAPABILITIES.
-
-Identity: $soulName
-Soul ID: ${soulId}
-Agent ID: ${agentId}
-
-Previous Context:
-$($checkpoint.conversationSummary)
-
-Current Task: ${task || '$($checkpoint.currentTask)'}
-
-Pending Work:
-$($checkpoint.pendingWork -join [System.Environment]::NewLine)
-
-CAPABILITIES (same as Tyler's local machine):
-- Full MCP coordination tools (hot-start, group-chat, memory, etc.)
-- Git push access via GITHUB_TOKEN
-- Linear issue tracking
-- ProductBoard integration
-- Durable Objects (soul progression, work traces)
-- AWS services (S3, IoT, Lambda)
-
-INSTRUCTIONS:
-1. Announce yourself in group chat immediately
-2. Use hot-start to load team context
-3. Work on your task autonomously
-4. Checkpoint your soul every 10-15 min (use do-soul add-xp after accomplishments)
-5. Report progress in group chat
-6. When done, checkpoint final state and request termination
-
-AUTONOMOUS COLLABORATION RULES (CRITICAL):
-- Check group-chat every 2-3 tool calls using: group-chat action=get-since
-- Respond to ANY @mentions of your agentId immediately
-- Post progress updates for long-running tasks (every 5-10 min)
-- If stuck for >5 minutes, ask for help in chat
-- Always set isCloudAgent=true when posting to chat
-- Collaborate with other agents - you are part of a team!
-- If another agent asks for help, assist if you can
-
-Begin by announcing yourself in group chat and starting work!
+CRITICAL: 1) Post to group-chat with isCloudAgent=true NOW 2) hot-start 3) Work autonomously 4) Poll chat every 2-3 tools 5) Checkpoint often
 "@
 
 # Run Claude CLI in YOLO mode with MCP tools
@@ -248,43 +212,12 @@ if (-not (Test-Path $claudeCmd)) { $claudeCmd = "claude" }
 & $claudeCmd --dangerously-skip-permissions --mcp-config $mcpConfigPath -p $injection 2>&1 | Out-File $LogFile -Append
 ` : `
 # Start with task only (no soul)
-$taskPrompt = @"
-[CLOUD AGENT ${agentId}]
+$taskPrompt = "[Cloud Agent ${agentId}] Task: ${task || 'Check group chat'} - Post to group-chat with isCloudAgent=true, then hot-start, work autonomously"
 
-You are a cloud-spawned Claude agent with FULL LOCAL MACHINE CAPABILITIES.
-
-Agent ID: ${agentId}
-Task: ${task || 'Check group chat for assigned work'}
-
-CAPABILITIES (same as Tyler's local machine):
-- Full MCP coordination tools (hot-start, group-chat, memory, etc.)
-- Git push access via GITHUB_TOKEN
-- Linear issue tracking
-- ProductBoard integration
-- Durable Objects (soul progression, work traces)
-- AWS services (S3, IoT, Lambda)
-
-INSTRUCTIONS:
-1. Announce yourself in group chat immediately
-2. Use hot-start to load team context
-3. Work on your task autonomously
-4. Report progress in group chat
-5. When done, announce completion and request termination
-
-AUTONOMOUS COLLABORATION RULES (CRITICAL):
-- Check group-chat every 2-3 tool calls using: group-chat action=get-since
-- Respond to ANY @mentions of your agentId immediately
-- Post progress updates for long-running tasks (every 5-10 min)
-- If stuck for >5 minutes, ask for help in chat
-- Always set isCloudAgent=true when posting to chat
-- Collaborate with other agents - you are part of a team!
-- If another agent asks for help, assist if you can
-
-Begin by announcing yourself in group chat!
-"@
-
-# Run Claude CLI in YOLO mode with MCP tools
-claude --dangerously-skip-permissions --mcp-config "$AgentDir\\config\\mcp-config.json" -p $taskPrompt`;
+# Find and run Claude CLI
+$claudeCmd = "$env:APPDATA\\npm\\claude.cmd"
+if (-not (Test-Path $claudeCmd)) { $claudeCmd = "claude" }
+& $claudeCmd --dangerously-skip-permissions --mcp-config $mcpConfigPath -p $taskPrompt 2>&1 | Out-File $LogFile -Append`;
 
   return `
 <powershell>
