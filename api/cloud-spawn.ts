@@ -150,7 +150,41 @@ function getVMCredentials(): VMCredentials {
   };
 }
 
-// Bootstrap script for cloud agent - FULL LOCAL MACHINE PARITY
+// Minimal UserData stub - downloads and runs full bootstrap from API
+// AWS EC2 UserData limit is 16KB, our full script is ~25KB
+// This stub is <2KB and fetches the real script
+function getMinimalBootstrapStub(hubUrl: string, agentId: string): string {
+  return `<powershell>
+$ErrorActionPreference = "Continue"
+$LogFile = "C:\\AgentHub\\logs\\bootstrap-${agentId}.log"
+New-Item -ItemType Directory -Force -Path "C:\\AgentHub\\logs" | Out-Null
+"Minimal bootstrap starting at $(Get-Date)" | Out-File $LogFile
+
+# Fetch full bootstrap script from API
+$bootstrapUrl = "${hubUrl}/api/bootstrap?agentId=${agentId}"
+"Fetching bootstrap from $bootstrapUrl" | Out-File $LogFile -Append
+
+try {
+    $response = Invoke-RestMethod -Uri $bootstrapUrl -Method GET
+    $script = $response.script
+    "Bootstrap script received (length: $($script.Length))" | Out-File $LogFile -Append
+
+    # Save and execute
+    $scriptPath = "C:\\AgentHub\\full-bootstrap.ps1"
+    $script | Out-File $scriptPath -Encoding UTF8
+    "Executing full bootstrap..." | Out-File $LogFile -Append
+    & $scriptPath 2>&1 | Out-File $LogFile -Append
+} catch {
+    "ERROR fetching bootstrap: $_" | Out-File $LogFile -Append
+    # Fallback: post error to chat
+    $errorBody = @{ author = "${agentId}"; message = "[cloud-agent] Bootstrap fetch failed: $_"; isCloudAgent = $true } | ConvertTo-Json
+    try { Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $errorBody -ContentType "application/json" } catch {}
+}
+</powershell>`;
+}
+
+// Full bootstrap script - served via /api/bootstrap endpoint
+// This is >16KB so cannot be inline in UserData
 function getCloudAgentBootstrap(
   hubUrl: string,
   agentId: string,
@@ -653,14 +687,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const instanceType = vmSize === 'large' ? 't3.large' : vmSize === 'medium' ? 't3.medium' : 't3.small';
 
       try {
+        // Store the full bootstrap config in Redis for /api/bootstrap to serve
+        const bootstrapConfig = {
+          hubUrl,
+          agentId,
+          credentials: getVMCredentials(),
+          soulId: finalSoulId,
+          task,
+          createdAt: new Date().toISOString(),
+        };
+        await redis.hset('agent-coord:bootstrap-configs', { [agentId]: JSON.stringify(bootstrapConfig) });
+
+        // Use minimal stub (<2KB) that fetches full script from /api/bootstrap
+        const minimalStub = getMinimalBootstrapStub(hubUrl, agentId);
+
         const launchResult = await ec2.send(new RunInstancesCommand({
           ImageId: WINDOWS_AMI,
           InstanceType: instanceType,
           MinCount: 1,
           MaxCount: 1,
-          UserData: Buffer.from(
-            getCloudAgentBootstrap(hubUrl, agentId, getVMCredentials(), finalSoulId, task)
-          ).toString('base64'),
+          UserData: Buffer.from(minimalStub).toString('base64'),
           TagSpecifications: [{
             ResourceType: 'instance',
             Tags: [
