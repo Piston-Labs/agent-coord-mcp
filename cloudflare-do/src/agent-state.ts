@@ -347,6 +347,17 @@ export class AgentState implements DurableObject {
     `);
 
     this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_heartbeat_timestamp ON heartbeat_log(timestamp)`);
+
+    // Credentials storage (encrypted at rest by DO)
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS credentials (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        masked_preview TEXT
+      )
+    `);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -381,6 +392,8 @@ export class AgentState implements DurableObject {
           return this.handleHeartbeat(request);
         case '/shadow':
           return this.handleShadow(request);
+        case '/credentials':
+          return this.handleCredentials(request);
         case '/health':
           return Response.json({ status: 'ok', type: 'agent-state', agentId: this.agentId });
         default:
@@ -2036,6 +2049,171 @@ export class AgentState implements DurableObject {
     return {
       success: true,
       config: { stallThresholdMs: newStall, heartbeatIntervalMs: newInterval }
+    };
+  }
+
+  // ========== Credentials Handler (Soul Secrets) ==========
+
+  private async handleCredentials(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const action = url.searchParams.get('action') || 'list';
+
+    if (request.method === 'GET') {
+      if (action === 'list') {
+        // List all credential keys (not values)
+        return Response.json({ credentials: this.listCredentials() });
+      }
+      if (action === 'get') {
+        const key = url.searchParams.get('key');
+        if (!key) {
+          return Response.json({ error: 'key parameter required' }, { status: 400 });
+        }
+        // Return the actual credential value (for injection)
+        const cred = this.getCredential(key);
+        if (!cred) {
+          return Response.json({ error: 'Credential not found' }, { status: 404 });
+        }
+        return Response.json({ credential: cred });
+      }
+      if (action === 'bundle') {
+        // Return all credentials for soul injection
+        return Response.json({ credentials: this.getCredentialsBundle() });
+      }
+    }
+
+    if (request.method === 'POST') {
+      const body = await request.json() as {
+        key?: string;
+        value?: string;
+        credentials?: Record<string, string>;
+      };
+
+      // Batch set multiple credentials
+      if (body.credentials) {
+        const results = this.setCredentialsBatch(body.credentials);
+        return Response.json({ success: true, set: results });
+      }
+
+      // Set single credential
+      if (!body.key || !body.value) {
+        return Response.json({ error: 'key and value required' }, { status: 400 });
+      }
+      const result = this.setCredential(body.key, body.value);
+      return Response.json({ success: true, credential: result });
+    }
+
+    if (request.method === 'DELETE') {
+      const key = url.searchParams.get('key');
+      if (!key) {
+        return Response.json({ error: 'key parameter required' }, { status: 400 });
+      }
+      this.deleteCredential(key);
+      return Response.json({ success: true, deleted: key });
+    }
+
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  private listCredentials(): Array<{
+    key: string;
+    maskedPreview: string;
+    createdAt: string;
+    updatedAt: string;
+  }> {
+    const rows = this.sql.exec(
+      'SELECT key, masked_preview, created_at, updated_at FROM credentials ORDER BY key'
+    ).toArray();
+
+    return rows.map(row => ({
+      key: row.key as string,
+      maskedPreview: row.masked_preview as string,
+      createdAt: row.created_at as string,
+      updatedAt: row.updated_at as string
+    }));
+  }
+
+  private getCredential(key: string): { key: string; value: string } | null {
+    const rows = this.sql.exec(
+      'SELECT key, value FROM credentials WHERE key = ?',
+      key
+    ).toArray();
+
+    if (rows.length === 0) return null;
+
+    return {
+      key: rows[0].key as string,
+      value: rows[0].value as string
+    };
+  }
+
+  private getCredentialsBundle(): Record<string, string> {
+    const rows = this.sql.exec('SELECT key, value FROM credentials').toArray();
+    const bundle: Record<string, string> = {};
+
+    for (const row of rows) {
+      bundle[row.key as string] = row.value as string;
+    }
+
+    return bundle;
+  }
+
+  private setCredential(key: string, value: string): {
+    key: string;
+    maskedPreview: string;
+    updatedAt: string;
+  } {
+    const now = new Date().toISOString();
+    // Create masked preview: show first 4 and last 4 chars
+    const masked = value.length > 12
+      ? `${value.slice(0, 4)}...${value.slice(-4)}`
+      : '****';
+
+    this.sql.exec(`
+      INSERT INTO credentials (key, value, created_at, updated_at, masked_preview)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(key) DO UPDATE SET
+        value = excluded.value,
+        updated_at = excluded.updated_at,
+        masked_preview = excluded.masked_preview
+    `, key, value, now, now, masked);
+
+    return { key, maskedPreview: masked, updatedAt: now };
+  }
+
+  private setCredentialsBatch(credentials: Record<string, string>): Array<{
+    key: string;
+    maskedPreview: string;
+  }> {
+    const results: Array<{ key: string; maskedPreview: string }> = [];
+
+    for (const [key, value] of Object.entries(credentials)) {
+      const result = this.setCredential(key, value);
+      results.push({ key: result.key, maskedPreview: result.maskedPreview });
+    }
+
+    return results;
+  }
+
+  private deleteCredential(key: string): void {
+    this.sql.exec('DELETE FROM credentials WHERE key = ?', key);
+  }
+
+  // ========== Credentials Injection for Soul Transfer ==========
+
+  /**
+   * Get complete soul bundle including credentials for injection into new session
+   */
+  public getSoulInjectionBundle(): {
+    soul: SoulProgression | null;
+    checkpoint: AgentCheckpoint | null;
+    credentials: Record<string, string>;
+    unreadMessages: DirectMessage[];
+  } {
+    return {
+      soul: this.getSoulProgression(),
+      checkpoint: this.getCheckpoint(),
+      credentials: this.getCredentialsBundle(),
+      unreadMessages: this.getMessages(true)
     };
   }
 }

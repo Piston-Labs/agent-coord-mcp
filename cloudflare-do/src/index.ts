@@ -75,6 +75,7 @@ export default {
             '/agent/:agentId/trace/:sessionId/resolve-escalation': 'Resolve escalation - POST',
             '/agent/:agentId/trace/:sessionId/escalations': 'Get trace escalations - GET',
             '/agent/:agentId/soul': 'Soul progression - GET/POST/PATCH',
+            '/agent/:agentId/credentials': 'Soul credentials - GET (list/get/bundle), POST (set), DELETE',
             '/agent/:agentId/dashboard': 'Agent self-dashboard - GET (aggregated view)',
             '/lock/:resourcePath/*': 'Resource locking - check, lock, unlock',
             '/health': 'Health check'
