@@ -7,11 +7,12 @@ import {
   TerminateInstancesCommand,
   StartInstancesCommand,
   StopInstancesCommand,
+  _InstanceType,
 } from '@aws-sdk/client-ec2';
-import type { _InstanceType } from '@aws-sdk/client-ec2';
 import {
   SSMClient,
   SendCommandCommand,
+  GetCommandInvocationCommand,
 } from '@aws-sdk/client-ssm';
 
 /**
@@ -89,7 +90,7 @@ node agent-spawn-service-v2.cjs 2>&1 | Out-File $LogFile -Append
 `;
 
 // Full bootstrap script for base Windows (installs everything)
-const getBootstrapScript = (apiKey: string, hubUrl: string, githubToken?: string) => `
+const getBootstrapScript = (apiKey: string, hubUrl: string) => `
 <powershell>
 # Enable TLS 1.2
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -97,11 +98,10 @@ const getBootstrapScript = (apiKey: string, hubUrl: string, githubToken?: string
 # Create directories
 $AgentDir = "C:\\AgentHub"
 New-Item -ItemType Directory -Force -Path $AgentDir
-New-Item -ItemType Directory -Force -Path "$AgentDir\\logs"
 Set-Location $AgentDir
 
 # Log start
-$LogFile = "$AgentDir\\logs\\bootstrap-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
+$LogFile = "$AgentDir\\bootstrap.log"
 "Bootstrap started at $(Get-Date)" | Out-File $LogFile
 
 # Install Chocolatey
@@ -113,101 +113,42 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocola
 # Install Node.js and Git
 "Installing Node.js and Git..." | Out-File $LogFile -Append
 choco install nodejs-lts git -y
+refreshenv
 
-# Refresh PATH from registry (refreshenv doesn't work in UserData scripts)
-$machinePath = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-$userPath = [System.Environment]::GetEnvironmentVariable("Path","User")
-$nodePath = "C:\\Program Files\\nodejs"
-$gitPath = "C:\\Program Files\\Git\\bin"
-$env:Path = "$machinePath;$userPath;$nodePath;$gitPath"
-
-# Configure npm for SYSTEM user context
-# SYSTEM user has a different profile path than regular users
-$npmGlobalDir = "C:\\AgentHub\\npm-global"
-$npmCacheDir = "C:\\AgentHub\\npm-cache"
-New-Item -ItemType Directory -Force -Path $npmGlobalDir | Out-Null
-New-Item -ItemType Directory -Force -Path $npmCacheDir | Out-Null
-
-# Set npm prefix and cache to our controlled directories
-"Configuring npm for SYSTEM user..." | Out-File $LogFile -Append
-npm config set prefix "$npmGlobalDir" 2>&1 | Out-File $LogFile -Append
-npm config set cache "$npmCacheDir" 2>&1 | Out-File $LogFile -Append
-
-# Add npm global bin to PATH for current session
-$env:Path = "$env:Path;$npmGlobalDir"
+# Add to PATH for this session
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 
 # Install Claude Code CLI
 "Installing Claude Code CLI..." | Out-File $LogFile -Append
-npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
-
-# Verify Claude CLI is installed and add to PATH permanently
-$claudePath = "$npmGlobalDir\\claude.cmd"
-if (Test-Path $claudePath) {
-    "Claude CLI installed successfully at $claudePath" | Out-File $LogFile -Append
-} else {
-    "WARNING: Claude CLI not found at $claudePath, checking alternate locations..." | Out-File $LogFile -Append
-    # Try to find claude anywhere
-    $found = Get-ChildItem -Path "C:\\" -Recurse -Filter "claude.cmd" -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($found) {
-        "Found claude at: $($found.FullName)" | Out-File $LogFile -Append
-        $npmGlobalDir = $found.DirectoryName
-    }
-}
-
-# Add npm global to Machine PATH permanently (for scheduled task and future sessions)
-$currentPath = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-if ($currentPath -notlike "*$npmGlobalDir*") {
-    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$npmGlobalDir", "Machine")
-    "Added npm global dir to PATH permanently" | Out-File $LogFile -Append
-}
+npm install -g @anthropic-ai/claude-code
 
 # Clone repo
 "Cloning agent-coord-mcp..." | Out-File $LogFile -Append
-git clone https://github.com/Piston-Labs/agent-coord-mcp.git 2>&1 | Out-File $LogFile -Append
+git clone https://github.com/Piston-Labs/agent-coord-mcp.git
 Set-Location agent-coord-mcp
-npm install 2>&1 | Out-File $LogFile -Append
+npm install
 
 # Set environment variables
 [Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "${apiKey}", "Machine")
 [Environment]::SetEnvironmentVariable("AGENT_HUB_URL", "${hubUrl}", "Machine")
-$env:ANTHROPIC_API_KEY = "${apiKey}"
-$env:AGENT_HUB_URL = "${hubUrl}"
-${githubToken ? `
-[Environment]::SetEnvironmentVariable("GITHUB_TOKEN", "${githubToken}", "Machine")
-$env:GITHUB_TOKEN = "${githubToken}"
-# Configure git to use token for pushing
-git config --global credential.helper store
-"https://x-access-token:${githubToken}@github.com" | Out-File "$env:USERPROFILE\\.git-credentials" -Encoding UTF8
-` : ''}
 
-# Create startup script (using single quotes to avoid escaping issues)
-$StartScript = @'
-# Load environment variables
-$env:ANTHROPIC_API_KEY = [Environment]::GetEnvironmentVariable("ANTHROPIC_API_KEY", "Machine")
-$env:GITHUB_TOKEN = [Environment]::GetEnvironmentVariable("GITHUB_TOKEN", "Machine")
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-
-# Navigate to repo
-Set-Location C:\AgentHub\agent-coord-mcp
-
-# Log startup
-$logFile = "C:\AgentHub\logs\service-$(Get-Date -Format 'yyyyMMdd').log"
-"Service starting at $(Get-Date)" | Out-File $logFile -Append
-
-# Start spawn service
-node agent-spawn-service-v2.cjs 2>&1 | Out-File $logFile -Append
-'@
-$StartScript | Out-File "$AgentDir\\start-service.ps1" -Encoding UTF8
+# Create startup script
+$StartScript = @"
+Set-Location C:\\AgentHub\\agent-coord-mcp
+\$env:ANTHROPIC_API_KEY = [Environment]::GetEnvironmentVariable("ANTHROPIC_API_KEY", "Machine")
+node agent-spawn-service-v2.cjs
+"@
+$StartScript | Out-File "$AgentDir\\start-service.ps1"
 
 # Create scheduled task to start on boot
-$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\\AgentHub\\start-service.ps1"
+$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-File C:\\AgentHub\\start-service.ps1"
 $Trigger = New-ScheduledTaskTrigger -AtStartup
 $Principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -RunLevel Highest
 Register-ScheduledTask -TaskName "AgentHubService" -Action $Action -Trigger $Trigger -Principal $Principal -Force
 
 # Start the service now
 "Starting agent service..." | Out-File $LogFile -Append
-Start-Process PowerShell -ArgumentList "-ExecutionPolicy Bypass -File C:\\AgentHub\\start-service.ps1" -WindowStyle Hidden
+Start-Process PowerShell -ArgumentList "-File C:\\AgentHub\\start-service.ps1" -WindowStyle Hidden
 
 # Signal completion
 "Bootstrap complete at $(Get-Date)" | Out-File $LogFile -Append
@@ -343,7 +284,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           UserData: Buffer.from(
             GOLDEN_AMI
               ? getGoldenBootScript(apiKey, hubUrl, soulId, task)
-              : getBootstrapScript(apiKey, hubUrl, process.env.GITHUB_TOKEN)
+              : getBootstrapScript(apiKey, hubUrl)
           ).toString('base64'),
           TagSpecifications: [{
             ResourceType: 'instance',
@@ -648,117 +589,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // === SOUL TRANSFER TO EXISTING VM ===
-    if (action === 'transfer-soul' && req.method === 'POST') {
-      if (!vmId || typeof vmId !== 'string') {
-        return res.status(400).json({ error: 'vmId required' });
-      }
-
-      const { soulId, killExisting = false } = req.body;
-      if (!soulId) {
-        return res.status(400).json({ error: 'soulId required' });
-      }
-
-      const raw = await redis.hget(VMS_KEY, vmId);
-      if (!raw) {
-        return res.status(404).json({ error: 'VM not found' });
-      }
-
-      const vm: AWSVM = typeof raw === 'string' ? JSON.parse(raw) : raw;
-
-      if (vm.status !== 'ready' && vm.status !== 'running') {
-        return res.status(400).json({ error: 'VM not ready for soul transfer', currentStatus: vm.status });
-      }
-
-      const ssm = getSSMClient(vm.region);
-      const newAgentId = `soul-${soulId.substring(0, 8)}-${Date.now().toString(36)}`;
-      const hubUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'https://agent-coord-mcp.vercel.app';
-
-      try {
-        // Build transfer command
-        let transferCommand = `
-Set-Location C:\\AgentHub\\agent-coord-mcp
-$env:ANTHROPIC_API_KEY = [Environment]::GetEnvironmentVariable("ANTHROPIC_API_KEY", "Machine")
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-`;
-
-        // Optionally kill existing Claude processes
-        if (killExisting) {
-          transferCommand += `
-# Kill any existing claude processes
-Get-Process -Name "claude*" -ErrorAction SilentlyContinue | Stop-Process -Force
-Start-Sleep -Seconds 2
-`;
-        }
-
-        // Fetch and inject soul
-        transferCommand += `
-# Fetch soul bundle
-$uri = "${hubUrl}/api/souls?action=get-bundle"
-$uri = $uri + "&soulId=${soulId}"
-$response = Invoke-RestMethod -Uri $uri -Method GET
-$bundle = $response.bundle
-
-# Create injection prompt
-$injection = @"
-[SOUL INJECTION - You are being restored from a checkpoint]
-
-Identity: $($bundle.identity.name)
-Soul ID: ${soulId}
-Body ID: ${newAgentId}
-VM: ${vmId}
-
-Previous Context:
-$($bundle.checkpoint.conversationSummary)
-
-Current Task: $($bundle.checkpoint.currentTask)
-
-Pending Work:
-$($bundle.checkpoint.pendingWork -join "\`n")
-
-Recent Context:
-$($bundle.checkpoint.recentContext)
-
-You have been transferred to a new body. Continue where you left off.
-Announce your return in group chat and resume work.
-"@
-
-# Start Claude with soul injection
-$injection | claude --dangerously-skip-permissions --mcp-config mcp-config.json
-`;
-
-        await ssm.send(new SendCommandCommand({
-          InstanceIds: [vm.instanceId],
-          DocumentName: 'AWS-RunPowerShellScript',
-          Parameters: { commands: [transferCommand] },
-          TimeoutSeconds: 300,
-        }));
-
-        // Update VM state
-        vm.activeAgents.push(newAgentId);
-        await redis.hset(VMS_KEY, { [vmId]: JSON.stringify(vm) });
-
-        // Notify group chat
-        await postToChat(`[soul-transfer] 🔄 Soul **${soulId}** transferred to VM ${vmId} as agent **${newAgentId}**${killExisting ? ' (killed existing agents)' : ''}`);
-
-        return res.json({
-          success: true,
-          agentId: newAgentId,
-          vmId,
-          soulId,
-          message: 'Soul transfer initiated. Agent should check in to group chat shortly.',
-        });
-
-      } catch (ssmError: any) {
-        return res.status(500).json({
-          error: 'Failed to transfer soul via SSM',
-          details: ssmError.message,
-        });
-      }
-    }
-
     // === PRICING INFO ===
     if (action === 'pricing' && req.method === 'GET') {
       return res.json({
@@ -774,7 +604,7 @@ $injection | claude --dangerously-skip-permissions --mcp-config mcp-config.json
 
     return res.status(400).json({
       error: 'Invalid action',
-      validActions: ['provision', 'list', 'status', 'stop', 'start', 'terminate', 'spawn-agent', 'transfer-soul', 'pricing'],
+      validActions: ['provision', 'list', 'status', 'stop', 'start', 'terminate', 'spawn-agent', 'pricing'],
     });
 
   } catch (error: any) {
