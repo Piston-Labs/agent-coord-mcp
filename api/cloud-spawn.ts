@@ -233,7 +233,10 @@ Begin by announcing yourself in group chat and starting work!
 # --dangerously-skip-permissions = YOLO mode (no permission prompts)
 # --mcp-config = Load our coordination MCP server
 # -p = Pass the initial prompt
-claude --dangerously-skip-permissions --mcp-config "$AgentDir\\config\\mcp-config.json" -p $injection
+$claudeCmd = "$env:APPDATA\\npm\\claude.cmd"
+if (-not (Test-Path $claudeCmd)) { $claudeCmd = "claude" }
+"Running: $claudeCmd --dangerously-skip-permissions --mcp-config $mcpConfigPath" | Out-File $LogFile -Append
+& $claudeCmd --dangerously-skip-permissions --mcp-config $mcpConfigPath -p $injection 2>&1 | Out-File $LogFile -Append
 ` : `
 # Start with task only (no soul)
 $taskPrompt = @"
@@ -409,29 +412,36 @@ npm run build 2>&1 | Out-File $LogFile -Append
 # STEP 5: Create MCP Config
 # ==============================================================================
 
-$mcpConfig = @"
-{
-  "mcpServers": {
-    "agent-coord": {
-      "command": "node",
-      "args": ["$($RepoDir.Replace('\\','\\\\'))\\\\dist\\\\index.js"],
-      "env": {
-        "UPSTASH_REDIS_REST_URL": "${credentials.UPSTASH_REDIS_REST_URL}",
-        "UPSTASH_REDIS_REST_TOKEN": "${credentials.UPSTASH_REDIS_REST_TOKEN}",
-        "DO_URL": "${credentials.DO_URL || ''}",
-        "GITHUB_TOKEN": "${credentials.GITHUB_TOKEN || ''}",
-        "LINEAR_API_KEY": "${credentials.LINEAR_API_KEY || ''}",
-        "AWS_ACCESS_KEY_ID": "${credentials.AWS_ACCESS_KEY_ID || ''}",
-        "AWS_SECRET_ACCESS_KEY": "${credentials.AWS_SECRET_ACCESS_KEY || ''}",
-        "AWS_REGION": "${credentials.AWS_REGION || 'us-west-1'}",
-        "ANTHROPIC_API_KEY": "${credentials.ANTHROPIC_API_KEY}"
-      }
+# Build MCP config with proper escaping
+$mcpConfigContent = @{
+    mcpServers = @{
+        "agent-coord" = @{
+            command = "node"
+            args = @("$RepoDir\\dist\\index.js")
+            env = @{
+                UPSTASH_REDIS_REST_URL = "${credentials.UPSTASH_REDIS_REST_URL}"
+                UPSTASH_REDIS_REST_TOKEN = "${credentials.UPSTASH_REDIS_REST_TOKEN}"
+                DO_URL = "${credentials.DO_URL || ''}"
+                GITHUB_TOKEN = "${credentials.GITHUB_TOKEN || ''}"
+                LINEAR_API_KEY = "${credentials.LINEAR_API_KEY || ''}"
+                AWS_ACCESS_KEY_ID = "${credentials.AWS_ACCESS_KEY_ID || ''}"
+                AWS_SECRET_ACCESS_KEY = "${credentials.AWS_SECRET_ACCESS_KEY || ''}"
+                AWS_REGION = "${credentials.AWS_REGION || 'us-west-1'}"
+                ANTHROPIC_API_KEY = "${credentials.ANTHROPIC_API_KEY}"
+            }
+        }
     }
-  }
 }
-"@
-$mcpConfig | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
-"MCP config written" | Out-File $LogFile -Append
+$mcpConfigContent | ConvertTo-Json -Depth 10 | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
+"MCP config written to $AgentDir\\config\\mcp-config.json" | Out-File $LogFile -Append
+
+# Verify MCP config was created
+if (Test-Path "$AgentDir\\config\\mcp-config.json") {
+    "MCP config file exists" | Out-File $LogFile -Append
+    Get-Content "$AgentDir\\config\\mcp-config.json" | Out-File $LogFile -Append
+} else {
+    "ERROR: MCP config file not created!" | Out-File $LogFile -Append
+}
 
 # ==============================================================================
 # STEP 6: Announce Ready & Start Agent
@@ -440,21 +450,58 @@ $mcpConfig | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
 "Announcing to group chat..." | Out-File $LogFile -Append
 $chatBody = @{
     author = "${agentId}"
-    message = "[cloud-agent] ☁️ I'm online! Running on AWS EC2 with FULL credentials. Ready for autonomous work."
+    message = "[cloud-agent] Bootstrap complete. Starting Claude CLI with MCP tools..."
     isCloudAgent = $true
 } | ConvertTo-Json
 
 try {
     Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $chatBody -ContentType "application/json"
-    "Posted to group chat" | Out-File $LogFile -Append
+    "Posted bootstrap status to chat" | Out-File $LogFile -Append
 } catch {
     "Failed to post to chat: $_" | Out-File $LogFile -Append
 }
 
+# Refresh PATH to include npm global packages
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";$env:APPDATA\\npm"
+
+# Verify Claude CLI is installed
+"Checking Claude CLI installation..." | Out-File $LogFile -Append
+$claudePath = Get-Command claude -ErrorAction SilentlyContinue
+if ($claudePath) {
+    "Claude CLI found at: $($claudePath.Source)" | Out-File $LogFile -Append
+} else {
+    "Claude CLI not in PATH, trying npm global path..." | Out-File $LogFile -Append
+    $claudePath = "$env:APPDATA\\npm\\claude.cmd"
+    if (Test-Path $claudePath) {
+        "Found Claude at: $claudePath" | Out-File $LogFile -Append
+    } else {
+        "ERROR: Claude CLI not found! Attempting reinstall..." | Out-File $LogFile -Append
+        npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
+    }
+}
+
 # Start Claude CLI with the task/soul
-"Starting Claude CLI..." | Out-File $LogFile -Append
+"Starting Claude CLI in YOLO mode..." | Out-File $LogFile -Append
 Set-Location $RepoDir
+
+# Use full path to claude and capture any errors
+$mcpConfigPath = "$AgentDir\\config\\mcp-config.json"
+"Using MCP config: $mcpConfigPath" | Out-File $LogFile -Append
+
+try {
 ${soulInjection}
+} catch {
+    "ERROR running Claude CLI: $_" | Out-File $LogFile -Append
+    # Post error to chat
+    $errorBody = @{
+        author = "${agentId}"
+        message = "[cloud-agent] ERROR: Claude CLI failed to start - $_"
+        isCloudAgent = $true
+    } | ConvertTo-Json
+    try {
+        Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $errorBody -ContentType "application/json"
+    } catch {}
+}
 
 "Cloud agent ${agentId} finished at $(Get-Date)" | Out-File $LogFile -Append
 </powershell>
