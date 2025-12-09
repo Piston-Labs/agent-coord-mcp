@@ -112,6 +112,48 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ issue: data.issue });
       }
 
+      // List users
+      if (action === 'users') {
+        const data = await linearQuery(`
+          query Users {
+            users {
+              nodes {
+                id
+                name
+                email
+                displayName
+                active
+              }
+            }
+          }
+        `);
+
+        return res.json({
+          users: data.users.nodes,
+          count: data.users.nodes.length
+        });
+      }
+
+      // List labels
+      if (action === 'labels') {
+        const data = await linearQuery(`
+          query Labels {
+            issueLabels {
+              nodes {
+                id
+                name
+                color
+              }
+            }
+          }
+        `);
+
+        return res.json({
+          labels: data.issueLabels.nodes,
+          count: data.issueLabels.nodes.length
+        });
+      }
+
       // List teams
       if (action === 'teams') {
         const data = await linearQuery(`
@@ -253,6 +295,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           success: data.issueUpdate.success,
           issue: data.issueUpdate.issue,
           message: 'Issue updated'
+        });
+      }
+
+      // Create label
+      if (action === 'create-label') {
+        const { name, color } = req.body;
+        if (!teamId || !name) {
+          return res.status(400).json({
+            error: 'teamId and name required for creating label'
+          });
+        }
+
+        const labelInput: Record<string, unknown> = {
+          name,
+          teamId,
+        };
+        if (color) labelInput.color = color;
+
+        const data = await linearQuery(`
+          mutation CreateLabel($input: IssueLabelCreateInput!) {
+            issueLabelCreate(input: $input) {
+              success
+              issueLabel {
+                id
+                name
+                color
+              }
+            }
+          }
+        `, { input: labelInput });
+
+        return res.json({
+          success: data.issueLabelCreate.success,
+          label: data.issueLabelCreate.issueLabel,
+          message: 'Label created'
         });
       }
 
