@@ -717,7 +717,7 @@ $($bundle.checkpoint.conversationSummary)
 Current Task: $($bundle.checkpoint.currentTask)
 
 Pending Work:
-$($bundle.checkpoint.pendingWork -join "`n")
+$($bundle.checkpoint.pendingWork -join "\`n")
 
 Recent Context:
 $($bundle.checkpoint.recentContext)
