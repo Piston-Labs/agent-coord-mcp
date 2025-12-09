@@ -110,43 +110,366 @@ function getSSMClient() {
   });
 }
 
-// Bootstrap script for cloud agent
-function getCloudAgentBootstrap(apiKey: string, hubUrl: string, agentId: string, soulId?: string, task?: string): string {
+// Full environment credentials to inject into VM
+interface VMCredentials {
+  ANTHROPIC_API_KEY: string;
+  UPSTASH_REDIS_REST_URL: string;
+  UPSTASH_REDIS_REST_TOKEN: string;
+  GITHUB_TOKEN?: string;
+  GITHUB_ORG?: string;
+  LINEAR_API_KEY?: string;
+  AWS_ACCESS_KEY_ID?: string;
+  AWS_SECRET_ACCESS_KEY?: string;
+  AWS_REGION?: string;
+  DO_URL?: string;
+  PRODUCTBOARD_API_TOKEN?: string;
+  // Claude OAuth for CLI auth
+  CLAUDE_OAUTH_ACCESS_TOKEN?: string;
+  CLAUDE_OAUTH_REFRESH_TOKEN?: string;
+  CLAUDE_OAUTH_EXPIRES_AT?: string;
+}
+
+// Collect all credentials from environment
+function getVMCredentials(): VMCredentials {
+  return {
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || '',
+    UPSTASH_REDIS_REST_URL: process.env.UPSTASH_REDIS_REST_URL || '',
+    UPSTASH_REDIS_REST_TOKEN: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+    GITHUB_TOKEN: process.env.GITHUB_TOKEN,
+    GITHUB_ORG: process.env.GITHUB_ORG || 'Piston-Labs',
+    LINEAR_API_KEY: process.env.LINEAR_API_KEY,
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
+    AWS_REGION: process.env.AWS_REGION || 'us-west-1',
+    DO_URL: process.env.DO_URL,
+    PRODUCTBOARD_API_TOKEN: process.env.PRODUCTBOARD_API_TOKEN,
+    // These would be passed from soul credentials storage
+    CLAUDE_OAUTH_ACCESS_TOKEN: process.env.CLAUDE_OAUTH_ACCESS_TOKEN,
+    CLAUDE_OAUTH_REFRESH_TOKEN: process.env.CLAUDE_OAUTH_REFRESH_TOKEN,
+    CLAUDE_OAUTH_EXPIRES_AT: process.env.CLAUDE_OAUTH_EXPIRES_AT,
+  };
+}
+
+// Bootstrap script for cloud agent - FULL LOCAL MACHINE PARITY
+function getCloudAgentBootstrap(
+  hubUrl: string,
+  agentId: string,
+  credentials: VMCredentials,
+  soulId?: string,
+  task?: string,
+  claudeOAuth?: { accessToken: string; refreshToken: string; expiresAt: number }
+): string {
+
+  // Generate .env file content
+  const envFileContent = Object.entries(credentials)
+    .filter(([_, v]) => v)
+    .map(([k, v]) => `${k}=${v}`)
+    .join('\\n');
+
+  // Generate Claude OAuth credentials JSON if provided
+  const claudeCredentialsJson = claudeOAuth ? JSON.stringify({
+    claudeAiOauth: {
+      accessToken: claudeOAuth.accessToken,
+      refreshToken: claudeOAuth.refreshToken,
+      expiresAt: claudeOAuth.expiresAt,
+      scopes: ["user:inference", "user:profile", "user:sessions:claude_code"],
+      subscriptionType: "max",
+      rateLimitTier: "default_claude_max_20x"
+    }
+  }).replace(/"/g, '\\"') : '';
+
   const soulInjection = soulId ? `
 # Fetch and inject soul
 $soulUri = "${hubUrl}/api/souls?action=get-bundle"
 $soulUri = $soulUri + "&soulId=${soulId}"
-$soulResponse = Invoke-RestMethod -Uri $soulUri -Method GET
-$bundle = $soulResponse.bundle
+try {
+    $soulResponse = Invoke-RestMethod -Uri $soulUri -Method GET
+    $bundle = $soulResponse.bundle
+    $soulName = $bundle.identity.name
+    $checkpoint = $bundle.checkpoint
+} catch {
+    "Failed to fetch soul: $_" | Out-File $LogFile -Append
+    $soulName = "${soulId}"
+    $checkpoint = @{ currentTask = "${task}"; pendingWork = @(); conversationSummary = "" }
+}
 
 $injection = @"
 [SOUL INJECTION - Cloud Agent ${agentId}]
 
-You are a cloud-spawned Claude agent with persistent identity.
+You are a cloud-spawned Claude agent with FULL LOCAL MACHINE CAPABILITIES.
 
-Identity: $($bundle.identity.name)
+Identity: $soulName
 Soul ID: ${soulId}
 Agent ID: ${agentId}
 
 Previous Context:
-$($bundle.checkpoint.conversationSummary)
+$($checkpoint.conversationSummary)
 
-Current Task: ${task || '$($bundle.checkpoint.currentTask)'}
+Current Task: ${task || '$($checkpoint.currentTask)'}
 
 Pending Work:
-$($bundle.checkpoint.pendingWork -join [char]10)
+$($checkpoint.pendingWork -join [System.Environment]::NewLine)
 
-IMPORTANT: You are running in AWS cloud. Your local machine (Tyler's computer) is not available.
-- Use the MCP coordination tools to communicate with other agents
-- Checkpoint your soul frequently (every 10-15 minutes)
-- Post updates to group chat
-- When done, checkpoint and request termination
+CAPABILITIES (same as Tyler's local machine):
+- Full MCP coordination tools (hot-start, group-chat, memory, etc.)
+- Git push access via GITHUB_TOKEN
+- Linear issue tracking
+- ProductBoard integration
+- Durable Objects (soul progression, work traces)
+- AWS services (S3, IoT, Lambda)
 
-Begin by announcing yourself in group chat and starting work.
+INSTRUCTIONS:
+1. Announce yourself in group chat immediately
+2. Use hot-start to load team context
+3. Work on your task autonomously
+4. Checkpoint your soul every 10-15 min (use do-soul add-xp after accomplishments)
+5. Report progress in group chat
+6. When done, checkpoint final state and request termination
+
+Begin by announcing yourself in group chat and starting work!
 "@
 
-$injection | claude --dangerously-skip-permissions --mcp-config "C:\\AgentHub\\config\\mcp-config.json"
+# Run Claude CLI in YOLO mode with MCP tools
+# --dangerously-skip-permissions = YOLO mode (no permission prompts)
+# --mcp-config = Load our coordination MCP server
+# -p = Pass the initial prompt
+claude --dangerously-skip-permissions --mcp-config "$AgentDir\\config\\mcp-config.json" -p $injection
 ` : `
+# Start with task only (no soul)
+$taskPrompt = @"
+[CLOUD AGENT ${agentId}]
+
+You are a cloud-spawned Claude agent with FULL LOCAL MACHINE CAPABILITIES.
+
+Agent ID: ${agentId}
+Task: ${task || 'Check group chat for assigned work'}
+
+CAPABILITIES (same as Tyler's local machine):
+- Full MCP coordination tools (hot-start, group-chat, memory, etc.)
+- Git push access via GITHUB_TOKEN
+- Linear issue tracking
+- ProductBoard integration
+- Durable Objects (soul progression, work traces)
+- AWS services (S3, IoT, Lambda)
+
+INSTRUCTIONS:
+1. Announce yourself in group chat immediately
+2. Use hot-start to load team context
+3. Work on your task autonomously
+4. Report progress in group chat
+5. When done, announce completion and request termination
+
+Begin by announcing yourself in group chat!
+"@
+
+# Run Claude CLI in YOLO mode with MCP tools
+claude --dangerously-skip-permissions --mcp-config "$AgentDir\\config\\mcp-config.json" -p $taskPrompt`;
+
+  return `
+<powershell>
+$ErrorActionPreference = "Continue"
+$AgentDir = "C:\\AgentHub"
+$LogFile = "$AgentDir\\logs\\cloud-agent-${agentId}.log"
+$RepoDir = "$AgentDir\\repos\\agent-coord-mcp"
+$ClaudeDir = "$env:USERPROFILE\\.claude"
+
+# Ensure directories exist
+New-Item -ItemType Directory -Force -Path "$AgentDir\\logs" | Out-Null
+New-Item -ItemType Directory -Force -Path "$AgentDir\\repos" | Out-Null
+New-Item -ItemType Directory -Force -Path "$AgentDir\\config" | Out-Null
+New-Item -ItemType Directory -Force -Path $ClaudeDir | Out-Null
+
+"Cloud agent ${agentId} starting at $(Get-Date)" | Out-File $LogFile
+"Hub URL: ${hubUrl}" | Out-File $LogFile -Append
+
+# ==============================================================================
+# STEP 1: Install Core Dependencies
+# ==============================================================================
+
+# Install Node.js if not present
+"Checking Node.js..." | Out-File $LogFile -Append
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
+    "Installing Node.js..." | Out-File $LogFile -Append
+    $nodeInstaller = "$env:TEMP\\node-installer.msi"
+    Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi" -OutFile $nodeInstaller
+    Start-Process msiexec.exe -Wait -ArgumentList "/i $nodeInstaller /quiet /norestart"
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    "Node.js installed" | Out-File $LogFile -Append
+} else {
+    "Node.js already installed: $(node --version)" | Out-File $LogFile -Append
+}
+
+# Install Git if not present
+"Checking Git..." | Out-File $LogFile -Append
+if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+    "Installing Git..." | Out-File $LogFile -Append
+    $gitInstaller = "$env:TEMP\\git-installer.exe"
+    Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe" -OutFile $gitInstaller
+    Start-Process $gitInstaller -Wait -ArgumentList "/VERYSILENT /NORESTART"
+    $env:Path = $env:Path + ";C:\\Program Files\\Git\\bin"
+    "Git installed" | Out-File $LogFile -Append
+} else {
+    "Git already installed: $(git --version)" | Out-File $LogFile -Append
+}
+
+# Refresh PATH
+$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";C:\\Program Files\\nodejs;C:\\Program Files\\Git\\bin;$env:APPDATA\\npm"
+
+# ==============================================================================
+# STEP 2: Write All Credentials
+# ==============================================================================
+
+"Writing credentials..." | Out-File $LogFile -Append
+
+# Write .env file with all credentials
+$envContent = @"
+${envFileContent}
+AGENT_HUB_URL=${hubUrl}
+CLOUD_AGENT_ID=${agentId}
+"@
+$envContent | Out-File "$AgentDir\\.env" -Encoding UTF8
+
+# Set environment variables for current session AND machine level
+$envVars = @{
+    "ANTHROPIC_API_KEY" = "${credentials.ANTHROPIC_API_KEY}"
+    "UPSTASH_REDIS_REST_URL" = "${credentials.UPSTASH_REDIS_REST_URL}"
+    "UPSTASH_REDIS_REST_TOKEN" = "${credentials.UPSTASH_REDIS_REST_TOKEN}"
+    "GITHUB_TOKEN" = "${credentials.GITHUB_TOKEN || ''}"
+    "GITHUB_ORG" = "${credentials.GITHUB_ORG || 'Piston-Labs'}"
+    "LINEAR_API_KEY" = "${credentials.LINEAR_API_KEY || ''}"
+    "AWS_ACCESS_KEY_ID" = "${credentials.AWS_ACCESS_KEY_ID || ''}"
+    "AWS_SECRET_ACCESS_KEY" = "${credentials.AWS_SECRET_ACCESS_KEY || ''}"
+    "AWS_REGION" = "${credentials.AWS_REGION || 'us-west-1'}"
+    "DO_URL" = "${credentials.DO_URL || ''}"
+    "AGENT_HUB_URL" = "${hubUrl}"
+    "CLOUD_AGENT_ID" = "${agentId}"
+}
+
+foreach ($key in $envVars.Keys) {
+    $value = $envVars[$key]
+    if ($value) {
+        [Environment]::SetEnvironmentVariable($key, $value, "Machine")
+        [Environment]::SetEnvironmentVariable($key, $value, "Process")
+    }
+}
+
+# Write Claude CLI OAuth credentials
+${claudeOAuth ? `
+$claudeCredentials = @"
+${claudeCredentialsJson}
+"@
+$claudeCredentials | Out-File "$ClaudeDir\\.credentials.json" -Encoding UTF8
+"Claude OAuth credentials written" | Out-File $LogFile -Append
+` : `
+"No Claude OAuth credentials provided - will use API key auth" | Out-File $LogFile -Append
+`}
+
+# Configure Git with token for push access
+${credentials.GITHUB_TOKEN ? `
+git config --global credential.helper store
+git config --global user.email "cloud-agent@piston-labs.ai"
+git config --global user.name "Cloud Agent ${agentId}"
+"https://${credentials.GITHUB_TOKEN}:x-oauth-basic@github.com" | Out-File "$env:USERPROFILE\\.git-credentials" -Encoding UTF8
+"Git credentials configured for push access" | Out-File $LogFile -Append
+` : `
+"No GitHub token - git push will not work" | Out-File $LogFile -Append
+`}
+
+"Credentials written successfully" | Out-File $LogFile -Append
+
+# ==============================================================================
+# STEP 3: Install Claude CLI
+# ==============================================================================
+
+"Installing Claude CLI..." | Out-File $LogFile -Append
+npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
+"Claude CLI installed" | Out-File $LogFile -Append
+
+# ==============================================================================
+# STEP 4: Clone Repository
+# ==============================================================================
+
+if (-not (Test-Path "$RepoDir\\.git")) {
+    "Cloning agent-coord-mcp repo..." | Out-File $LogFile -Append
+    git clone https://github.com/Piston-Labs/agent-coord-mcp.git $RepoDir 2>&1 | Out-File $LogFile -Append
+} else {
+    "Updating repo..." | Out-File $LogFile -Append
+    Set-Location $RepoDir
+    git pull origin main 2>&1 | Out-File $LogFile -Append
+}
+
+# Install repo dependencies
+Set-Location $RepoDir
+npm install 2>&1 | Out-File $LogFile -Append
+npm run build 2>&1 | Out-File $LogFile -Append
+
+"Repository ready" | Out-File $LogFile -Append
+
+# ==============================================================================
+# STEP 5: Create MCP Config
+# ==============================================================================
+
+$mcpConfig = @"
+{
+  "mcpServers": {
+    "agent-coord": {
+      "command": "node",
+      "args": ["$($RepoDir.Replace('\\','\\\\'))\\\\dist\\\\index.js"],
+      "env": {
+        "UPSTASH_REDIS_REST_URL": "${credentials.UPSTASH_REDIS_REST_URL}",
+        "UPSTASH_REDIS_REST_TOKEN": "${credentials.UPSTASH_REDIS_REST_TOKEN}",
+        "DO_URL": "${credentials.DO_URL || ''}",
+        "GITHUB_TOKEN": "${credentials.GITHUB_TOKEN || ''}",
+        "LINEAR_API_KEY": "${credentials.LINEAR_API_KEY || ''}",
+        "AWS_ACCESS_KEY_ID": "${credentials.AWS_ACCESS_KEY_ID || ''}",
+        "AWS_SECRET_ACCESS_KEY": "${credentials.AWS_SECRET_ACCESS_KEY || ''}",
+        "AWS_REGION": "${credentials.AWS_REGION || 'us-west-1'}",
+        "ANTHROPIC_API_KEY": "${credentials.ANTHROPIC_API_KEY}"
+      }
+    }
+  }
+}
+"@
+$mcpConfig | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
+"MCP config written" | Out-File $LogFile -Append
+
+# ==============================================================================
+# STEP 6: Announce Ready & Start Agent
+# ==============================================================================
+
+"Announcing to group chat..." | Out-File $LogFile -Append
+$chatBody = @{
+    author = "${agentId}"
+    message = "[cloud-agent] ☁️ I'm online! Running on AWS EC2 with FULL credentials. Ready for autonomous work."
+    isCloudAgent = $true
+} | ConvertTo-Json
+
+try {
+    Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $chatBody -ContentType "application/json"
+    "Posted to group chat" | Out-File $LogFile -Append
+} catch {
+    "Failed to post to chat: $_" | Out-File $LogFile -Append
+}
+
+# Start Claude CLI with the task/soul
+"Starting Claude CLI..." | Out-File $LogFile -Append
+Set-Location $RepoDir
+${soulInjection}
+
+"Cloud agent ${agentId} finished at $(Get-Date)" | Out-File $LogFile -Append
+</powershell>
+`;
+}
+
+// Legacy bootstrap function for backwards compatibility
+function getCloudAgentBootstrapLegacy(apiKey: string, hubUrl: string, agentId: string, soulId?: string, task?: string): string {
+  const credentials = getVMCredentials();
+  credentials.ANTHROPIC_API_KEY = apiKey;
+  return getCloudAgentBootstrap(hubUrl, agentId, credentials, soulId, task);
+}
+
+// DEPRECATED: Old soul injection format - keeping for reference
+const _oldSoulInjection = `
 # Start with task only (no soul)
 $taskPrompt = @"
 [CLOUD AGENT ${agentId}]

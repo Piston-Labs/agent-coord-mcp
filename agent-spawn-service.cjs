@@ -14,9 +14,12 @@ const http = require('http');
 const { spawn, exec } = require('child_process');
 const url = require('url');
 
-const PORT = 3847; // Unique port for spawn service
-const AGENT_DIR = 'C:\\Users\\tyler\\Desktop\\agent-coord-mcp';
-const API_BASE = 'https://agent-coord-mcp.vercel.app';
+const PORT = process.env.SPAWN_SERVICE_PORT || 3847;
+// Support both local dev and cloud VM paths
+const AGENT_DIR = process.env.AGENT_DIR || 'C:\\Users\\tyler\\Desktop\\agent-coord-mcp';
+const MCP_CONFIG_PATH = process.env.MCP_CONFIG_PATH || 'mcp-config.json';
+const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+const IS_CLOUD_VM = process.env.HOST_VM_ID ? true : false;
 
 // Track spawned agents
 const spawnedAgents = new Map();
@@ -25,15 +28,58 @@ function log(msg) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-// Spawn a new Claude agent
-async function spawnAgent(agentId, task) {
+// Build the agent prompt for YOLO mode
+function buildAgentPrompt(agentId, task, soulId) {
+  const basePrompt = `[AGENT ${agentId}]
+
+You are a Claude agent running in YOLO mode with FULL CAPABILITIES.
+
+Agent ID: ${agentId}
+Task: ${task || 'Check group chat for assigned work'}
+${soulId ? `Soul ID: ${soulId}` : ''}
+${IS_CLOUD_VM ? 'Environment: AWS Cloud VM' : 'Environment: Local Machine'}
+
+CAPABILITIES:
+- Full MCP coordination tools (hot-start, group-chat, memory, etc.)
+- Git push access via GITHUB_TOKEN
+- Linear issue tracking
+- ProductBoard integration
+- Durable Objects (soul progression, work traces)
+- AWS services (S3, IoT, Lambda)
+
+INSTRUCTIONS:
+1. Run hot-start to load team context immediately
+2. Announce yourself in group chat
+3. Work on your task autonomously
+4. Report progress in group chat periodically
+5. When done, announce completion
+
+Begin by running hot-start and announcing yourself!`;
+
+  return basePrompt;
+}
+
+// Spawn a new Claude agent in YOLO mode
+async function spawnAgent(agentId, task, soulId) {
   const id = agentId || `agent-${Date.now().toString(36)}`;
-  
+
   log(`Spawning agent: ${id}${task ? ` with task: ${task}` : ''}`);
-  
-  // Use Start-Process to spawn in a new window
-  const psCommand = `Start-Process cmd -ArgumentList '/k', 'cd /d ${AGENT_DIR} && claude --dangerously-skip-permissions --mcp-config mcp-config.json'`;
-  
+
+  // Build the prompt for the agent
+  const prompt = buildAgentPrompt(id, task, soulId);
+
+  // Escape the prompt for PowerShell (replace double quotes and newlines)
+  const escapedPrompt = prompt
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '`n')
+    .replace(/\$/g, '`$');
+
+  // Use Start-Process to spawn in a new window with the task prompt
+  // --dangerously-skip-permissions = YOLO mode (auto-approve all tool calls)
+  // --mcp-config = Load our coordination MCP server
+  // -p = Initial prompt with task
+  const psCommand = `Start-Process cmd -ArgumentList '/k', 'cd /d ${AGENT_DIR} && claude --dangerously-skip-permissions --mcp-config ${MCP_CONFIG_PATH} -p "${escapedPrompt}"'`;
+
   return new Promise((resolve, reject) => {
     exec(`powershell -Command "${psCommand}"`, (error, stdout, stderr) => {
       if (error) {
@@ -41,20 +87,22 @@ async function spawnAgent(agentId, task) {
         reject(error);
         return;
       }
-      
+
       const spawnInfo = {
         id,
         task: task || 'general',
+        soulId: soulId || null,
         spawnedAt: new Date().toISOString(),
-        status: 'running'
+        status: 'running',
+        isCloudVM: IS_CLOUD_VM
       };
-      
+
       spawnedAgents.set(id, spawnInfo);
-      
+
       // Register with the hub
       registerAgent(id, task);
-      
-      log(`Agent ${id} spawned successfully`);
+
+      log(`Agent ${id} spawned successfully in YOLO mode`);
       resolve(spawnInfo);
     });
   });
@@ -134,12 +182,12 @@ const server = http.createServer(async (req, res) => {
   }
   
   try {
-    // POST /spawn - Spawn a new agent
+    // POST /spawn - Spawn a new agent in YOLO mode
     if (path === '/spawn' && req.method === 'POST') {
       const body = await parseBody(req);
-      const { agentId, task, requestedBy } = body;
-      
-      const result = await spawnAgent(agentId, task);
+      const { agentId, task, requestedBy, soulId } = body;
+
+      const result = await spawnAgent(agentId, task, soulId);
       
       // Notify chat
       if (requestedBy) {

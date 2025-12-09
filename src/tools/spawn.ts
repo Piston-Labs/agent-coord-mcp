@@ -367,4 +367,180 @@ export function registerSpawnTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // VM-POOL TOOL - Manage persistent Agent Host VMs
+  // ============================================================================
+
+  server.tool(
+    'vm-pool',
+    'Manage persistent cloud VMs that host agents. Create a host VM once, then spawn agents instantly. VMs have full credentials like your local machine.',
+    {
+      action: z.enum(['list', 'create', 'spawn', 'stop', 'start', 'terminate']).describe(
+        'list=show all VMs, create=boot new host VM, spawn=spawn agent on existing VM (instant!), stop/start=hibernate VM, terminate=destroy VM'
+      ),
+      vmId: z.string().optional().describe('VM ID for stop/start/terminate/spawn actions'),
+      vmSize: z.enum(['small', 'medium', 'large']).optional().describe('For create: small=$0.02/hr, medium=$0.04/hr, large=$0.08/hr'),
+      agentId: z.string().optional().describe('For spawn: ID for the new agent'),
+      task: z.string().optional().describe('For spawn: Task for the agent'),
+      soulId: z.string().optional().describe('For spawn: Soul to inject'),
+      requestedBy: z.string().describe('Your agent ID'),
+    },
+    async (args) => {
+      const { action, vmId, vmSize, agentId, task, soulId, requestedBy } = args;
+
+      try {
+        let response: Response;
+        let data: any;
+
+        switch (action) {
+          case 'list':
+            response = await fetch(`${API_BASE}/api/vm-pool`);
+            data = await response.json();
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  vms: data.vms,
+                  summary: data.summary,
+                  readyForSpawn: data.readyForSpawn,
+                  tip: data.readyForSpawn
+                    ? 'Use action=spawn to instantly create agents on ready VMs'
+                    : 'Use action=create to boot a new host VM first'
+                }, null, 2)
+              }]
+            };
+
+          case 'create':
+            response = await fetch(`${API_BASE}/api/vm-pool`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ vmSize: vmSize || 'medium' })
+            });
+            data = await response.json();
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: data.success,
+                  message: '🖥️ Host VM provisioning started!',
+                  vm: data.vm,
+                  estimatedReadyMinutes: data.estimatedReadyMinutes,
+                  nextSteps: data.nextSteps,
+                  tip: 'Once ready, use action=spawn for instant agent creation'
+                }, null, 2)
+              }]
+            };
+
+          case 'spawn':
+            if (!task && !soulId) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: 'Either task or soulId required for spawn'
+                  }, null, 2)
+                }]
+              };
+            }
+            response = await fetch(`${API_BASE}/api/vm-pool?action=spawn`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ agentId, task, soulId, targetVmId: vmId })
+            });
+            data = await response.json();
+
+            if (!response.ok) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify({
+                    error: data.error,
+                    tip: data.tip || 'Create a host VM first with action=create'
+                  }, null, 2)
+                }]
+              };
+            }
+
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: true,
+                  message: '🚀 Agent spawned INSTANTLY on cloud VM!',
+                  agent: data.agent,
+                  hostVM: data.hostVM,
+                  spawnTime: 'instant (< 1 second)'
+                }, null, 2)
+              }]
+            };
+
+          case 'stop':
+          case 'start':
+            if (!vmId) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify({ error: 'vmId required for stop/start' }, null, 2)
+                }]
+              };
+            }
+            response = await fetch(`${API_BASE}/api/vm-pool?action=${action}&vmId=${vmId}`, {
+              method: 'PATCH'
+            });
+            data = await response.json();
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: data.success,
+                  message: `VM ${vmId} ${action}ping...`,
+                  vm: data.vm
+                }, null, 2)
+              }]
+            };
+
+          case 'terminate':
+            if (!vmId) {
+              return {
+                content: [{
+                  type: 'text',
+                  text: JSON.stringify({ error: 'vmId required for terminate' }, null, 2)
+                }]
+              };
+            }
+            response = await fetch(`${API_BASE}/api/vm-pool?vmId=${vmId}`, {
+              method: 'DELETE'
+            });
+            data = await response.json();
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({
+                  success: data.success,
+                  message: `🛑 VM ${vmId} terminated`,
+                  vm: data.vm
+                }, null, 2)
+              }]
+            };
+
+          default:
+            return {
+              content: [{
+                type: 'text',
+                text: JSON.stringify({ error: `Unknown action: ${action}` }, null, 2)
+              }]
+            };
+        }
+      } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({ error: errMsg }, null, 2)
+          }]
+        };
+      }
+    }
+  );
 }
