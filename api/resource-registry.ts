@@ -580,7 +580,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (allTools.length > 0) {
           md += '## MCP Tools\n\n';
-          const categories = [...new Set(allTools.map(t => t.category))];
+          const categories = Array.from(new Set(allTools.map(t => t.category)));
           for (const cat of categories) {
             md += `### ${cat.charAt(0).toUpperCase() + cat.slice(1)}\n\n`;
             for (const tool of allTools.filter(t => t.category === cat)) {
@@ -621,7 +621,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         tools: {
           count: allTools.length,
           items: allTools,
-          categories: [...new Set(allTools.map(t => t.category))]
+          categories: Array.from(new Set(allTools.map(t => t.category)))
         },
         integrations: {
           count: allIntegrations.length,
