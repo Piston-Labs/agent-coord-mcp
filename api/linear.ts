@@ -256,6 +256,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      // Create project
+      if (action === 'create-project') {
+        if (!teamId || !title) {
+          return res.status(400).json({
+            error: 'teamId and title required for creating project'
+          });
+        }
+
+        const projectInput: Record<string, unknown> = {
+          name: title,
+          teamIds: [teamId],
+        };
+        if (description) projectInput.description = description;
+
+        const data = await linearQuery(`
+          mutation CreateProject($input: ProjectCreateInput!) {
+            projectCreate(input: $input) {
+              success
+              project {
+                id
+                name
+                url
+              }
+            }
+          }
+        `, { input: projectInput });
+
+        return res.json({
+          success: data.projectCreate.success,
+          project: data.projectCreate.project,
+          message: 'Project created'
+        });
+      }
+
       // Create new issue
       if (!teamId || !title) {
         return res.status(400).json({
