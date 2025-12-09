@@ -7,8 +7,8 @@ import {
   TerminateInstancesCommand,
   StartInstancesCommand,
   StopInstancesCommand,
-  _InstanceType,
 } from '@aws-sdk/client-ec2';
+import type { _InstanceType } from '@aws-sdk/client-ec2';
 import {
   SSMClient,
   SendCommandCommand,
