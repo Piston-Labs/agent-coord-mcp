@@ -468,136 +468,7 @@ function getCloudAgentBootstrapLegacy(apiKey: string, hubUrl: string, agentId: s
   return getCloudAgentBootstrap(hubUrl, agentId, credentials, soulId, task);
 }
 
-// DEPRECATED: Old soul injection format - keeping for reference
-const _oldSoulInjection = `
-# Start with task only (no soul)
-$taskPrompt = @"
-[CLOUD AGENT ${agentId}]
-
-You are a cloud-spawned Claude agent running in AWS.
-
-Task: ${task || 'No specific task - check group chat for work'}
-
-IMPORTANT: You are running in AWS cloud. Your local machine (Tyler's computer) is not available.
-- Use the MCP coordination tools to communicate with other agents
-- Post updates to group chat regularly
-- When done, announce completion and request termination
-
-Begin by announcing yourself in group chat and starting work.
-"@
-
-$taskPrompt | claude --dangerously-skip-permissions --mcp-config "C:\\AgentHub\\config\\mcp-config.json"
-`;
-
-  return `
-<powershell>
-$ErrorActionPreference = "Continue"
-$AgentDir = "C:\\AgentHub"
-$LogFile = "$AgentDir\\logs\\cloud-agent-${agentId}.log"
-$RepoDir = "$AgentDir\\repos\\agent-coord-mcp"
-
-# Ensure directories exist
-New-Item -ItemType Directory -Force -Path "$AgentDir\\logs" | Out-Null
-New-Item -ItemType Directory -Force -Path "$AgentDir\\repos" | Out-Null
-New-Item -ItemType Directory -Force -Path "$AgentDir\\config" | Out-Null
-
-"Cloud agent ${agentId} starting at $(Get-Date)" | Out-File $LogFile
-
-# Set environment variables
-[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "${apiKey}", "Machine")
-[Environment]::SetEnvironmentVariable("AGENT_HUB_URL", "${hubUrl}", "Machine")
-[Environment]::SetEnvironmentVariable("CLOUD_AGENT_ID", "${agentId}", "Machine")
-$env:ANTHROPIC_API_KEY = "${apiKey}"
-$env:AGENT_HUB_URL = "${hubUrl}"
-
-# Install Node.js if not present
-"Checking Node.js..." | Out-File $LogFile -Append
-if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    "Installing Node.js..." | Out-File $LogFile -Append
-    $nodeInstaller = "$env:TEMP\\node-installer.msi"
-    Invoke-WebRequest -Uri "https://nodejs.org/dist/v20.10.0/node-v20.10.0-x64.msi" -OutFile $nodeInstaller
-    Start-Process msiexec.exe -Wait -ArgumentList "/i $nodeInstaller /quiet /norestart"
-    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-    "Node.js installed" | Out-File $LogFile -Append
-} else {
-    "Node.js already installed: $(node --version)" | Out-File $LogFile -Append
-}
-
-# Install Git if not present
-"Checking Git..." | Out-File $LogFile -Append
-if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
-    "Installing Git..." | Out-File $LogFile -Append
-    $gitInstaller = "$env:TEMP\\git-installer.exe"
-    Invoke-WebRequest -Uri "https://github.com/git-for-windows/git/releases/download/v2.43.0.windows.1/Git-2.43.0-64-bit.exe" -OutFile $gitInstaller
-    Start-Process $gitInstaller -Wait -ArgumentList "/VERYSILENT /NORESTART"
-    $env:Path = $env:Path + ";C:\\Program Files\\Git\\bin"
-    "Git installed" | Out-File $LogFile -Append
-} else {
-    "Git already installed: $(git --version)" | Out-File $LogFile -Append
-}
-
-# Refresh PATH
-$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User") + ";C:\\Program Files\\nodejs;C:\\Program Files\\Git\\bin"
-
-# Install Claude CLI globally
-"Installing Claude CLI..." | Out-File $LogFile -Append
-npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
-$env:Path = $env:Path + ";$env:APPDATA\\npm"
-"Claude CLI installed" | Out-File $LogFile -Append
-
-# Clone or update repo
-if (-not (Test-Path "$RepoDir\\.git")) {
-    "Cloning agent-coord-mcp repo..." | Out-File $LogFile -Append
-    git clone https://github.com/Piston-Labs/agent-coord-mcp.git $RepoDir 2>&1 | Out-File $LogFile -Append
-} else {
-    "Updating repo..." | Out-File $LogFile -Append
-    Set-Location $RepoDir
-    git pull origin main 2>&1 | Out-File $LogFile -Append
-}
-
-# Install repo dependencies
-Set-Location $RepoDir
-npm install 2>&1 | Out-File $LogFile -Append
-
-# Create MCP config for Claude CLI
-$mcpConfig = @"
-{
-  "mcpServers": {
-    "agent-coord": {
-      "command": "node",
-      "args": ["$($RepoDir.Replace('\\','\\\\'))\\\\dist\\\\index.js"],
-      "env": {
-        "UPSTASH_REDIS_REST_URL": "https://usw1-driving-manatee-34638.upstash.io",
-        "UPSTASH_REDIS_REST_TOKEN": "YOUR_TOKEN_HERE"
-      }
-    }
-  }
-}
-"@
-$mcpConfig | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
-
-# Announce to group chat that we're ready
-"Announcing to group chat..." | Out-File $LogFile -Append
-$chatBody = @{
-    author = "${agentId}"
-    message = "[cloud-agent] I'm online! Running on AWS EC2 in us-west-1. Ready for tasks."
-} | ConvertTo-Json
-
-try {
-    Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $chatBody -ContentType "application/json"
-    "Posted to group chat" | Out-File $LogFile -Append
-} catch {
-    "Failed to post to chat: $_" | Out-File $LogFile -Append
-}
-
-# Run Claude CLI with task
-"Starting Claude CLI..." | Out-File $LogFile -Append
-${soulInjection}
-
-"Cloud agent ${agentId} finished at $(Get-Date)" | Out-File $LogFile -Append
-</powershell>
-`;
-}
+// Legacy code removed - see getCloudAgentBootstrap for current implementation
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -748,7 +619,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           MinCount: 1,
           MaxCount: 1,
           UserData: Buffer.from(
-            getCloudAgentBootstrap(apiKey, hubUrl, agentId, finalSoulId, task)
+            getCloudAgentBootstrap(hubUrl, agentId, getVMCredentials(), finalSoulId, task)
           ).toString('base64'),
           TagSpecifications: [{
             ResourceType: 'instance',
