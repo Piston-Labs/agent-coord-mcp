@@ -6,8 +6,28 @@
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
+import * as os from 'os';
+import * as crypto from 'crypto';
 
 const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+/**
+ * Generate a machine fingerprint for identity binding.
+ * Uses hostname + username + platform to create a unique ID for this machine.
+ * This allows the same agent to resume identity across sessions.
+ */
+function getMachineFingerprint(): string {
+  const hostname = os.hostname();
+  const username = os.userInfo().username;
+  const platform = os.platform();
+  const homeDir = os.homedir();
+
+  // Create a stable hash from machine characteristics
+  const raw = `${hostname}:${username}:${platform}:${homeDir}`;
+  const hash = crypto.createHash('sha256').update(raw).digest('hex').substring(0, 16);
+
+  return `machine-${hash}`;
+}
 
 export function registerOrchestrationTools(server: McpServer) {
   // ============================================================================
@@ -16,24 +36,55 @@ export function registerOrchestrationTools(server: McpServer) {
 
   server.tool(
     'hot-start',
-    'Load all context instantly for zero cold start. Returns checkpoint, team status, chat, memories, tips.',
+    'Load all context instantly for zero cold start. Returns checkpoint, team status, chat, memories, tips. Automatically uses machine fingerprint for identity persistence.',
     {
-      agentId: z.string().describe('Your agent ID'),
+      agentId: z.string().optional().describe('Your agent ID (optional if machine has bound identity)'),
       role: z.enum(['general', 'technical', 'product', 'sales', 'coordination']).optional().describe('Role for optimized memory filtering'),
       repo: z.string().optional().describe('Repository ID to load context for'),
-      include: z.string().optional().describe('Comma-separated list: checkpoint,team,chat,context,memories,repo,metrics')
+      include: z.string().optional().describe('Comma-separated list: checkpoint,team,chat,context,memories,repo,metrics'),
+      bindIdentity: z.boolean().optional().describe('Set to true to bind this agentId to this machine for future sessions')
     },
     async (args) => {
-      const { agentId, role = 'general', repo, include } = args;
+      const { agentId, role = 'general', repo, include, bindIdentity } = args;
+
+      // Generate machine fingerprint for identity resolution
+      const machineId = getMachineFingerprint();
 
       try {
+        // Build params - machineId is always sent for identity resolution
+        const params = new URLSearchParams();
+        params.append('machineId', machineId);
+        if (agentId) params.append('agentId', agentId);
+        if (role) params.append('role', role);
+        if (repo) params.append('repo', repo);
+        if (include) params.append('include', include);
+        if (bindIdentity) params.append('bindIdentity', 'true');
+
+        const res = await fetch(`${API_BASE}/api/hot-start?${params}`);
+        const data = await res.json();
+
+        // If we got an error about missing agentId, provide helpful guidance
+        if (data.error) {
+          return {
+            content: [{
+              type: 'text',
+              text: JSON.stringify({
+                error: data.error,
+                tip: data.tip,
+                machineId,
+                suggestion: 'Call hot-start with agentId and bindIdentity=true to bind your identity to this machine'
+              }, null, 2)
+            }]
+          };
+        }
+
         // Register agent with API so they show in web dashboard sidebar
         try {
           await fetch(`${API_BASE}/api/agents`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              id: agentId,
+              id: data.agentId,
               status: 'active',
               currentTask: 'Starting up (hot-start)',
               role: role
@@ -43,16 +94,10 @@ export function registerOrchestrationTools(server: McpServer) {
           // Ignore registration errors, continue with hot-start
         }
 
-        const params = new URLSearchParams({ agentId });
-        if (role) params.append('role', role);
-        if (repo) params.append('repo', repo);
-        if (include) params.append('include', include);
-
-        const res = await fetch(`${API_BASE}/api/hot-start?${params}`);
-        const data = await res.json();
-
         // Format a helpful summary
         const summary = {
+          agentId: data.agentId,
+          identity: data.identity,  // Include identity resolution info
           loadTime: `${data.loadTime}ms`,
           hasCheckpoint: !!data.checkpoint,
           activeAgents: data.activeAgents?.length || 0,
@@ -77,7 +122,7 @@ export function registerOrchestrationTools(server: McpServer) {
           }]
         };
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error), machineId }) }] };
       }
     }
   );

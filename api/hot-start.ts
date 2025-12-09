@@ -20,6 +20,7 @@ const LOCKS_KEY = 'agent-coord:resource-locks';
 const ZONES_KEY = 'agent-coord:zones';
 const CLAIMS_KEY = 'agent-coord:claims';
 const SOULS_KEY = 'agent-coord:souls';  // For meta-learning integration
+const MACHINE_IDENTITY_KEY = 'agent-coord:machine-identity';  // Machine -> AgentId bindings
 
 // Durable Objects URL for soul progression
 const DO_URL = process.env.DO_URL || 'http://localhost:8787';
@@ -101,6 +102,14 @@ interface HotStartResponse {
   agentId: string;
   timestamp: string;
   loadTime: number;  // milliseconds
+
+  // Identity binding info (for machine-based identity persistence)
+  identity?: {
+    resolvedFromMachine: boolean;  // true if agentId was resolved from machineId
+    machineId?: string;            // the machine fingerprint used
+    boundAt?: string;              // when this machine was bound to this agentId
+    message: string;               // human-readable identity status
+  };
 
   // Agent's previous state
   checkpoint?: any;
@@ -206,13 +215,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
 
   try {
-    const { agentId, include, role, repo } = req.query;
+    const { agentId, include, role, repo, machineId, bindIdentity } = req.query;
 
-    if (!agentId) {
-      return res.status(400).json({ error: 'agentId required' });
+    // Machine identity resolution: if machineId provided, look up bound agentId
+    let resolvedAgentId = agentId as string | undefined;
+    let identityBound = false;
+
+    if (machineId && typeof machineId === 'string') {
+      // Try to resolve machineId to agentId
+      const boundAgentId = await redis.hget(MACHINE_IDENTITY_KEY, machineId);
+      if (boundAgentId && typeof boundAgentId === 'string') {
+        resolvedAgentId = boundAgentId;
+        identityBound = true;
+      } else if (agentId && bindIdentity === 'true') {
+        // Bind this machine to the provided agentId
+        await redis.hset(MACHINE_IDENTITY_KEY, { [machineId]: agentId as string });
+        resolvedAgentId = agentId as string;
+        identityBound = true;
+      }
     }
 
-    const agentIdStr = agentId as string;
+    if (!resolvedAgentId) {
+      return res.status(400).json({
+        error: 'agentId required (or provide machineId with bound identity)',
+        tip: 'First call with agentId + machineId + bindIdentity=true to bind, then subsequent calls only need machineId'
+      });
+    }
+
+    const agentIdStr = resolvedAgentId;
     const roleStr = role as string || 'general';
     const repoStr = repo as string;
 
@@ -552,6 +582,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       agentId: agentIdStr,
       timestamp: new Date().toISOString(),
       loadTime: Date.now() - startTime,
+
+      // Include identity info so agents know how their identity was resolved
+      identity: identityBound ? {
+        resolvedFromMachine: true,
+        machineId: machineId as string,
+        message: `Identity '${agentIdStr}' resolved from machine binding. You are ${agentIdStr}.`
+      } : machineId ? {
+        resolvedFromMachine: false,
+        machineId: machineId as string,
+        message: `Machine not bound. Using provided agentId '${agentIdStr}'. Call with bindIdentity=true to persist.`
+      } : {
+        resolvedFromMachine: false,
+        message: `Using provided agentId '${agentIdStr}'. Pass machineId to enable identity persistence.`
+      },
 
       checkpoint: checkpoint ? (typeof checkpoint === 'string' ? JSON.parse(checkpoint) : checkpoint) : undefined,
       previousMetrics: metrics ? (typeof metrics === 'string' ? JSON.parse(metrics) : metrics) : undefined,
