@@ -209,9 +209,11 @@ export function registerSpawnTools(server: McpServer) {
       shadowMode: z.boolean().optional().describe('Spawn as dormant shadow agent that activates on primary stall'),
       shadowFor: z.string().optional().describe('AgentId to shadow (required if shadowMode is true)'),
       stallThresholdMs: z.number().optional().describe('How long without heartbeat = stall in ms (default: 300000 = 5 min)'),
+      // Network test mode
+      networkTest: z.boolean().optional().describe('Minimal network test - just posts to chat, no Claude/Node setup. Use to diagnose connectivity issues.'),
     },
     async (args) => {
-      const { task, soulId, soulName, vmSize = 'small', requestedBy, shadowMode, shadowFor, stallThresholdMs } = args;
+      const { task, soulId, soulName, vmSize = 'small', requestedBy, shadowMode, shadowFor, stallThresholdMs, networkTest } = args;
 
       try {
         const response = await fetch(`${API_BASE}/api/cloud-spawn`, {
@@ -226,6 +228,7 @@ export function registerSpawnTools(server: McpServer) {
             shadowMode,
             shadowFor,
             stallThresholdMs,
+            networkTest,
           })
         });
 

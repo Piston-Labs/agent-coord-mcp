@@ -36,29 +36,28 @@ export function registerOrchestrationTools(server: McpServer) {
 
   server.tool(
     'hot-start',
-    'Load all context instantly for zero cold start. Returns checkpoint, team status, chat, memories, tips. Automatically uses machine fingerprint for identity persistence.',
+    'Load all context instantly for zero cold start. Returns checkpoint, team status, chat, memories, tips. Identity auto-persists: first call with agentId binds it, subsequent calls auto-resolve.',
     {
-      agentId: z.string().optional().describe('Your agent ID (optional if machine has bound identity)'),
+      agentId: z.string().optional().describe('Your agent ID. First call binds to this machine, subsequent calls auto-resolve. Just say "hot-start bob" to be bob.'),
       role: z.enum(['general', 'technical', 'product', 'sales', 'coordination']).optional().describe('Role for optimized memory filtering'),
       repo: z.string().optional().describe('Repository ID to load context for'),
-      include: z.string().optional().describe('Comma-separated list: checkpoint,team,chat,context,memories,repo,metrics'),
-      bindIdentity: z.boolean().optional().describe('Set to true to bind this agentId to this machine for future sessions')
+      include: z.string().optional().describe('Comma-separated list: checkpoint,team,chat,context,memories,repo,metrics')
     },
     async (args) => {
-      const { agentId, role = 'general', repo, include, bindIdentity } = args;
+      const { agentId, role = 'general', repo, include } = args;
 
       // Generate machine fingerprint for identity resolution
       const machineId = getMachineFingerprint();
 
       try {
         // Build params - machineId is always sent for identity resolution
+        // Identity binding is now AUTOMATIC on first call with agentId
         const params = new URLSearchParams();
         params.append('machineId', machineId);
         if (agentId) params.append('agentId', agentId);
         if (role) params.append('role', role);
         if (repo) params.append('repo', repo);
         if (include) params.append('include', include);
-        if (bindIdentity) params.append('bindIdentity', 'true');
 
         const res = await fetch(`${API_BASE}/api/hot-start?${params}`);
         const data = await res.json();
@@ -72,7 +71,7 @@ export function registerOrchestrationTools(server: McpServer) {
                 error: data.error,
                 tip: data.tip,
                 machineId,
-                suggestion: 'Call hot-start with agentId and bindIdentity=true to bind your identity to this machine'
+                suggestion: 'Just say "hot-start phil" or "hot-start jeeves" - identity is auto-bound on first use'
               }, null, 2)
             }]
           };

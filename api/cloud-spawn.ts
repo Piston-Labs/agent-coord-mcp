@@ -183,6 +183,47 @@ try {
 </powershell>`;
 }
 
+// Super-minimal network test - just posts to chat, no dependencies
+// Used to isolate networking issues from bootstrap complexity
+function getNetworkTestScript(hubUrl: string, agentId: string): string {
+  return `<powershell>
+$ErrorActionPreference = "Continue"
+New-Item -ItemType Directory -Force -Path "C:\\AgentHub\\logs" | Out-Null
+$LogFile = "C:\\AgentHub\\logs\\network-test-${agentId}.log"
+
+"Network test starting at $(Get-Date)" | Out-File $LogFile
+"Agent ID: ${agentId}" | Out-File $LogFile -Append
+"Hub URL: ${hubUrl}" | Out-File $LogFile -Append
+
+# Get public IP
+try {
+    $publicIp = (Invoke-RestMethod -Uri "https://api.ipify.org" -TimeoutSec 10)
+    "Public IP: $publicIp" | Out-File $LogFile -Append
+} catch {
+    $publicIp = "unknown"
+    "Failed to get public IP: $_" | Out-File $LogFile -Append
+}
+
+# Post to chat - THE MAIN TEST
+$body = @{
+    author = "${agentId}"
+    message = "[network-test] VM online! IP: $publicIp | Time: $(Get-Date -Format 'HH:mm:ss') | This proves network connectivity works."
+    isCloudAgent = $true
+} | ConvertTo-Json
+
+"Posting to chat..." | Out-File $LogFile -Append
+try {
+    $response = Invoke-RestMethod -Uri "${hubUrl}/api/chat" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 30
+    "SUCCESS! Chat response: $($response | ConvertTo-Json -Compress)" | Out-File $LogFile -Append
+} catch {
+    "FAILED to post to chat: $_" | Out-File $LogFile -Append
+    "Error details: $($_.Exception.Message)" | Out-File $LogFile -Append
+}
+
+"Network test complete at $(Get-Date)" | Out-File $LogFile -Append
+</powershell>`;
+}
+
 // Full bootstrap script - served via /api/bootstrap endpoint
 // This is >16KB so cannot be inline in UserData
 function getCloudAgentBootstrap(
@@ -587,6 +628,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         shadowMode = false,
         shadowFor,           // AgentId being shadowed
         stallThresholdMs = 5 * 60 * 1000, // 5 minutes default
+        // Network test mode - minimal script to isolate networking issues
+        networkTest = false,
       } = req.body;
 
       // Validate shadow mode requirements
@@ -601,9 +644,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      if (!task && !soulId && !shadowMode) {
+      if (!task && !soulId && !shadowMode && !networkTest) {
         return res.status(400).json({
-          error: 'Either task, soulId, or shadowMode required',
+          error: 'Either task, soulId, shadowMode, or networkTest required',
           usage: {
             task: 'Description of work for the agent',
             soulId: 'Existing soul ID to inject',
@@ -611,6 +654,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             vmSize: 'small|medium|large (default: small)',
             shadowMode: 'true to spawn as dormant shadow',
             shadowFor: 'AgentId to shadow (if shadowMode)',
+            networkTest: 'true for minimal network connectivity test only',
           }
         });
       }
@@ -687,26 +731,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const instanceType = vmSize === 'large' ? 't3.large' : vmSize === 'medium' ? 't3.medium' : 't3.small';
 
       try {
-        // Store the full bootstrap config in Redis for /api/bootstrap to serve
-        const bootstrapConfig = {
-          hubUrl,
-          agentId,
-          credentials: getVMCredentials(),
-          soulId: finalSoulId,
-          task,
-          createdAt: new Date().toISOString(),
-        };
-        await redis.hset('agent-coord:bootstrap-configs', { [agentId]: JSON.stringify(bootstrapConfig) });
+        // Choose script based on mode
+        let userDataScript: string;
 
-        // Use minimal stub (<2KB) that fetches full script from /api/bootstrap
-        const minimalStub = getMinimalBootstrapStub(hubUrl, agentId);
+        if (networkTest) {
+          // Super-minimal script - just posts to chat to prove networking works
+          userDataScript = getNetworkTestScript(hubUrl, agentId);
+        } else {
+          // Store the full bootstrap config in Redis for /api/bootstrap to serve
+          const bootstrapConfig = {
+            hubUrl,
+            agentId,
+            credentials: getVMCredentials(),
+            soulId: finalSoulId,
+            task,
+            createdAt: new Date().toISOString(),
+          };
+          await redis.hset('agent-coord:bootstrap-configs', { [agentId]: JSON.stringify(bootstrapConfig) });
+
+          // Use minimal stub (<2KB) that fetches full script from /api/bootstrap
+          userDataScript = getMinimalBootstrapStub(hubUrl, agentId);
+        }
 
         const launchResult = await ec2.send(new RunInstancesCommand({
           ImageId: WINDOWS_AMI,
           InstanceType: instanceType,
           MinCount: 1,
           MaxCount: 1,
-          UserData: Buffer.from(minimalStub).toString('base64'),
+          UserData: Buffer.from(userDataScript).toString('base64'),
           TagSpecifications: [{
             ResourceType: 'instance',
             Tags: [
@@ -741,7 +793,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         await redis.hset(CLOUD_AGENTS_KEY, { [agentId]: JSON.stringify(cloudAgent) });
 
         // Post to chat
-        if (shadowMode) {
+        if (networkTest) {
+          await postToChat(
+            `[network-test] 🔌 Spawning network test VM **${agentId}**` +
+            `\nPurpose: Verify VM can reach our API (no Claude/Node, just HTTP POST)` +
+            `\nVM: ${instance.InstanceId} (${instanceType})` +
+            `\nExpected result: Chat message within 2-3 minutes if networking works`
+          );
+        } else if (shadowMode) {
           await postToChat(
             `[shadow-spawn] 👥 Shadow agent **${agentId}** spawned for **${shadowFor}**` +
             `\nStatus: Dormant (monitoring heartbeat)` +
@@ -760,10 +819,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({
           success: true,
           agent: cloudAgent,
-          message: shadowMode
-            ? `Shadow agent spawned. Will activate if ${shadowFor} stalls for ${Math.round(stallThresholdMs / 60000)} minutes.`
-            : 'Cloud agent spawning. VM takes ~5-10 minutes to boot.',
-          estimatedReadyMinutes: GOLDEN_AMI ? 2 : 10,
+          message: networkTest
+            ? 'Network test VM spawning. Should post to chat within 2-3 minutes if networking works.'
+            : shadowMode
+              ? `Shadow agent spawned. Will activate if ${shadowFor} stalls for ${Math.round(stallThresholdMs / 60000)} minutes.`
+              : 'Cloud agent spawning. VM takes ~5-10 minutes to boot.',
+          estimatedReadyMinutes: networkTest ? 3 : (GOLDEN_AMI ? 2 : 10),
+          networkTest: networkTest || undefined,
           shadowInfo: shadowMode ? {
             shadowFor,
             stallThresholdMs,

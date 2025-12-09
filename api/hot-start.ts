@@ -215,23 +215,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const startTime = Date.now();
 
   try {
-    const { agentId, include, role, repo, machineId, bindIdentity } = req.query;
+    const { agentId, include, role, repo, machineId } = req.query;
 
-    // Machine identity resolution: if machineId provided, look up bound agentId
+    // Machine identity resolution - AUTOMATIC binding
+    // If machineId is provided:
+    //   1. If machine already bound: use that identity (ignore provided agentId)
+    //   2. If not bound AND agentId provided: bind automatically
+    //   3. If not bound AND no agentId: error (must provide identity first time)
     let resolvedAgentId = agentId as string | undefined;
     let identityBound = false;
+    let newlyBound = false;
 
     if (machineId && typeof machineId === 'string') {
       // Try to resolve machineId to agentId
       const boundAgentId = await redis.hget(MACHINE_IDENTITY_KEY, machineId);
       if (boundAgentId && typeof boundAgentId === 'string') {
+        // Machine already bound - use that identity (this is the "just works" case)
         resolvedAgentId = boundAgentId;
         identityBound = true;
-      } else if (agentId && bindIdentity === 'true') {
-        // Bind this machine to the provided agentId
+      } else if (agentId) {
+        // Auto-bind: first time seeing this machine, bind it to the provided agentId
         await redis.hset(MACHINE_IDENTITY_KEY, { [machineId]: agentId as string });
         resolvedAgentId = agentId as string;
         identityBound = true;
+        newlyBound = true;
       }
     }
 
@@ -584,14 +591,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       loadTime: Date.now() - startTime,
 
       // Include identity info so agents know how their identity was resolved
-      identity: identityBound ? {
+      identity: identityBound && !newlyBound ? {
         resolvedFromMachine: true,
         machineId: machineId as string,
-        message: `Identity '${agentIdStr}' resolved from machine binding. You are ${agentIdStr}.`
+        message: `Welcome back, ${agentIdStr}! Identity auto-resolved from machine binding.`
+      } : identityBound && newlyBound ? {
+        resolvedFromMachine: true,
+        newlyBound: true,
+        machineId: machineId as string,
+        message: `Identity '${agentIdStr}' now bound to this machine. Future hot-starts will auto-resolve.`
       } : machineId ? {
         resolvedFromMachine: false,
         machineId: machineId as string,
-        message: `Machine not bound. Using provided agentId '${agentIdStr}'. Call with bindIdentity=true to persist.`
+        message: `Machine not bound and no agentId provided. Provide agentId to bind identity.`
       } : {
         resolvedFromMachine: false,
         message: `Using provided agentId '${agentIdStr}'. Pass machineId to enable identity persistence.`
