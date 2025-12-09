@@ -439,12 +439,20 @@ if (-not (Test-Path "$RepoDir\\.git")) {
     git pull origin main 2>&1 | Out-File $LogFile -Append
 }
 
-# Install repo dependencies
+# Install repo dependencies (LIGHTWEIGHT - no playwright!)
 Set-Location $RepoDir
-npm install 2>&1 | Out-File $LogFile -Append
+
+# Use lightweight package.json for cloud agents (no playwright, ~15MB vs ~250MB)
+"Using lightweight package.cloud.json..." | Out-File $LogFile -Append
+if (Test-Path "$RepoDir\\package.cloud.json") {
+    Copy-Item "$RepoDir\\package.cloud.json" "$RepoDir\\package.json" -Force
+    "Copied package.cloud.json to package.json" | Out-File $LogFile -Append
+}
+
+npm install --omit=dev 2>&1 | Out-File $LogFile -Append
 npm run build 2>&1 | Out-File $LogFile -Append
 
-"Repository ready" | Out-File $LogFile -Append
+"Repository ready (lightweight install)" | Out-File $LogFile -Append
 
 # ==============================================================================
 # STEP 5: Create MCP Config
