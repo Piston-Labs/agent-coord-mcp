@@ -1,6 +1,5 @@
 {
     "outputDirectory": "web",
-    "buildCommand": "npm run build",
     "headers": [
         {
             "headers": [
