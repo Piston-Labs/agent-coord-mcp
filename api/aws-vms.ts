@@ -12,7 +12,6 @@ import {
 import {
   SSMClient,
   SendCommandCommand,
-  GetCommandInvocationCommand,
 } from '@aws-sdk/client-ssm';
 
 /**
