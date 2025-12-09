@@ -33,12 +33,9 @@ const CHAT_KEY = 'agent-coord:chat';
 // AWS Configuration
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';
 
-// Windows Server 2022 AMIs by region (updated Dec 2025)
-// Use GOLDEN_AMI if set (pre-configured with Claude CLI), otherwise use base Windows
-const GOLDEN_AMI = process.env.AWS_GOLDEN_AMI_ID;
-
+// Windows Server 2022 AMIs by region
 const WINDOWS_AMIS: Record<string, string> = {
-  'us-east-1': GOLDEN_AMI || 'ami-0159172a5a821bafd',  // Windows_Server-2022-English-Full-Base-2025.11.12
+  'us-east-1': 'ami-0be0e902919675894',
   'us-east-2': 'ami-0c1704bac156af62c',
   'us-west-1': 'ami-0e5d865c678e78624',
   'us-west-2': 'ami-0f5daaa3a7fb3378b',
@@ -52,44 +49,7 @@ const INSTANCE_CONFIGS: Record<string, { type: _InstanceType; vcpu: number; memo
   xlarge: { type: 't3.xlarge', vcpu: 4, memory: 16, price: 0.276, capacity: 8 },
 };
 
-// Quick boot script for Golden AMI (everything pre-installed)
-const getGoldenBootScript = (apiKey: string, hubUrl: string, soulId?: string, task?: string) => `
-<powershell>
-# Golden AMI Boot - just inject credentials and start
-$AgentDir = "C:\\AgentHub"
-$LogFile = "$AgentDir\\logs\\boot-$(Get-Date -Format 'yyyyMMdd-HHmmss').log"
-
-"Boot started at $(Get-Date)" | Out-File $LogFile
-
-# Inject API key
-[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", "${apiKey}", "Machine")
-[Environment]::SetEnvironmentVariable("AGENT_HUB_URL", "${hubUrl}", "Machine")
-$env:ANTHROPIC_API_KEY = "${apiKey}"
-
-# Pull latest code
-Set-Location "$AgentDir\\repos\\agent-coord-mcp"
-git pull origin main 2>&1 | Out-File $LogFile -Append
-
-# Start agent with soul or task if provided
-${soulId ? `
-# Soul injection
-$bundle = Invoke-RestMethod -Uri "${hubUrl}/api/souls?action=get-bundle&soulId=${soulId}"
-$bundleJson = $bundle.bundle | ConvertTo-Json -Depth 10
-$bundleJson | claude --dangerously-skip-permissions --mcp-config "$AgentDir\\config\\mcp-config.json" 2>&1 | Out-File $LogFile -Append
-` : task ? `
-# Task injection
-"${task}" | claude --dangerously-skip-permissions --mcp-config "$AgentDir\\config\\mcp-config.json" 2>&1 | Out-File $LogFile -Append
-` : `
-# Start spawn service for on-demand agents
-node agent-spawn-service-v2.cjs 2>&1 | Out-File $LogFile -Append
-`}
-
-"Boot complete at $(Get-Date)" | Out-File $LogFile -Append
-"READY" | Out-File "$AgentDir\\ready.txt"
-</powershell>
-`;
-
-// Full bootstrap script for base Windows (installs everything)
+// Bootstrap script for Windows
 const getBootstrapScript = (apiKey: string, hubUrl: string) => `
 <powershell>
 # Enable TLS 1.2
@@ -229,7 +189,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // === PROVISION NEW VM ===
     if (action === 'provision' && req.method === 'POST') {
-      const { size = 'medium', region = AWS_REGION, tags, soulId, task } = req.body;
+      const { size = 'medium', region = AWS_REGION, tags } = req.body;
 
       // Validate
       const config = INSTANCE_CONFIGS[size];
@@ -281,11 +241,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           InstanceType: config.type,
           MinCount: 1,
           MaxCount: 1,
-          UserData: Buffer.from(
-            GOLDEN_AMI
-              ? getGoldenBootScript(apiKey, hubUrl, soulId, task)
-              : getBootstrapScript(apiKey, hubUrl)
-          ).toString('base64'),
+          UserData: Buffer.from(getBootstrapScript(apiKey, hubUrl)).toString('base64'),
           TagSpecifications: [{
             ResourceType: 'instance',
             Tags: [
