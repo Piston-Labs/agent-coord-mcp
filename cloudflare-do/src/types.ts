@@ -104,5 +104,6 @@ export interface Env {
   COORDINATOR: DurableObjectNamespace;
   AGENT_STATE: DurableObjectNamespace;
   RESOURCE_LOCK: DurableObjectNamespace;
+  VM_POOL: DurableObjectNamespace;
   ENVIRONMENT?: string;
 }

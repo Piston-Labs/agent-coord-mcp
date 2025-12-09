@@ -8,13 +8,18 @@ account_id = "8d4252856750d8486c1740c063bc5a40"
 bindings = [
   { name = "COORDINATOR", class_name = "AgentCoordinator" },
   { name = "AGENT_STATE", class_name = "AgentState" },
-  { name = "RESOURCE_LOCK", class_name = "ResourceLock" }
+  { name = "RESOURCE_LOCK", class_name = "ResourceLock" },
+  { name = "VM_POOL", class_name = "VMPool" }
 ]
 
 # SQLite storage backend for all DOs
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["AgentCoordinator", "AgentState", "ResourceLock"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["VMPool"]
 
 # Environment variables (set via wrangler secret)
 [vars]

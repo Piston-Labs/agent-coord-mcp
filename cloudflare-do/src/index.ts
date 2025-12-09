@@ -18,6 +18,7 @@ import type { Env } from './types';
 export { AgentCoordinator } from './agent-coordinator';
 export { AgentState } from './agent-state';
 export { ResourceLock } from './resource-lock';
+export { VMPool } from './vm-pool';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -46,12 +47,14 @@ export default {
         response = await routeToAgentState(request, env, path);
       } else if (path.startsWith('/lock/')) {
         response = await routeToResourceLock(request, env, path);
+      } else if (path.startsWith('/vmpool')) {
+        response = await routeToVMPool(request, env, path.replace('/vmpool', '') || '/');
       } else if (path === '/health') {
         response = Response.json({
           status: 'ok',
           service: 'agent-coord-do',
           timestamp: new Date().toISOString(),
-          durableObjects: ['AgentCoordinator', 'AgentState', 'ResourceLock']
+          durableObjects: ['AgentCoordinator', 'AgentState', 'ResourceLock', 'VMPool']
         });
       } else if (path === '/' || path === '') {
         response = Response.json({
@@ -78,6 +81,17 @@ export default {
             '/agent/:agentId/credentials': 'Soul credentials - GET (list/get/bundle), POST (set), DELETE',
             '/agent/:agentId/dashboard': 'Agent self-dashboard - GET (aggregated view)',
             '/lock/:resourcePath/*': 'Resource locking - check, lock, unlock',
+            '/vmpool/status': 'VM pool status - GET',
+            '/vmpool/vms': 'List all VMs - GET',
+            '/vmpool/spawn': 'Assign agent to VM - POST',
+            '/vmpool/provision': 'Register new VM - POST',
+            '/vmpool/terminate': 'Terminate VM - POST',
+            '/vmpool/release': 'Release agent from VM - POST',
+            '/vmpool/scale': 'Scale recommendations - POST',
+            '/vmpool/vm/:vmId': 'VM details - GET',
+            '/vmpool/vm/:vmId/ready': 'Mark VM ready - POST',
+            '/vmpool/vm/:vmId/agents': 'VM agent list - GET',
+            '/vmpool/vm/:vmId/health': 'VM health history - GET',
             '/health': 'Health check'
           },
           docs: 'https://github.com/piston-labs/agent-coord-mcp/tree/main/cloudflare-do'
@@ -172,6 +186,21 @@ async function routeToResourceLock(request: Request, env: Env, path: string): Pr
   const url = new URL(request.url);
   url.pathname = subPath;
   url.searchParams.set('resourcePath', resourcePath);
+
+  return stub.fetch(new Request(url.toString(), request));
+}
+
+/**
+ * Route to the singleton VMPool DO
+ */
+async function routeToVMPool(request: Request, env: Env, subPath: string): Promise<Response> {
+  // Use a fixed name for the singleton VM pool
+  const id = env.VM_POOL.idFromName('main');
+  const stub = env.VM_POOL.get(id);
+
+  // Rewrite URL for the DO
+  const url = new URL(request.url);
+  url.pathname = subPath;
 
   return stub.fetch(new Request(url.toString(), request));
 }

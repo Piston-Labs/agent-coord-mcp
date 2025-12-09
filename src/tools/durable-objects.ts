@@ -575,4 +575,163 @@ export function registerDurableObjectsTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // DO-VMPOOL TOOL - Persistent VM Pool Management
+  // ============================================================================
+
+  server.tool(
+    'do-vmpool',
+    'Manage persistent cloud VM pool in Durable Objects. Track VMs, assign agents, monitor health, auto-scale. Perfect for instant agent spawning. Requires wrangler dev or DO_URL.',
+    {
+      action: z.enum(['status', 'list', 'spawn', 'provision', 'terminate', 'ready', 'release', 'scale', 'config']).describe('status=pool overview, list=all VMs, spawn=assign agent to VM, provision=register new VM, terminate=remove VM, ready=mark VM ready, release=release agent, scale=get scaling recommendation, config=get/set config'),
+      agentId: z.string().optional().describe('Agent ID (for spawn/release actions)'),
+      vmId: z.string().optional().describe('VM ID (for terminate/ready actions)'),
+      instanceId: z.string().optional().describe('AWS EC2 instance ID (for provision action)'),
+      vmSize: z.enum(['small', 'medium', 'large']).optional().describe('VM size (for provision action) - small=2 agents, medium=5 agents, large=10 agents'),
+      region: z.string().optional().describe('AWS region (for provision action)'),
+      publicIp: z.string().optional().describe('Public IP (for provision action)'),
+      task: z.string().optional().describe('Task description (for spawn action)'),
+      scaleAction: z.enum(['up', 'down', 'set']).optional().describe('Scale direction (for scale action)'),
+      count: z.number().optional().describe('Target VM count (for scale action with set)'),
+      force: z.boolean().optional().describe('Force terminate even with active agents'),
+      configUpdate: z.object({
+        minVMs: z.number().optional(),
+        maxVMs: z.number().optional(),
+        targetFreeCapacity: z.number().optional(),
+        healthCheckIntervalMs: z.number().optional()
+      }).optional().describe('Config values to update (for config action with POST)')
+    },
+    async (args) => {
+      const { action, agentId, vmId, instanceId, vmSize, region, publicIp, task, scaleAction, count, force, configUpdate } = args;
+
+      try {
+        const baseUrl = `${DO_BASE}/vmpool`;
+
+        switch (action) {
+          case 'status': {
+            const res = await fetch(`${baseUrl}/status`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get pool status: ${error}`, hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev' }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'list': {
+            const res = await fetch(`${baseUrl}/vms`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to list VMs: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'spawn': {
+            if (!agentId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'agentId required for spawn action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}/spawn`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ agentId, task, preferredVmId: vmId })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'provision': {
+            if (!instanceId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'instanceId required for provision action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}/provision`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ instanceId, vmSize, region, publicIp })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'terminate': {
+            if (!vmId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'vmId required for terminate action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}/terminate`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ vmId, force })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'ready': {
+            if (!vmId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'vmId required for ready action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}/vm/${encodeURIComponent(vmId)}/ready`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: '{}'
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'release': {
+            if (!agentId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'agentId required for release action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}/release`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ agentId })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'scale': {
+            if (!scaleAction) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'scaleAction (up/down/set) required for scale action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}/scale`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: scaleAction, count })
+            });
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'config': {
+            if (configUpdate) {
+              const res = await fetch(`${baseUrl}/config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(configUpdate)
+              });
+              const data = await res.json();
+              return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+            } else {
+              const res = await fetch(`${baseUrl}/config`);
+              const data = await res.json();
+              return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+            }
+          }
+
+          default:
+            return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({
+          error: String(error),
+          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
+        }) }] };
+      }
+    }
+  );
 }
