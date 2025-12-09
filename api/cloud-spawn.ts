@@ -226,6 +226,15 @@ INSTRUCTIONS:
 5. Report progress in group chat
 6. When done, checkpoint final state and request termination
 
+AUTONOMOUS COLLABORATION RULES (CRITICAL):
+- Check group-chat every 2-3 tool calls using: group-chat action=get-since
+- Respond to ANY @mentions of your agentId immediately
+- Post progress updates for long-running tasks (every 5-10 min)
+- If stuck for >5 minutes, ask for help in chat
+- Always set isCloudAgent=true when posting to chat
+- Collaborate with other agents - you are part of a team!
+- If another agent asks for help, assist if you can
+
 Begin by announcing yourself in group chat and starting work!
 "@
 
@@ -262,6 +271,15 @@ INSTRUCTIONS:
 4. Report progress in group chat
 5. When done, announce completion and request termination
 
+AUTONOMOUS COLLABORATION RULES (CRITICAL):
+- Check group-chat every 2-3 tool calls using: group-chat action=get-since
+- Respond to ANY @mentions of your agentId immediately
+- Post progress updates for long-running tasks (every 5-10 min)
+- If stuck for >5 minutes, ask for help in chat
+- Always set isCloudAgent=true when posting to chat
+- Collaborate with other agents - you are part of a team!
+- If another agent asks for help, assist if you can
+
 Begin by announcing yourself in group chat!
 "@
 
@@ -284,6 +302,26 @@ New-Item -ItemType Directory -Force -Path $ClaudeDir | Out-Null
 
 "Cloud agent ${agentId} starting at $(Get-Date)" | Out-File $LogFile
 "Hub URL: ${hubUrl}" | Out-File $LogFile -Append
+
+# ==============================================================================
+# STEP 0: Enable SSH Access (OpenSSH Server)
+# ==============================================================================
+
+"Setting up SSH access..." | Out-File $LogFile -Append
+
+# Install and configure OpenSSH Server for remote debugging
+try {
+    Add-WindowsCapability -Online -Name OpenSSH.Server~~~~0.0.1.0 -ErrorAction SilentlyContinue
+    Start-Service sshd -ErrorAction SilentlyContinue
+    Set-Service -Name sshd -StartupType 'Automatic' -ErrorAction SilentlyContinue
+
+    # Configure firewall rule for SSH
+    New-NetFirewallRule -Name "OpenSSH-Server" -DisplayName "OpenSSH Server (sshd)" -Enabled True -Direction Inbound -Protocol TCP -Action Allow -LocalPort 22 -ErrorAction SilentlyContinue
+
+    "SSH Server enabled on port 22" | Out-File $LogFile -Append
+} catch {
+    "Warning: Could not enable SSH: $_" | Out-File $LogFile -Append
+}
 
 # ==============================================================================
 # STEP 1: Install Core Dependencies
