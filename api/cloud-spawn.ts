@@ -427,29 +427,38 @@ npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
 "Claude CLI installed" | Out-File $LogFile -Append
 
 # ==============================================================================
-# STEP 4: Clone Repository
+# STEP 4: Clone Repository (LIGHTWEIGHT - shallow clone, no history)
 # ==============================================================================
 
 if (-not (Test-Path "$RepoDir\\.git")) {
-    "Cloning agent-coord-mcp repo..." | Out-File $LogFile -Append
-    git clone https://github.com/Piston-Labs/agent-coord-mcp.git $RepoDir 2>&1 | Out-File $LogFile -Append
+    "Cloning agent-coord-mcp repo (shallow)..." | Out-File $LogFile -Append
+    # Shallow clone with depth=1 - only get latest commit, not full history
+    git clone --depth 1 --single-branch https://github.com/Piston-Labs/agent-coord-mcp.git $RepoDir 2>&1 | Out-File $LogFile -Append
 } else {
     "Updating repo..." | Out-File $LogFile -Append
     Set-Location $RepoDir
     git pull origin main 2>&1 | Out-File $LogFile -Append
 }
 
-# Install repo dependencies (LIGHTWEIGHT - no playwright!)
 Set-Location $RepoDir
 
 # Use lightweight package.json for cloud agents (no playwright, ~15MB vs ~250MB)
-"Using lightweight package.cloud.json..." | Out-File $LogFile -Append
+"Switching to lightweight package.cloud.json..." | Out-File $LogFile -Append
 if (Test-Path "$RepoDir\\package.cloud.json") {
     Copy-Item "$RepoDir\\package.cloud.json" "$RepoDir\\package.json" -Force
     "Copied package.cloud.json to package.json" | Out-File $LogFile -Append
+} else {
+    "WARNING: package.cloud.json not found, using full package.json" | Out-File $LogFile -Append
 }
 
-npm install --omit=dev 2>&1 | Out-File $LogFile -Append
+# Skip playwright browser downloads explicitly
+$env:PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1"
+
+# Install with production deps only, skip optional deps
+"Running npm install (lightweight)..." | Out-File $LogFile -Append
+npm install --omit=dev --omit=optional --ignore-scripts 2>&1 | Out-File $LogFile -Append
+
+"Building TypeScript..." | Out-File $LogFile -Append
 npm run build 2>&1 | Out-File $LogFile -Append
 
 "Repository ready (lightweight install)" | Out-File $LogFile -Append
