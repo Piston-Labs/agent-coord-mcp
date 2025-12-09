@@ -12,3 +12,6 @@ NUL
 
 # Wrangler/Cloudflare local state
 .wrangler/
+
+# TypeScript incremental build cache
+.tsbuildinfo

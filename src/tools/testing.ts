@@ -2,21 +2,40 @@
  * Testing Tools - UI testing, metrics, and browser automation
  *
  * Tools: ui-test, metrics, browser
+ *
+ * NOTE: Playwright is optional - loaded only when browser tool is used.
+ * This allows Vercel builds to work without the heavy Playwright package.
  */
 
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
-import { chromium, Browser, Page } from 'playwright';
 
 const API_BASE = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
+
+// Playwright types (optional - only available when playwright is installed)
+type Browser = any;
+type Page = any;
 
 // Browser instance management (shared across calls for efficiency)
 let browserInstance: Browser | null = null;
 let pageInstance: Page | null = null;
+let playwrightModule: any = null;
+
+async function getPlaywright() {
+  if (!playwrightModule) {
+    try {
+      playwrightModule = await import('playwright');
+    } catch (e) {
+      throw new Error('Playwright not available. Install with: npm install playwright');
+    }
+  }
+  return playwrightModule;
+}
 
 async function getBrowser(): Promise<Browser> {
   if (!browserInstance) {
-    browserInstance = await chromium.launch({
+    const pw = await getPlaywright();
+    browserInstance = await pw.chromium.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
