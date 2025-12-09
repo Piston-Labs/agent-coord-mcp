@@ -57,9 +57,6 @@ function escapePowerShellString(str: string): string {
 function generateFullBootstrap(config: BootstrapConfig): string {
   const { hubUrl, agentId, credentials, soulId, task } = config;
 
-  // Escape task for safe PowerShell embedding
-  const safeTask = escapePowerShellString(task || '');
-
   // Generate .env file content
   const envFileContent = Object.entries(credentials)
     .filter(([_, v]) => v)
@@ -80,8 +77,11 @@ try {
     $checkpoint = @{ currentTask = ""; pendingWork = @(); conversationSummary = "" }
 }
 
-# Build prompt - task is pre-escaped for PowerShell safety
-$taskText = "${safeTask}"
+# Build prompt - task stored in single quotes to avoid escaping issues
+$taskText = @'
+${task || ''}
+'@
+$taskText = $taskText.Trim()
 if (-not $taskText) { $taskText = $checkpoint.currentTask }
 
 $injection = "[Cloud Agent ${agentId}] Identity: $soulName | Soul: ${soulId} | Task: $taskText - Post to group-chat with isCloudAgent=true, use hot-start, work autonomously, checkpoint often"
@@ -91,8 +91,12 @@ if (-not (Test-Path $claudeCmd)) { $claudeCmd = "claude" }
 "Running: $claudeCmd --dangerously-skip-permissions --mcp-config $mcpConfigPath" | Out-File $LogFile -Append
 & $claudeCmd --dangerously-skip-permissions --mcp-config $mcpConfigPath -p $injection 2>&1 | Out-File $LogFile -Append
 ` : `
-# Start with task only (no soul) - task is pre-escaped for PowerShell safety
-$taskPrompt = "[Cloud Agent ${agentId}] Task: ${safeTask || 'Check group chat'} - Post to group-chat with isCloudAgent=true, then hot-start, work autonomously"
+# Start with task only (no soul) - task stored in here-string to avoid escaping issues
+$taskText = @'
+${task || 'Check group chat'}
+'@
+$taskText = $taskText.Trim()
+$taskPrompt = "[Cloud Agent ${agentId}] Task: $taskText - Post to group-chat with isCloudAgent=true, then hot-start, work autonomously"
 
 $claudeCmd = "$env:APPDATA\\npm\\claude.cmd"
 if (-not (Test-Path $claudeCmd)) { $claudeCmd = "claude" }
