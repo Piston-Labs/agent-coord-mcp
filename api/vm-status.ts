@@ -162,7 +162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // Get AWS instance details
     const ec2 = getEC2Client();
-    const instanceIds = [...new Set(activeAgents.map(a => a.instanceId).filter(Boolean))];
+    const instanceIds = Array.from(new Set(activeAgents.map(a => a.instanceId).filter(Boolean)));
 
     let awsInstances: Record<string, any> = {};
     let awsStatuses: Record<string, any> = {};
