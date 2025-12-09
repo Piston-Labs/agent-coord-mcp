@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud VMs - Agent Coordination Hub</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border: #30363d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --accent: #58a6ff;
+      --success: #3fb950;
+      --warning: #d29922;
+      --danger: #f85149;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .back-link {
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .summary-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .summary-card .value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .summary-card .label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+      text-transform: uppercase;
+    }
+
+    .summary-card.running .value { color: var(--success); }
+    .summary-card.cost .value { color: var(--warning); }
+    .summary-card.terminated .value { color: var(--text-secondary); }
+
+    .vm-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 20px;
+    }
+
+    .vm-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .vm-card.running { border-color: var(--success); }
+    .vm-card.booting { border-color: var(--warning); }
+    .vm-card.terminated { opacity: 0.6; }
+
+    .vm-header {
+      padding: 16px 20px;
+      background: var(--bg-tertiary);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .vm-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .vm-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: var(--bg-primary);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-secondary);
+    }
+
+    .status-dot.running { background: var(--success); }
+    .status-dot.pending, .status-dot.booting { background: var(--warning); animation: pulse 1.5s infinite; }
+    .status-dot.stopped { background: var(--danger); }
+    .status-dot.terminated { background: var(--text-secondary); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .vm-body {
+      padding: 20px;
+    }
+
+    .vm-info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .vm-info-row:last-child {
+      border-bottom: none;
+    }
+
+    .vm-info-label {
+      color: var(--text-secondary);
+    }
+
+    .vm-info-value {
+      color: var(--text-primary);
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+    }
+
+    .vm-info-value.ip {
+      color: var(--accent);
+    }
+
+    .progress-bar-container {
+      margin-top: 16px;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      margin-bottom: 6px;
+    }
+
+    .progress-phase {
+      color: var(--text-secondary);
+    }
+
+    .progress-percent {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .progress-bar {
+      height: 6px;
+      background: var(--bg-primary);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--success));
+      border-radius: 3px;
+      transition: width 0.5s ease;
+    }
+
+    .task-preview {
+      margin-top: 16px;
+      padding: 12px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      max-height: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .vm-actions {
+      padding: 12px 20px;
+      background: var(--bg-tertiary);
+      display: flex;
+      gap: 8px;
+    }
+
+    .vm-action-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .vm-action-btn:hover {
+      background: var(--bg-primary);
+      border-color: var(--accent);
+    }
+
+    .vm-action-btn.danger {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .vm-action-btn.danger:hover {
+      background: rgba(248, 81, 73, 0.1);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-secondary);
+    }
+
+    .empty-state h2 {
+      font-size: 18px;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .refresh-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      padding: 12px 24px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(88, 166, 255, 0.3);
+    }
+
+    .refresh-btn:hover {
+      background: #4a9eff;
+    }
+
+    .last-updated {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .spawn-btn {
+      padding: 10px 20px;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .spawn-btn:hover {
+      opacity: 0.9;
+    }
+
+    @media (max-width: 768px) {
+      .summary-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .vm-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <a href="/" class="back-link">&larr; Back to Dashboard</a>
+      <h1>☁️ Cloud VMs</h1>
+    </div>
+    <div style="display: flex; align-items: center; gap: 16px;">
+      <span class="last-updated" id="lastUpdated">Loading...</span>
+      <button class="spawn-btn" onclick="showSpawnModal()">+ Spawn Agent</button>
+    </div>
+  </header>
+
+  <div class="summary-cards" id="summaryCards">
+    <div class="summary-card">
+      <div class="value" id="totalVms">-</div>
+      <div class="label">Total VMs</div>
+    </div>
+    <div class="summary-card running">
+      <div class="value" id="runningVms">-</div>
+      <div class="label">Running</div>
+    </div>
+    <div class="summary-card">
+      <div class="value" id="bootingVms">-</div>
+      <div class="label">Booting</div>
+    </div>
+    <div class="summary-card cost">
+      <div class="value" id="hourlyCost">-</div>
+      <div class="label">$/Hour</div>
+    </div>
+    <div class="summary-card cost">
+      <div class="value" id="totalSpent">-</div>
+      <div class="label">Spent Today</div>
+    </div>
+  </div>
+
+  <div class="vm-grid" id="vmGrid">
+    <div class="empty-state">
+      <h2>Loading VMs...</h2>
+      <p>Fetching cloud agent status from AWS</p>
+    </div>
+  </div>
+
+  <button class="refresh-btn" onclick="loadVMs()">🔄 Refresh</button>
+
+  <script>
+    const API_BASE = 'https://agent-coord-mcp.vercel.app';
+
+    async function loadVMs() {
+      try {
+        const response = await fetch(`${API_BASE}/api/vm-status`);
+        const data = await response.json();
+
+        // Update summary
+        document.getElementById('totalVms').textContent = data.summary?.total || 0;
+        document.getElementById('runningVms').textContent = data.summary?.running || 0;
+        document.getElementById('bootingVms').textContent = data.summary?.booting || 0;
+        document.getElementById('hourlyCost').textContent = '$' + (data.summary?.totalHourlyCost || 0).toFixed(3);
+        document.getElementById('totalSpent').textContent = '$' + (data.summary?.totalSpentToday || 0).toFixed(2);
+        document.getElementById('lastUpdated').textContent = 'Updated: ' + new Date().toLocaleTimeString();
+
+        // Render VMs
+        const grid = document.getElementById('vmGrid');
+
+        if (!data.vms || data.vms.length === 0) {
+          grid.innerHTML = `
+            <div class="empty-state">
+              <h2>No Cloud VMs</h2>
+              <p>Spawn a cloud agent to see it here</p>
+            </div>
+          `;
+          return;
+        }
+
+        grid.innerHTML = data.vms.map(vm => renderVMCard(vm)).join('');
+      } catch (error) {
+        console.error('Failed to load VMs:', error);
+        document.getElementById('vmGrid').innerHTML = `
+          <div class="empty-state">
+            <h2>Error Loading VMs</h2>
+            <p>${error.message}</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderVMCard(vm) {
+      const stateClass = vm.state === 'running' ? 'running' :
+                         vm.state === 'pending' ? 'booting' :
+                         vm.state === 'terminated' ? 'terminated' : '';
+
+      return `
+        <div class="vm-card ${stateClass}">
+          <div class="vm-header">
+            <span class="vm-title">${vm.agentId}</span>
+            <div class="vm-status">
+              <span class="status-dot ${vm.state}"></span>
+              ${vm.state}
+            </div>
+          </div>
+          <div class="vm-body">
+            <div class="vm-info-row">
+              <span class="vm-info-label">Instance ID</span>
+              <span class="vm-info-value">${vm.instanceId}</span>
+            </div>
+            <div class="vm-info-row">
+              <span class="vm-info-label">Public IP</span>
+              <span class="vm-info-value ip">${vm.publicIp || 'Pending...'}</span>
+            </div>
+            <div class="vm-info-row">
+              <span class="vm-info-label">Type</span>
+              <span class="vm-info-value">${vm.instanceType}</span>
+            </div>
+            <div class="vm-info-row">
+              <span class="vm-info-label">Uptime</span>
+              <span class="vm-info-value">${vm.uptimeMinutes} min</span>
+            </div>
+            <div class="vm-info-row">
+              <span class="vm-info-label">Health</span>
+              <span class="vm-info-value">${vm.instanceStatus} / ${vm.systemStatus}</span>
+            </div>
+            <div class="vm-info-row">
+              <span class="vm-info-label">Cost</span>
+              <span class="vm-info-value">$${vm.estimatedTotalCost.toFixed(4)} ($${vm.estimatedHourlyCost}/hr)</span>
+            </div>
+            <div class="vm-info-row">
+              <span class="vm-info-label">Spawned By</span>
+              <span class="vm-info-value">${vm.spawnedBy}</span>
+            </div>
+
+            ${vm.state !== 'terminated' && vm.bootstrapProgress < 100 ? `
+              <div class="progress-bar-container">
+                <div class="progress-label">
+                  <span class="progress-phase">${formatPhase(vm.bootstrapPhase)}</span>
+                  <span class="progress-percent">${vm.bootstrapProgress}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" style="width: ${vm.bootstrapProgress}%"></div>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="task-preview">
+              <strong>Task:</strong> ${vm.task || 'No task assigned'}
+            </div>
+          </div>
+          ${vm.state === 'running' ? `
+            <div class="vm-actions">
+              <button class="vm-action-btn" onclick="openSSH('${vm.publicIp}')">SSH</button>
+              <button class="vm-action-btn danger" onclick="terminateVM('${vm.agentId}')">Terminate</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }
+
+    function formatPhase(phase) {
+      const phases = {
+        'starting': 'Starting instance...',
+        'booting-os': 'Booting Windows...',
+        'initializing-windows': 'Initializing Windows...',
+        'running-userdata': 'Running bootstrap...',
+        'installing-nodejs': 'Installing Node.js...',
+        'installing-git': 'Installing Git...',
+        'cloning-repo': 'Cloning repository...',
+        'npm-install': 'Installing dependencies...',
+        'starting-claude-cli': 'Starting Claude CLI...',
+        'waiting-for-agent': 'Waiting for agent...',
+        'ready': 'Ready',
+        'terminated': 'Terminated',
+      };
+      return phases[phase] || phase;
+    }
+
+    function openSSH(ip) {
+      if (ip) {
+        alert(`SSH to: Administrator@${ip}\n\nUse Remote Desktop or SSH with your key.`);
+      }
+    }
+
+    async function terminateVM(agentId) {
+      if (!confirm(`Terminate agent ${agentId}? This will stop the VM.`)) return;
+
+      try {
+        const response = await fetch(`${API_BASE}/api/cloud-spawn?agentId=${agentId}`, {
+          method: 'DELETE'
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          alert('Agent terminated successfully');
+          loadVMs();
+        } else {
+          alert('Failed to terminate: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    function showSpawnModal() {
+      const task = prompt('Enter task for the new cloud agent:');
+      if (task) {
+        spawnAgent(task);
+      }
+    }
+
+    async function spawnAgent(task) {
+      try {
+        const response = await fetch(`${API_BASE}/api/cloud-spawn`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            task,
+            vmSize: 'small',
+            spawnedBy: 'dashboard'
+          })
+        });
+        const data = await response.json();
+
+        if (data.success) {
+          alert(`Agent ${data.agent.agentId} spawning!\nVM will be ready in ~5-10 minutes.`);
+          loadVMs();
+        } else {
+          alert('Failed to spawn: ' + (data.error || 'Unknown error'));
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      }
+    }
+
+    // Initial load
+    loadVMs();
+
+    // Auto-refresh every 15 seconds
+    setInterval(loadVMs, 15000);
+  </script>
+</body>
+</html>
