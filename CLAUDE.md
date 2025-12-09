@@ -271,14 +271,87 @@ do-onboard agentId=phoenix
 ### During Work
 1. Claim what you're working on
 2. Report progress in chat periodically
-3. Checkpoint your state every 10-15 minutes
+3. **Checkpoint your state every 10-15 minutes** (see Checkpointing below)
 4. Report token usage regularly
 
 ### Before Ending Session
-1. Save checkpoint with full state
+1. **Save checkpoint with full state** (MUST call the tool - see below)
 2. Complete or hand off any pending work
 3. Announce departure in chat
 4. Release any claims/locks
+
+## Checkpointing (CRITICAL)
+
+**⚠️ IMPORTANT: Checkpointing means CALLING A TOOL, not posting a message to chat!**
+
+A common failure mode is posting a "checkpoint summary" to group chat but NOT actually saving state. This means your context is LOST on restart.
+
+### How to Checkpoint Properly
+
+**Option 1: Redis checkpoint (current, for session continuity)**
+```typescript
+// Use the agent-status tool with save-checkpoint action
+agent-status action=save-checkpoint agentId=YOUR_ID currentTask="what you're doing" pendingWork=["item1","item2"] recentContext="summary" conversationSummary="key decisions"
+```
+
+**Option 2: DO checkpoint (persistent, for soul/identity)**
+```typescript
+// Use the do-checkpoint MCP tool (recommended)
+do-checkpoint action=save agentId=YOUR_ID conversationSummary="key decisions" pendingWork=["item1","item2"] currentTask="what you're doing"
+
+// Or POST directly to Durable Object endpoint
+POST ${DO_URL}/agent/YOUR_ID/checkpoint
+Body: {
+  "conversationSummary": "...",
+  "accomplishments": ["..."],
+  "pendingWork": ["..."],
+  "recentContext": "...",
+  "filesEdited": ["..."]
+}
+```
+
+### Checkpoint Storage Comparison
+
+| Storage | Tool/Method | Persistence | Use Case |
+|---------|-------------|-------------|----------|
+| **Redis** | `agent-status save-checkpoint` | ~24h TTL | Quick session resume, hot-start |
+| **Durable Objects** | `do-checkpoint save` | Permanent | Soul identity, long-term state |
+
+**Recommendation:** Use Redis for frequent checkpoints during work. Use DO for end-of-session or before major restarts.
+
+### What to Checkpoint
+
+Always include:
+- `currentTask`: What you're actively working on
+- `pendingWork`: Array of incomplete items
+- `recentContext`: Summary of recent conversation/decisions
+- `conversationSummary`: Key outcomes and progress
+
+Optional but helpful:
+- `filesEdited`: Files you've modified
+- `accomplishments`: Completed items this session
+
+### When to Checkpoint
+
+1. **Every 10-15 minutes** during active work
+2. **Before any restart** (when asked to checkpoint)
+3. **When switching tasks**
+4. **When approaching token limits** (150k+ tokens)
+5. **Before ending session**
+
+### Anti-Pattern (DON'T DO THIS)
+
+```
+❌ WRONG: Posting to chat only
+"🔖 Checkpoint: Working on X, pending Y..."
+→ This is just a message, NOT a checkpoint!
+
+✅ RIGHT: Call the tool
+agent-status action=save-checkpoint agentId=OMNI currentTask="X" pendingWork=["Y"]
+→ This actually persists your state!
+```
+
+You CAN also post a summary to chat for team visibility, but the tool call is mandatory.
 
 ## Resource Registry Auto-Sync (MANDATORY)
 

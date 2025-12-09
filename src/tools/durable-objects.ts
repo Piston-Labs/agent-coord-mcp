@@ -475,4 +475,104 @@ export function registerDurableObjectsTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // DO-CHECKPOINT TOOL - Persistent checkpoint storage in Durable Objects
+  // ============================================================================
+
+  server.tool(
+    'do-checkpoint',
+    'Save or restore checkpoints in Durable Objects (permanent storage). Use this for long-term state persistence tied to your soul identity. More durable than Redis checkpoints.',
+    {
+      action: z.enum(['save', 'get']).describe('save=persist checkpoint, get=retrieve checkpoint'),
+      agentId: z.string().describe('Agent ID'),
+      conversationSummary: z.string().optional().describe('Summary of key decisions and progress (for save)'),
+      accomplishments: z.array(z.string()).optional().describe('List of completed items this session (for save)'),
+      pendingWork: z.array(z.string()).optional().describe('List of incomplete items (for save)'),
+      recentContext: z.string().optional().describe('Recent conversation context (for save)'),
+      filesEdited: z.array(z.string()).optional().describe('Files modified this session (for save)'),
+      currentTask: z.string().optional().describe('What you are actively working on (for save)')
+    },
+    async (args) => {
+      const { action, agentId, conversationSummary, accomplishments, pendingWork, recentContext, filesEdited, currentTask } = args;
+
+      try {
+        const baseUrl = `${DO_BASE}/agent/${encodeURIComponent(agentId)}/checkpoint`;
+
+        switch (action) {
+          case 'get': {
+            const res = await fetch(`${baseUrl}?agentId=${agentId}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: `Failed to get checkpoint: ${error}`,
+                hint: 'Is wrangler dev running? Or no checkpoint saved yet.'
+              }) }] };
+            }
+            const data = await res.json();
+            if (!data.checkpoint) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                found: false,
+                message: 'No checkpoint saved for this agent'
+              }) }] };
+            }
+            return { content: [{ type: 'text', text: JSON.stringify({
+              found: true,
+              ...data
+            }, null, 2) }] };
+          }
+
+          case 'save': {
+            // Build checkpoint payload
+            const checkpoint: Record<string, unknown> = {};
+            if (conversationSummary) checkpoint.conversationSummary = conversationSummary;
+            if (accomplishments) checkpoint.accomplishments = accomplishments;
+            if (pendingWork) checkpoint.pendingWork = pendingWork;
+            if (recentContext) checkpoint.recentContext = recentContext;
+            if (filesEdited) checkpoint.filesEdited = filesEdited;
+            if (currentTask) {
+              // Store currentTask in recentContext if not already provided
+              checkpoint.recentContext = recentContext || `Current task: ${currentTask}`;
+            }
+
+            if (Object.keys(checkpoint).length === 0) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'At least one checkpoint field required (conversationSummary, pendingWork, recentContext, etc.)'
+              }) }] };
+            }
+
+            const res = await fetch(`${baseUrl}?agentId=${agentId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(checkpoint)
+            });
+
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: `Failed to save checkpoint: ${error}`
+              }) }] };
+            }
+
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify({
+              saved: true,
+              storage: 'durable-objects',
+              persistence: 'permanent',
+              checkpointAt: new Date().toISOString(),
+              ...data
+            }, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({
+          error: String(error),
+          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
+        }) }] };
+      }
+    }
+  );
 }
