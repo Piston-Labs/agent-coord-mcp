@@ -351,4 +351,128 @@ export function registerDurableObjectsTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // DO-CREDENTIALS TOOL - Soul credentials/secrets management
+  // ============================================================================
+
+  server.tool(
+    'do-credentials',
+    'Manage soul credentials (API keys, tokens) stored in Durable Objects. Credentials persist with the soul for session injection. Requires wrangler dev or DO_URL.',
+    {
+      action: z.enum(['list', 'get', 'set', 'set-batch', 'delete', 'bundle']).describe('list=show keys, get=get value, set=store single, set-batch=store multiple, delete=remove, bundle=get all for injection'),
+      agentId: z.string().describe('Agent ID (credentials stored per-soul)'),
+      key: z.string().optional().describe('Credential key name (e.g., ANTHROPIC_API_KEY)'),
+      value: z.string().optional().describe('Credential value (for set action)'),
+      credentials: z.record(z.string()).optional().describe('Key-value pairs (for set-batch action)')
+    },
+    async (args) => {
+      const { action, agentId, key, value, credentials } = args;
+
+      try {
+        const baseUrl = `${DO_BASE}/agent/${encodeURIComponent(agentId)}/credentials`;
+
+        switch (action) {
+          case 'list': {
+            const res = await fetch(`${baseUrl}?action=list`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to list credentials: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'get': {
+            if (!key) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'key parameter required for get action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}?action=get&key=${encodeURIComponent(key)}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get credential: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'set': {
+            if (!key || !value) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'key and value required for set action' }) }] };
+            }
+            const res = await fetch(baseUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ key, value })
+            });
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to set credential: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'set-batch': {
+            if (!credentials || Object.keys(credentials).length === 0) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'credentials object required for set-batch action' }) }] };
+            }
+            const res = await fetch(baseUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ credentials })
+            });
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to set credentials: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'delete': {
+            if (!key) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'key parameter required for delete action' }) }] };
+            }
+            const res = await fetch(`${baseUrl}?key=${encodeURIComponent(key)}`, { method: 'DELETE' });
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to delete credential: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'bundle': {
+            const res = await fetch(`${baseUrl}?action=bundle`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get credentials bundle: ${error}` }) }] };
+            }
+            const data = await res.json();
+            // Mask values in output for security
+            const masked = { ...data };
+            if (masked.credentials) {
+              for (const k of Object.keys(masked.credentials)) {
+                const v = masked.credentials[k];
+                masked.credentials[k] = v.length > 12 ? `${v.slice(0, 4)}...${v.slice(-4)}` : '****';
+              }
+            }
+            return { content: [{ type: 'text', text: JSON.stringify({
+              note: 'Values masked for security. Use get action for full values.',
+              ...masked
+            }, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({
+          error: String(error),
+          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
+        }) }] };
+      }
+    }
+  );
 }
