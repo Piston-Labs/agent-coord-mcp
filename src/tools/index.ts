@@ -17,3 +17,4 @@ export { registerExternalTools } from './external.js';
 export { registerFileContextTools, fileContextToolDefinitions } from './file-context.js';
 export { registerDurableObjectsTools } from './durable-objects.js';
 export { registerBlogTools } from './blog.js';
+export { registerA2ATools } from './a2a-protocol.js';

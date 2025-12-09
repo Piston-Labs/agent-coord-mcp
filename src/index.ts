@@ -29,6 +29,7 @@ import { registerExternalTools } from './tools/external.js';
 import { registerFileContextTools } from './tools/file-context.js';
 import { registerDurableObjectsTools } from './tools/durable-objects.js';
 import { registerBlogTools } from './tools/blog.js';
+import { registerA2ATools } from './tools/a2a-protocol.js';
 
 const server = new McpServer({
   name: 'agent-coord-mcp',
@@ -50,6 +51,7 @@ registerExternalTools(server);      // linear, sentry, github, discord
 registerFileContextTools(server);   // file-info, file-read-smart, file-split-work
 registerDurableObjectsTools(server); // do-soul, do-trace, do-dashboard, do-session, do-onboard
 registerBlogTools(server);           // blog-session, blog-message, blog-draft, blog-search, blog-agent-prompt
+registerA2ATools(server);            // a2a-send, a2a-parse, a2a-encode, a2a-negotiate, a2a-vocab, a2a-bridge
 
 // ============================================================================
 // Start Server

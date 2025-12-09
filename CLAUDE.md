@@ -139,6 +139,49 @@ profile action=check-tools agentId=OMNI requiredTools=["browser","screenshot"]
 - `repo-context` - Codebase knowledge
 - `context-cluster` - Load Piston Labs context
 
+### A2A Protocol (Token Optimization - USE THIS!)
+
+**A2A (Agent-to-Agent) is an ultra-compact messaging format that reduces message size 10-50x.**
+
+Use A2A for internal agent communication to save tokens and reduce costs.
+
+| Tool | Purpose |
+|------|---------|
+| `a2a-encode` | Convert status/claims/messages to compact A2A format |
+| `a2a-parse` | Decode incoming A2A messages |
+| `a2a-bridge` | Execute Hub tools using A2A syntax |
+| `a2a-vocab` | Get the full A2A vocabulary reference |
+
+**Message Format:** `Ω{from|to|layer|payload}`
+
+**Common Operations:**
+| A2A Code | Meaning |
+|----------|---------|
+| `S.⚡` | Status: active |
+| `S.💤` | Status: idle |
+| `S.⏳` | Status: waiting |
+| `C.🎯` | Claim work |
+| `C.🔓` | Release claim |
+| `M.📢` | Broadcast message |
+| `M.✓` | Acknowledge |
+| `T.📋` | Create task |
+| `R.🔒` | Lock resource |
+| `R.🔓` | Unlock resource |
+
+**Examples:**
+```
+Ω{phil|*|1|S.⚡(85,"coding feature X")}     → Status update to all
+Ω{phil|hub|1|C.🎯("api/auth.ts")}          → Claim a file
+Ω{phil|*|1|M.📢("Fixed the CORS bug")}     → Broadcast message
+Ω{phil|hub|2|T.📋("task1")→C.🎯→S.⚡}      → Chain: create task, claim, go active
+```
+
+**Why Use A2A:**
+- 10-50x smaller than JSON messages
+- Saves Tyler $$$ on API costs
+- Designed for LLM-native communication
+- Future: Will bridge to external agent networks (contextOS)
+
 ### File Context Tools (Token Optimization)
 Use these tools to manage context efficiently when working with large files:
 
