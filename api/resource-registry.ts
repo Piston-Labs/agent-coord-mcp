@@ -107,6 +107,43 @@ const MCP_TOOLS = [
   { id: 'do-dashboard', name: 'do-dashboard', category: 'durable-objects', description: 'Agent self-dashboard with coaching suggestions and alerts.', file: 'src/tools/durable-objects.ts' },
   { id: 'do-session', name: 'do-session', category: 'durable-objects', description: 'Session resume for CEO Portal - participants, accomplishments, pending work.', file: 'src/tools/durable-objects.ts' },
   { id: 'do-onboard', name: 'do-onboard', category: 'durable-objects', description: 'Full agent onboarding bundle from DO - soul, checkpoint, team, tasks.', file: 'src/tools/durable-objects.ts' },
+  { id: 'do-credentials', name: 'do-credentials', category: 'durable-objects', description: 'Manage soul credentials (API keys, tokens) stored in Durable Objects for session injection.', file: 'src/tools/durable-objects.ts' },
+
+  // Blog Tools (src/tools/blog.ts) - NEW Dec 2024
+  { id: 'blog-session', name: 'blog-session', category: 'context', description: 'Create and manage blog generation sessions with research library integration.', file: 'src/tools/blog.ts' },
+  { id: 'blog-message', name: 'blog-message', category: 'context', description: 'Send messages in blog sessions for collaborative writing.', file: 'src/tools/blog.ts' },
+  { id: 'blog-draft', name: 'blog-draft', category: 'context', description: 'Save or retrieve blog drafts with word count, reading time, and research sources.', file: 'src/tools/blog.ts' },
+  { id: 'blog-search', name: 'blog-search', category: 'context', description: 'Search research library and shared memory for blog content.', file: 'src/tools/blog.ts' },
+  { id: 'blog-agent-prompt', name: 'blog-agent-prompt', category: 'context', description: 'Get system prompt for spawning a Claude agent for blog generation.', file: 'src/tools/blog.ts' },
+
+  // A2A Protocol Tools (src/tools/a2a-protocol.ts) - NEW Dec 2024
+  { id: 'a2a-send', name: 'a2a-send', category: 'external', description: 'Send messages using A2A protocol format (Ω{from|to|layer|payload}) for ultra-compact agent communication.', file: 'src/tools/a2a-protocol.ts' },
+  { id: 'a2a-parse', name: 'a2a-parse', category: 'external', description: 'Parse and explain A2A messages without executing (for debugging).', file: 'src/tools/a2a-protocol.ts' },
+  { id: 'a2a-encode', name: 'a2a-encode', category: 'external', description: 'Convert Hub MCP actions to A2A protocol format for contextOS agents.', file: 'src/tools/a2a-protocol.ts' },
+  { id: 'a2a-negotiate', name: 'a2a-negotiate', category: 'external', description: 'Negotiate A2A protocol version and capabilities with peer agents.', file: 'src/tools/a2a-protocol.ts' },
+  { id: 'a2a-vocab', name: 'a2a-vocab', category: 'external', description: 'List available A2A domains and operations with Hub equivalents.', file: 'src/tools/a2a-protocol.ts' },
+  { id: 'a2a-bridge', name: 'a2a-bridge', category: 'external', description: 'Send A2A messages to external endpoints (contextOS or other A2A-compatible servers).', file: 'src/tools/a2a-protocol.ts' },
+
+  // VM Pool Tools (src/tools/spawn.ts) - NEW Dec 2024
+  { id: 'vm-pool', name: 'vm-pool', category: 'infrastructure', description: 'Manage persistent cloud VMs that host agents. Create host VMs once, spawn agents instantly.', file: 'src/tools/spawn.ts' },
+
+  // Airtable Integration (src/tools/integrations.ts)
+  { id: 'airtable', name: 'airtable', category: 'integrations', description: 'Manage features, tasks, and product roadmap in Airtable. Create records, update status, query by view.', file: 'src/tools/integrations.ts' },
+
+  // VIN Decode Tool (src/tools/integrations.ts)
+  { id: 'vin-decode', name: 'vin-decode', category: 'integrations', description: 'Decode Vehicle Identification Number to get make, model, year, engine details via NHTSA API.', file: 'src/tools/integrations.ts' },
+
+  // Research Query Tool (src/tools/context.ts)
+  { id: 'research-query', name: 'research-query', category: 'context', description: 'Search internal philosophy library and research corpus (Stoic AI, alignment, consciousness).', file: 'src/tools/context.ts' },
+
+  // Dictation Tool (src/tools/integrations.ts)
+  { id: 'dictation', name: 'dictation', category: 'integrations', description: 'Store and analyze voice dictations, meeting notes, and call transcripts.', file: 'src/tools/integrations.ts' },
+
+  // Kudos Tool (src/tools/core.ts)
+  { id: 'kudos', name: 'kudos', category: 'core', description: 'Give and track peer recognition kudos between agents and team members.', file: 'src/tools/core.ts' },
+
+  // Rules Tool (src/tools/core.ts)
+  { id: 'rules', name: 'rules', category: 'core', description: 'Get development workflow rules, QC requirements, and success criteria.', file: 'src/tools/core.ts' },
 ];
 
 // External integrations with detailed status
@@ -257,10 +294,29 @@ const INTEGRATIONS = [
       'CRUD for features, products, components, notes'
     ]
   },
+  {
+    id: 'airtable',
+    name: 'Airtable',
+    category: 'external',
+    description: 'Database/spreadsheet for product roadmap, features, and task management',
+    status: process.env.AIRTABLE_API_TOKEN ? 'live' : 'needs-setup',
+    envVar: 'AIRTABLE_API_TOKEN',
+    setupUrl: 'https://airtable.com/create/tokens',
+    setupInstructions: 'Create Personal Access Token at Airtable. Set AIRTABLE_API_TOKEN and AIRTABLE_BASE_ID env vars.',
+    endpoint: '/api/airtable',
+    features: [
+      'list-records - query tables with filters',
+      'get-record - single record by ID',
+      'create-record - add new records',
+      'update-record - modify records',
+      'delete-record - remove records',
+      'list-tables - show schema'
+    ]
+  },
 ];
 
 // API endpoints - COMPLETE REGISTRY (auto-synced with /api/ folder)
-// Last updated: 2025-12-04
+// Last updated: 2025-12-08
 const API_ENDPOINTS = [
   // === CORE COORDINATION ===
   { id: 'chat', path: '/api/chat', methods: ['GET', 'POST', 'DELETE'], description: 'Group chat messaging', category: 'core' },
@@ -414,6 +470,22 @@ const API_ENDPOINTS = [
   { id: 'do-soul', path: '/agent/:id/soul', methods: ['GET', 'POST', 'PATCH'], description: '[DO] Soul progression - XP, levels, achievements', category: 'do' },
   { id: 'do-dashboard', path: '/agent/:id/dashboard', methods: ['GET'], description: '[DO] Agent self-dashboard with coaching suggestions', category: 'do' },
   { id: 'do-lock', path: '/lock/:path/*', methods: ['GET', 'POST'], description: '[DO] Resource locking with TTL and history', category: 'do' },
+  { id: 'do-credentials', path: '/agent/:id/credentials', methods: ['GET', 'POST', 'DELETE'], description: '[DO] Soul credentials - API keys and tokens for session injection', category: 'do' },
+
+  // === NEW API ENDPOINTS (Dec 2024) ===
+  { id: 'airtable', path: '/api/airtable', methods: ['GET', 'POST', 'PUT', 'DELETE'], description: 'Airtable database integration - manage features, tasks, roadmap', category: 'integrations' },
+  { id: 'agent-chat', path: '/api/agent-chat', methods: ['GET', 'POST'], description: 'Agent-to-agent chat API for spawned agents to communicate', category: 'agents' },
+  { id: 'agent-stall-check', path: '/api/agent-stall-check', methods: ['GET', 'POST'], description: 'Check for stalled agents and trigger shadow takeover', category: 'infrastructure' },
+  { id: 'embeddings', path: '/api/embeddings', methods: ['GET', 'POST'], description: 'Vector embeddings for semantic search and memory', category: 'context' },
+  { id: 'memory-consolidate', path: '/api/memory-consolidate', methods: ['POST'], description: 'Consolidate and compress agent memories to reduce storage', category: 'context' },
+  { id: 'persistence-docs', path: '/api/persistence-docs', methods: ['GET', 'POST', 'DELETE'], description: 'PERSISTENCE research documents storage and retrieval', category: 'context' },
+  { id: 'research', path: '/api/research', methods: ['GET', 'POST'], description: 'Research operations API', category: 'context' },
+  { id: 'research-analyze', path: '/api/research-analyze', methods: ['POST'], description: 'AI-powered research analysis and summarization', category: 'context' },
+  { id: 'research-query', path: '/api/research-query', methods: ['GET', 'POST'], description: 'Query research library and memory with semantic search', category: 'context' },
+  { id: 'sales-chat', path: '/api/sales-chat', methods: ['POST'], description: 'AI sales assistant chat for shop owners', category: 'sales' },
+  { id: 'shadow-agents', path: '/api/shadow-agents', methods: ['GET', 'POST', 'DELETE'], description: 'Shadow agent registry for automatic failover', category: 'infrastructure' },
+  { id: 'tools-test', path: '/api/tools-test', methods: ['GET'], description: 'Automated MCP tool validation - run tests, check results', category: 'testing' },
+  { id: 'vin-decode', path: '/api/vin-decode', methods: ['GET', 'POST'], description: 'Decode VIN to get vehicle make, model, year via NHTSA API', category: 'fleet' },
 ];
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {

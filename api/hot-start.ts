@@ -21,6 +21,9 @@ const ZONES_KEY = 'agent-coord:zones';
 const CLAIMS_KEY = 'agent-coord:claims';
 const SOULS_KEY = 'agent-coord:souls';  // For meta-learning integration
 
+// Durable Objects URL for soul progression
+const DO_URL = process.env.DO_URL || 'http://localhost:8787';
+
 // Built-in Piston Labs context (same as piston-context.ts)
 const PISTON_CONTEXT: Record<string, any> = {
   technical: {
@@ -119,6 +122,19 @@ interface HotStartResponse {
   // Quick tips based on role
   tips: string[];
 
+  // Durable Objects soul progression (XP, level, achievements)
+  doSoul?: {
+    soulId: string;
+    name: string;
+    level: string;
+    totalXP: number;
+    currentStreak: number;
+    achievements: string[];
+    abilities: Record<string, boolean>;
+    trustScore: number;
+    specializations: Record<string, number>;
+  };
+
   // Context Substrate - rules and session
   substrate?: {
     session: SubstrateSession;
@@ -132,6 +148,31 @@ interface HotStartResponse {
     };
     requiresAcknowledgment: boolean;
   };
+}
+
+/**
+ * Fetch DO soul via do-onboard endpoint (auto-creates if missing)
+ */
+async function fetchDoSoul(agentId: string): Promise<any> {
+  try {
+    const response = await fetch(`${DO_URL}/coordinator/onboard`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agentId })
+    });
+
+    if (!response.ok) {
+      console.error(`[hot-start] DO onboard failed for ${agentId}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.soul || null;
+  } catch (error) {
+    // DO might not be running - this is optional, not critical
+    console.error(`[hot-start] DO fetch failed for ${agentId}:`, error);
+    return null;
+  }
 }
 
 /**
@@ -175,10 +216,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const roleStr = role as string || 'general';
     const repoStr = repo as string;
 
-    // Parse includes (default: all, now includes substrate)
+    // Parse includes (default: all, now includes substrate and doSoul)
     const includes = include
       ? (include as string).split(',').map(s => s.trim())
-      : ['checkpoint', 'team', 'chat', 'context', 'memories', 'repo', 'metrics', 'substrate'];
+      : ['checkpoint', 'team', 'chat', 'context', 'memories', 'repo', 'metrics', 'substrate', 'doSoul'];
 
     // Build response in parallel
     const [
@@ -193,7 +234,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       locksData,
       zonesData,
       claimsData,
-      soulData  // Titans/MIRAS meta-learning integration
+      soulData,  // Titans/MIRAS meta-learning integration
+      doSoulData  // Durable Objects progression
     ] = await Promise.all([
       // Agent's checkpoint
       includes.includes('checkpoint')
@@ -253,6 +295,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Soul data for meta-learning (Titans/MIRAS-inspired personalization)
       includes.includes('memories')
         ? redis.hget(SOULS_KEY, agentIdStr)
+        : null,
+
+      // Durable Objects soul progression (XP, level, achievements)
+      // Uses do-onboard which auto-creates soul if missing
+      includes.includes('doSoul')
+        ? fetchDoSoul(agentIdStr)
         : null
     ]);
 
@@ -517,6 +565,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       repoContext: repoContext ? (typeof repoContext === 'string' ? JSON.parse(repoContext) : repoContext) : undefined,
 
       tips,
+
+      // Durable Objects soul progression (unified with Redis identity)
+      doSoul: doSoulData ? {
+        soulId: doSoulData.soulId,
+        name: doSoulData.name,
+        level: doSoulData.level,
+        totalXP: doSoulData.totalXP,
+        currentStreak: doSoulData.currentStreak,
+        achievements: doSoulData.achievements || [],
+        abilities: doSoulData.abilities || {},
+        trustScore: doSoulData.trustScore,
+        specializations: doSoulData.specializations || {},
+      } : undefined,
 
       substrate,
     };

@@ -114,16 +114,27 @@ iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocola
 # Install Node.js and Git
 "Installing Node.js and Git..." | Out-File $LogFile -Append
 choco install nodejs-lts git -y
-refreshenv
 
 # Refresh PATH from registry (refreshenv doesn't work in UserData scripts)
 $machinePath = [System.Environment]::GetEnvironmentVariable("Path","Machine")
 $userPath = [System.Environment]::GetEnvironmentVariable("Path","User")
-$env:Path = "$machinePath;$userPath"
+$nodePath = "C:\\Program Files\\nodejs"
+$gitPath = "C:\\Program Files\\Git\\bin"
+$env:Path = "$machinePath;$userPath;$nodePath;$gitPath"
 
-# Create npm global directory for SYSTEM user (fixes "ENOENT: no such file or directory" error)
-$npmGlobalDir = "C:\\Windows\\system32\\config\\systemprofile\\AppData\\Roaming\\npm"
-New-Item -ItemType Directory -Force -Path $npmGlobalDir
+# Configure npm for SYSTEM user context
+# SYSTEM user has a different profile path than regular users
+$npmGlobalDir = "C:\\AgentHub\\npm-global"
+$npmCacheDir = "C:\\AgentHub\\npm-cache"
+New-Item -ItemType Directory -Force -Path $npmGlobalDir | Out-Null
+New-Item -ItemType Directory -Force -Path $npmCacheDir | Out-Null
+
+# Set npm prefix and cache to our controlled directories
+"Configuring npm for SYSTEM user..." | Out-File $LogFile -Append
+npm config set prefix "$npmGlobalDir" 2>&1 | Out-File $LogFile -Append
+npm config set cache "$npmCacheDir" 2>&1 | Out-File $LogFile -Append
+
+# Add npm global bin to PATH for current session
 $env:Path = "$env:Path;$npmGlobalDir"
 
 # Install Claude Code CLI
@@ -134,14 +145,21 @@ npm install -g @anthropic-ai/claude-code 2>&1 | Out-File $LogFile -Append
 $claudePath = "$npmGlobalDir\\claude.cmd"
 if (Test-Path $claudePath) {
     "Claude CLI installed successfully at $claudePath" | Out-File $LogFile -Append
-    # Add npm global to Machine PATH permanently
-    $currentPath = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-    if ($currentPath -notlike "*$npmGlobalDir*") {
-        [Environment]::SetEnvironmentVariable("Path", "$currentPath;$npmGlobalDir", "Machine")
-        "Added npm global dir to PATH" | Out-File $LogFile -Append
-    }
 } else {
-    "WARNING: Claude CLI not found at expected path" | Out-File $LogFile -Append
+    "WARNING: Claude CLI not found at $claudePath, checking alternate locations..." | Out-File $LogFile -Append
+    # Try to find claude anywhere
+    $found = Get-ChildItem -Path "C:\\" -Recurse -Filter "claude.cmd" -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) {
+        "Found claude at: $($found.FullName)" | Out-File $LogFile -Append
+        $npmGlobalDir = $found.DirectoryName
+    }
+}
+
+# Add npm global to Machine PATH permanently (for scheduled task and future sessions)
+$currentPath = [System.Environment]::GetEnvironmentVariable("Path","Machine")
+if ($currentPath -notlike "*$npmGlobalDir*") {
+    [Environment]::SetEnvironmentVariable("Path", "$currentPath;$npmGlobalDir", "Machine")
+    "Added npm global dir to PATH permanently" | Out-File $LogFile -Append
 }
 
 # Clone repo
@@ -165,11 +183,20 @@ git config --global credential.helper store
 
 # Create startup script (using single quotes to avoid escaping issues)
 $StartScript = @'
-Set-Location C:\AgentHub\agent-coord-mcp
+# Load environment variables
 $env:ANTHROPIC_API_KEY = [Environment]::GetEnvironmentVariable("ANTHROPIC_API_KEY", "Machine")
 $env:GITHUB_TOKEN = [Environment]::GetEnvironmentVariable("GITHUB_TOKEN", "Machine")
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
-node agent-spawn-service-v2.cjs
+
+# Navigate to repo
+Set-Location C:\AgentHub\agent-coord-mcp
+
+# Log startup
+$logFile = "C:\AgentHub\logs\service-$(Get-Date -Format 'yyyyMMdd').log"
+"Service starting at $(Get-Date)" | Out-File $logFile -Append
+
+# Start spawn service
+node agent-spawn-service-v2.cjs 2>&1 | Out-File $logFile -Append
 '@
 $StartScript | Out-File "$AgentDir\\start-service.ps1" -Encoding UTF8
 
