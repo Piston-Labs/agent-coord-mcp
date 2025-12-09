@@ -1,6 +1,7 @@
 name = "agent-coord-do"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
+account_id = "8d4252856750d8486c1740c063bc5a40"
 
 # Durable Objects configuration
 [durable_objects]
