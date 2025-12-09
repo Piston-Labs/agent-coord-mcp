@@ -464,31 +464,36 @@ npm run build 2>&1 | Out-File $LogFile -Append
 "Repository ready (lightweight install)" | Out-File $LogFile -Append
 
 # ==============================================================================
-# STEP 5: Create MCP Config
+# STEP 5: Create MCP Config (Write raw JSON to avoid PowerShell encoding issues)
 # ==============================================================================
 
-# Build MCP config with proper escaping
-$mcpConfigContent = @{
-    mcpServers = @{
-        "agent-coord" = @{
-            command = "node"
-            args = @("$RepoDir\\dist\\index.js")
-            env = @{
-                UPSTASH_REDIS_REST_URL = "${credentials.UPSTASH_REDIS_REST_URL}"
-                UPSTASH_REDIS_REST_TOKEN = "${credentials.UPSTASH_REDIS_REST_TOKEN}"
-                DO_URL = "${credentials.DO_URL || ''}"
-                GITHUB_TOKEN = "${credentials.GITHUB_TOKEN || ''}"
-                LINEAR_API_KEY = "${credentials.LINEAR_API_KEY || ''}"
-                AWS_ACCESS_KEY_ID = "${credentials.AWS_ACCESS_KEY_ID || ''}"
-                AWS_SECRET_ACCESS_KEY = "${credentials.AWS_SECRET_ACCESS_KEY || ''}"
-                AWS_REGION = "${credentials.AWS_REGION || 'us-west-1'}"
-                ANTHROPIC_API_KEY = "${credentials.ANTHROPIC_API_KEY}"
-            }
-        }
+# Write MCP config as raw JSON string - PowerShell's ConvertTo-Json + UTF8 adds BOM
+# which breaks Claude CLI's JSON parser. Use forward slashes (works on Windows).
+$mcpConfigJson = @'
+{
+  "mcpServers": {
+    "agent-coord": {
+      "command": "node",
+      "args": ["C:/AgentHub/repos/agent-coord-mcp/dist/index.js"],
+      "env": {
+        "UPSTASH_REDIS_REST_URL": "${credentials.UPSTASH_REDIS_REST_URL}",
+        "UPSTASH_REDIS_REST_TOKEN": "${credentials.UPSTASH_REDIS_REST_TOKEN}",
+        "DO_URL": "${credentials.DO_URL || ''}",
+        "GITHUB_TOKEN": "${credentials.GITHUB_TOKEN || ''}",
+        "LINEAR_API_KEY": "${credentials.LINEAR_API_KEY || ''}",
+        "AWS_ACCESS_KEY_ID": "${credentials.AWS_ACCESS_KEY_ID || ''}",
+        "AWS_SECRET_ACCESS_KEY": "${credentials.AWS_SECRET_ACCESS_KEY || ''}",
+        "AWS_REGION": "${credentials.AWS_REGION || 'us-west-1'}",
+        "ANTHROPIC_API_KEY": "${credentials.ANTHROPIC_API_KEY}"
+      }
     }
+  }
 }
-$mcpConfigContent | ConvertTo-Json -Depth 10 | Out-File "$AgentDir\\config\\mcp-config.json" -Encoding UTF8
-"MCP config written to $AgentDir\\config\\mcp-config.json" | Out-File $LogFile -Append
+'@
+
+# Write without BOM using .NET (PowerShell's Out-File -Encoding UTF8 adds BOM)
+[System.IO.File]::WriteAllText("$AgentDir\\config\\mcp-config.json", $mcpConfigJson, [System.Text.UTF8Encoding]::new($false))
+"MCP config written to $AgentDir\\config\\mcp-config.json (UTF-8 no BOM)" | Out-File $LogFile -Append
 
 # Verify MCP config was created
 if (Test-Path "$AgentDir\\config\\mcp-config.json") {

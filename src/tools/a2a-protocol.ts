@@ -848,4 +848,89 @@ export function registerA2ATools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // AGENT-STEER - Send steering commands to cloud agents via bridge
+  // ============================================================================
+
+  server.tool(
+    'agent-steer',
+    'Send steering commands to cloud agents. Cloud agents poll for these commands and execute them.',
+    {
+      from: z.string().describe('Your agent ID (sender)'),
+      to: z.string().describe('Target cloud agent ID'),
+      command: z.enum([
+        'run-task',       // Execute a specific task
+        'use-tool',       // Call an MCP tool
+        'checkpoint',     // Save checkpoint
+        'report-status',  // Request status report
+        'poll-chat',      // Check group chat
+        'terminate',      // Request graceful termination
+        'custom'          // Custom command
+      ]).describe('Command type'),
+      payload: z.record(z.unknown()).optional().describe('Command payload/parameters'),
+      priority: z.enum(['low', 'normal', 'high', 'urgent']).optional().describe('Command priority (default: normal)')
+    },
+    async (args) => {
+      try {
+        const response = await fetch(`${API_BASE}/api/agent-bridge?action=steer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: args.from,
+            to: args.to,
+            command: args.command,
+            payload: args.payload || {},
+            priority: args.priority || 'normal'
+          })
+        });
+
+        const result = await response.json();
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(result, null, 2)
+          }]
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({ error: String(error) })
+          }]
+        };
+      }
+    }
+  );
+
+  // ============================================================================
+  // AGENT-BRIDGE-STATUS - Check bridge and cloud agent status
+  // ============================================================================
+
+  server.tool(
+    'agent-bridge-status',
+    'Check status of the agent bridge and connected cloud agents.',
+    {
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      try {
+        const response = await fetch(`${API_BASE}/api/agent-bridge?action=status`);
+        const result = await response.json();
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify(result, null, 2)
+          }]
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: JSON.stringify({ error: String(error) })
+          }]
+        };
+      }
+    }
+  );
 }
