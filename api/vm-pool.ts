@@ -471,6 +471,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Create new pool VM
       const { vmSize = 'medium' } = req.body || {};
       const sizeConfig = INSTANCE_SIZES[vmSize] || INSTANCE_SIZES.medium;
+      const instanceType = vmSize === 'large' ? 't3.large' : vmSize === 'small' ? 't3.small' : 't3.medium';
       const vmId = generateId('pool-vm');
       const hubUrl = process.env.API_BASE || 'https://agent-coord-mcp.vercel.app';
 
@@ -479,7 +480,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Launch EC2 instance
       const runResult = await ec2.send(new RunInstancesCommand({
         ImageId: WINDOWS_AMI,
-        InstanceType: sizeConfig.type,
+        InstanceType: instanceType,
         MinCount: 1,
         MaxCount: 1,
         KeyName: process.env.AWS_KEY_PAIR_NAME || 'claude-agents',
