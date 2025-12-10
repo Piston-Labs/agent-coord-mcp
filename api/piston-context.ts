@@ -27,10 +27,11 @@ const PISTON_CONTEXT: Record<string, any> = {
     description: 'Piston Labs technical architecture - automotive telemetry platform',
     topics: {
       devices: {
-        summary: 'Teltonika FMM00A GPS telemetry devices sold to consumers for vehicle tracking',
-        details: 'Piston Labs sells Teltonika FMM00A OBD-II plug-in devices directly to consumers. These devices connect to vehicles and transmit real-time telemetry data including GPS location, speed, mileage, VIN, and battery voltage.',
+        summary: 'Otto - our OBD-II telemetry dongle sold to consumers for vehicle tracking',
+        details: 'Piston Labs sells Otto, our branded OBD-II plug-in device (Teltonika FMM00A hardware), directly to consumers. Otto connects to vehicles and transmits real-time telemetry data including GPS location, speed, mileage, VIN, and battery voltage.',
         patterns: ['LTE connectivity via Soracom SIM', 'OBD-II port plug-and-play', 'Real-time telemetry streaming'],
         hardware: {
+          productName: 'Otto',
           model: 'Teltonika FMM00A',
           connectivity: 'LTE via Soracom SIM',
           interface: 'OBD-II port',
@@ -51,8 +52,8 @@ const PISTON_CONTEXT: Record<string, any> = {
         }
       },
       lambda: {
-        summary: 'Python Lambda function parses Teltonika protocol data',
-        details: 'parse-teltonika-data Lambda function (Python 3.13) receives data from AWS IoT Core, parses Teltonika FMM00A protocol, extracts telemetry fields, and writes to S3/TimescaleDB/Supabase.',
+        summary: 'Python Lambda function parses Otto device (Teltonika protocol) data',
+        details: 'parse-teltonika-data Lambda function (Python 3.13) receives data from AWS IoT Core, parses Otto device data (Teltonika FMM00A protocol), extracts telemetry fields, and writes to S3/TimescaleDB/Supabase.',
         patterns: ['Teltonika codec parsing', 'Multi-destination writes', 'Error handling with DLQ'],
         function: {
           name: 'parse-teltonika-data',
@@ -85,15 +86,15 @@ const PISTON_CONTEXT: Record<string, any> = {
     topics: {
       vision: {
         summary: 'Consumer vehicle telemetry + B2B shop dashboard for auto repair marketing',
-        details: 'Piston Labs has two products: (1) B2C telemetry devices sold to consumers who plug them into their cars for vehicle tracking and service reminders, and (2) B2B dashboard sold to auto repair shops for customer marketing and light CRM.',
+        details: 'Piston Labs has two products: (1) Otto - our B2C telemetry dongle sold to consumers who plug it into their cars for vehicle tracking and service reminders, and (2) B2B dashboard sold to auto repair shops for customer marketing and light CRM.',
         products: {
-          b2c: 'Teltonika FMM00A devices + consumer web app for vehicle tracking',
+          b2c: 'Otto device + consumer web app for vehicle tracking',
           b2b: 'Shop dashboard for customer management, marketing, and service coordination'
         }
       },
       consumerApp: {
         summary: 'Consumer web app for vehicle tracking, service history, and maintenance reminders',
-        details: 'Consumers purchase Teltonika devices and use the companion web app to view real-time vehicle location, track mileage, receive oil change reminders, upload service documents, and request appointments.',
+        details: 'Consumers purchase Otto and use the companion web app to view real-time vehicle location, track mileage, receive oil change reminders, upload service documents, and request appointments.',
         features: ['Real-time GPS tracking', 'Mileage tracking', 'Service history', 'Oil change reminders', 'Document upload', 'Appointment requests']
       },
       shopDashboard: {
@@ -112,8 +113,8 @@ const PISTON_CONTEXT: Record<string, any> = {
     description: 'Sales strategy for B2C device sales and B2B shop subscriptions',
     topics: {
       strategy: {
-        summary: 'B2C: Sell devices to consumers. B2B: Sell dashboard subscriptions to auto repair shops.',
-        details: 'Two sales motions: (1) Sell Teltonika devices to consumers who want vehicle tracking and service reminders, (2) Sell dashboard subscriptions to auto repair shops who want to market to and manage customers.',
+        summary: 'B2C: Sell Otto devices to consumers. B2B: Sell dashboard subscriptions to auto repair shops.',
+        details: 'Two sales motions: (1) Sell Otto devices to consumers who want vehicle tracking and service reminders, (2) Sell dashboard subscriptions to auto repair shops who want to market to and manage customers.',
         icp: {
           b2c: 'Car owners who want vehicle tracking and maintenance reminders',
           b2b: 'Independent auto repair shops, tire shops, oil change franchises'
@@ -172,7 +173,7 @@ const PISTON_CONTEXT: Record<string, any> = {
         roles: {
           tyler: 'CEO - Strategy, sales, agent coordination infrastructure',
           ryan: 'Technical Co-Founder - Gran Autismo dashboard (React/Supabase)',
-          tom: 'Hardware/IoT - Teltonika devices, AWS IoT pipeline, telemetry accuracy'
+          tom: 'Hardware/IoT - Otto devices (Teltonika hardware), AWS IoT pipeline, telemetry accuracy'
         }
       },
       onboarding: {
