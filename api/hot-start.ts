@@ -30,9 +30,9 @@ const PISTON_CONTEXT: Record<string, any> = {
   technical: {
     description: 'Piston Labs technical architecture - automotive telemetry platform',
     topics: {
-      devices: { summary: 'Teltonika FMM00A GPS telemetry devices sold to consumers for vehicle tracking' },
+      devices: { summary: 'Otto - our OBD-II telemetry dongle (Teltonika FMM00A hardware) sold to consumers for vehicle tracking' },
       aws: { summary: 'AWS IoT pipeline: Soracom -> AWS IoT Core -> Lambda -> S3/TimescaleDB/Supabase' },
-      lambda: { summary: 'Python Lambda function parses Teltonika FMM00A protocol data' },
+      lambda: { summary: 'Python Lambda function parses Otto device (Teltonika protocol) data' },
       databases: { summary: 'S3 for raw data, TimescaleDB for time-series, Supabase for app data' },
       api: { summary: 'REST APIs for consumer web app and B2B shop dashboard' }
     }

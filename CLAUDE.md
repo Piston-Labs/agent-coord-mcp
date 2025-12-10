@@ -21,10 +21,12 @@ This is the **Agent Coordination Hub** - a multi-agent orchestration system that
 ### Piston Labs Products (Separate)
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| Telemetry Storage | **AWS S3** | Raw device data (`telemetry-raw-usw1`) |
-| Device Registry | **AWS DynamoDB** | Device shadows, profiles |
-| Real-time Ingest | **AWS IoT Core** | MQTT from Teltonika devices |
+| Telemetry Storage | **AWS S3** | Raw Otto device data (`telemetry-raw-usw1`) |
+| Device Registry | **AWS DynamoDB** | Otto device shadows, profiles |
+| Real-time Ingest | **AWS IoT Core** | MQTT from Otto devices (Teltonika hardware) |
 | Processing | **AWS Lambda** | Telemetry parsing, alerts |
+
+**Note:** "Otto" is our consumer-facing product name for the OBD-II telemetry dongle. The underlying hardware is Teltonika FMM00A.
 
 **The Hub coordinates agents working on Piston Labs products, but doesn't share their infrastructure.**
 
@@ -212,9 +214,9 @@ Use these tools to manage context efficiently when working with large files:
 
 ### Piston Labs Context (for agents working on Piston products)
 These tools help agents coordinate work on Piston Labs products. The data is stored in the Hub's Redis, not AWS.
-- `device` - GPS fleet info (cached from AWS)
+- `device` - Otto fleet info (cached from AWS)
 - `aws-status` - Check Piston's AWS infrastructure status
-- `fleet-analytics` - Device analytics
+- `fleet-analytics` - Otto device analytics
 - `shop` - Sales pipeline CRM
 - `generate-doc` - Create sales documents
 - `context-cluster` - Load Piston product/technical context
