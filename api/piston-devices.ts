@@ -87,6 +87,12 @@ const KNOWN_DEVICES: Record<string, Partial<Device>> = {
     model: 'FMM00A',
     vehicle: { make: 'Test', model: 'Workbench', year: 2024 },
     notes: 'Development/testing device'
+  },
+  '862464068693907': {
+    name: 'Tyler Test Device',
+    model: 'FMM00A',
+    vehicle: { make: 'Test', model: 'Config Validation', year: 2025 },
+    notes: 'Active test device - Dec 2025 config validation. IMEI auth every ~2 min.'
   }
 };
 
