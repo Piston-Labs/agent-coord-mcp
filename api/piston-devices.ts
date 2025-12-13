@@ -24,6 +24,7 @@ interface Device {
   imei: string;
   name: string;
   model: 'FMB920' | 'FMM00A' | 'FMC130' | 'unknown';
+  backend?: 'aws' | 'cloudflare';  // AWS IoT Core (legacy) vs Cloudflare Workers (new)
   status: 'active' | 'idle' | 'offline' | 'provisioning';
   vehicle?: {
     make?: string;
@@ -50,18 +51,26 @@ interface Device {
   lastFuelLevel?: number;
 }
 
-// Known Piston Labs devices (Teltonika FMM00A OBD-II devices)
-// Updated Dec 8 2025 from VIN decode (AVL ID 256) via NHTSA API
+/**
+ * BACKEND ARCHITECTURE:
+ * - Devices 1-5 (862464068511489 through 862464068525406) -> AWS IoT Core (legacy)
+ * - Device 6+ (862464068693907+) -> Cloudflare Workers + D1 (new architecture)
+ * 
+ * Migration from AWS to Cloudflare in progress as of Dec 2025.
+ * Updated Dec 8 2025 from VIN decode (AVL ID 256) via NHTSA API
+ */
 const KNOWN_DEVICES: Record<string, Partial<Device>> = {
   '862464068511489': {
     name: 'Toyota Tacoma',
     model: 'FMM00A',
+    backend: 'aws',
     vehicle: { make: 'Toyota', model: 'Tacoma', year: 2008 },
     notes: 'Production device - awaiting VIN confirmation'
   },
   '862464068525638': {
     name: 'Lexus RX 350',
     model: 'FMM00A',
+    backend: 'aws',
     vehicle: {
       make: 'Lexus',
       model: 'RX 350',
@@ -73,24 +82,28 @@ const KNOWN_DEVICES: Record<string, Partial<Device>> = {
   '862464068558217': {
     name: 'Pug Subaru Legacy',
     model: 'FMM00A',
+    backend: 'aws',
     vehicle: { make: 'Subaru', model: 'Legacy', year: 1997 },
     notes: 'Beta tester device - Pug. 1997 may have limited OBD-II support'
   },
   '862464068597504': {
     name: 'Tom OBD2 Emulator',
     model: 'FMM00A',
+    backend: 'aws',
     vehicle: { make: 'Emulator', model: 'OBD2', year: 2024 },
     notes: 'Spare device - OBD2 emulator for testing'
   },
   '862464068525406': {
     name: 'Workbench Device',
     model: 'FMM00A',
+    backend: 'aws',
     vehicle: { make: 'Test', model: 'Workbench', year: 2024 },
     notes: 'Development/testing device'
   },
   '862464068693907': {
     name: 'Tyler Test Device',
     model: 'FMM00A',
+    backend: 'cloudflare',
     vehicle: { make: 'Test', model: 'Config Validation', year: 2025 },
     notes: 'Active test device - Dec 2025 config validation. IMEI auth every ~2 min.'
   }
