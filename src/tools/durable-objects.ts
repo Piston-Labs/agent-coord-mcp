@@ -14,8 +14,8 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 
-// DO_URL for production, fallback to local wrangler dev
-const DO_BASE = process.env.DO_URL || 'http://127.0.0.1:8787';
+// Production DO URL - always use deployed worker, never local
+const DO_BASE = process.env.DO_URL || 'https://agent-coord-do.elidecloud.workers.dev';
 
 export function registerDurableObjectsTools(server: McpServer) {
   // ============================================================================
@@ -24,7 +24,7 @@ export function registerDurableObjectsTools(server: McpServer) {
 
   server.tool(
     'do-soul',
-    'Soul progression system in Durable Objects. Get/update XP, levels, achievements, abilities, and specializations. Requires wrangler dev running locally or DO_URL set.',
+    'Soul progression system in Durable Objects. Get/update XP, levels, achievements, abilities, and specializations.',
     {
       action: z.enum(['get', 'create', 'add-xp', 'unlock-achievement']).describe('get=fetch soul, create=new soul, add-xp=award XP, unlock-achievement=grant achievement'),
       agentId: z.string().describe('Agent ID (soul is stored per-agent)'),
@@ -44,7 +44,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             const res = await fetch(`${baseUrl}?agentId=${agentId}`);
             if (!res.ok) {
               const error = await res.text();
-              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get soul: ${error}`, hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev' }) }] };
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get soul: ${error}` }) }] };
             }
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
@@ -102,10 +102,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
         }
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -116,7 +113,7 @@ export function registerDurableObjectsTools(server: McpServer) {
 
   server.tool(
     'do-trace',
-    'WorkTrace observability - log work steps, track progress, detect stuck states. "Show Your Work" for agents. Requires wrangler dev or DO_URL.',
+    'WorkTrace observability - log work steps, track progress, detect stuck states. "Show Your Work" for agents.',
     {
       action: z.enum(['list', 'start', 'get', 'step', 'complete']).describe('list=all traces, start=new trace, get=fetch trace, step=log work step, complete=finish trace'),
       agentId: z.string().describe('Agent ID'),
@@ -138,7 +135,7 @@ export function registerDurableObjectsTools(server: McpServer) {
           case 'list': {
             const res = await fetch(`${baseUrl}?agentId=${agentId}`);
             if (!res.ok) {
-              return { content: [{ type: 'text', text: JSON.stringify({ error: 'Failed to list traces', hint: 'Is wrangler dev running?' }) }] };
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'Failed to list traces' }) }] };
             }
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
@@ -213,7 +210,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
         }
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error), hint: 'Is wrangler dev running?' }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -237,8 +234,7 @@ export function registerDurableObjectsTools(server: McpServer) {
         if (!res.ok) {
           const error = await res.text();
           return { content: [{ type: 'text', text: JSON.stringify({
-            error: `Failed to get dashboard: ${error}`,
-            hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
+            error: `Failed to get dashboard: ${error}`
           }) }] };
         }
 
@@ -262,10 +258,7 @@ export function registerDurableObjectsTools(server: McpServer) {
           ...data
         }, null, 2) }] };
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -285,18 +278,14 @@ export function registerDurableObjectsTools(server: McpServer) {
         if (!res.ok) {
           const error = await res.text();
           return { content: [{ type: 'text', text: JSON.stringify({
-            error: `Failed to get session resume: ${error}`,
-            hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
+            error: `Failed to get session resume: ${error}`
           }) }] };
         }
 
         const data = await res.json();
         return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -320,8 +309,7 @@ export function registerDurableObjectsTools(server: McpServer) {
         if (!res.ok) {
           const error = await res.text();
           return { content: [{ type: 'text', text: JSON.stringify({
-            error: `Failed to get onboarding bundle: ${error}`,
-            hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
+            error: `Failed to get onboarding bundle: ${error}`
           }) }] };
         }
 
@@ -344,10 +332,7 @@ export function registerDurableObjectsTools(server: McpServer) {
           ...data
         }, null, 2) }] };
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -358,7 +343,7 @@ export function registerDurableObjectsTools(server: McpServer) {
 
   server.tool(
     'do-credentials',
-    'Manage soul credentials (API keys, tokens) stored in Durable Objects. Credentials persist with the soul for session injection. Requires wrangler dev or DO_URL.',
+    'Manage soul credentials (API keys, tokens) stored in Durable Objects. Credentials persist with the soul for session injection.',
     {
       action: z.enum(['list', 'get', 'set', 'set-batch', 'delete', 'bundle']).describe('list=show keys, get=get value, set=store single, set-batch=store multiple, delete=remove, bundle=get all for injection'),
       agentId: z.string().describe('Agent ID (credentials stored per-soul)'),
@@ -468,10 +453,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
         }
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -505,8 +487,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             if (!res.ok) {
               const error = await res.text();
               return { content: [{ type: 'text', text: JSON.stringify({
-                error: `Failed to get checkpoint: ${error}`,
-                hint: 'Is wrangler dev running? Or no checkpoint saved yet.'
+                error: `Failed to get checkpoint: ${error}`
               }) }] };
             }
             const data = await res.json();
@@ -568,10 +549,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
         }
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
@@ -582,7 +560,7 @@ export function registerDurableObjectsTools(server: McpServer) {
 
   server.tool(
     'do-vmpool',
-    'Manage persistent cloud VM pool in Durable Objects. Track VMs, assign agents, monitor health, auto-scale. Perfect for instant agent spawning. Requires wrangler dev or DO_URL.',
+    'Manage persistent cloud VM pool in Durable Objects. Track VMs, assign agents, monitor health, auto-scale. Perfect for instant agent spawning.',
     {
       action: z.enum(['status', 'list', 'spawn', 'provision', 'terminate', 'ready', 'release', 'scale', 'config']).describe('status=pool overview, list=all VMs, spawn=assign agent to VM, provision=register new VM, terminate=remove VM, ready=mark VM ready, release=release agent, scale=get scaling recommendation, config=get/set config'),
       agentId: z.string().optional().describe('Agent ID (for spawn/release actions)'),
@@ -613,7 +591,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             const res = await fetch(`${baseUrl}/status`);
             if (!res.ok) {
               const error = await res.text();
-              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get pool status: ${error}`, hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev' }) }] };
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get pool status: ${error}` }) }] };
             }
             const data = await res.json();
             return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
@@ -727,10 +705,7 @@ export function registerDurableObjectsTools(server: McpServer) {
             return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
         }
       } catch (error) {
-        return { content: [{ type: 'text', text: JSON.stringify({
-          error: String(error),
-          hint: 'Is wrangler dev running? Try: cd cloudflare-do && npx wrangler dev'
-        }) }] };
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
       }
     }
   );
