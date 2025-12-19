@@ -181,6 +181,7 @@ git config --global credential.helper store
 ` : ''}
 
 # Create startup script (using single quotes to avoid escaping issues)
+# Note: Use escaped backslashes (\\) in JS template literal to preserve paths
 $StartScript = @'
 # Load environment variables
 $env:ANTHROPIC_API_KEY = [Environment]::GetEnvironmentVariable("ANTHROPIC_API_KEY", "Machine")
@@ -188,10 +189,10 @@ $env:GITHUB_TOKEN = [Environment]::GetEnvironmentVariable("GITHUB_TOKEN", "Machi
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")
 
 # Navigate to repo
-Set-Location C:\AgentHub\agent-coord-mcp
+Set-Location C:\\AgentHub\\agent-coord-mcp
 
 # Log startup
-$logFile = "C:\AgentHub\logs\service-$(Get-Date -Format 'yyyyMMdd').log"
+$logFile = "C:\\AgentHub\\logs\\service-$(Get-Date -Format 'yyyyMMdd').log"
 "Service starting at $(Get-Date)" | Out-File $logFile -Append
 
 # Start spawn service
