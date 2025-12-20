@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patina - Vintage Internet Search</title>
+  <style>
+    :root {
+      --bg: #f5f0e6;
+      --text: #2d2d2d;
+      --accent: #6b4c35;
+      --link: #1a5276;
+      --border: #c9b99a;
+      --card-bg: #fffef9;
+      --muted: #7d7d7d;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Georgia, 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 0;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      font-size: 3em;
+      margin: 0;
+      color: var(--accent);
+      letter-spacing: 2px;
+    }
+
+    .tagline {
+      font-style: italic;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+
+    .search-box {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 12px 16px;
+      font-size: 1.1em;
+      font-family: inherit;
+      border: 2px solid var(--border);
+      background: var(--card-bg);
+      border-radius: 4px;
+    }
+
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    button {
+      padding: 12px 24px;
+      font-size: 1em;
+      font-family: inherit;
+      background: var(--accent);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #5a3d2a;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+
+    .actions button {
+      background: var(--card-bg);
+      color: var(--accent);
+      border: 2px solid var(--border);
+    }
+
+    .actions button:hover {
+      background: var(--border);
+    }
+
+    .actions button.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .categories {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+    }
+
+    .category-tag {
+      padding: 4px 12px;
+      font-size: 0.9em;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .category-tag:hover, .category-tag.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    .results {
+      margin-top: 20px;
+    }
+
+    .site-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 16px;
+      border-radius: 4px;
+    }
+
+    .site-card h3 {
+      margin: 0 0 8px 0;
+    }
+
+    .site-card h3 a {
+      color: var(--link);
+      text-decoration: none;
+    }
+
+    .site-card h3 a:hover {
+      text-decoration: underline;
+    }
+
+    .site-meta {
+      font-size: 0.85em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .site-meta span {
+      margin-right: 12px;
+    }
+
+    .site-vibe {
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .site-why {
+      font-size: 0.95em;
+    }
+
+    .stats {
+      display: flex;
+      gap: 30px;
+      justify-content: center;
+      padding: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      margin-bottom: 30px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2em;
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 0.85em;
+      color: var(--muted);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+    }
+
+    .empty-state h2 {
+      color: var(--accent);
+    }
+
+    footer {
+      text-align: center;
+      padding: 40px 0;
+      margin-top: 40px;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.9em;
+    }
+
+    footer a {
+      color: var(--link);
+    }
+
+    .wander-result {
+      text-align: center;
+      padding: 40px;
+    }
+
+    .wander-result h2 {
+      color: var(--accent);
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: var(--muted);
+    }
+
+    @media (max-width: 600px) {
+      h1 {
+        font-size: 2em;
+      }
+      .search-box {
+        flex-direction: column;
+      }
+      .stats {
+        flex-direction: column;
+        gap: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>PATINA</h1>
+    <p class="tagline">The good internet, curated.</p>
+  </header>
+
+  <div class="stats" id="stats">
+    <div class="stat">
+      <div class="stat-value" id="stat-sites">-</div>
+      <div class="stat-label">sites indexed</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-categories">-</div>
+      <div class="stat-label">categories</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="stat-pending">-</div>
+      <div class="stat-label">pending review</div>
+    </div>
+  </div>
+
+  <div class="search-box">
+    <input type="text" id="search-input" placeholder="Search the vintage web..." autofocus>
+    <button onclick="search()">Search</button>
+  </div>
+
+  <div class="actions">
+    <button onclick="wander()">Wander</button>
+    <button onclick="browse()">Browse All</button>
+    <button onclick="showSubmit()">Submit a Site</button>
+  </div>
+
+  <div class="categories" id="categories"></div>
+
+  <div class="results" id="results">
+    <div class="empty-state">
+      <h2>Explore the vintage internet</h2>
+      <p>Search for topics, click Wander for a random gem, or browse by category.</p>
+      <p>No SEO spam. No content farms. Just the good stuff.</p>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      <a href="https://github.com/tylerporras/patina">GitHub</a> &middot;
+      Part of the <a href="/">Agent Coordination Hub</a>
+    </p>
+    <p>Sites curated by AI + humans. No algorithms, just taste.</p>
+  </footer>
+
+  <script>
+    const API_BASE = '/api/patina';
+    let currentCategory = null;
+
+    async function loadStats() {
+      try {
+        const res = await fetch(`${API_BASE}?action=stats`);
+        const data = await res.json();
+        document.getElementById('stat-sites').textContent = data.totalSites || 0;
+        document.getElementById('stat-categories').textContent = Object.keys(data.byCategory || {}).length;
+        document.getElementById('stat-pending').textContent = data.pendingSubmissions || 0;
+
+        // Build category tags
+        const cats = document.getElementById('categories');
+        cats.innerHTML = '';
+        for (const [cat, count] of Object.entries(data.byCategory || {})) {
+          const tag = document.createElement('span');
+          tag.className = 'category-tag';
+          tag.textContent = `${cat} (${count})`;
+          tag.onclick = () => filterCategory(cat);
+          cats.appendChild(tag);
+        }
+      } catch (e) {
+        console.error('Failed to load stats:', e);
+      }
+    }
+
+    async function search() {
+      const query = document.getElementById('search-input').value.trim();
+      if (!query) return;
+
+      showLoading();
+      try {
+        const url = currentCategory
+          ? `${API_BASE}?action=search&query=${encodeURIComponent(query)}&category=${currentCategory}`
+          : `${API_BASE}?action=search&query=${encodeURIComponent(query)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        renderSites(data.sites || [], `Results for "${query}"`);
+      } catch (e) {
+        showError('Search failed');
+      }
+    }
+
+    async function wander() {
+      showLoading();
+      try {
+        const url = currentCategory
+          ? `${API_BASE}?action=wander&category=${currentCategory}`
+          : `${API_BASE}?action=wander`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.site) {
+          renderWander(data.site);
+        } else {
+          showEmpty('No sites in the index yet. Be the first to submit one!');
+        }
+      } catch (e) {
+        showError('Wander failed');
+      }
+    }
+
+    async function browse() {
+      showLoading();
+      try {
+        const url = currentCategory
+          ? `${API_BASE}?action=search&category=${currentCategory}&limit=50`
+          : `${API_BASE}?action=browse`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (currentCategory) {
+          renderSites(data.sites || [], `Browsing: ${currentCategory}`);
+        } else {
+          // Show all categories with their sites
+          const allSites = [];
+          for (const cat of data.categories || []) {
+            allSites.push(...(cat.sites || []));
+          }
+          renderSites(allSites, 'All Sites');
+        }
+      } catch (e) {
+        showError('Browse failed');
+      }
+    }
+
+    function filterCategory(cat) {
+      const tags = document.querySelectorAll('.category-tag');
+      tags.forEach(t => t.classList.remove('active'));
+
+      if (currentCategory === cat) {
+        currentCategory = null;
+      } else {
+        currentCategory = cat;
+        event.target.classList.add('active');
+      }
+    }
+
+    function renderSites(sites, title) {
+      const container = document.getElementById('results');
+
+      if (!sites || sites.length === 0) {
+        showEmpty('No sites found. Try a different search or submit some gems!');
+        return;
+      }
+
+      let html = `<h2>${title} (${sites.length})</h2>`;
+      for (const site of sites) {
+        html += `
+          <div class="site-card">
+            <h3><a href="${site.url}" target="_blank" rel="noopener">${site.title || site.domain}</a></h3>
+            <div class="site-meta">
+              <span>${site.era}</span>
+              <span>${site.category}</span>
+              <span>${site.confidence}% match</span>
+            </div>
+            <div class="site-vibe">"${site.vibe}"</div>
+            <div class="site-why">${site.why}</div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function renderWander(site) {
+      const container = document.getElementById('results');
+      container.innerHTML = `
+        <div class="wander-result">
+          <h2>You discovered...</h2>
+          <div class="site-card">
+            <h3><a href="${site.url}" target="_blank" rel="noopener">${site.title || site.domain}</a></h3>
+            <div class="site-meta">
+              <span>${site.era}</span>
+              <span>${site.category}</span>
+            </div>
+            <div class="site-vibe">"${site.vibe}"</div>
+            <div class="site-why">${site.why}</div>
+          </div>
+          <button onclick="wander()">Wander Again</button>
+        </div>
+      `;
+    }
+
+    function showSubmit() {
+      const container = document.getElementById('results');
+      container.innerHTML = `
+        <div class="site-card">
+          <h3>Submit a Site</h3>
+          <p>Know a hidden gem? A personal homepage from 1998? A weird forum that's somehow still alive?</p>
+          <form onsubmit="submitSite(event)">
+            <input type="url" id="submit-url" placeholder="https://..." required style="width:100%; margin-bottom:10px; padding:10px; font-family:inherit; border:1px solid var(--border);">
+            <textarea id="submit-reason" placeholder="Why does this site belong in Patina?" style="width:100%; height:80px; margin-bottom:10px; padding:10px; font-family:inherit; border:1px solid var(--border);"></textarea>
+            <button type="submit">Submit for Review</button>
+          </form>
+        </div>
+      `;
+    }
+
+    async function submitSite(e) {
+      e.preventDefault();
+      const url = document.getElementById('submit-url').value;
+      const reason = document.getElementById('submit-reason').value;
+
+      try {
+        const res = await fetch(API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'submit', url, reason })
+        });
+        const data = await res.json();
+
+        if (data.alreadyExists) {
+          showEmpty('This site is already in the index!');
+          renderSites([data.site], 'Already Indexed');
+        } else {
+          showEmpty('Thanks! Your submission is pending review.');
+        }
+      } catch (e) {
+        showError('Submission failed');
+      }
+    }
+
+    function showLoading() {
+      document.getElementById('results').innerHTML = '<div class="loading">Loading...</div>';
+    }
+
+    function showEmpty(message) {
+      document.getElementById('results').innerHTML = `<div class="empty-state"><p>${message}</p></div>`;
+    }
+
+    function showError(message) {
+      document.getElementById('results').innerHTML = `<div class="empty-state"><p style="color:#a33">${message}</p></div>`;
+    }
+
+    // Enter key to search
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') search();
+    });
+
+    // Load stats on page load
+    loadStats();
+  </script>
+</body>
+</html>
