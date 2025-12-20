@@ -10,6 +10,9 @@ const PATINA_SITES_KEY = 'patina:sites';
 const PATINA_SITES_BY_CATEGORY = 'patina:sites:category';
 const PATINA_SUBMISSIONS_KEY = 'patina:submissions';
 
+// Quality threshold - only the best sites make it in
+const MIN_CONFIDENCE = 95;
+
 interface PatinaSite {
   id: string;
   url: string;
@@ -228,7 +231,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
-      // Add a site directly (for pipeline/admin)
+      // Add a site directly (for pipeline/admin) - enforces quality and deduplication
       case 'add': {
         const site: Partial<PatinaSite> = req.body?.site || req.body;
 
@@ -236,13 +239,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ error: 'Site URL required' });
         }
 
+        const domain = site.domain || extractDomain(site.url);
+        const confidence = site.confidence || 80;
+
+        // Reject if below quality threshold
+        if (confidence < MIN_CONFIDENCE) {
+          return res.status(400).json({
+            error: 'Below quality threshold',
+            confidence,
+            required: MIN_CONFIDENCE
+          });
+        }
+
+        // Check for duplicate domain
+        const existingSites = await redis.hgetall(PATINA_SITES_KEY) as Record<string, PatinaSite> || {};
+        const duplicate = Object.values(existingSites).find(s => s.domain === domain);
+        if (duplicate) {
+          return res.status(400).json({
+            error: 'Duplicate domain',
+            domain,
+            existingSite: duplicate
+          });
+        }
+
         const fullSite: PatinaSite = {
           id: site.id || generateId(),
           url: site.url,
-          domain: site.domain || extractDomain(site.url),
+          domain,
           title: site.title,
           description: site.description,
-          confidence: site.confidence || 80,
+          confidence,
           era: site.era || 'timeless',
           category: site.category || 'other',
           vibe: site.vibe || '',
@@ -258,7 +284,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.json({ added: true, site: fullSite });
       }
 
-      // Bulk add sites (for seeding)
+      // Bulk add sites (for seeding) - enforces quality threshold and deduplication
       case 'seed': {
         const sites: Partial<PatinaSite>[] = req.body?.sites || [];
 
@@ -266,17 +292,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(400).json({ error: 'Sites array required' });
         }
 
+        // Get existing sites to check for duplicates
+        const existingSites = await redis.hgetall(PATINA_SITES_KEY) as Record<string, PatinaSite> || {};
+        const existingDomains = new Set(Object.values(existingSites).map(s => s.domain));
+
         const added: PatinaSite[] = [];
+        const rejected: { url: string; reason: string }[] = [];
+
         for (const site of sites) {
           if (!site.url) continue;
+
+          const domain = site.domain || extractDomain(site.url);
+          const confidence = site.confidence || 80;
+
+          // Reject if below quality threshold
+          if (confidence < MIN_CONFIDENCE) {
+            rejected.push({ url: site.url, reason: `Below quality threshold (${confidence} < ${MIN_CONFIDENCE})` });
+            continue;
+          }
+
+          // Reject if duplicate domain
+          if (existingDomains.has(domain)) {
+            rejected.push({ url: site.url, reason: `Duplicate domain: ${domain}` });
+            continue;
+          }
 
           const fullSite: PatinaSite = {
             id: site.id || generateId(),
             url: site.url,
-            domain: site.domain || extractDomain(site.url),
+            domain,
             title: site.title,
             description: site.description,
-            confidence: site.confidence || 80,
+            confidence,
             era: site.era || 'timeless',
             category: site.category || 'other',
             vibe: site.vibe || '',
@@ -288,12 +335,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
           await redis.hset(PATINA_SITES_KEY, { [fullSite.id]: fullSite });
           added.push(fullSite);
+          existingDomains.add(domain); // Track for this batch
         }
 
         return res.json({
           seeded: true,
           count: added.length,
-          sites: added
+          sites: added,
+          rejected: rejected.length > 0 ? rejected : undefined
         });
       }
 
@@ -307,6 +356,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
 
         return res.json({ count: submissions.length, submissions });
+      }
+
+      // Purge: remove duplicates and low-quality sites
+      case 'purge': {
+        const allSites = await redis.hgetall(PATINA_SITES_KEY) as Record<string, PatinaSite> || {};
+        const sites = Object.entries(allSites);
+
+        const seenDomains = new Map<string, { id: string; confidence: number }>();
+        const toDelete: string[] = [];
+
+        for (const [id, site] of sites) {
+          // Remove if below threshold
+          if (site.confidence < MIN_CONFIDENCE) {
+            toDelete.push(id);
+            continue;
+          }
+
+          // Check for duplicate - keep highest confidence
+          const existing = seenDomains.get(site.domain);
+          if (existing) {
+            if (site.confidence > existing.confidence) {
+              toDelete.push(existing.id);
+              seenDomains.set(site.domain, { id, confidence: site.confidence });
+            } else {
+              toDelete.push(id);
+            }
+          } else {
+            seenDomains.set(site.domain, { id, confidence: site.confidence });
+          }
+        }
+
+        // Delete the bad ones
+        for (const id of toDelete) {
+          await redis.hdel(PATINA_SITES_KEY, id);
+        }
+
+        return res.json({
+          purged: true,
+          removed: toDelete.length,
+          remaining: sites.length - toDelete.length
+        });
       }
 
       // Stats
