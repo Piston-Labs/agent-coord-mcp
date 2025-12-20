@@ -187,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           categories: Object.keys(byCategory).map(cat => ({
             name: cat,
             count: byCategory[cat].length,
-            sites: category ? byCategory[cat] : byCategory[cat].slice(0, 5)
+            sites: byCategory[cat]  // Return all sites, let frontend handle display
           }))
         });
       }
