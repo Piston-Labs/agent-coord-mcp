@@ -399,6 +399,45 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
       }
 
+      // Remove a site by domain or ID
+      case 'remove': {
+        const domain = (req.body?.domain as string) || (req.query.domain as string);
+        const id = (req.body?.id as string) || (req.query.id as string);
+
+        if (!domain && !id) {
+          return res.status(400).json({ error: 'Domain or ID required' });
+        }
+
+        const allSites = await redis.hgetall(PATINA_SITES_KEY) as Record<string, PatinaSite> || {};
+
+        let toRemove: string | null = null;
+        let removedSite: PatinaSite | null = null;
+
+        if (id && allSites[id]) {
+          toRemove = id;
+          removedSite = allSites[id];
+        } else if (domain) {
+          for (const [siteId, site] of Object.entries(allSites)) {
+            if (site.domain === domain || site.url.includes(domain)) {
+              toRemove = siteId;
+              removedSite = site;
+              break;
+            }
+          }
+        }
+
+        if (!toRemove) {
+          return res.status(404).json({ error: 'Site not found', domain, id });
+        }
+
+        await redis.hdel(PATINA_SITES_KEY, toRemove);
+
+        return res.json({
+          removed: true,
+          site: removedSite
+        });
+      }
+
       // Stats
       case 'stats': {
         const allSites = await redis.hgetall(PATINA_SITES_KEY) as Record<string, PatinaSite> || {};
@@ -429,7 +468,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       default:
         return res.status(400).json({
           error: 'Unknown action',
-          availableActions: ['search', 'wander', 'browse', 'submit', 'add', 'seed', 'submissions', 'stats']
+          availableActions: ['search', 'wander', 'browse', 'submit', 'add', 'seed', 'submissions', 'purge', 'remove', 'stats']
         });
     }
   } catch (error) {
