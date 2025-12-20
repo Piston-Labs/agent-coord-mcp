@@ -239,6 +239,44 @@
       color: var(--muted);
     }
 
+    .filter-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 20px;
+      padding: 12px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+    }
+
+    .filter-label {
+      font-weight: bold;
+      color: var(--muted);
+      margin-right: 8px;
+    }
+
+    .wander-cat-btn {
+      padding: 6px 14px;
+      font-size: 0.9em;
+      background: var(--link);
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .wander-cat-btn:hover {
+      background: #154360;
+    }
+
+    .actions button.active {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
     @media (max-width: 600px) {
       h1 {
         font-size: 2em;
@@ -280,12 +318,19 @@
   </div>
 
   <div class="actions">
-    <button onclick="wander()">Wander</button>
-    <button onclick="browse()">Browse All</button>
+    <button onclick="browseAll()" id="btn-browse">Browse All</button>
+    <button onclick="wanderAll()" id="btn-wander">Wander</button>
     <button onclick="showSubmit()">Submit a Site</button>
   </div>
 
-  <div class="categories" id="categories"></div>
+  <div class="filter-bar" id="filter-bar" style="display:none;">
+    <span class="filter-label">Filter:</span>
+    <span class="category-tag active" data-cat="" onclick="setFilter('')">All</span>
+    <span id="category-pills"></span>
+    <span class="wander-in-category" id="wander-in-category" style="display:none; margin-left: 20px;">
+      <button onclick="wanderCategory()" class="wander-cat-btn">Wander in this category</button>
+    </span>
+  </div>
 
   <div class="results" id="results">
     <div class="empty-state">
@@ -305,7 +350,9 @@
 
   <script>
     const API_BASE = '/api/patina';
-    let currentCategory = null;
+    let currentFilter = '';  // empty = all
+    let allSites = [];       // cached for filtering
+    let categoryData = {};   // category counts
 
     async function loadStats() {
       try {
@@ -314,32 +361,63 @@
         document.getElementById('stat-sites').textContent = data.totalSites || 0;
         document.getElementById('stat-categories').textContent = Object.keys(data.byCategory || {}).length;
         document.getElementById('stat-pending').textContent = data.pendingSubmissions || 0;
-
-        // Build category tags
-        const cats = document.getElementById('categories');
-        cats.innerHTML = '';
-        for (const [cat, count] of Object.entries(data.byCategory || {})) {
-          const tag = document.createElement('span');
-          tag.className = 'category-tag';
-          tag.textContent = `${cat} (${count})`;
-          tag.onclick = () => filterCategory(cat);
-          cats.appendChild(tag);
-        }
+        categoryData = data.byCategory || {};
       } catch (e) {
         console.error('Failed to load stats:', e);
       }
+    }
+
+    function buildFilterPills() {
+      const pills = document.getElementById('category-pills');
+      pills.innerHTML = '';
+      for (const [cat, count] of Object.entries(categoryData)) {
+        const tag = document.createElement('span');
+        tag.className = 'category-tag' + (currentFilter === cat ? ' active' : '');
+        tag.dataset.cat = cat;
+        tag.textContent = `${cat} (${count})`;
+        tag.onclick = () => setFilter(cat);
+        pills.appendChild(tag);
+      }
+    }
+
+    function setFilter(cat) {
+      // Toggle if clicking same category
+      if (currentFilter === cat && cat !== '') {
+        currentFilter = '';
+      } else {
+        currentFilter = cat;
+      }
+
+      // Update active state on all pills
+      document.querySelectorAll('.filter-bar .category-tag').forEach(t => {
+        t.classList.toggle('active', t.dataset.cat === currentFilter);
+      });
+
+      // Show/hide "wander in category" button
+      const wanderCatBtn = document.getElementById('wander-in-category');
+      wanderCatBtn.style.display = currentFilter ? 'inline' : 'none';
+
+      // Re-render with filter
+      renderFilteredSites();
+    }
+
+    function renderFilteredSites() {
+      let filtered = allSites;
+      if (currentFilter) {
+        filtered = allSites.filter(s => s.category === currentFilter);
+      }
+      const title = currentFilter ? `${currentFilter} (${filtered.length})` : `All Sites (${filtered.length})`;
+      renderSites(filtered, title);
     }
 
     async function search() {
       const query = document.getElementById('search-input').value.trim();
       if (!query) return;
 
+      hideFilterBar();
       showLoading();
       try {
-        const url = currentCategory
-          ? `${API_BASE}?action=search&query=${encodeURIComponent(query)}&category=${currentCategory}`
-          : `${API_BASE}?action=search&query=${encodeURIComponent(query)}`;
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}?action=search&query=${encodeURIComponent(query)}`);
         const data = await res.json();
         renderSites(data.sites || [], `Results for "${query}"`);
       } catch (e) {
@@ -347,17 +425,39 @@
       }
     }
 
-    async function wander() {
+    async function browseAll() {
+      showLoading();
+      setActiveButton('btn-browse');
+      try {
+        const res = await fetch(`${API_BASE}?action=browse`);
+        const data = await res.json();
+
+        // Collect all sites from all categories
+        allSites = [];
+        for (const cat of data.categories || []) {
+          allSites.push(...(cat.sites || []));
+        }
+
+        // Show filter bar and render
+        showFilterBar();
+        currentFilter = '';
+        buildFilterPills();
+        setFilter('');  // Reset to "All"
+      } catch (e) {
+        showError('Browse failed');
+      }
+    }
+
+    async function wanderAll() {
+      hideFilterBar();
+      setActiveButton('btn-wander');
       showLoading();
       try {
-        const url = currentCategory
-          ? `${API_BASE}?action=wander&category=${currentCategory}`
-          : `${API_BASE}?action=wander`;
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}?action=wander`);
         const data = await res.json();
 
         if (data.site) {
-          renderWander(data.site);
+          renderWander(data.site, false);
         } else {
           showEmpty('No sites in the index yet. Be the first to submit one!');
         }
@@ -366,40 +466,36 @@
       }
     }
 
-    async function browse() {
+    async function wanderCategory() {
+      if (!currentFilter) return wanderAll();
+
       showLoading();
       try {
-        const url = currentCategory
-          ? `${API_BASE}?action=search&category=${currentCategory}&limit=50`
-          : `${API_BASE}?action=browse`;
-        const res = await fetch(url);
+        const res = await fetch(`${API_BASE}?action=wander&category=${currentFilter}`);
         const data = await res.json();
 
-        if (currentCategory) {
-          renderSites(data.sites || [], `Browsing: ${currentCategory}`);
+        if (data.site) {
+          renderWander(data.site, true);
         } else {
-          // Show all categories with their sites
-          const allSites = [];
-          for (const cat of data.categories || []) {
-            allSites.push(...(cat.sites || []));
-          }
-          renderSites(allSites, 'All Sites');
+          showEmpty(`No sites in ${currentFilter} yet.`);
         }
       } catch (e) {
-        showError('Browse failed');
+        showError('Wander failed');
       }
     }
 
-    function filterCategory(cat) {
-      const tags = document.querySelectorAll('.category-tag');
-      tags.forEach(t => t.classList.remove('active'));
+    function showFilterBar() {
+      document.getElementById('filter-bar').style.display = 'flex';
+    }
 
-      if (currentCategory === cat) {
-        currentCategory = null;
-      } else {
-        currentCategory = cat;
-        event.target.classList.add('active');
-      }
+    function hideFilterBar() {
+      document.getElementById('filter-bar').style.display = 'none';
+    }
+
+    function setActiveButton(id) {
+      document.querySelectorAll('.actions button').forEach(b => b.classList.remove('active'));
+      const btn = document.getElementById(id);
+      if (btn) btn.classList.add('active');
     }
 
     function renderSites(sites, title) {
@@ -428,11 +524,13 @@
       container.innerHTML = html;
     }
 
-    function renderWander(site) {
+    function renderWander(site, inCategory) {
       const container = document.getElementById('results');
+      const categoryLabel = inCategory ? ` in ${currentFilter}` : '';
+      const wanderAgainFn = inCategory ? 'wanderCategory()' : 'wanderAll()';
       container.innerHTML = `
         <div class="wander-result">
-          <h2>You discovered...</h2>
+          <h2>You discovered${categoryLabel}...</h2>
           <div class="site-card">
             <h3><a href="${site.url}" target="_blank" rel="noopener">${site.title || site.domain}</a></h3>
             <div class="site-meta">
@@ -442,7 +540,10 @@
             <div class="site-vibe">"${site.vibe}"</div>
             <div class="site-why">${site.why}</div>
           </div>
-          <button onclick="wander()">Wander Again</button>
+          <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button onclick="${wanderAgainFn}">Wander Again</button>
+            <button onclick="browseAll()" style="background:var(--card-bg); color:var(--accent); border:2px solid var(--border);">Browse All</button>
+          </div>
         </div>
       `;
     }
