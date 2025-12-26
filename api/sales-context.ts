@@ -17,7 +17,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
 
-const GITHUB_REPO = 'tylerporras/teltonika-context-system';
+const GITHUB_REPO = 'Piston-Labs/telemetry';
 const GITHUB_BRANCH = 'main';
 const CONTEXT_BASE = 'context';
 

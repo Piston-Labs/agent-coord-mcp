@@ -284,7 +284,7 @@ export class GitHubContextLoader {
  * Create pre-configured context loader for Piston Labs repos
  */
 export function createPistonContextLoader(): GitHubContextLoader {
-  return new GitHubContextLoader('tylerporras', 'teltonika-context-system');
+  return new GitHubContextLoader('Piston-Labs', 'telemetry');
 }
 
 /**
