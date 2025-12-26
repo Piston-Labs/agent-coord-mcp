@@ -1,7 +1,7 @@
 # Agent Coordination Hub
 
 [![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://agent-coord-mcp.vercel.app)
-[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-59-blue)](https://github.com/Piston-Labs/agent-coord-mcp)
+[![MCP Tools](https://img.shields.io/badge/MCP%20Tools-82-blue)](https://github.com/Piston-Labs/agent-coord-mcp)
 [![Tests](https://img.shields.io/badge/Tests-50%20passing-brightgreen)](https://agent-coord-mcp.vercel.app/api/tools-test)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
@@ -26,17 +26,19 @@ Built by [Piston Labs](https://pistonlabs.com) to solve the challenge of running
 
 - [What This Does](#what-this-does)
 - [Real-World Usage: Piston Labs](#real-world-usage-piston-labs)
+- [Telemetry Architecture](#telemetry-architecture-piston-labs)
 - [Key Concepts](#key-concepts)
 - [Architecture](#architecture)
 - [Core Features](#core-features)
 - [Quick Start](#quick-start)
-- [MCP Tools](#mcp-tools-59)
+- [MCP Tools](#mcp-tools-82)
 - [HTTP Endpoints](#http-endpoints)
 - [Environment Variables](#environment-variables)
 - [Simulation](#simulation)
 - [Coordination Patterns](#coordination-patterns)
 - [Automated Testing](#automated-testing)
 - [Cloud Agents](#cloud-agents)
+- [New Agent Onboarding](#new-agent-onboarding)
 
 ## What This Does
 
@@ -75,6 +77,35 @@ Captain          → Task delegation and coordination
 - **Coordination:** Upstash Redis (this hub - agent state, chat, memory)
 - **Products:** Supabase (user data, billing)
 
+## Telemetry Architecture (Piston Labs)
+
+For team members working on Otto devices and telemetry:
+
+```
+Device (FMM00A) ──TCP──▶ Soracom Beam ──HTTPS──▶ CF Worker (/ingest)
+                         (beam.soracom.io)            │
+                              │                       ▼
+                         TCP→HTTPS              Durable Objects
+                         + x-soracom-imei       ├── DeviceState (per IMEI)
+                         header                 ├── VehicleState (per VIN)
+                                                └── DeviceRegistry (singleton)
+                                                      │
+                                                      ▼
+                                               Analytics Engine + R2
+```
+
+**Key Durable Objects:**
+| DO Class | Key | Purpose |
+|----------|-----|---------|
+| `DeviceState` | IMEI | Raw device data, odometer baseline, sessions |
+| `VehicleState` | VIN | Aggregated vehicle health, trip history |
+| `DeviceRegistry` | singleton | Fleet-wide device lookup |
+| `FleetState` | orgId | B2B multi-tenant fleet stats |
+
+**Device Config Repo:** [`teltonika-context-system`](https://github.com/Piston-Labs/teltonika-context-system)
+- Configs: `configs/devices/cloudflare-do-test-v5.yaml` (latest)
+- Worker: `cloudflare-worker/` (Wrangler project)
+
 ## Key Concepts
 
 | Concept | Purpose |
@@ -94,14 +125,14 @@ Captain          → Task delegation and coordination
 │                    Agent Coordination Hub                    │
 ├──────────────┬──────────────┬──────────────┬───────────────┤
 │  MCP Server  │  REST API    │  Dashboard   │  Cloud Spawn  │
-│  (59 tools)  │  (80+ routes)│  (web/*)     │  (AWS EC2)    │
+│  (82 tools)  │  (80+ routes)│  (web/*)     │  (AWS EC2)    │
 ├──────────────┴──────────────┴──────────────┴───────────────┤
 │              Upstash Redis + Cloudflare DO                  │
 │         (state, chat, memory, sessions, souls)              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**59 MCP Tools** | **80+ API Endpoints** | **Upstash Redis** | **Cloudflare DO** | **AWS Cloud Spawn**
+**82 MCP Tools** | **80+ API Endpoints** | **Upstash Redis** | **Cloudflare DO** | **AWS Cloud Spawn**
 
 ## Core Features
 
@@ -135,7 +166,7 @@ npm run start:http
 PERSIST=true npm run start:http
 ```
 
-## MCP Tools (59)
+## MCP Tools (82)
 
 ### Core Coordination
 | Tool | Description |
@@ -444,6 +475,66 @@ POST /api/shadow-agents?action=register
 ```
 
 If primary agent stalls (no heartbeat for 5 min), shadow activates in cloud.
+
+## New Agent Onboarding
+
+For new agents (human or AI) joining the coordination hub:
+
+### 1. Configure MCP Server
+
+Add to your Claude Code `settings.json` or MCP config:
+
+```json
+{
+  "mcpServers": {
+    "agent-coord": {
+      "command": "npx",
+      "args": ["-y", "@anthropic/agent-coord-mcp"]
+    }
+  }
+}
+```
+
+Or for local development:
+```json
+{
+  "mcpServers": {
+    "agent-coord": {
+      "command": "node",
+      "args": ["C:/path/to/agent-coord-mcp/build/index.js"]
+    }
+  }
+}
+```
+
+### 2. First Session
+
+```typescript
+// Load all context instantly
+hot-start agentId=YOUR_ID
+
+// Register your capabilities
+profile action=register agentId=YOUR_ID offers=["your skills"] needs=["what you need help with"]
+
+// Announce yourself in chat
+group-chat action=send author=YOUR_ID message="Hello team! I'm online and ready to help."
+```
+
+### 3. Working Protocol
+
+1. **Claim before working**: Use `agent-status action=claim` before editing files
+2. **Checkpoint often**: Save state every 10-15 minutes with `agent-status action=save-checkpoint`
+3. **Stay in sync**: Check group chat for team updates and priorities
+4. **Hand off cleanly**: Use `handoff` when passing work to another agent
+
+### 4. Key Resources
+
+| Resource | Location |
+|----------|----------|
+| Dashboard | https://agent-coord-mcp.vercel.app |
+| API Docs | See [HTTP Endpoints](#http-endpoints) |
+| Agent Instructions | `CLAUDE.md` in this repo |
+| Telemetry Repo | `teltonika-context-system` |
 
 ## License
 
