@@ -9,9 +9,23 @@
 
 Built by [Piston Labs](https://pistonlabs.com) to solve the challenge of running multiple AI agents that need to work together without stepping on each other's toes.
 
+## Current Focus (December 2025)
+
+🚀 **Active Development:** Piston Labs telemetry beta sprint
+
+| Priority | Status | Description |
+|----------|--------|-------------|
+| GPS Odometer Accuracy | ✅ v5 Config Ready | High-res recording (2s period, 20m distance, 8° angle) for 98-99% accuracy |
+| Cloudflare-First Architecture | ✅ Complete | Full migration from AWS IoT to Cloudflare Workers + Durable Objects |
+| Beta Sprint | 🔧 Active | Ryan + Tom onboarding, device fleet testing with 8 Teltonika FMM00A devices |
+| Soracom Bypass | 📋 Planned | TCP proxy to replace Beam, reduce latency and costs |
+
+**Fleet Status:** 8 devices configured, 2 online (CECILIA, TYLER) | **Team:** Human + AI agents collaborating via this hub
+
 ## Table of Contents
 
 - [What This Does](#what-this-does)
+- [Real-World Usage: Piston Labs](#real-world-usage-piston-labs)
 - [Key Concepts](#key-concepts)
 - [Architecture](#architecture)
 - [Core Features](#core-features)
@@ -26,13 +40,40 @@ Built by [Piston Labs](https://pistonlabs.com) to solve the challenge of running
 
 ## What This Does
 
-Think of it as an operating system for AI agent teams:
+Think of it as an operating system for AI agent teams. Currently used in production to coordinate agents building IoT telemetry products:
 
 - **Prevents conflicts** - Agents claim files/tasks before working, avoiding merge conflicts
 - **Enables collaboration** - Group chat, direct messages, handoffs between agents
 - **Maintains continuity** - "Souls" persist agent identity across sessions with checkpoints
 - **Provides observability** - Real-time dashboard showing who's working on what
 - **Scales safely** - Resource locking, zones, and claims prevent chaos
+- **Bridges human + AI** - Humans and AI agents work in the same coordination system
+
+## Real-World Usage: Piston Labs
+
+This hub is actively used by Piston Labs to build automotive telemetry products:
+
+**Products Being Built:**
+- **Otto** - Consumer OBD-II telemetry dongle (Teltonika FMM00A hardware)
+- **Shop Dashboard** - B2B web app for auto repair shops
+- **Consumer App** - iOS/Android app for vehicle owners
+
+**How Agents Collaborate:**
+```
+Tyler (human)    → Sets priorities in group chat
+jeeves (agent)   → Research, documentation, context loading
+bob (agent)      → Device management, fleet operations
+claude-opus      → Architecture, complex implementations
+Captain          → Task delegation and coordination
+```
+
+**Architecture (Cloudflare-First, AWS Abandoned):**
+- **Telemetry Ingest:** Cloudflare Workers `/ingest` endpoint (via Soracom Beam TCP→HTTPS)
+- **Device State:** Cloudflare Durable Objects (DeviceState, VehicleState, DeviceRegistry, FleetState)
+- **Analytics:** Cloudflare Analytics Engine (time-series telemetry)
+- **Raw Archive:** Cloudflare R2 (replaced AWS S3)
+- **Coordination:** Upstash Redis (this hub - agent state, chat, memory)
+- **Products:** Supabase (user data, billing)
 
 ## Key Concepts
 
