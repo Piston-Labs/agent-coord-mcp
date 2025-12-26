@@ -189,8 +189,16 @@ async function fetchGitHubFile(path: string): Promise<string | null> {
   }
 
   try {
-    const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/${GITHUB_BRANCH}/${path}`;
-    const response = await fetch(url);
+    // Use GitHub API for private repos (raw.githubusercontent.com doesn't work)
+    const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${path}?ref=${GITHUB_BRANCH}`;
+    const headers: Record<string, string> = {
+      'Accept': 'application/vnd.github.v3.raw',
+      'User-Agent': 'agent-coord-mcp'
+    };
+    if (GITHUB_TOKEN) {
+      headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+    }
+    const response = await fetch(url, { headers });
 
     if (!response.ok) {
       console.error(`[sales-context] Failed to fetch ${path}: ${response.status}`);
