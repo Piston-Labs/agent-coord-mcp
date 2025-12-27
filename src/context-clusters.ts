@@ -72,7 +72,7 @@ export class ClusterSelector {
       'api', 'database', 'code', 'function', 'class', 'module',
       'deploy', 'server', 'client', 'backend', 'frontend',
       'bug', 'error', 'fix', 'debug', 'test', 'architecture',
-      'teltonika', 'device', 'gps', 'iot', 'lambda', 'aws'
+      'teltonika', 'device', 'gps', 'iot', 'cloudflare', 'worker', 'durable'
     ]);
 
     this.registerCluster('development', [
