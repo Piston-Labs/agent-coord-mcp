@@ -3682,7 +3682,33 @@
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.5; transform: scale(0.8); }
     }
-    
+
+    /* WebSocket status indicator */
+    .ws-status {
+      display: flex;
+      align-items: center;
+      margin-right: 4px;
+    }
+
+    .ws-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #64748b;
+      transition: background 0.3s;
+    }
+
+    .ws-status.connected .ws-dot {
+      background: #38bdf8;
+      box-shadow: 0 0 6px #38bdf8;
+      animation: wsPulse 2s infinite;
+    }
+
+    @keyframes wsPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
     .last-updated {
       font-size: 10px;
       color: var(--text-secondary);
@@ -12774,6 +12800,9 @@
           </div>
           <div class="telemetry-controls">
             <div class="live-indicator" id="liveIndicator">
+              <span class="ws-status" id="wsStatusIndicator" title="Connecting...">
+                <span class="ws-dot"></span>
+              </span>
               <span class="live-dot"></span>
               <span>Live</span>
               <span class="last-updated" id="telemetryLastUpdated">--</span>
@@ -21630,11 +21659,187 @@
 
     // === TELEMETRY FUNCTIONS ===
 
-    // Smart polling configuration (Samsara-inspired real-time tracking)
-    const TELEMETRY_POLL_FAST = 2000;    // 2 seconds when actively viewing telemetry
+    // Cloudflare telemetry endpoint (primary data source)
+    const CLOUDFLARE_TELEMETRY_URL = 'https://piston-telemetry.tyler-4c4.workers.dev';
+    const CLOUDFLARE_WS_URL = 'wss://piston-telemetry.tyler-4c4.workers.dev/ws';
+
+    // WebSocket connection for real-time updates
+    let telemetryWs = null;
+    let wsReconnectAttempts = 0;
+    const WS_MAX_RECONNECT_ATTEMPTS = 5;
+    const WS_RECONNECT_DELAY = 3000;
+
+    // Smart polling configuration (fallback when WebSocket unavailable)
+    const TELEMETRY_POLL_FAST = 5000;    // 5 seconds when actively viewing telemetry
     const TELEMETRY_POLL_SLOW = 30000;   // 30 seconds when backgrounded or on other tabs
     let telemetryRefreshInterval = null;
     let telemetryPollRate = TELEMETRY_POLL_FAST;
+
+    // Transform Cloudflare device format to hub format
+    function transformCloudflareDevice(cfDevice) {
+      const lastSeen = cfDevice.lastSeen ? new Date(cfDevice.lastSeen) : null;
+      const isOnline = cfDevice.online === true;
+      const odometerKm = (cfDevice.odometer || 0) / 1000; // Convert from meters to km
+      const odometerMiles = odometerKm * 0.621371; // Convert to miles for display
+
+      return {
+        imei: cfDevice.imei,
+        deviceName: cfDevice.name || `Device ${cfDevice.imei?.slice(-4) || '????'}`,
+        vehicleInfo: {
+          vin: cfDevice.vin || undefined,
+          make: undefined,
+          model: undefined,
+          year: undefined
+        },
+        metrics: {
+          batteryVoltage: cfDevice.voltage ? cfDevice.voltage / 1000 : 12.6, // mV to V
+          externalVoltage: cfDevice.externalVoltage ? cfDevice.externalVoltage / 1000 : 12.6,
+          speed: cfDevice.speed || 0,
+          odometer: odometerKm,
+          odometerMiles: Math.round(odometerMiles),
+          fuelLevel: cfDevice.fuelLevel,
+          engineRPM: cfDevice.rpm || 0,
+          coolantTemp: cfDevice.coolantTemp
+        },
+        position: {
+          lat: cfDevice.latitude || 0,
+          lng: cfDevice.longitude || 0,
+          altitude: cfDevice.altitude,
+          heading: cfDevice.heading,
+          satellites: cfDevice.satellites || 0
+        },
+        status: {
+          ignition: cfDevice.ignition === true,
+          movement: (cfDevice.speed || 0) > 0,
+          gpsValid: (cfDevice.latitude || 0) !== 0 && (cfDevice.longitude || 0) !== 0,
+          charging: cfDevice.voltage ? cfDevice.voltage > 13500 : false,
+          offline: !isOnline
+        },
+        connectivity: {
+          signalStrength: cfDevice.signal || 3,
+          carrier: cfDevice.carrier,
+          lastSeen: lastSeen ? lastSeen.toISOString() : new Date().toISOString()
+        },
+        health: calculateDeviceHealth(cfDevice, isOnline),
+        timestamp: lastSeen ? lastSeen.toISOString() : new Date().toISOString()
+      };
+    }
+
+    // Calculate health score for device
+    function calculateDeviceHealth(cfDevice, isOnline) {
+      if (!isOnline) {
+        return { score: 0, status: 'critical', issues: ['Device offline'] };
+      }
+
+      let score = 100;
+      const issues = [];
+
+      // Check battery voltage (mV)
+      const voltage = cfDevice.voltage || 0;
+      if (voltage > 0 && voltage < 11800) {
+        issues.push('Low battery voltage');
+        score -= 20;
+      }
+      if (voltage > 0 && voltage < 11000) {
+        issues.push('Critical battery voltage');
+        score -= 20;
+      }
+
+      // Check GPS
+      if ((cfDevice.latitude || 0) === 0 && (cfDevice.longitude || 0) === 0) {
+        issues.push('No GPS signal');
+        score -= 15;
+      }
+
+      let status = 'excellent';
+      if (score < 90) status = 'good';
+      if (score < 70) status = 'warning';
+      if (score < 50) status = 'critical';
+
+      return { score: Math.max(0, score), status, issues };
+    }
+
+    // Connect to WebSocket for real-time updates
+    function connectTelemetryWebSocket() {
+      if (telemetryWs && telemetryWs.readyState === WebSocket.OPEN) {
+        return; // Already connected
+      }
+
+      try {
+        telemetryWs = new WebSocket(CLOUDFLARE_WS_URL);
+
+        telemetryWs.onopen = () => {
+          console.log('[Telemetry] WebSocket connected');
+          wsReconnectAttempts = 0;
+          updateWsStatus(true);
+        };
+
+        telemetryWs.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleWsMessage(data);
+          } catch (err) {
+            console.error('[Telemetry] WebSocket message parse error:', err);
+          }
+        };
+
+        telemetryWs.onclose = () => {
+          console.log('[Telemetry] WebSocket closed');
+          updateWsStatus(false);
+          scheduleWsReconnect();
+        };
+
+        telemetryWs.onerror = (err) => {
+          console.error('[Telemetry] WebSocket error:', err);
+          updateWsStatus(false);
+        };
+      } catch (err) {
+        console.error('[Telemetry] WebSocket connection failed:', err);
+        updateWsStatus(false);
+        scheduleWsReconnect();
+      }
+    }
+
+    function scheduleWsReconnect() {
+      if (wsReconnectAttempts >= WS_MAX_RECONNECT_ATTEMPTS) {
+        console.log('[Telemetry] Max reconnect attempts reached, falling back to polling');
+        return;
+      }
+      wsReconnectAttempts++;
+      setTimeout(() => {
+        console.log(`[Telemetry] Reconnecting WebSocket (attempt ${wsReconnectAttempts})`);
+        connectTelemetryWebSocket();
+      }, WS_RECONNECT_DELAY);
+    }
+
+    function updateWsStatus(connected) {
+      const indicator = document.getElementById('wsStatusIndicator');
+      if (indicator) {
+        indicator.classList.toggle('connected', connected);
+        indicator.title = connected ? 'Real-time connected' : 'Connecting...';
+      }
+    }
+
+    function handleWsMessage(data) {
+      if (data.type === 'devices') {
+        // Full device list update
+        const devices = (data.devices || []).map(transformCloudflareDevice);
+        updateTelemetryUI(devices);
+      } else if (data.type === 'device_heartbeat' || data.type === 'heartbeat') {
+        // Single device update - update in place
+        if (data.imei && currentTelemetryData) {
+          const idx = currentTelemetryData.findIndex(d => d.imei === data.imei);
+          if (idx >= 0) {
+            const updated = transformCloudflareDevice(data);
+            currentTelemetryData[idx] = updated;
+            renderTelemetryGrid(currentTelemetryData);
+          }
+        }
+      } else if (data.type === 'device_registered') {
+        // New device - refetch all
+        fetchTelemetry();
+      }
+    }
 
     // Update poll rate based on visibility and active tab
     function updateTelemetryPollRate() {
@@ -21659,48 +21864,24 @@
         refreshBtn.classList.add('loading');
         refreshBtn.innerHTML = '<span class="refresh-spinner"></span>';
       }
-      
+
       try {
-        const res = await fetch(API_BASE + '/telemetry?alerts=true');
+        // Fetch from Cloudflare telemetry endpoint (primary data source)
+        const res = await fetch(CLOUDFLARE_TELEMETRY_URL + '/devices');
         const data = await res.json();
 
-        // Update fleet summary
-        if (data.fleet) {
-          document.getElementById('fleetTotal').textContent = data.fleet.total;
-          document.getElementById('fleetActive').textContent = data.fleet.active;
-          document.getElementById('fleetMoving').textContent = data.fleet.moving;
-          document.getElementById('fleetAvgBattery').textContent = data.fleet.avgBatteryVoltage + 'V';
-          
-          // Update health score
-          const healthEl = document.getElementById('fleetHealthScore');
-          const healthStat = healthEl.closest('.fleet-stat');
-          if (data.fleet.health) {
-            healthEl.textContent = data.fleet.health.avgScore;
-            healthStat.classList.remove('warning', 'critical');
-            if (data.fleet.health.avgScore < 50) healthStat.classList.add('critical');
-            else if (data.fleet.health.avgScore < 70) healthStat.classList.add('warning');
-          }
-        }
+        // Transform Cloudflare devices to hub format
+        const devices = (data.devices || []).map(transformCloudflareDevice);
 
-        // Update alerts
-        if (data.alertSummary && data.alertSummary.total > 0) {
-          document.getElementById('alertIndicator').style.display = 'flex';
-          document.getElementById('alertCount').textContent = data.alertSummary.total;
-          renderAlerts(data.alerts || []);
-        } else {
-          document.getElementById('alertIndicator').style.display = 'none';
-          document.getElementById('alertsBanner').style.display = 'none';
-        }
+        // Update the UI with transformed data
+        updateTelemetryUI(devices);
 
-        // Render device cards
-        renderTelemetryGrid(data.devices || []);
-
-        // Update health overview panel
-        updateHealthOverview(data.devices || [], data.alerts || []);
+        // Try to connect WebSocket for real-time updates
+        connectTelemetryWebSocket();
 
         // Fetch geofences (separate call to avoid blocking telemetry)
         fetchGeofences();
-        
+
         // Update last updated time
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -21708,6 +21889,7 @@
         if (lastUpdatedEl) lastUpdatedEl.textContent = timeStr;
 
         // Start auto-refresh if not already running (uses smart polling rate)
+        // WebSocket provides real-time updates, but polling is backup
         if (!telemetryRefreshInterval) {
           telemetryRefreshInterval = setInterval(fetchTelemetry, telemetryPollRate);
         }
@@ -21731,6 +21913,51 @@
           refreshBtn.innerHTML = 'Refresh';
         }
       }
+    }
+
+    // Update all telemetry UI components with device data
+    function updateTelemetryUI(devices) {
+      // Calculate fleet summary
+      const onlineDevices = devices.filter(d => !d.status.offline);
+      const offlineDevices = devices.filter(d => d.status.offline);
+      const activeDevices = onlineDevices.filter(d => d.status.ignition);
+      const movingDevices = onlineDevices.filter(d => d.status.movement);
+      const avgBattery = devices.length > 0
+        ? devices.reduce((sum, d) => sum + (d.metrics.batteryVoltage || 0), 0) / devices.length
+        : 0;
+      const avgHealth = devices.length > 0
+        ? devices.reduce((sum, d) => sum + (d.health.score || 0), 0) / devices.length
+        : 0;
+
+      // Update fleet summary UI
+      document.getElementById('fleetTotal').textContent = devices.length;
+      document.getElementById('fleetActive').textContent = activeDevices.length;
+      document.getElementById('fleetMoving').textContent = movingDevices.length;
+      document.getElementById('fleetAvgBattery').textContent = avgBattery.toFixed(1) + 'V';
+
+      // Update health score
+      const healthEl = document.getElementById('fleetHealthScore');
+      const healthStat = healthEl?.closest('.fleet-stat');
+      if (healthEl) {
+        healthEl.textContent = Math.round(avgHealth);
+        if (healthStat) {
+          healthStat.classList.remove('warning', 'critical');
+          if (avgHealth < 50) healthStat.classList.add('critical');
+          else if (avgHealth < 70) healthStat.classList.add('warning');
+        }
+      }
+
+      // Hide alerts (Cloudflare doesn't provide alerts yet)
+      const alertIndicator = document.getElementById('alertIndicator');
+      const alertsBanner = document.getElementById('alertsBanner');
+      if (alertIndicator) alertIndicator.style.display = 'none';
+      if (alertsBanner) alertsBanner.style.display = 'none';
+
+      // Render device cards
+      renderTelemetryGrid(devices);
+
+      // Update health overview panel
+      updateHealthOverview(devices, []);
     }
 
     function renderAlerts(alerts) {
