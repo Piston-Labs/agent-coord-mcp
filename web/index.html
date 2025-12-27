@@ -12962,8 +12962,8 @@
           </div>
         </div>
 
-        <!-- Geofence Management Section (moved above map for visibility) -->
-        <div class="geofence-section" id="geofenceSection">
+        <!-- Geofence Management Section (hidden - feature removed) -->
+        <div class="geofence-section" id="geofenceSection" style="display: none;">
           <div class="geofence-header" onclick="toggleGeofenceSection()">
             <div class="geofence-title">
               <span class="geofence-icon">📍</span>
@@ -21735,8 +21735,9 @@
 
     // === TELEMETRY FUNCTIONS ===
 
-    // Cloudflare telemetry endpoint (primary data source)
-    const CLOUDFLARE_TELEMETRY_URL = 'https://piston-telemetry.tyler-4c4.workers.dev';
+    // Cloudflare telemetry via hub proxy (avoids CORS issues)
+    const CF_TELEMETRY_API = API_BASE + '/cf-telemetry';
+    // Direct WebSocket still works (WebSocket isn't subject to CORS)
     const CLOUDFLARE_WS_URL = 'wss://piston-telemetry.tyler-4c4.workers.dev/ws';
 
     // WebSocket connection for real-time updates
@@ -21942,8 +21943,8 @@
       }
 
       try {
-        // Fetch from Cloudflare telemetry endpoint (primary data source)
-        const res = await fetch(CLOUDFLARE_TELEMETRY_URL + '/devices');
+        // Fetch from Cloudflare via hub proxy (avoids CORS)
+        const res = await fetch(CF_TELEMETRY_API);
         const data = await res.json();
 
         // Transform Cloudflare devices to hub format
@@ -21954,9 +21955,6 @@
 
         // Try to connect WebSocket for real-time updates
         connectTelemetryWebSocket();
-
-        // Fetch geofences (separate call to avoid blocking telemetry)
-        fetchGeofences();
 
         // Update last updated time
         const now = new Date();
@@ -22655,7 +22653,7 @@
       tripsList.innerHTML = '<div class="trips-loading">Loading trips...</div>';
 
       try {
-        const res = await fetch(CLOUDFLARE_TELEMETRY_URL + '/device/' + imei + '/trips');
+        const res = await fetch(CF_TELEMETRY_API + '?imei=' + imei + '&trips=true');
         const data = await res.json();
 
         if (!data.trips || data.trips.length === 0) {
