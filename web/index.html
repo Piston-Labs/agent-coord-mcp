@@ -4115,6 +4115,7 @@
       flex: 1;
       display: grid !important;
       grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      grid-auto-rows: min-content; /* Allow rows to size based on content */
       gap: 20px;
       padding: 24px;
       overflow-y: auto;
@@ -4128,6 +4129,7 @@
       transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
       padding-bottom: 12px;
       min-height: 140px;
+      height: auto; /* Allow card to grow based on content */
     }
 
     .device-card:hover { 
