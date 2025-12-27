@@ -3321,6 +3321,82 @@
       margin-top: 8px;
     }
 
+    /* Trip History Panel */
+    .trips-section {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .trips-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .trips-loading, .trips-empty {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 20px;
+      font-size: 13px;
+    }
+
+    .trip-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: var(--bg-secondary);
+      border-radius: 6px;
+      border-left: 3px solid #38bdf8;
+      transition: background 0.2s;
+    }
+
+    .trip-item:hover {
+      background: rgba(56, 189, 248, 0.1);
+    }
+
+    .trip-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .trip-date {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .trip-time {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .trip-stats {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .trip-stat {
+      text-align: right;
+    }
+
+    .trip-stat-value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #38bdf8;
+    }
+
+    .trip-stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: #64748b;
+      letter-spacing: 0.5px;
+    }
 
     /* Fleet Map */
     .fleet-map-container {
@@ -22497,9 +22573,12 @@
 
       // Show modal
       document.getElementById('deviceModalOverlay').classList.add('visible');
-      
+
       // Fetch and display history
       fetchDeviceHistory(imei);
+
+      // Fetch and display trips from Cloudflare
+      fetchDeviceTrips(imei);
     }
 
     function closeDeviceModal() {
@@ -22568,6 +22647,92 @@
       } else {
         el.classList.remove('active');
       }
+    }
+
+    // Fetch and render trip history from Cloudflare
+    async function fetchDeviceTrips(imei) {
+      const tripsList = document.getElementById('tripsList');
+      tripsList.innerHTML = '<div class="trips-loading">Loading trips...</div>';
+
+      try {
+        const res = await fetch(CLOUDFLARE_TELEMETRY_URL + '/device/' + imei + '/trips');
+        const data = await res.json();
+
+        if (!data.trips || data.trips.length === 0) {
+          tripsList.innerHTML = '<div class="trips-empty">No trips recorded yet. Trips are recorded when the ignition turns off.</div>';
+          return;
+        }
+
+        // Take first 20 trips
+        const trips = data.trips.slice(0, 20);
+        tripsList.innerHTML = trips.map(trip => renderTripItem(trip)).join('');
+      } catch (err) {
+        console.error('Failed to fetch trips:', err);
+        tripsList.innerHTML = '<div class="trips-empty">Failed to load trip history</div>';
+      }
+    }
+
+    function renderTripItem(trip) {
+      const startDate = new Date(trip.startTime);
+      const endDate = new Date(trip.endTime);
+
+      // Format date: "Mon, Dec 23"
+      const dateStr = startDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      });
+
+      // Format time range: "02:30 PM - 03:45 PM"
+      const startTimeStr = startDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      const endTimeStr = endDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+
+      // Calculate distance in miles (trip.distance is in meters)
+      const distanceMeters = trip.distance || 0;
+      const distanceMiles = distanceMeters / 1609.34;
+      let distanceStr;
+      if (distanceMiles < 0.1) {
+        distanceStr = Math.round(distanceMeters * 3.28084) + ' ft';
+      } else {
+        distanceStr = distanceMiles.toFixed(1) + ' mi';
+      }
+
+      // Calculate duration
+      const durationMs = trip.duration || 0;
+      const durationMin = Math.round(durationMs / 60000);
+      let durationStr;
+      if (durationMin < 60) {
+        durationStr = durationMin + ' min';
+      } else {
+        const hours = Math.floor(durationMin / 60);
+        const mins = durationMin % 60;
+        durationStr = hours + 'h ' + mins + 'm';
+      }
+
+      return `
+        <div class="trip-item">
+          <div class="trip-info">
+            <div class="trip-date">${dateStr}</div>
+            <div class="trip-time">${startTimeStr} - ${endTimeStr}</div>
+          </div>
+          <div class="trip-stats">
+            <div class="trip-stat">
+              <div class="trip-stat-value">${distanceStr}</div>
+              <div class="trip-stat-label">Distance</div>
+            </div>
+            <div class="trip-stat">
+              <div class="trip-stat-value">${durationStr}</div>
+              <div class="trip-stat-label">Duration</div>
+            </div>
+          </div>
+        </div>
+      `;
     }
 
     // Close modal on Escape
@@ -28061,6 +28226,12 @@ function toggleBlogPreview() {
                 <span>Now</span>
               </div>
             </div>
+          </div>
+        </div>
+        <div class="modal-section trips-section" id="modalTripsSection">
+          <h4>Trip History</h4>
+          <div class="trips-list" id="tripsList">
+            <div class="trips-loading">Loading trips...</div>
           </div>
         </div>
       </div>
