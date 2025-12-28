@@ -185,6 +185,36 @@ async function fetchDoSoul(agentId: string): Promise<any> {
 }
 
 /**
+ * Fetch checkpoint from Durable Objects (source of truth for agent identity/state)
+ * DO checkpoints persist permanently, unlike Redis which may expire.
+ * Architecture: DO is source of truth, Redis acts as cache/intermediate layer.
+ */
+async function fetchDoCheckpoint(agentId: string): Promise<any> {
+  try {
+    const response = await fetch(`${DO_URL}/agent/${agentId}/checkpoint`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+      // 404 means no checkpoint exists yet - not an error
+      if (response.status === 404) {
+        return null;
+      }
+      console.error(`[hot-start] DO checkpoint fetch failed for ${agentId}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return data.checkpoint || data || null;
+  } catch (error) {
+    // DO might not be running - graceful fallback to Redis
+    console.error(`[hot-start] DO checkpoint fetch failed for ${agentId}:`, error);
+    return null;
+  }
+}
+
+/**
  * Hot Start API - Zero cold start for agents
  *
  * Bundles together all the context an agent needs to start immediately:
@@ -259,8 +289,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       : ['checkpoint', 'team', 'chat', 'context', 'memories', 'repo', 'metrics', 'substrate', 'doSoul'];
 
     // Build response in parallel
+    // Architecture: DO is source of truth for checkpoints, Redis is cache/intermediate layer
     const [
-      checkpoint,
+      redisCheckpoint,  // Redis cache (may be expired)
+      doCheckpoint,     // DO source of truth (persistent)
       agentStatus,
       recentChat,
       memories,
@@ -274,9 +306,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       soulData,  // Titans/MIRAS meta-learning integration
       doSoulData  // Durable Objects progression
     ] = await Promise.all([
-      // Agent's checkpoint
+      // Agent's checkpoint from Redis (cache layer)
       includes.includes('checkpoint')
         ? redis.hget(CHECKPOINTS_KEY, agentIdStr)
+        : null,
+
+      // Agent's checkpoint from Durable Objects (source of truth)
+      includes.includes('checkpoint')
+        ? fetchDoCheckpoint(agentIdStr)
         : null,
 
       // All agent statuses
@@ -609,7 +646,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         message: `Using provided agentId '${agentIdStr}'. Pass machineId to enable identity persistence.`
       },
 
-      checkpoint: checkpoint ? (typeof checkpoint === 'string' ? JSON.parse(checkpoint) : checkpoint) : undefined,
+      // Checkpoint: DO is source of truth, Redis is fallback cache
+      // This ensures agent state persists even if Redis expires
+      checkpoint: (() => {
+        // Prefer DO checkpoint (source of truth)
+        if (doCheckpoint) {
+          return typeof doCheckpoint === 'string' ? JSON.parse(doCheckpoint) : doCheckpoint;
+        }
+        // Fall back to Redis cache if DO is unavailable
+        if (redisCheckpoint) {
+          return typeof redisCheckpoint === 'string' ? JSON.parse(redisCheckpoint) : redisCheckpoint;
+        }
+        return undefined;
+      })(),
       previousMetrics: metrics ? (typeof metrics === 'string' ? JSON.parse(metrics) : metrics) : undefined,
 
       activeAgents,
@@ -639,11 +688,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     };
 
     // Record this as a hot start in metrics
+    // Check if we had a checkpoint from either source
+    const hasCheckpoint = !!(doCheckpoint || redisCheckpoint);
     await redis.lpush('agent-coord:metrics-events', JSON.stringify({
       id: `event-${Date.now().toString(36)}`,
       agentId: agentIdStr,
       eventType: 'context_load',
-      metadata: { isHotStart: !!checkpoint, loadTime: response.loadTime, role: roleStr },
+      metadata: {
+        isHotStart: hasCheckpoint,
+        checkpointSource: doCheckpoint ? 'durable-objects' : (redisCheckpoint ? 'redis' : 'none'),
+        loadTime: response.loadTime,
+        role: roleStr
+      },
       timestamp: new Date().toISOString()
     }));
 
