@@ -101,7 +101,7 @@ const KNOWN_DEVICES: Record<string, Partial<Device>> = {
     notes: 'Development/testing device'
   },
   '862464068693907': {
-    name: 'Tyler Test Device',
+    name: 'PUG',
     model: 'FMM00A',
     backend: 'cloudflare',
     vehicle: { make: 'Test', model: 'Config Validation', year: 2025 },
