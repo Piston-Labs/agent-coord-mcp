@@ -45,7 +45,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const clientId = process.env.GOOGLE_DRIVE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_DRIVE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_SHEETS_REDIRECT_URI ||
-    `${process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000'}/api/google-sheets?action=callback`;
+    'https://agent-coord-mcp.vercel.app/api/google-sheets?action=callback';
 
   if (!clientId || !clientSecret) {
     return res.status(500).json({
