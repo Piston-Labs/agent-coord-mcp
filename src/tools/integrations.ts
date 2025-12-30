@@ -1468,6 +1468,165 @@ Requires PRODUCTBOARD_API_TOKEN env var.`,
   );
 
   // ============================================================================
+  // GOOGLE-SHEETS TOOL - Read and write Google Spreadsheets
+  // ============================================================================
+
+  server.tool(
+    'google-sheets',
+    'Read and write Google Spreadsheets. Append rows, update cells, read data. Requires Google OAuth with Sheets scope.',
+    {
+      action: z.enum(['status', 'auth-url', 'read', 'append', 'update', 'metadata'])
+        .describe('status=check connection, auth-url=get OAuth URL, read=read data, append=add rows, update=modify cells, metadata=get sheet info'),
+      spreadsheetId: z.string().optional().describe('Google Spreadsheet ID (from URL: docs.google.com/spreadsheets/d/{THIS_PART}/edit)'),
+      range: z.string().optional().describe('Cell range in A1 notation (e.g., "Sheet1!A1:Z100" or just "A1:Z100")'),
+      values: z.array(z.any()).optional().describe('Row data to append or update. For single row: ["val1", "val2"]. For multiple: [["row1col1", "row1col2"], ["row2col1", "row2col2"]]'),
+      agentId: z.string().describe('Your agent ID')
+    },
+    async (args) => {
+      const { action, spreadsheetId, range, values, agentId } = args;
+
+      try {
+        switch (action) {
+          case 'status': {
+            const res = await fetch(`${API_BASE}/api/google-sheets?action=status`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'auth-url': {
+            const res = await fetch(`${API_BASE}/api/google-sheets?action=auth-url`);
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify({
+              ...data,
+              instructions: 'Open this URL in a browser to authorize Google Sheets access. This grants read/write access to spreadsheets.'
+            }, null, 2) }] };
+          }
+
+          case 'read': {
+            if (!spreadsheetId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'spreadsheetId required for read' }) }] };
+            }
+            const params = new URLSearchParams({
+              action: 'read',
+              spreadsheetId
+            });
+            if (range) params.set('range', range);
+
+            const res = await fetch(`${API_BASE}/api/google-sheets?${params}`);
+            const data = await res.json();
+
+            // Format as markdown table if data exists
+            if (data.values && data.values.length > 0) {
+              const lines = [
+                `## Spreadsheet Data`,
+                `Range: ${data.range}`,
+                `Rows: ${data.rowCount}`,
+                ``
+              ];
+
+              // Create markdown table
+              const headers = data.values[0];
+              lines.push('| ' + headers.join(' | ') + ' |');
+              lines.push('| ' + headers.map(() => '---').join(' | ') + ' |');
+              for (let i = 1; i < Math.min(data.values.length, 50); i++) {
+                lines.push('| ' + data.values[i].join(' | ') + ' |');
+              }
+              if (data.values.length > 50) {
+                lines.push(``, `... and ${data.values.length - 50} more rows`);
+              }
+
+              return { content: [{ type: 'text', text: lines.join('\n') }] };
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'append': {
+            if (!spreadsheetId || !values) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'spreadsheetId and values required for append',
+                example: 'google-sheets action=append spreadsheetId=xxx values=["col1", "col2", "col3"]'
+              }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-sheets?action=append`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                spreadsheetId,
+                range: range || 'Sheet1',
+                values
+              })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              return { content: [{ type: 'text', text: `✅ Appended ${data.updatedRows} row(s) to ${data.updatedRange}` }] };
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'update': {
+            if (!spreadsheetId || !range || !values) {
+              return { content: [{ type: 'text', text: JSON.stringify({
+                error: 'spreadsheetId, range, and values required for update',
+                example: 'google-sheets action=update spreadsheetId=xxx range=A1:C1 values=["new1", "new2", "new3"]'
+              }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-sheets?action=update`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                spreadsheetId,
+                range,
+                values
+              })
+            });
+            const data = await res.json();
+
+            if (data.success) {
+              return { content: [{ type: 'text', text: `✅ Updated ${data.updatedCells} cell(s) at ${data.updatedRange}` }] };
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'metadata': {
+            if (!spreadsheetId) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'spreadsheetId required for metadata' }) }] };
+            }
+
+            const res = await fetch(`${API_BASE}/api/google-sheets?action=metadata&spreadsheetId=${spreadsheetId}`);
+            const data = await res.json();
+
+            if (data.title) {
+              const lines = [
+                `## ${data.title}`,
+                `ID: ${data.spreadsheetId}`,
+                ``,
+                `### Sheets:`
+              ];
+              for (const sheet of data.sheets || []) {
+                lines.push(`- **${sheet.title}** (${sheet.rowCount} rows x ${sheet.columnCount} cols)`);
+              }
+              return { content: [{ type: 'text', text: lines.join('\n') }] };
+            }
+
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: `Unknown action: ${action}` }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
+
+  // ============================================================================
   // VERCEL-ENV TOOL - Manage Vercel environment variables
   // ============================================================================
 
