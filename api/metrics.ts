@@ -6,6 +6,23 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+// Cloudflare telemetry endpoint for fleet data
+const CF_TELEMETRY_URL = 'https://piston-telemetry.tyler-4c4.workers.dev/devices';
+
+// Helper for fetch with timeout
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return res;
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
 /**
  * System Metrics API - Analytics and usage statistics
  *
@@ -128,18 +145,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       handoffsRaw,
       workflowRunsRaw,
       memoryRaw,
-      telemetryRaw,
+      telemetryRes,
     ] = await Promise.all([
-      redis.hgetall('agent-coord:agents'),
-      redis.hgetall('agent-coord:active-agents'),
-      redis.lrange('agent-coord:group-chat', 0, -1),
-      redis.hgetall('agent-coord:tasks'),
-      redis.hgetall('agent-coord:locks'),
-      redis.hgetall('agent-coord:claims'),
-      redis.lrange('agent-coord:handoffs', 0, -1),
-      redis.lrange('agent-coord:workflow-runs', 0, -1),
-      redis.hgetall('agent-coord:shared-memory'),
-      redis.hgetall('piston:devices'),
+      redis.hgetall('agent-coord:agents').catch(() => ({})),
+      redis.hgetall('agent-coord:active-agents').catch(() => ({})),
+      redis.lrange('agent-coord:group-chat', 0, -1).catch(() => []),
+      redis.hgetall('agent-coord:tasks').catch(() => ({})),
+      redis.hgetall('agent-coord:locks').catch(() => ({})),
+      redis.hgetall('agent-coord:claims').catch(() => ({})),
+      redis.lrange('agent-coord:handoffs', 0, -1).catch(() => []),
+      redis.lrange('agent-coord:workflow-runs', 0, -1).catch(() => []),
+      redis.hgetall('agent-coord:shared-memory').catch(() => ({})),
+      fetchWithTimeout(CF_TELEMETRY_URL, 3000),
     ]);
 
     // Process agents
@@ -218,14 +235,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       memoryCategories[category] = (memoryCategories[category] || 0) + 1;
     });
 
-    // Process telemetry - devices from piston:devices key
-    const telemetryDevices = Object.values(telemetryRaw || {}).map(t =>
-      typeof t === 'string' ? JSON.parse(t) : t
-    );
-    // Count active devices (status === 'active') - piston-devices uses string status
-    const activeDevices = telemetryDevices.filter(d => d.status === 'active').length;
-    // Note: Battery voltage not stored in piston:devices - would need to fetch from telemetry data
-    const avgBattery = 0; // TODO: Fetch from device telemetry if needed
+    // Process telemetry from Cloudflare worker
+    let telemetryDevices: any[] = [];
+    let activeDevices = 0;
+    let avgBattery = 0;
+
+    if (telemetryRes && telemetryRes.ok) {
+      try {
+        const telemetryData = await telemetryRes.json();
+        telemetryDevices = telemetryData.devices || telemetryData || [];
+        if (Array.isArray(telemetryDevices)) {
+          activeDevices = telemetryDevices.filter((d: any) => d.online || d.ignition).length;
+          // Calculate average battery voltage
+          const voltages = telemetryDevices
+            .map((d: any) => d.externalVoltage || d.batteryVoltage || d.voltage)
+            .filter((v: any) => typeof v === 'number' && v > 0);
+          if (voltages.length > 0) {
+            avgBattery = voltages.reduce((a: number, b: number) => a + b, 0) / voltages.length;
+          }
+        }
+      } catch (e) {
+        console.error('Telemetry parse error:', e);
+      }
+    }
 
     const metrics: SystemMetrics = {
       timestamp: new Date().toISOString(),
