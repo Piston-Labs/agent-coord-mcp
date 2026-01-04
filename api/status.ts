@@ -61,7 +61,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redis.lrange('agent-coord:group-chat', 0, 4), // Last 5 messages
       redis.lrange('agent-coord:workflow-runs', 0, 4), // Last 5 runs
       redis.hgetall('agent-coord:locks'),
-      redis.lrange('agent-coord:handoffs', 0, 9), // Last 10 handoffs
+      redis.lrange('agent-coord:handoffs', 0, 9).catch(() => []), // Last 10 handoffs (may be wrong type)
       redis.hgetall('agent-coord:tasks'),
       fetchWithTimeout(CF_TELEMETRY_URL, 3000)
     ]);
