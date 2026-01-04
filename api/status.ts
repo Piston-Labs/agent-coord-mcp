@@ -9,6 +9,20 @@ const redis = new Redis({
 // Cloudflare telemetry endpoint for fleet data
 const CF_TELEMETRY_URL = 'https://piston-telemetry.tyler-4c4.workers.dev/devices';
 
+// Helper for fetch with timeout (compatible with Node 16+)
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<Response | null> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    return res;
+  } catch {
+    clearTimeout(timeoutId);
+    return null;
+  }
+}
+
 /**
  * System Status API - Real-time dashboard data
  *
@@ -49,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       redis.hgetall('agent-coord:locks'),
       redis.lrange('agent-coord:handoffs', 0, 9), // Last 10 handoffs
       redis.hgetall('agent-coord:tasks'),
-      fetch(CF_TELEMETRY_URL, { signal: AbortSignal.timeout(3000) }).catch(() => null)
+      fetchWithTimeout(CF_TELEMETRY_URL, 3000)
     ]);
 
     const loadTime = Date.now() - startTime;
