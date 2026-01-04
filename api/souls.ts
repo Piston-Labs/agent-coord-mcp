@@ -395,6 +395,42 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.json({ souls: soulList, count: soulList.length });
     }
 
+    // Update soul identity/configuration (for modifying personality, rules, etc.)
+    if (action === 'update' && req.method === 'POST') {
+      if (!soulId || typeof soulId !== 'string') {
+        return res.status(400).json({ error: 'soulId required' });
+      }
+
+      const raw = await redis.hget(SOULS_KEY, soulId);
+      if (!raw) {
+        return res.status(404).json({ error: 'Soul not found' });
+      }
+
+      const soul: AgentSoul = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      const { personality, systemPromptAdditions, name, expertise } = req.body;
+
+      // Update identity fields (normally immutable, but allowed via explicit update)
+      if (personality !== undefined) soul.personality = personality;
+      if (systemPromptAdditions !== undefined) soul.systemPromptAdditions = systemPromptAdditions;
+      if (name !== undefined) soul.name = name;
+      if (expertise !== undefined) soul.expertise = expertise;
+
+      soul.updatedAt = new Date().toISOString();
+
+      await redis.hset(SOULS_KEY, { [soulId]: JSON.stringify(soul) });
+
+      return res.json({
+        success: true,
+        soul: {
+          soulId: soul.soulId,
+          name: soul.name,
+          personality: soul.personality?.substring(0, 200) + '...',
+          systemPromptAdditions: soul.systemPromptAdditions?.substring(0, 200) + '...',
+          updatedAt: soul.updatedAt,
+        },
+      });
+    }
+
     // Update soul state (checkpoint)
     if (action === 'checkpoint' && req.method === 'POST') {
       if (!soulId || typeof soulId !== 'string') {
@@ -1113,7 +1149,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({
       error: 'Invalid action',
       validActions: [
-        'create', 'get', 'list', 'checkpoint',  // Soul operations
+        'create', 'get', 'list', 'update', 'checkpoint',  // Soul operations
         'spawn-body', 'update-tokens', 'body-status', 'list-bodies',  // Body operations
         'bind', 'initiate-transfer', 'complete-transfer', 'get-bundle',  // Binding & Transfer operations
         'grant-capability',  // Capability management
