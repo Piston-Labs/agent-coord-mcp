@@ -6,6 +6,9 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN!,
 });
 
+// Cloudflare telemetry endpoint for fleet data
+const CF_TELEMETRY_URL = 'https://piston-telemetry.tyler-4c4.workers.dev/devices';
+
 /**
  * System Status API - Real-time dashboard data
  *
@@ -30,21 +33,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const startTime = Date.now();
 
-    // Parallel fetch all needed data
+    // Parallel fetch all needed data (including telemetry from Cloudflare)
     const [
       agentsRaw,
       chatRaw,
       workflowRunsRaw,
       locksRaw,
       handoffsRaw,
-      tasksRaw
+      tasksRaw,
+      telemetryRes
     ] = await Promise.all([
       redis.hgetall('agent-coord:active-agents'),
       redis.lrange('agent-coord:group-chat', 0, 4), // Last 5 messages
       redis.lrange('agent-coord:workflow-runs', 0, 4), // Last 5 runs
       redis.hgetall('agent-coord:locks'),
       redis.lrange('agent-coord:handoffs', 0, 9), // Last 10 handoffs
-      redis.hgetall('agent-coord:tasks')
+      redis.hgetall('agent-coord:tasks'),
+      fetch(CF_TELEMETRY_URL, { signal: AbortSignal.timeout(3000) }).catch(() => null)
     ]);
 
     const loadTime = Date.now() - startTime;
@@ -123,6 +128,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         priority: t.priority
       }));
 
+    // Process telemetry from Cloudflare
+    let telemetry = { totalDevices: 0, activeDevices: 0, avgBatteryVoltage: null as number | null };
+    if (telemetryRes && telemetryRes.ok) {
+      try {
+        const telemetryData = await telemetryRes.json();
+        const devices = telemetryData.devices || telemetryData || [];
+        if (Array.isArray(devices)) {
+          telemetry.totalDevices = devices.length;
+          telemetry.activeDevices = devices.filter((d: any) => d.online || d.ignition).length;
+          // Calculate average battery voltage from devices that have it
+          const voltages = devices
+            .map((d: any) => d.externalVoltage || d.batteryVoltage || d.voltage)
+            .filter((v: any) => typeof v === 'number' && v > 0);
+          if (voltages.length > 0) {
+            telemetry.avgBatteryVoltage = Math.round((voltages.reduce((a: number, b: number) => a + b, 0) / voltages.length) * 10) / 10;
+          }
+        }
+      } catch (e) {
+        console.error('Telemetry parse error:', e);
+      }
+    }
+
     return res.json({
       timestamp: new Date().toISOString(),
       loadTime: `${loadTime}ms`,
@@ -137,6 +164,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         pendingHandoffs,
         inProgressTasks
       },
+      telemetry,
       counts: {
         agents: agents.length,
         locks: activeLocks.length,
