@@ -290,8 +290,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const latencyMs = Date.now() - startTime;
 
       // 6. Post to group chat if requested
+      // Skip posting if agent indicates silence (passive agents use [silence] marker)
       let chatMessage = null;
-      if (postToGroupChat && generatedResponse) {
+      const isSilenceResponse = generatedResponse.toLowerCase().startsWith('[silence]') ||
+        generatedResponse.toLowerCase().includes('*captain remains silent*') ||
+        generatedResponse.toLowerCase().includes('*remains silent*') ||
+        generatedResponse.trim() === '';
+
+      if (postToGroupChat && generatedResponse && !isSilenceResponse) {
         chatMessage = await postToChat(soul.name, generatedResponse, false);
       }
 
