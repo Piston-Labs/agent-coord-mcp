@@ -214,9 +214,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Push to front of list (newest first)
       await redis.lpush(MESSAGES_KEY, JSON.stringify(newMessage));
-      
+
       // Trim to max messages
       await redis.ltrim(MESSAGES_KEY, 0, MAX_MESSAGES - 1);
+
+      // Bridge to Cloudflare DO for WebSocket broadcast to connected agents
+      // This allows agents using WebSocket listeners to receive real-time messages
+      const DO_URL = process.env.DO_URL || 'https://agent-coord-do.elidecloud.workers.dev';
+      try {
+        await fetch(`${DO_URL}/coordinator/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            author: newMessage.author,
+            authorType: newMessage.authorType,
+            message: newMessage.message,
+            id: newMessage.id,
+            timestamp: newMessage.timestamp
+          })
+        });
+      } catch (e) {
+        // Non-blocking - don't fail the request if DO is unavailable
+        console.error('Failed to bridge message to DO:', e);
+      }
 
       return res.json({ id: newMessage.id, sent: true, timestamp: newMessage.timestamp });
     }

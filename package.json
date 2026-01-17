@@ -24,6 +24,9 @@
     "dev:fleet": "tsx src/fleet-bridge.ts",
     "dev:http": "tsx src/http-server.ts",
     "dev:bridge": "tsx src/message-bridge.ts",
+    "listener": "node scripts/clab-listener.js",
+    "runner": "node scripts/clab-agent-runner.js",
+    "daemon": "node scripts/autonomous-daemon.js",
     "check": "npm run build",
     "test": "npm run build && npx tsx --test test/*.test.ts",
     "sim": "tsx test/multi-agent-sim.ts"
@@ -52,6 +55,7 @@
     "@upstash/redis": "^1.35.7",
     "pg": "^8.16.3",
     "typescript": "^5.9.3",
+    "ws": "^8.18.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {

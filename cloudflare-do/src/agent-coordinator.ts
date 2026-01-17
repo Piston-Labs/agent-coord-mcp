@@ -22,7 +22,6 @@ interface CoordinatorState {
 export class AgentCoordinator implements DurableObject {
   private state: DurableObjectState;
   private env: Env;
-  private connections: Map<string, WebSocket> = new Map();
   private sql: SqlStorage;
 
   constructor(state: DurableObjectState, env: Env) {
@@ -182,9 +181,9 @@ export class AgentCoordinator implements DurableObject {
     const url = new URL(request.url);
     const agentId = url.searchParams.get('agentId') || `anon-${Date.now()}`;
 
-    // Accept the WebSocket connection
+    // Accept the WebSocket connection with hibernation support
+    // Tags are used to identify the agent when broadcasting
     this.state.acceptWebSocket(server, [agentId]);
-    this.connections.set(agentId, server);
 
     // Mark agent as active
     this.updateAgentStatus(agentId, 'active');
@@ -237,7 +236,6 @@ export class AgentCoordinator implements DurableObject {
   async webSocketClose(ws: WebSocket) {
     const agentId = this.state.getTags(ws)?.[0];
     if (agentId) {
-      this.connections.delete(agentId);
       this.updateAgentStatus(agentId, 'offline');
       this.broadcast({
         type: 'agent-update',
@@ -249,16 +247,26 @@ export class AgentCoordinator implements DurableObject {
 
   /**
    * Broadcast message to all connected WebSockets
+   * Uses hibernation-safe API to get WebSockets that survive DO sleep
    */
   private broadcast(message: WebSocketMessage, exclude?: string) {
     const payload = JSON.stringify(message);
-    for (const [agentId, ws] of this.connections) {
-      if (agentId !== exclude) {
-        try {
+
+    // Use hibernation API to get all WebSockets (survives DO hibernation)
+    const websockets = this.state.getWebSockets();
+
+    for (const ws of websockets) {
+      try {
+        // Get the agentId tag from the WebSocket
+        const tags = this.state.getTags(ws);
+        const agentId = tags?.[0];
+
+        if (agentId !== exclude) {
           ws.send(payload);
-        } catch {
-          this.connections.delete(agentId);
         }
+      } catch (e) {
+        // WebSocket is dead, will be cleaned up automatically
+        console.error('Failed to send to WebSocket:', e);
       }
     }
   }
