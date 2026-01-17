@@ -9,7 +9,8 @@ bindings = [
   { name = "COORDINATOR", class_name = "AgentCoordinator" },
   { name = "AGENT_STATE", class_name = "AgentState" },
   { name = "RESOURCE_LOCK", class_name = "ResourceLock" },
-  { name = "VM_POOL", class_name = "VMPool" }
+  { name = "VM_POOL", class_name = "VMPool" },
+  { name = "GIT_TREE", class_name = "GitTree" }
 ]
 
 # SQLite storage backend for all DOs
@@ -20,6 +21,10 @@ new_sqlite_classes = ["AgentCoordinator", "AgentState", "ResourceLock"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["VMPool"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["GitTree"]
 
 # Environment variables (set via wrangler secret)
 [vars]

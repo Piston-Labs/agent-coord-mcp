@@ -709,4 +709,159 @@ export function registerDurableObjectsTools(server: McpServer) {
       }
     }
   );
+
+  // ============================================================================
+  // GIT-TREE TOOL - Repository tree browsing and caching
+  // ============================================================================
+
+  server.tool(
+    'git-tree',
+    'Browse and cache GitHub repository trees. List files/directories, track commits, compare branches. Caches trees for fast context loading.',
+    {
+      action: z.enum(['status', 'list', 'cache', 'file', 'commits', 'branches', 'compare', 'search']).describe(
+        'status=cache info, list=browse tree, cache=snapshot tree, file=get file info, commits=list commits, branches=list branches, compare=diff branches, search=find files'
+      ),
+      repoId: z.string().describe('Repository ID in "owner-repo" format (e.g., "Piston-Labs-telemetry")'),
+      branch: z.string().optional().describe('Branch name (default: main)'),
+      path: z.string().optional().describe('Path within repo (for list/file/commits actions)'),
+      depth: z.number().optional().describe('Directory depth to list (default: 1, -1 for all)'),
+      refresh: z.boolean().optional().describe('Force refresh cache (for list action)'),
+      commitSha: z.string().optional().describe('Specific commit SHA (for cache action)'),
+      limit: z.number().optional().describe('Max results (for commits action, default: 20)'),
+      since: z.string().optional().describe('ISO timestamp - commits after this (for commits action)'),
+      base: z.string().optional().describe('Base branch for compare'),
+      head: z.string().optional().describe('Head branch for compare'),
+      query: z.string().optional().describe('Search query - glob pattern like "*.ts" or "src/**/*.test.ts"'),
+      paths: z.array(z.string()).optional().describe('Only cache specific paths (for large repos)')
+    },
+    async (args) => {
+      const { action, repoId, branch, path, depth, refresh, commitSha, limit, since, base, head, query, paths } = args;
+
+      try {
+        const baseUrl = `${DO_BASE}/gittree/${encodeURIComponent(repoId)}`;
+
+        switch (action) {
+          case 'status': {
+            const res = await fetch(`${baseUrl}/status?repoId=${encodeURIComponent(repoId)}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to get status: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'list': {
+            const params = new URLSearchParams({ repoId });
+            if (branch) params.set('branch', branch);
+            if (path) params.set('path', path);
+            if (depth !== undefined) params.set('depth', String(depth));
+            if (refresh) params.set('refresh', 'true');
+
+            const res = await fetch(`${baseUrl}/tree?${params}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to list tree: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'cache': {
+            const res = await fetch(`${baseUrl}/tree?repoId=${encodeURIComponent(repoId)}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ branch, commitSha, paths })
+            });
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to cache tree: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'file': {
+            if (!path) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'path parameter required' }) }] };
+            }
+            const params = new URLSearchParams({ repoId, path });
+            if (branch) params.set('branch', branch);
+
+            const res = await fetch(`${baseUrl}/file?${params}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `File not found: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'commits': {
+            const params = new URLSearchParams({ repoId });
+            if (branch) params.set('branch', branch);
+            if (limit !== undefined) params.set('limit', String(limit));
+            if (since) params.set('since', since);
+            if (path) params.set('path', path);
+
+            const res = await fetch(`${baseUrl}/commits?${params}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to list commits: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'branches': {
+            const res = await fetch(`${baseUrl}/branches?repoId=${encodeURIComponent(repoId)}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to list branches: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'compare': {
+            if (!head) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'head parameter required' }) }] };
+            }
+            const params = new URLSearchParams({ repoId, head });
+            if (base) params.set('base', base);
+
+            const res = await fetch(`${baseUrl}/compare?${params}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to compare branches: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          case 'search': {
+            if (!query) {
+              return { content: [{ type: 'text', text: JSON.stringify({ error: 'query parameter required' }) }] };
+            }
+            const params = new URLSearchParams({ repoId, q: query });
+            if (branch) params.set('branch', branch);
+            if (limit !== undefined) params.set('limit', String(limit));
+
+            const res = await fetch(`${baseUrl}/search?${params}`);
+            if (!res.ok) {
+              const error = await res.text();
+              return { content: [{ type: 'text', text: JSON.stringify({ error: `Failed to search files: ${error}` }) }] };
+            }
+            const data = await res.json();
+            return { content: [{ type: 'text', text: JSON.stringify(data, null, 2) }] };
+          }
+
+          default:
+            return { content: [{ type: 'text', text: JSON.stringify({ error: `Unknown action: ${action}` }) }] };
+        }
+      } catch (error) {
+        return { content: [{ type: 'text', text: JSON.stringify({ error: String(error) }) }] };
+      }
+    }
+  );
 }

@@ -19,6 +19,7 @@ export { AgentCoordinator } from './agent-coordinator';
 export { AgentState } from './agent-state';
 export { ResourceLock } from './resource-lock';
 export { VMPool } from './vm-pool';
+export { GitTree } from './git-tree';
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
@@ -49,12 +50,14 @@ export default {
         response = await routeToResourceLock(request, env, path);
       } else if (path.startsWith('/vmpool')) {
         response = await routeToVMPool(request, env, path.replace('/vmpool', '') || '/');
+      } else if (path.startsWith('/gittree/')) {
+        response = await routeToGitTree(request, env, path);
       } else if (path === '/health') {
         response = Response.json({
           status: 'ok',
           service: 'agent-coord-do',
           timestamp: new Date().toISOString(),
-          durableObjects: ['AgentCoordinator', 'AgentState', 'ResourceLock', 'VMPool']
+          durableObjects: ['AgentCoordinator', 'AgentState', 'ResourceLock', 'VMPool', 'GitTree']
         });
       } else if (path === '/' || path === '') {
         response = Response.json({
@@ -92,6 +95,14 @@ export default {
             '/vmpool/vm/:vmId/ready': 'Mark VM ready - POST',
             '/vmpool/vm/:vmId/agents': 'VM agent list - GET',
             '/vmpool/vm/:vmId/health': 'VM health history - GET',
+            '/gittree/:repoId/status': 'Git tree status - GET',
+            '/gittree/:repoId/tree': 'List/cache tree - GET (list), POST (cache)',
+            '/gittree/:repoId/file': 'Get file info - GET',
+            '/gittree/:repoId/commits': 'List/track commits - GET (list), POST (track)',
+            '/gittree/:repoId/branches': 'List branches - GET',
+            '/gittree/:repoId/compare': 'Compare branches - GET',
+            '/gittree/:repoId/search': 'Search files - GET',
+            '/gittree/:repoId/webhook': 'Webhook updates - POST',
             '/health': 'Health check'
           },
           docs: 'https://github.com/piston-labs/agent-coord-mcp/tree/main/cloudflare-do'
@@ -201,6 +212,31 @@ async function routeToVMPool(request: Request, env: Env, subPath: string): Promi
   // Rewrite URL for the DO
   const url = new URL(request.url);
   url.pathname = subPath;
+
+  return stub.fetch(new Request(url.toString(), request));
+}
+
+/**
+ * Route to per-repo GitTree DO
+ */
+async function routeToGitTree(request: Request, env: Env, path: string): Promise<Response> {
+  // Extract repo ID from path: /gittree/:repoId/...
+  const match = path.match(/^\/gittree\/([^/]+)(\/.*)?$/);
+  if (!match) {
+    return Response.json({ error: 'Invalid gittree path' }, { status: 400 });
+  }
+
+  const repoId = decodeURIComponent(match[1]);
+  const subPath = match[2] || '/status';
+
+  // Each repo gets its own DO instance
+  const id = env.GIT_TREE.idFromName(repoId);
+  const stub = env.GIT_TREE.get(id);
+
+  // Rewrite URL and add repo ID
+  const url = new URL(request.url);
+  url.pathname = subPath;
+  url.searchParams.set('repoId', repoId);
 
   return stub.fetch(new Request(url.toString(), request));
 }
