@@ -298,12 +298,71 @@ export class AgentCoordinator implements DurableObject {
 
   /**
    * Handle /chat endpoint
+   *
+   * GET params:
+   *   - limit: number of messages to return (default 50)
+   *   - agentId: if provided, returns pendingMentions and updates lastChatCheck
+   *   - since: ISO timestamp to get messages after
+   *   - inbox: if 'true', only return messages mentioning agentId
    */
   private async handleChat(request: Request): Promise<Response> {
     if (request.method === 'GET') {
       const url = new URL(request.url);
       const limit = parseInt(url.searchParams.get('limit') || '50');
-      return Response.json({ messages: this.getMessages(limit) });
+      const agentId = url.searchParams.get('agentId');
+      const since = url.searchParams.get('since');
+      const inboxOnly = url.searchParams.get('inbox') === 'true';
+
+      let messages = this.getMessages(limit * 2); // Get more to filter
+
+      // Filter by timestamp if provided
+      if (since) {
+        messages = messages.filter(m => new Date(m.timestamp) > new Date(since));
+      }
+
+      // If agentId provided, find pending mentions
+      let pendingMentions: GroupMessage[] = [];
+      if (agentId) {
+        const lastCheck = this.getAgentLastChatCheck(agentId);
+        const mentionPattern = new RegExp(`@${agentId}\\b|@all\\b|@everyone\\b|@team\\b`, 'i');
+
+        pendingMentions = messages.filter(m => {
+          // Skip own messages
+          if (m.author === agentId) return false;
+          // Check if it mentions this agent
+          if (!mentionPattern.test(m.message)) return false;
+          // Check if it's new since last check
+          if (lastCheck && new Date(m.timestamp) <= new Date(lastCheck)) return false;
+          return true;
+        });
+
+        // Update last chat check timestamp
+        this.updateAgentLastChatCheck(agentId);
+      }
+
+      // If inbox only, return just mentions
+      if (inboxOnly && agentId) {
+        return Response.json({
+          messages: pendingMentions,
+          count: pendingMentions.length,
+          agentId,
+          isInbox: true
+        });
+      }
+
+      // Return regular messages with pending mentions as extra field
+      const result: any = {
+        messages: messages.slice(0, limit),
+        count: messages.length
+      };
+
+      if (agentId && pendingMentions.length > 0) {
+        result.pendingMentions = pendingMentions;
+        result.pendingCount = pendingMentions.length;
+        result.hint = `You have ${pendingMentions.length} unread mention(s). Check and respond!`;
+      }
+
+      return Response.json(result);
     }
 
     if (request.method === 'POST') {
@@ -313,6 +372,29 @@ export class AgentCoordinator implements DurableObject {
     }
 
     return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  /**
+   * Get agent's last chat check timestamp
+   */
+  private getAgentLastChatCheck(agentId: string): string | null {
+    const result = this.sql.exec(`SELECT last_seen FROM agents WHERE agent_id = ?`, agentId);
+    const rows = result.toArray();
+    if (rows.length === 0) return null;
+    return rows[0].last_seen as string | null;
+  }
+
+  /**
+   * Update agent's last chat check timestamp
+   */
+  private updateAgentLastChatCheck(agentId: string): void {
+    const now = new Date().toISOString();
+    // Upsert the agent record with updated last_seen
+    this.sql.exec(`
+      INSERT INTO agents (agent_id, status, last_seen)
+      VALUES (?, 'active', ?)
+      ON CONFLICT(agent_id) DO UPDATE SET last_seen = ?, status = 'active'
+    `, agentId, now, now);
   }
 
   /**
@@ -444,6 +526,7 @@ export class AgentCoordinator implements DurableObject {
 
   /**
    * Handle /work endpoint - returns everything an agent needs on startup
+   * Now includes pendingMentions for automatic inbox delivery
    */
   private async handleWork(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -459,20 +542,46 @@ export class AgentCoordinator implements DurableObject {
     // Get agent's assigned tasks
     const myTasks = this.getTasks(null, agentId);
     const todoTasks = this.getTasks('todo', null);
-    const messages = this.getMessages(20);
+    const messages = this.getMessages(50); // Get more for mention scanning
     const agents = this.getActiveAgents();
 
-    return Response.json({
+    // Find pending mentions for this agent
+    const lastCheck = this.getAgentLastChatCheck(agentId);
+    const mentionPattern = new RegExp(`@${agentId}\\b|@all\\b|@everyone\\b|@team\\b`, 'i');
+
+    const pendingMentions = messages.filter(m => {
+      if (m.author === agentId) return false;
+      if (!mentionPattern.test(m.message)) return false;
+      if (lastCheck && new Date(m.timestamp) <= new Date(lastCheck)) return false;
+      return true;
+    });
+
+    // Update last chat check
+    this.updateAgentLastChatCheck(agentId);
+
+    const response: any = {
       agentId,
       summary: {
         activeAgents: agents.length,
         todoTasks: todoTasks.length,
-        inProgressTasks: myTasks.filter(t => t.status === 'in-progress').length
+        inProgressTasks: myTasks.filter(t => t.status === 'in-progress').length,
+        pendingMentions: pendingMentions.length
       },
       team: agents,
       tasks: { todo: todoTasks, mine: myTasks },
-      recentChat: messages
-    });
+      recentChat: messages.slice(0, 20)
+    };
+
+    // Include pending mentions if any
+    if (pendingMentions.length > 0) {
+      response.inbox = {
+        pendingMentions,
+        count: pendingMentions.length,
+        hint: `You have ${pendingMentions.length} unread mention(s)! Respond to keep the conversation flowing.`
+      };
+    }
+
+    return Response.json(response);
   }
 
   // ========== Database Operations ==========
