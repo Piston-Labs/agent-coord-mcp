@@ -163,6 +163,128 @@ export class GitTree implements DurableObject {
     this.initializeDatabase();
   }
 
+  // ============================================================================
+  // WEBSOCKET HIBERNATION API
+  // ============================================================================
+
+  /**
+   * Broadcast an event to all connected WebSocket clients (dashboards)
+   */
+  private broadcast(event: GitTreeEvent): void {
+    const message = JSON.stringify(event);
+
+    // Get all WebSocket connections from hibernation storage
+    const websockets = this.state.getWebSockets();
+
+    for (const ws of websockets) {
+      try {
+        ws.send(message);
+      } catch (e) {
+        // Client disconnected, will be cleaned up by close handler
+      }
+    }
+  }
+
+  /**
+   * Emit a typed event to all dashboard viewers
+   */
+  private emit(
+    type: GitTreeEvent['type'],
+    data: Record<string, unknown> = {}
+  ): void {
+    this.broadcast({
+      type,
+      timestamp: new Date().toISOString(),
+      repoId: this.repoId,
+      data: {
+        owner: this.owner,
+        repo: this.name,
+        ...data
+      }
+    });
+  }
+
+  /**
+   * Handle incoming WebSocket messages from dashboards
+   */
+  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): void {
+    try {
+      const data = JSON.parse(message as string);
+
+      // Handle ping/pong for keepalive
+      if (data.type === 'ping') {
+        ws.send(JSON.stringify({ type: 'pong', timestamp: new Date().toISOString() }));
+        return;
+      }
+
+      // Handle subscription to specific events (future: filtering)
+      if (data.type === 'subscribe') {
+        const meta = this.state.getWebSocketMeta(ws) as WebSocketMeta | null;
+        if (meta) {
+          // Could store subscription preferences here
+          ws.send(JSON.stringify({
+            type: 'subscribed',
+            viewerId: meta.viewerId,
+            repoId: this.repoId
+          }));
+        }
+      }
+
+      // Handle stats request
+      if (data.type === 'get-stats') {
+        const stats = this.getStats();
+        ws.send(JSON.stringify({ type: 'stats', ...stats }));
+      }
+    } catch (e) {
+      // Ignore malformed messages
+    }
+  }
+
+  /**
+   * Handle WebSocket connection close
+   */
+  async webSocketClose(ws: WebSocket, code: number, reason: string, wasClean: boolean): Promise<void> {
+    const meta = this.state.getWebSocketMeta(ws) as WebSocketMeta | null;
+
+    // Notify other viewers that someone left
+    if (meta) {
+      this.emit('viewer:leave', {
+        viewerId: meta.viewerId,
+        connectedAt: meta.connectedAt,
+        duration: Date.now() - new Date(meta.connectedAt).getTime()
+      });
+    }
+  }
+
+  /**
+   * Handle WebSocket errors
+   */
+  async webSocketError(ws: WebSocket, error: unknown): Promise<void> {
+    // Just close the connection on error
+    ws.close(1011, 'WebSocket error');
+  }
+
+  /**
+   * Get current stats for dashboard
+   */
+  private getStats(): Record<string, unknown> {
+    const treeCount = this.sql.exec('SELECT COUNT(*) as count FROM trees').toArray()[0] as { count: number };
+    const fileCount = this.sql.exec('SELECT COUNT(*) as count FROM files').toArray()[0] as { count: number };
+    const commitCount = this.sql.exec('SELECT COUNT(*) as count FROM commits').toArray()[0] as { count: number };
+    const viewerCount = this.state.getWebSockets().length;
+
+    return {
+      repoId: this.repoId,
+      owner: this.owner,
+      repo: this.name,
+      cachedTrees: treeCount.count,
+      cachedFiles: fileCount.count,
+      trackedCommits: commitCount.count,
+      connectedViewers: viewerCount,
+      timestamp: new Date().toISOString()
+    };
+  }
+
   private initializeDatabase() {
     // Repository metadata
     this.sql.exec(`
@@ -277,6 +399,11 @@ export class GitTree implements DurableObject {
     }
 
     try {
+      // Handle WebSocket upgrade for dashboard connections
+      if (path === '/ws' || path === '/websocket') {
+        return this.handleWebSocketUpgrade(request);
+      }
+
       switch (path) {
         case '/':
         case '/status':
@@ -327,6 +454,55 @@ export class GitTree implements DurableObject {
   }
 
   // ============================================================================
+  // WEBSOCKET UPGRADE HANDLER
+  // ============================================================================
+
+  private handleWebSocketUpgrade(request: Request): Response {
+    // Verify it's a WebSocket upgrade request
+    const upgradeHeader = request.headers.get('Upgrade');
+    if (!upgradeHeader || upgradeHeader.toLowerCase() !== 'websocket') {
+      return new Response('Expected WebSocket upgrade', { status: 426 });
+    }
+
+    // Create WebSocket pair
+    const pair = new WebSocketPair();
+    const [client, server] = Object.values(pair);
+
+    // Generate viewer ID
+    const viewerId = `viewer-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
+
+    // Store metadata with the WebSocket for hibernation
+    const meta: WebSocketMeta = {
+      viewerId,
+      connectedAt: new Date().toISOString(),
+      userAgent: request.headers.get('User-Agent') || undefined
+    };
+
+    // Accept the WebSocket with hibernation support
+    this.state.acceptWebSocket(server, meta);
+
+    // Send welcome message with current stats
+    server.send(JSON.stringify({
+      type: 'connected',
+      viewerId,
+      repoId: this.repoId,
+      owner: this.owner,
+      repo: this.name,
+      stats: this.getStats(),
+      timestamp: new Date().toISOString()
+    }));
+
+    // Notify other viewers
+    this.emit('viewer:join', { viewerId });
+
+    // Return the client end of the WebSocket
+    return new Response(null, {
+      status: 101,
+      webSocket: client
+    });
+  }
+
+  // ============================================================================
   // STATUS
   // ============================================================================
 
@@ -374,6 +550,10 @@ export class GitTree implements DurableObject {
     if (cached && !forceRefresh && !this.isCacheExpired(cached)) {
       // Return from cache, filtered by path
       const files = this.getFilesAtPath(cacheKey, path, depth);
+
+      // Emit cache hit event
+      this.emit('tree:hit', { branch, path, fileCount: files.length, cacheKey });
+
       return Response.json({
         source: 'cache',
         branch,
@@ -384,6 +564,9 @@ export class GitTree implements DurableObject {
         expiresAt: cached.expires_at
       });
     }
+
+    // Emit cache miss event
+    this.emit('tree:miss', { branch, path, cacheKey, forceRefresh });
 
     // Fetch from GitHub API
     const result = await this.fetchTreeFromGitHub(branch);
@@ -516,6 +699,15 @@ export class GitTree implements DurableObject {
         updated_at = ?
       WHERE repo_id = ?
     `, now, commitSha, data.tree.length, now, this.repoId);
+
+    // Emit tree cached event
+    this.emit('tree:cached', {
+      branch,
+      commitSha,
+      fileCount: data.tree.length,
+      truncated: data.truncated || false,
+      expiresAt
+    });
   }
 
   private calculateExpiry(branch: string): string {
@@ -570,6 +762,10 @@ export class GitTree implements DurableObject {
     }
 
     const file = rows[0];
+
+    // Emit file access event
+    this.emit('file:access', { path: file.path, type: file.type, branch, size: file.size });
+
     return Response.json({
       path: file.path,
       type: file.type,
@@ -660,6 +856,14 @@ export class GitTree implements DurableObject {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `, commit.sha, commit.message, commit.author, commit.authorEmail || null,
        commit.timestamp, commit.parentSha || null, commit.branch || null, now);
+
+    // Emit commit tracked event
+    this.emit('commit:tracked', {
+      sha: commit.sha.slice(0, 7),
+      message: commit.message.split('\n')[0].slice(0, 80),
+      author: commit.author,
+      branch: commit.branch
+    });
   }
 
   private rowToCommit(row: CommitRow): GitCommit {
@@ -795,6 +999,9 @@ export class GitTree implements DurableObject {
       LIMIT ?
     `, cacheKey, sqlPattern, limit).toArray() as unknown as FileRow[];
 
+    // Emit search query event
+    this.emit('search:query', { query, branch, matchCount: rows.length, pattern: sqlPattern });
+
     return Response.json({
       query,
       branch,
@@ -852,6 +1059,18 @@ export class GitTree implements DurableObject {
       const latestCommit = body.commits[body.commits.length - 1];
       this.updateBranch(body.branch, latestCommit.sha);
     }
+
+    // Emit webhook push event
+    this.emit('webhook:push', {
+      branch: body.branch,
+      commitCount: body.commits.length,
+      commits: body.commits.map(c => ({
+        sha: c.sha.slice(0, 7),
+        message: c.message.split('\n')[0].slice(0, 80),
+        author: c.author
+      })),
+      cacheInvalidated: cacheKey
+    });
 
     return Response.json({
       success: true,

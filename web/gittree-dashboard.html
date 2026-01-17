@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GitTree Live Dashboard</title>
+  <style>
+    :root {
+      --bg-primary: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --border-color: #30363d;
+      --text-primary: #c9d1d9;
+      --text-secondary: #8b949e;
+      --text-muted: #6e7681;
+      --accent-green: #3fb950;
+      --accent-blue: #58a6ff;
+      --accent-purple: #a371f7;
+      --accent-yellow: #d29922;
+      --accent-red: #f85149;
+      --accent-orange: #db6d28;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+      padding: 16px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 20px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header h1 svg {
+      width: 24px;
+      height: 24px;
+      fill: var(--accent-green);
+    }
+
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--accent-red);
+      transition: background 0.3s;
+    }
+
+    .status-dot.connected {
+      background: var(--accent-green);
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 350px;
+      gap: 20px;
+      padding: 20px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 1024px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      background: var(--bg-tertiary);
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      font-size: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .panel-content {
+      padding: 16px;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .stat-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+
+    /* Repo Selector */
+    .repo-selector {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .repo-selector input {
+      flex: 1;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 14px;
+    }
+
+    .repo-selector input:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .repo-selector button {
+      background: var(--accent-green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .repo-selector button:hover {
+      opacity: 0.9;
+    }
+
+    .repo-selector button:disabled {
+      background: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* Activity Feed */
+    .activity-feed {
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      animation: fadeIn 0.3s ease-out;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .activity-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .activity-icon.tree { background: rgba(59, 130, 246, 0.2); }
+    .activity-icon.commit { background: rgba(163, 113, 247, 0.2); }
+    .activity-icon.search { background: rgba(251, 191, 36, 0.2); }
+    .activity-icon.file { background: rgba(16, 185, 129, 0.2); }
+    .activity-icon.webhook { background: rgba(248, 113, 113, 0.2); }
+    .activity-icon.viewer { background: rgba(96, 165, 250, 0.2); }
+
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-title {
+      font-size: 14px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .activity-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .activity-time {
+      font-size: 12px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* File Tree */
+    .file-tree {
+      font-family: 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .tree-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .tree-item:hover {
+      background: var(--bg-tertiary);
+    }
+
+    .tree-item.directory {
+      color: var(--accent-blue);
+    }
+
+    .tree-item.file {
+      color: var(--text-secondary);
+    }
+
+    .tree-icon {
+      width: 16px;
+      text-align: center;
+    }
+
+    .tree-children {
+      margin-left: 20px;
+      display: none;
+    }
+
+    .tree-children.expanded {
+      display: block;
+    }
+
+    /* Viewers */
+    .viewers-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .viewer-badge {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .viewer-badge.self {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* Code highlight */
+    code {
+      background: var(--bg-tertiary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Fira Code', monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <h1>
+      <svg viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+        <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"/>
+      </svg>
+      GitTree Live Dashboard
+    </h1>
+    <div class="connection-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Disconnected</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="left-column">
+      <!-- Repo Selector -->
+      <div class="repo-selector">
+        <input type="text" id="repoInput" placeholder="owner--repo (e.g., Piston-Labs--agent-coord-mcp)" value="Piston-Labs--agent-coord-mcp">
+        <button id="connectBtn" onclick="connect()">Connect</button>
+      </div>
+
+      <!-- Stats Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="statTrees">-</div>
+          <div class="stat-label">Cached Trees</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statFiles">-</div>
+          <div class="stat-label">Cached Files</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statCommits">-</div>
+          <div class="stat-label">Tracked Commits</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statViewers">-</div>
+          <div class="stat-label">Live Viewers</div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Live Activity Feed</span>
+          <button onclick="clearActivity()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:12px;">Clear</button>
+        </div>
+        <div class="panel-content">
+          <div class="activity-feed" id="activityFeed">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+              <p>Waiting for activity...</p>
+              <p style="font-size:12px;margin-top:8px;">Connect to a repo to see live events</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-column">
+      <!-- Viewers Panel -->
+      <div class="panel" style="margin-bottom:20px;">
+        <div class="panel-header">Connected Viewers</div>
+        <div class="panel-content">
+          <div class="viewers-list" id="viewersList">
+            <span style="color:var(--text-muted);font-size:13px;">No viewers connected</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Tree Panel -->
+      <div class="panel">
+        <div class="panel-header">
+          <span>Repository Tree</span>
+          <button onclick="refreshTree()" style="background:none;border:none;color:var(--accent-blue);cursor:pointer;font-size:12px;">Refresh</button>
+        </div>
+        <div class="panel-content">
+          <div class="file-tree" id="fileTree">
+            <div class="empty-state">
+              <p>Connect to view tree</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const DO_BASE = 'https://agent-coord-do.elidecloud.workers.dev';
+    let ws = null;
+    let repoId = '';
+    let viewerId = '';
+    let viewers = new Set();
+    let activityCount = 0;
+
+    // Event type icons and colors
+    const eventConfig = {
+      'tree:cached': { icon: '📦', class: 'tree', label: 'Tree Cached' },
+      'tree:hit': { icon: '✅', class: 'tree', label: 'Cache Hit' },
+      'tree:miss': { icon: '🔄', class: 'tree', label: 'Cache Miss' },
+      'tree:expired': { icon: '⏰', class: 'tree', label: 'Cache Expired' },
+      'commit:tracked': { icon: '📝', class: 'commit', label: 'Commit Tracked' },
+      'webhook:push': { icon: '🚀', class: 'webhook', label: 'Webhook Push' },
+      'search:query': { icon: '🔍', class: 'search', label: 'Search' },
+      'file:access': { icon: '📄', class: 'file', label: 'File Access' },
+      'viewer:join': { icon: '👋', class: 'viewer', label: 'Viewer Joined' },
+      'viewer:leave': { icon: '👋', class: 'viewer', label: 'Viewer Left' },
+      'connected': { icon: '🔗', class: 'viewer', label: 'Connected' },
+      'stats': { icon: '📊', class: 'tree', label: 'Stats Update' },
+    };
+
+    function connect() {
+      repoId = document.getElementById('repoInput').value.trim();
+      if (!repoId) return;
+
+      // Close existing connection
+      if (ws) {
+        ws.close();
+      }
+
+      // Update UI
+      document.getElementById('connectBtn').disabled = true;
+      document.getElementById('statusText').textContent = 'Connecting...';
+
+      // Connect to WebSocket
+      const wsUrl = `wss://agent-coord-do.elidecloud.workers.dev/gittree/${encodeURIComponent(repoId)}/ws?repoId=${encodeURIComponent(repoId)}`;
+      ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        document.getElementById('statusDot').classList.add('connected');
+        document.getElementById('statusText').textContent = 'Connected';
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('connectBtn').textContent = 'Reconnect';
+
+        // Request initial stats
+        ws.send(JSON.stringify({ type: 'get-stats' }));
+
+        // Load initial tree
+        refreshTree();
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleEvent(data);
+        } catch (e) {
+          console.error('Failed to parse message:', e);
+        }
+      };
+
+      ws.onclose = () => {
+        document.getElementById('statusDot').classList.remove('connected');
+        document.getElementById('statusText').textContent = 'Disconnected';
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('connectBtn').textContent = 'Connect';
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        document.getElementById('statusText').textContent = 'Error';
+      };
+    }
+
+    function handleEvent(data) {
+      const type = data.type;
+      const config = eventConfig[type] || { icon: '📌', class: 'tree', label: type };
+
+      // Update stats if provided
+      if (data.stats || type === 'stats') {
+        const stats = data.stats || data;
+        if (stats.cachedTrees !== undefined) document.getElementById('statTrees').textContent = stats.cachedTrees;
+        if (stats.cachedFiles !== undefined) document.getElementById('statFiles').textContent = stats.cachedFiles;
+        if (stats.trackedCommits !== undefined) document.getElementById('statCommits').textContent = stats.trackedCommits;
+        if (stats.connectedViewers !== undefined) document.getElementById('statViewers').textContent = stats.connectedViewers;
+      }
+
+      // Handle connected event
+      if (type === 'connected') {
+        viewerId = data.viewerId;
+        viewers.add(viewerId);
+        updateViewersList();
+      }
+
+      // Handle viewer events
+      if (type === 'viewer:join' && data.data?.viewerId) {
+        viewers.add(data.data.viewerId);
+        updateViewersList();
+      }
+      if (type === 'viewer:leave' && data.data?.viewerId) {
+        viewers.delete(data.data.viewerId);
+        updateViewersList();
+      }
+
+      // Add to activity feed
+      addActivityItem(config, data);
+    }
+
+    function addActivityItem(config, data) {
+      const feed = document.getElementById('activityFeed');
+
+      // Remove empty state if present
+      const emptyState = feed.querySelector('.empty-state');
+      if (emptyState) emptyState.remove();
+
+      // Build description based on event type
+      let description = config.label;
+      const eventData = data.data || data;
+
+      if (data.type === 'tree:cached') {
+        description = `Cached <code>${eventData.branch}</code> branch (${eventData.fileCount} files)`;
+      } else if (data.type === 'tree:hit') {
+        description = `Cache hit for <code>${eventData.branch}</code> (${eventData.fileCount} files)`;
+      } else if (data.type === 'tree:miss') {
+        description = `Cache miss for <code>${eventData.branch}</code> - fetching from GitHub`;
+      } else if (data.type === 'commit:tracked') {
+        description = `<code>${eventData.sha}</code> ${eventData.message}`;
+      } else if (data.type === 'webhook:push') {
+        description = `Push to <code>${eventData.branch}</code> (${eventData.commitCount} commits)`;
+      } else if (data.type === 'search:query') {
+        description = `Search: <code>${eventData.query}</code> (${eventData.matchCount} matches)`;
+      } else if (data.type === 'file:access') {
+        description = `Accessed <code>${eventData.path}</code>`;
+      } else if (data.type === 'viewer:join') {
+        description = `${eventData.viewerId} joined`;
+      } else if (data.type === 'viewer:leave') {
+        description = `${eventData.viewerId} left`;
+      } else if (data.type === 'connected') {
+        description = `Connected as ${data.viewerId}`;
+      }
+
+      const time = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+
+      const item = document.createElement('div');
+      item.className = 'activity-item';
+      item.innerHTML = `
+        <div class="activity-icon ${config.class}">${config.icon}</div>
+        <div class="activity-content">
+          <div class="activity-title">${description}</div>
+          <div class="activity-meta">${data.repoId || repoId}</div>
+        </div>
+        <div class="activity-time">${time}</div>
+      `;
+
+      // Insert at top
+      feed.insertBefore(item, feed.firstChild);
+
+      // Limit to 50 items
+      activityCount++;
+      if (activityCount > 50) {
+        feed.removeChild(feed.lastChild);
+      }
+    }
+
+    function clearActivity() {
+      const feed = document.getElementById('activityFeed');
+      feed.innerHTML = `
+        <div class="empty-state">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          <p>Activity cleared</p>
+        </div>
+      `;
+      activityCount = 0;
+    }
+
+    function updateViewersList() {
+      const list = document.getElementById('viewersList');
+      if (viewers.size === 0) {
+        list.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">No viewers connected</span>';
+        return;
+      }
+
+      list.innerHTML = Array.from(viewers).map(v =>
+        `<span class="viewer-badge ${v === viewerId ? 'self' : ''}">${v}${v === viewerId ? ' (you)' : ''}</span>`
+      ).join('');
+    }
+
+    async function refreshTree() {
+      if (!repoId) return;
+
+      const treeEl = document.getElementById('fileTree');
+      treeEl.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center;">Loading...</div>';
+
+      try {
+        const res = await fetch(`${DO_BASE}/gittree/${encodeURIComponent(repoId)}/tree?repoId=${encodeURIComponent(repoId)}&branch=main&depth=2`);
+        const data = await res.json();
+
+        if (data.error) {
+          treeEl.innerHTML = `<div style="color:var(--accent-red);padding:20px;">${data.error}</div>`;
+          return;
+        }
+
+        // Build tree structure
+        const tree = buildTreeStructure(data.tree || []);
+        treeEl.innerHTML = renderTree(tree);
+      } catch (e) {
+        treeEl.innerHTML = `<div style="color:var(--accent-red);padding:20px;">Failed to load tree</div>`;
+      }
+    }
+
+    function buildTreeStructure(files) {
+      const root = { children: {} };
+
+      for (const file of files) {
+        const parts = file.path.split('/');
+        let current = root;
+
+        for (let i = 0; i < parts.length; i++) {
+          const part = parts[i];
+          if (!current.children[part]) {
+            current.children[part] = {
+              name: part,
+              type: i === parts.length - 1 ? file.type : 'tree',
+              children: {}
+            };
+          }
+          current = current.children[part];
+        }
+      }
+
+      return root.children;
+    }
+
+    function renderTree(tree, depth = 0) {
+      let html = '';
+      const entries = Object.entries(tree).sort((a, b) => {
+        // Directories first
+        if (a[1].type === 'tree' && b[1].type !== 'tree') return -1;
+        if (a[1].type !== 'tree' && b[1].type === 'tree') return 1;
+        return a[0].localeCompare(b[0]);
+      });
+
+      for (const [name, node] of entries) {
+        const isDir = node.type === 'tree';
+        const icon = isDir ? '📁' : getFileIcon(name);
+        const hasChildren = Object.keys(node.children).length > 0;
+
+        html += `
+          <div class="tree-item ${isDir ? 'directory' : 'file'}" onclick="${isDir && hasChildren ? `toggleTree(this)` : ''}">
+            <span class="tree-icon">${icon}</span>
+            <span>${name}</span>
+          </div>
+        `;
+
+        if (hasChildren) {
+          html += `<div class="tree-children">${renderTree(node.children, depth + 1)}</div>`;
+        }
+      }
+
+      return html;
+    }
+
+    function getFileIcon(name) {
+      const ext = name.split('.').pop()?.toLowerCase();
+      const icons = {
+        ts: '📘', js: '📒', json: '📋', md: '📝', html: '🌐', css: '🎨',
+        py: '🐍', rs: '🦀', go: '🐹', java: '☕', rb: '💎', php: '🐘',
+        yml: '⚙️', yaml: '⚙️', toml: '⚙️', sh: '🔧', bat: '🔧',
+        png: '🖼️', jpg: '🖼️', gif: '🖼️', svg: '🖼️',
+        gitignore: '🙈', dockerfile: '🐳'
+      };
+      return icons[ext] || '📄';
+    }
+
+    function toggleTree(el) {
+      const children = el.nextElementSibling;
+      if (children && children.classList.contains('tree-children')) {
+        children.classList.toggle('expanded');
+        const icon = el.querySelector('.tree-icon');
+        icon.textContent = children.classList.contains('expanded') ? '📂' : '📁';
+      }
+    }
+
+    // Ping to keep connection alive
+    setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'ping' }));
+      }
+    }, 30000);
+
+    // Auto-connect if repo is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlRepo = urlParams.get('repo');
+    if (urlRepo) {
+      document.getElementById('repoInput').value = urlRepo;
+      setTimeout(connect, 500);
+    }
+  </script>
+</body>
+</html>
