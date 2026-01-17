@@ -261,9 +261,16 @@ export class GitTree implements DurableObject {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // Extract repo info from query params
+    // Extract repo info from query params or path
+    // Format: "owner--repo" (double hyphen delimiter) to handle hyphenated owners like "Piston-Labs"
     this.repoId = url.searchParams.get('repoId') || '';
-    if (this.repoId.includes('-')) {
+    if (this.repoId.includes('--')) {
+      // Double hyphen delimiter: "Piston-Labs--agent-coord-mcp"
+      const [owner, ...repoParts] = this.repoId.split('--');
+      this.owner = owner;
+      this.name = repoParts.join('--');
+    } else if (this.repoId.includes('-')) {
+      // Fallback: single hyphen for simple owners: "anthropics-claude-code"
       const parts = this.repoId.split('-');
       this.owner = parts[0];
       this.name = parts.slice(1).join('-');
