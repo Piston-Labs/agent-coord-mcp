@@ -358,6 +358,29 @@ export class AgentState implements DurableObject {
         masked_preview TEXT
       )
     `);
+
+    // Goals queue for autonomous agents
+    this.sql.exec(`
+      CREATE TABLE IF NOT EXISTS goals (
+        id TEXT PRIMARY KEY,
+        title TEXT NOT NULL,
+        description TEXT,
+        type TEXT DEFAULT 'task',
+        priority INTEGER DEFAULT 5,
+        status TEXT DEFAULT 'pending',
+        xp_reward INTEGER DEFAULT 10,
+        source TEXT DEFAULT 'self',
+        assigned_by TEXT,
+        context TEXT,
+        created_at TEXT NOT NULL,
+        started_at TEXT,
+        completed_at TEXT,
+        outcome TEXT
+      )
+    `);
+
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_goals_status ON goals(status)`);
+    this.sql.exec(`CREATE INDEX IF NOT EXISTS idx_goals_priority ON goals(priority DESC)`);
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -394,6 +417,8 @@ export class AgentState implements DurableObject {
           return this.handleShadow(request);
         case '/credentials':
           return this.handleCredentials(request);
+        case '/goals':
+          return this.handleGoals(request);
         case '/health':
           return Response.json({ status: 'ok', type: 'agent-state', agentId: this.agentId });
         default:
@@ -2196,6 +2221,350 @@ export class AgentState implements DurableObject {
 
   private deleteCredential(key: string): void {
     this.sql.exec('DELETE FROM credentials WHERE key = ?', key);
+  }
+
+  // ========== Goals Handler (Autonomous Work Queue) ==========
+
+  private async handleGoals(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const action = url.searchParams.get('action') || 'list';
+
+    if (request.method === 'GET') {
+      if (action === 'list') {
+        const status = url.searchParams.get('status');
+        return Response.json({ goals: this.listGoals(status) });
+      }
+      if (action === 'next') {
+        // Get the highest priority pending goal
+        const goal = this.getNextGoal();
+        return Response.json({ goal });
+      }
+      if (action === 'active') {
+        // Get currently in-progress goal
+        const goal = this.getActiveGoal();
+        return Response.json({ goal });
+      }
+      if (action === 'stats') {
+        return Response.json({ stats: this.getGoalStats() });
+      }
+    }
+
+    if (request.method === 'POST') {
+      const body = await request.json() as {
+        action?: string;
+        id?: string;
+        title?: string;
+        description?: string;
+        type?: string;
+        priority?: number;
+        xpReward?: number;
+        source?: string;
+        assignedBy?: string;
+        context?: string;
+        outcome?: string;
+      };
+
+      const postAction = body.action || action;
+
+      if (postAction === 'create') {
+        if (!body.title) {
+          return Response.json({ error: 'title required' }, { status: 400 });
+        }
+        const goal = this.createGoal(body);
+        return Response.json({ success: true, goal });
+      }
+
+      if (postAction === 'start') {
+        if (!body.id) {
+          return Response.json({ error: 'id required' }, { status: 400 });
+        }
+        const goal = this.startGoal(body.id);
+        return Response.json({ success: true, goal });
+      }
+
+      if (postAction === 'complete') {
+        if (!body.id) {
+          return Response.json({ error: 'id required' }, { status: 400 });
+        }
+        const result = this.completeGoal(body.id, body.outcome || 'completed');
+        return Response.json({ success: true, ...result });
+      }
+
+      if (postAction === 'fail') {
+        if (!body.id) {
+          return Response.json({ error: 'id required' }, { status: 400 });
+        }
+        const goal = this.failGoal(body.id, body.outcome || 'failed');
+        return Response.json({ success: true, goal });
+      }
+
+      if (postAction === 'abandon') {
+        if (!body.id) {
+          return Response.json({ error: 'id required' }, { status: 400 });
+        }
+        const goal = this.abandonGoal(body.id);
+        return Response.json({ success: true, goal });
+      }
+    }
+
+    if (request.method === 'DELETE') {
+      const id = url.searchParams.get('id');
+      if (!id) {
+        return Response.json({ error: 'id parameter required' }, { status: 400 });
+      }
+      this.deleteGoal(id);
+      return Response.json({ success: true, deleted: id });
+    }
+
+    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+  }
+
+  private listGoals(status?: string | null): Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    type: string;
+    priority: number;
+    status: string;
+    xpReward: number;
+    source: string;
+    assignedBy: string | null;
+    createdAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+  }> {
+    let query = 'SELECT * FROM goals';
+    const params: string[] = [];
+
+    if (status) {
+      query += ' WHERE status = ?';
+      params.push(status);
+    }
+
+    query += ' ORDER BY priority DESC, created_at ASC';
+
+    const rows = this.sql.exec(query, ...params).toArray();
+
+    return rows.map(row => ({
+      id: row.id as string,
+      title: row.title as string,
+      description: row.description as string | null,
+      type: row.type as string,
+      priority: row.priority as number,
+      status: row.status as string,
+      xpReward: row.xp_reward as number,
+      source: row.source as string,
+      assignedBy: row.assigned_by as string | null,
+      createdAt: row.created_at as string,
+      startedAt: row.started_at as string | null,
+      completedAt: row.completed_at as string | null
+    }));
+  }
+
+  private getNextGoal(): {
+    id: string;
+    title: string;
+    description: string | null;
+    type: string;
+    priority: number;
+    xpReward: number;
+    context: string | null;
+  } | null {
+    const rows = this.sql.exec(`
+      SELECT id, title, description, type, priority, xp_reward, context
+      FROM goals
+      WHERE status = 'pending'
+      ORDER BY priority DESC, created_at ASC
+      LIMIT 1
+    `).toArray();
+
+    if (rows.length === 0) return null;
+
+    const row = rows[0];
+    return {
+      id: row.id as string,
+      title: row.title as string,
+      description: row.description as string | null,
+      type: row.type as string,
+      priority: row.priority as number,
+      xpReward: row.xp_reward as number,
+      context: row.context as string | null
+    };
+  }
+
+  private getActiveGoal(): {
+    id: string;
+    title: string;
+    description: string | null;
+    type: string;
+    priority: number;
+    startedAt: string;
+  } | null {
+    const rows = this.sql.exec(`
+      SELECT id, title, description, type, priority, started_at
+      FROM goals
+      WHERE status = 'in_progress'
+      LIMIT 1
+    `).toArray();
+
+    if (rows.length === 0) return null;
+
+    const row = rows[0];
+    return {
+      id: row.id as string,
+      title: row.title as string,
+      description: row.description as string | null,
+      type: row.type as string,
+      priority: row.priority as number,
+      startedAt: row.started_at as string
+    };
+  }
+
+  private getGoalStats(): {
+    total: number;
+    pending: number;
+    inProgress: number;
+    completed: number;
+    failed: number;
+    totalXpEarned: number;
+    totalXpPending: number;
+  } {
+    const rows = this.sql.exec(`
+      SELECT
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN status = 'in_progress' THEN 1 ELSE 0 END) as in_progress,
+        SUM(CASE WHEN status = 'completed' THEN 1 ELSE 0 END) as completed,
+        SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
+        SUM(CASE WHEN status = 'completed' THEN xp_reward ELSE 0 END) as xp_earned,
+        SUM(CASE WHEN status = 'pending' THEN xp_reward ELSE 0 END) as xp_pending
+      FROM goals
+    `).toArray();
+
+    const row = rows[0];
+    return {
+      total: (row.total as number) || 0,
+      pending: (row.pending as number) || 0,
+      inProgress: (row.in_progress as number) || 0,
+      completed: (row.completed as number) || 0,
+      failed: (row.failed as number) || 0,
+      totalXpEarned: (row.xp_earned as number) || 0,
+      totalXpPending: (row.xp_pending as number) || 0
+    };
+  }
+
+  private createGoal(data: {
+    title: string;
+    description?: string;
+    type?: string;
+    priority?: number;
+    xpReward?: number;
+    source?: string;
+    assignedBy?: string;
+    context?: string;
+  }): { id: string; title: string; priority: number; status: string; createdAt: string } {
+    const id = `goal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const now = new Date().toISOString();
+
+    this.sql.exec(`
+      INSERT INTO goals (id, title, description, type, priority, xp_reward, source, assigned_by, context, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+      id,
+      data.title,
+      data.description || null,
+      data.type || 'task',
+      data.priority || 5,
+      data.xpReward || 10,
+      data.source || 'self',
+      data.assignedBy || null,
+      data.context || null,
+      now
+    );
+
+    return {
+      id,
+      title: data.title,
+      priority: data.priority || 5,
+      status: 'pending',
+      createdAt: now
+    };
+  }
+
+  private startGoal(id: string): { id: string; status: string; startedAt: string } | null {
+    const now = new Date().toISOString();
+
+    this.sql.exec(`
+      UPDATE goals
+      SET status = 'in_progress', started_at = ?
+      WHERE id = ?
+    `, now, id);
+
+    return { id, status: 'in_progress', startedAt: now };
+  }
+
+  private completeGoal(id: string, outcome: string): {
+    goal: { id: string; status: string; completedAt: string; xpReward: number };
+    xpAwarded: number;
+  } {
+    const now = new Date().toISOString();
+
+    // Get the XP reward before completing
+    const goalRows = this.sql.exec('SELECT xp_reward FROM goals WHERE id = ?', id).toArray();
+    const xpReward = goalRows.length > 0 ? (goalRows[0].xp_reward as number) : 0;
+
+    this.sql.exec(`
+      UPDATE goals
+      SET status = 'completed', completed_at = ?, outcome = ?
+      WHERE id = ?
+    `, now, outcome, id);
+
+    // Award XP to soul (if soul exists)
+    this.sql.exec(`
+      UPDATE soul_progression
+      SET total_xp = total_xp + ?,
+          tasks_completed = tasks_completed + 1,
+          tasks_successful = tasks_successful + 1
+      WHERE soul_id = ?
+    `, xpReward, this.agentId);
+
+    return {
+      goal: { id, status: 'completed', completedAt: now, xpReward },
+      xpAwarded: xpReward
+    };
+  }
+
+  private failGoal(id: string, outcome: string): { id: string; status: string; completedAt: string } {
+    const now = new Date().toISOString();
+
+    this.sql.exec(`
+      UPDATE goals
+      SET status = 'failed', completed_at = ?, outcome = ?
+      WHERE id = ?
+    `, now, outcome, id);
+
+    // Update soul stats (task completed but not successful)
+    this.sql.exec(`
+      UPDATE soul_progression
+      SET tasks_completed = tasks_completed + 1
+      WHERE soul_id = ?
+    `, this.agentId);
+
+    return { id, status: 'failed', completedAt: now };
+  }
+
+  private abandonGoal(id: string): { id: string; status: string } {
+    this.sql.exec(`
+      UPDATE goals
+      SET status = 'abandoned'
+      WHERE id = ?
+    `, id);
+
+    return { id, status: 'abandoned' };
+  }
+
+  private deleteGoal(id: string): void {
+    this.sql.exec('DELETE FROM goals WHERE id = ?', id);
   }
 
   // ========== Credentials Injection for Soul Transfer ==========

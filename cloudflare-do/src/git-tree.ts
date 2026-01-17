@@ -471,7 +471,7 @@ export class GitTree implements DurableObject {
     // Generate viewer ID
     const viewerId = `viewer-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
 
-    // Store metadata with the WebSocket for hibernation
+    // Store metadata for this viewer
     const meta: WebSocketMeta = {
       viewerId,
       connectedAt: new Date().toISOString(),
@@ -479,7 +479,8 @@ export class GitTree implements DurableObject {
     };
 
     // Accept the WebSocket with hibernation support
-    this.state.acceptWebSocket(server, meta);
+    // Second param must be an array of string tags for hibernation
+    this.state.acceptWebSocket(server, [viewerId]);
 
     // Send welcome message with current stats
     server.send(JSON.stringify({

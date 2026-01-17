@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "agent-coord": {
-      "command": "node",
-      "args": ["C:/Users/tyler/Desktop/agent-coord-mcp/dist/index.js"]
-    }
-  }
-}

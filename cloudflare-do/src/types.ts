@@ -105,5 +105,7 @@ export interface Env {
   AGENT_STATE: DurableObjectNamespace;
   RESOURCE_LOCK: DurableObjectNamespace;
   VM_POOL: DurableObjectNamespace;
+  GIT_TREE: DurableObjectNamespace;
   ENVIRONMENT?: string;
+  GITHUB_TOKEN?: string;
 }

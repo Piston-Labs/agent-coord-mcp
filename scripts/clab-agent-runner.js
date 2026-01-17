@@ -20,7 +20,7 @@ const readline = require('readline');
 const path = require('path');
 
 // Configuration
-// Use the direct Cloudflare DO URL for WebSocket (clab.era-auto.co is Vercel, doesn't proxy WS)
+// Cloudflare DO WebSocket endpoint
 const CLAB_WS_URL = 'wss://agent-coord-do.elidecloud.workers.dev/coordinator';
 const RECONNECT_DELAY = 5000;
 const OUTPUT_DEBOUNCE_MS = 1500; // Wait for output to settle before posting
@@ -227,15 +227,15 @@ function processAndPostOutput(rawOutput) {
   postToChat(cleaned);
 }
 
-// Vercel API for web dashboard visibility
-const VERCEL_CHAT_URL = 'https://clab.era-auto.co/api/chat';
+// Cloudflare DO chat endpoint
+const DO_CHAT_URL = 'https://agent-coord-do.elidecloud.workers.dev/coordinator/chat';
 
 async function postToChat(message) {
   lastPostedMessage = message;
 
-  // Post to Vercel API (shows in web dashboard)
+  // Post directly to Cloudflare DO
   try {
-    const res = await fetch(VERCEL_CHAT_URL, {
+    const res = await fetch(DO_CHAT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -245,13 +245,11 @@ async function postToChat(message) {
       })
     });
     if (!res.ok) {
-      console.error('[Runner] Failed to post to Vercel API:', res.status);
+      console.error('[Runner] Failed to post to DO:', res.status);
     }
   } catch (e) {
-    console.error('[Runner] Error posting to Vercel API:', e.message);
+    console.error('[Runner] Error posting to DO:', e.message);
   }
-
-  // The Vercel API now bridges to DO, so WebSocket clients will receive it automatically
 
   console.log(`[Runner] Posted to chat: ${message.substring(0, 60)}...`);
 }

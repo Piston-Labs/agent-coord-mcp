@@ -16,7 +16,7 @@ const path = require('path');
 const os = require('os');
 
 // Configuration
-// Use the direct Cloudflare DO URL for WebSocket (clab.era-auto.co is Vercel, doesn't proxy WS)
+// Cloudflare DO WebSocket endpoint
 const CLAB_WS_URL = 'wss://agent-coord-do.elidecloud.workers.dev/coordinator';
 const INBOX_PATH = path.join(os.homedir(), '.clab', 'inbox.json');
 const RECONNECT_DELAY = 5000;

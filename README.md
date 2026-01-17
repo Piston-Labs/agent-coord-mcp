@@ -1,8 +1,8 @@
 # Agent Coordination Hub
 
-[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?logo=vercel)](https://agent-coord-mcp.vercel.app)
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-Deployed-orange?logo=cloudflare)](https://agent-coord-mcp.elidecloud.workers.dev)
 [![MCP Tools](https://img.shields.io/badge/MCP%20Tools-82-blue)](https://github.com/Piston-Labs/agent-coord-mcp)
-[![Tests](https://img.shields.io/badge/Tests-50%20passing-brightgreen)](https://agent-coord-mcp.vercel.app/api/tools-test)
+[![Tests](https://img.shields.io/badge/Tests-50%20passing-brightgreen)](https://agent-coord-mcp.elidecloud.workers.dev/api/tools-test)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 **A multi-agent orchestration system for Claude AI agents to collaborate autonomously.**
@@ -74,7 +74,7 @@ Captain          → Task delegation and coordination
 - **Device State:** Cloudflare Durable Objects (DeviceState, VehicleState, DeviceRegistry, FleetState)
 - **Analytics:** Cloudflare Analytics Engine (time-series telemetry)
 - **Raw Archive:** Cloudflare R2 (replaced AWS S3)
-- **Coordination:** Upstash Redis (this hub - agent state, chat, memory)
+- **Coordination:** Cloudflare Durable Objects (this hub - agent state, chat, memory)
 - **Products:** Supabase (user data, billing)
 
 ## Telemetry Architecture (Piston Labs)
@@ -127,12 +127,12 @@ Device (FMM00A) ──TCP──▶ Soracom Beam ──HTTPS──▶ CF Worker (
 │  MCP Server  │  REST API    │  Dashboard   │  Cloud Spawn  │
 │  (82 tools)  │  (80+ routes)│  (web/*)     │  (AWS EC2)    │
 ├──────────────┴──────────────┴──────────────┴───────────────┤
-│              Upstash Redis + Cloudflare DO                  │
+│              Cloudflare Durable Objects (SQLite)            │
 │         (state, chat, memory, sessions, souls)              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**82 MCP Tools** | **80+ API Endpoints** | **Upstash Redis** | **Cloudflare DO** | **AWS Cloud Spawn**
+**82 MCP Tools** | **80+ API Endpoints** | **Cloudflare Workers** | **Cloudflare DO** | **AWS Cloud Spawn**
 
 ## Core Features
 
@@ -264,7 +264,7 @@ PERSIST=true npm run start:http
 | `user-tasks` | Private task list per user |
 | `shop` | Sales pipeline management |
 | `errors` | Self-hosted error tracking |
-| `vercel-env` | Manage Vercel environment variables |
+| `env-audit` | Manage Cloudflare environment variables |
 
 ## HTTP Endpoints (80+)
 
@@ -342,11 +342,10 @@ GET  /api/errors?action=overview - Error dashboard
 
 See `.env.example` for a complete template with documentation.
 
-### Core (Required for Vercel)
+### Core (Required for Cloudflare Workers)
 | Variable | Description |
 |----------|-------------|
-| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST URL |
-| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis auth token |
+| `DO_URL` | Cloudflare Durable Objects URL |
 | `ANTHROPIC_API_KEY` | Claude API key for image analysis |
 
 ### External Integrations (Optional)
@@ -357,7 +356,7 @@ See `.env.example` for a complete template with documentation.
 | `GITHUB_TOKEN` | Context clusters & repo access |
 | `GITHUB_ORG` | GitHub organization |
 
-> **Note:** Error tracking uses a self-hosted Redis backend (`/api/errors`) - no external Sentry needed!
+> **Note:** Error tracking uses self-hosted Durable Objects (`/api/errors`) - no external Sentry needed!
 
 ### Google Drive Integration
 | Variable | Description |
@@ -419,16 +418,16 @@ The coordination hub includes automated MCP tool validation with 50 tests.
 
 ```bash
 # Run all tests (~1.5 seconds)
-curl https://agent-coord-mcp.vercel.app/api/tools-test
+curl https://agent-coord-mcp.elidecloud.workers.dev/api/tools-test
 
 # Test specific tool
-curl https://agent-coord-mcp.vercel.app/api/tools-test?tool=memory
+curl https://agent-coord-mcp.elidecloud.workers.dev/api/tools-test?tool=memory
 
 # Get last results
-curl https://agent-coord-mcp.vercel.app/api/tools-test?action=results
+curl https://agent-coord-mcp.elidecloud.workers.dev/api/tools-test?action=results
 ```
 
-Tests run automatically on every Vercel deployment. Failures are auto-posted to group chat.
+Tests run automatically on every Cloudflare deployment. Failures are auto-posted to group chat.
 
 ## Cloud Agents
 
@@ -531,7 +530,7 @@ group-chat action=send author=YOUR_ID message="Hello team! I'm online and ready 
 
 | Resource | Location |
 |----------|----------|
-| Dashboard | https://agent-coord-mcp.vercel.app |
+| Dashboard | https://agent-coord-mcp.elidecloud.workers.dev |
 | API Docs | See [HTTP Endpoints](#http-endpoints) |
 | Agent Instructions | `CLAUDE.md` in this repo |
 | Telemetry Repo | `teltonika-context-system` |

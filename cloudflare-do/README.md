@@ -1,17 +1,19 @@
-# Agent Coordination - Durable Objects PoC
+# Agent Coordination - Cloudflare Durable Objects
 
-This is a Proof of Concept for migrating agent-coord-mcp from Upstash Redis to Cloudflare Durable Objects.
+**Production storage backend for the Agent Coordination Hub.**
+
+All agent state, chat, memory, tasks, and coordination data is stored in Cloudflare Durable Objects with SQLite persistence.
 
 ## Why Durable Objects?
 
-| Feature | Current (Redis) | Durable Objects |
-|---------|-----------------|-----------------|
-| **State Model** | Centralized hash keys | Distributed per-entity |
-| **Consistency** | Eventually consistent | Strongly consistent (single-threaded) |
-| **Real-time** | API polling | WebSocket push |
-| **Storage** | External service | Built-in SQLite (10GB/DO) |
-| **Geographic** | Single region | Edge-distributed |
-| **Cost** | Per-operation | Per-request + hibernation savings |
+| Feature | Benefit |
+|---------|---------|
+| **State Model** | Distributed per-entity (each agent = own DO) |
+| **Consistency** | Strongly consistent (single-threaded per DO) |
+| **Real-time** | WebSocket push with hibernation |
+| **Storage** | Built-in SQLite (10GB/DO) |
+| **Geographic** | Edge-distributed, low latency globally |
+| **Cost** | Per-request + hibernation savings (free when idle) |
 
 ## Architecture
 
@@ -123,26 +125,11 @@ POST /lock/{path}/unlock     - Release lock
 GET  /lock/{path}/history    - Lock history
 ```
 
-## Migration Strategy
+## Production Deployment
 
-### Phase 1: Deploy DO Worker (parallel)
-- Deploy this Worker alongside existing Vercel API
-- Both systems read/write to their own storage
-- Test with select agents
+**Live at:** `agent-coord-do.elidecloud.workers.dev`
 
-### Phase 2: Write-through
-- Write to both Redis and DOs
-- Read from DOs
-- Verify data consistency
-
-### Phase 3: Read migration
-- Switch reads to DOs
-- Keep Redis as backup
-
-### Phase 4: Full migration
-- Disable Redis writes
-- Remove Redis dependency
-- Update MCP tools to use DO endpoints
+The migration from Upstash Redis to Durable Objects is **complete**. All coordination data now lives in DOs.
 
 ## Development
 
@@ -185,14 +172,14 @@ npm run deploy
    - Low latency globally
    - Automatic migration
 
-## Cost Comparison
+## Cost Benefits
 
-| Metric | Upstash Redis | Durable Objects |
-|--------|--------------|-----------------|
-| Storage | $0.25/GB/mo | $0.20/GB/mo |
-| Requests | $0.2/100K | $0.15/million |
-| WebSocket | N/A (polling) | Included |
-| Hibernation | N/A | Free when idle |
+| Metric | Durable Objects |
+|--------|-----------------|
+| Storage | $0.20/GB/mo |
+| Requests | $0.15/million |
+| WebSocket | Included |
+| Hibernation | Free when idle |
 
 ## TypeScript Client
 
@@ -236,12 +223,15 @@ See `examples/` for full demos:
 - `basic-usage.ts` - All client methods
 - `websocket-realtime.ts` - Real-time updates
 
-## Next Steps
+## Roadmap
 
-- [x] Create MCP tool adapter for DO endpoints
-- [x] Add example usage documentation
-- [ ] Deploy to Cloudflare staging
-- [ ] Benchmark performance vs Redis
-- [ ] Implement zone claiming in DOs
-- [ ] Add handoff support
-- [ ] Build migration script for existing data
+Completed:
+- [x] MCP tool adapter for DO endpoints
+- [x] Zone claiming
+- [x] Handoff support
+- [x] Full migration from Redis
+- [x] Production deployment
+
+In Progress:
+- [ ] GitTree DO for repository caching
+- [ ] Enhanced WebSocket dashboard

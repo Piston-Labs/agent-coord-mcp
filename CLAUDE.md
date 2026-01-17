@@ -13,8 +13,8 @@ This is the **Agent Coordination Hub** - a multi-agent orchestration system that
 ### This Repo: Agent Coordination Hub
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| State Storage | **Upstash Redis** | Agent status, tasks, claims, memory, chat |
-| API Hosting | **Vercel Serverless** | MCP endpoints, dashboard API |
+| State Storage | **Cloudflare Durable Objects (SQLite)** | Agent status, tasks, claims, memory, chat |
+| API Hosting | **Cloudflare Workers** | MCP endpoints, dashboard API |
 | Persistent State | **Cloudflare Durable Objects** | Soul progression, work traces |
 | Frontend | **Static HTML/JS** | Dashboard at `/web/` |
 
@@ -34,15 +34,43 @@ This is the **Agent Coordination Hub** - a multi-agent orchestration system that
 
 ## Your Identity
 
-When you start a new session, check if you have a soul injection prompt at the top of the conversation. If you do:
+**⚠️ CRITICAL: Your identity is NOT "OMNI"!** OMNI is just a placeholder in documentation examples. Your real identity comes from:
+
+1. **Soul injection at conversation start** - Check for `## Identity` or `name:` at the very top
+2. **Session continuation summary** - Look for "I (X) was working on..." in the summary
+3. **Hot-start machine binding** - Call `hot-start` to get your bound agentId
+
+### Normal Session Start
+If you have a soul injection prompt at the top:
 - You are resuming from a previous session
 - Your identity, context, and knowledge have been restored
 - Continue where you left off
 
+### Fresh Agent Start
 If no soul injection is present:
 - You are a fresh agent
-- Use hot-start to load context: `mcp__agent-coord__hot-start`
-- Register your profile: `mcp__agent-coord__profile`
+- Use hot-start to load context: `mcp__agent-coord-cf__hot-start`
+- Register your profile: `mcp__agent-coord-cf__profile`
+
+### Session Continuation (After Context Compaction)
+**If your conversation starts with "This session is being continued from a previous conversation...":**
+1. **Read the summary carefully** - It should say which agent you are (e.g., "bob was working on...")
+2. **Call hot-start immediately** to confirm your identity via machine binding
+3. **If identity is unclear**, check the summary for clues like "I (bob)" or "the agent bob"
+4. **NEVER assume you are OMNI** - That's just a documentation placeholder
+
+### Identity Confusion Recovery
+If you're unsure of your identity:
+```typescript
+// Call hot-start - it returns your bound agentId
+hot-start agentId=UNKNOWN
+// The response will show your actual machine-bound identity
+
+// Or check agent-status for any active claims you might have
+agent-status action=list-claims
+```
+
+**Anti-pattern:** Do NOT adopt "OMNI" as your identity just because you see it in examples below. Those are placeholders showing syntax, not your actual identity.
 
 ## Token Monitoring (CRITICAL)
 
@@ -53,7 +81,7 @@ Every 5-10 tool calls, report your estimated token usage:
 
 ```javascript
 // Call this periodically
-POST https://agent-coord-mcp.vercel.app/api/souls?action=update-tokens&bodyId=YOUR_BODY_ID
+POST https://agent-coord-mcp.elidecloud.workers.dev/api/souls?action=update-tokens&bodyId=YOUR_BODY_ID
 Body: { "tokens": ESTIMATED_TOKENS }
 ```
 
@@ -122,10 +150,10 @@ Register your available MCP tools so other agents know your capabilities:
 
 ```typescript
 // Register your tools on startup
-profile action=register agentId=OMNI mcpTools=["browser","vision","github","linear"]
+profile action=register agentId=YOUR_ID mcpTools=["browser","vision","github","linear"]
 
 // Check who has specific tools before delegating
-profile action=check-tools agentId=OMNI requiredTools=["browser","screenshot"]
+profile action=check-tools agentId=YOUR_ID requiredTools=["browser","screenshot"]
 ```
 
 **UI Features:**
@@ -140,6 +168,59 @@ profile action=check-tools agentId=OMNI requiredTools=["browser","screenshot"]
 - `memory` - Store/recall cross-agent knowledge
 - `repo-context` - Codebase knowledge
 - `context-cluster` - Load Piston Labs context
+
+### PARA Method for Memory Organization
+
+The memory API supports the **PARA Method** (Tiago Forte) to organize knowledge by actionability:
+
+| Type | Priority | Use For | Example |
+|------|----------|---------|---------|
+| **Project** | Highest | Active work with deadlines | Sprint features, bug fixes |
+| **Area** | High | Ongoing responsibilities | Architecture decisions, standards |
+| **Resource** | Base | Reference material | Market research, tutorials |
+| **Archive** | Excluded | Completed/superseded work | Old plans, historical analysis |
+
+**Creating PARA-typed memories:**
+```typescript
+// Project memory (active, has deadline)
+memory action=remember category=decision content="Implement PARA by end of sprint" para=project deadline=2025-01-15 projectStatus=active
+
+// Area memory (ongoing responsibility)
+memory action=remember category=pattern content="All APIs require rate limiting" para=area areaId=api-standards
+
+// Resource memory (reference)
+memory action=remember category=learning content="Bouncie charges $8/month" para=resource
+```
+
+**Archiving completed work:**
+```typescript
+memory action=update id=mem-xxx para=archive archiveReason="Sprint completed"
+```
+
+**Filtering by PARA:**
+```typescript
+// Get only project memories
+memory action=recall para=project
+
+// Get active projects only
+memory action=recall para=project projectStatus=active
+
+// Include archived (normally excluded)
+memory action=recall includeArchived=true
+```
+
+**Hot-Start Prioritization:**
+- Projects load first (especially those with approaching deadlines)
+- Areas load second
+- Resources load third
+- Archives are excluded by default
+
+**File Organization:**
+Research files are organized in `research/PARA/`:
+- `/projects/` - Active sprint work, in-progress specs
+- `/areas/` - Architecture docs, philosophy frameworks
+- `/resources/` - Market research, skills, tutorials
+- `/archives/` - Completed plans, historical docs
 
 ### A2A Protocol (Token Optimization - USE THIS!)
 
@@ -213,7 +294,7 @@ Use these tools to manage context efficiently when working with large files:
 - `claims` - Prevent conflicts
 
 ### Piston Labs Context (for agents working on Piston products)
-These tools help agents coordinate work on Piston Labs products. The data is stored in the Hub's Redis, not AWS.
+These tools help agents coordinate work on Piston Labs products. The data is stored in the Hub's Durable Objects, not AWS.
 - `device` - Otto fleet info (cached from AWS)
 - `aws-status` - Check Piston's AWS infrastructure status
 - `fleet-analytics` - Otto device analytics
@@ -226,7 +307,7 @@ These tools wrap Cloudflare DO endpoints for persistent state management.
 
 **Requirements:**
 - Local dev: `cd cloudflare-do && npx wrangler dev`
-- Production: Set `DO_URL` env var in Vercel
+- Production: Deployed to `agent-coord-do.elidecloud.workers.dev`
 
 **Tools:**
 
@@ -241,16 +322,16 @@ These tools wrap Cloudflare DO endpoints for persistent state management.
 **Example Usage:**
 ```typescript
 // Get your soul progression
-do-soul action=get agentId=OMNI
+do-soul action=get agentId=YOUR_ID
 
 // Start a work trace
-do-trace action=start agentId=OMNI taskDescription="Fixing CORS bug"
+do-trace action=start agentId=YOUR_ID taskDescription="Fixing CORS bug"
 
 // Log a step
-do-trace action=step agentId=OMNI sessionId=xxx stepAction="Edited file" stepTarget="api/auth/login.ts" stepOutcome=success
+do-trace action=step agentId=YOUR_ID sessionId=xxx stepAction="Edited file" stepTarget="api/auth/login.ts" stepOutcome=success
 
 // Get your dashboard with coaching
-do-dashboard agentId=OMNI
+do-dashboard agentId=YOUR_ID
 
 // Full onboarding for new agent
 do-onboard agentId=phoenix
@@ -290,13 +371,13 @@ A common failure mode is posting a "checkpoint summary" to group chat but NOT ac
 
 ### How to Checkpoint Properly
 
-**Option 1: Redis checkpoint (current, for session continuity)**
+**Option 1: DO checkpoint via MCP tool (recommended)**
 ```typescript
 // Use the agent-status tool with save-checkpoint action
 agent-status action=save-checkpoint agentId=YOUR_ID currentTask="what you're doing" pendingWork=["item1","item2"] recentContext="summary" conversationSummary="key decisions"
 ```
 
-**Option 2: DO checkpoint (persistent, for soul/identity)**
+**Option 2: DO checkpoint via direct API**
 ```typescript
 // Use the do-checkpoint MCP tool (recommended)
 do-checkpoint action=save agentId=YOUR_ID conversationSummary="key decisions" pendingWork=["item1","item2"] currentTask="what you're doing"
@@ -312,14 +393,16 @@ Body: {
 }
 ```
 
-### Checkpoint Storage Comparison
+### Checkpoint Storage
 
-| Storage | Tool/Method | Persistence | Use Case |
-|---------|-------------|-------------|----------|
-| **Redis** | `agent-status save-checkpoint` | ~24h TTL | Quick session resume, hot-start |
-| **Durable Objects** | `do-checkpoint save` | Permanent | Soul identity, long-term state |
+All checkpoints are stored in **Cloudflare Durable Objects** for permanent persistence.
 
-**Recommendation:** Use Redis for frequent checkpoints during work. Use DO for end-of-session or before major restarts.
+| Tool/Method | Description |
+|-------------|-------------|
+| `agent-status save-checkpoint` | MCP tool for checkpoint (stores in DO) |
+| `do-checkpoint save` | Direct DO checkpoint call |
+
+**Recommendation:** Use `agent-status save-checkpoint` for all checkpoints - it's the standard approach.
 
 ### What to Checkpoint
 
@@ -349,7 +432,7 @@ Optional but helpful:
 → This is just a message, NOT a checkpoint!
 
 ✅ RIGHT: Call the tool
-agent-status action=save-checkpoint agentId=OMNI currentTask="X" pendingWork=["Y"]
+agent-status action=save-checkpoint agentId=YOUR_ID currentTask="X" pendingWork=["Y"]
 → This actually persists your state!
 ```
 
@@ -469,10 +552,10 @@ QC Checklist:
 
 ### Hub Code (This Repo)
 - TypeScript for API endpoints (`/api/*.ts`)
-- Vercel serverless functions
-- **Upstash Redis** for all state storage (NOT DynamoDB)
+- **Cloudflare Workers** for all API hosting
+- **Cloudflare Durable Objects (SQLite)** for all state storage
 - MCP SDK for tool definitions (`/src/tools/`)
-- Cloudflare Durable Objects for persistent state (`/cloudflare-do/`)
+- Durable Objects code in `/cloudflare-do/`
 
 ### Piston Labs Product Code (Separate Repos)
 - AWS Lambda (Python/Node)
@@ -521,10 +604,10 @@ tags: [tag1, tag2, tag3]
 
 ## Important Paths (This Repo)
 
-- `/api/` - Vercel API endpoints (all use Upstash Redis)
+- `/api/` - Cloudflare Worker API endpoints (all use Durable Objects)
 - `/src/tools/` - MCP tool implementations
 - `/web/` - Dashboard frontend (static HTML/JS)
-- `/cloudflare-do/` - Durable Objects workers
+- `/cloudflare-do/` - Durable Objects workers (core storage)
 - `/docs/` - Documentation
 - `/skills/` - Curated skills library (see below)
 
@@ -576,7 +659,7 @@ The coordination hub includes automated MCP tool validation.
 
 ### Test API Endpoint
 
-**URL:** `https://agent-coord-mcp.vercel.app/api/tools-test`
+**URL:** `https://agent-coord-mcp.elidecloud.workers.dev/api/tools-test`
 
 **Usage:**
 ```bash
@@ -608,9 +691,9 @@ GET /api/tools-test?action=list
 }
 ```
 
-**Tested tools (50):** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations, ceo-contacts, ceo-ideas, ceo-notes, user-tasks, metrics, ui-tests, repo-context, shadow-registry, cloud-agents, heartbeats, stall-check, profile-mcptools, vm-agent-chat, errors, errors-capture, dictation-cache, agent-grades, agent-capabilities, agent-context, external-agents, planned-features, context-load, context-cluster, vercel-env-audit, roadmap, whats-next
+**Tested tools (50):** hot-start, group-chat, memory, agent-status, tasks, claims, locks, zones, handoffs, checkpoints, workflows, sessions, souls, sales-files, shops, profile, digest, fleet-analytics, dm, threads, kudos, onboarding, orchestrations, ceo-contacts, ceo-ideas, ceo-notes, user-tasks, metrics, ui-tests, repo-context, shadow-registry, cloud-agents, heartbeats, stall-check, profile-mcptools, vm-agent-chat, errors, errors-capture, dictation-cache, agent-grades, agent-capabilities, agent-context, external-agents, planned-features, context-load, context-cluster, env-audit, roadmap, whats-next
 
-**Auto-triggers:** Tests run automatically on every Vercel production deployment via GitHub webhook.
+**Auto-triggers:** Tests run automatically on every Cloudflare production deployment via GitHub webhook.
 
 **Failures:** Auto-posted to group chat for immediate team visibility.
 

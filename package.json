@@ -1,68 +1,29 @@
 {
-  "name": "@piston-labs/agent-coord-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for multi-agent coordination - status, messaging, resource locking, and task management",
+  "name": "clab",
+  "version": "1.0.0",
+  "description": "CLAB - Agent Coordination Lab. Multi-agent orchestration with Cloudflare Durable Objects.",
   "type": "module",
-  "main": "dist/index.js",
-  "bin": {
-    "agent-coord-mcp": "./bin/agent-coord-mcp.js",
-    "agent-coord-http": "./bin/agent-coord-http.js"
-  },
   "scripts": {
-    "build": "npx tsc",
-    "start": "node dist/index.js",
-    "start:http": "node dist/http-server.js",
-    "start:bridge": "node dist/message-bridge.js",
-    "start:bot": "node dist/agent-bot.js",
-    "start:autonomous": "node dist/autonomous-agent.js",
-    "start:fleet": "node dist/fleet-bridge.js",
-    "start:cloud": "node dist/cloud-agent.js",
-    "start:spawner": "node dist/agent-spawner.js",
-    "dev": "tsx src/index.ts",
-    "dev:spawner": "tsx src/agent-spawner.ts",
-    "dev:cloud": "tsx src/cloud-agent.ts",
-    "dev:fleet": "tsx src/fleet-bridge.ts",
-    "dev:http": "tsx src/http-server.ts",
-    "dev:bridge": "tsx src/message-bridge.ts",
     "listener": "node scripts/clab-listener.js",
     "runner": "node scripts/clab-agent-runner.js",
     "daemon": "node scripts/autonomous-daemon.js",
-    "check": "npm run build",
-    "test": "npm run build && npx tsx --test test/*.test.ts",
-    "sim": "tsx test/multi-agent-sim.ts"
+    "deploy": "cd cloudflare-do && npx wrangler deploy",
+    "dev": "cd cloudflare-do && npx wrangler dev"
   },
   "keywords": [
-    "mcp",
+    "clab",
     "multi-agent",
     "coordination",
+    "cloudflare",
+    "durable-objects",
     "ai",
     "llm",
-    "claude",
-    "cursor",
-    "windsurf"
+    "claude"
   ],
   "author": "Piston Labs",
   "license": "MIT",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.71.1",
-    "@aws-sdk/client-dynamodb": "^3.940.0",
-    "@aws-sdk/client-ec2": "^3.943.0",
-    "@aws-sdk/client-s3": "^3.943.0",
-    "@aws-sdk/client-ssm": "^3.943.0",
-    "@aws-sdk/s3-request-presigner": "^3.943.0",
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@types/node": "^22.19.1",
-    "@upstash/redis": "^1.35.7",
-    "pg": "^8.16.3",
-    "typescript": "^5.9.3",
-    "ws": "^8.18.0",
-    "zod": "^3.22.0"
-  },
-  "devDependencies": {
-    "@types/pg": "^8.15.6",
-    "@vercel/node": "^5.5.13",
-    "playwright": "^1.49.1",
-    "tsx": "^4.21.0"
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=18.0.0"

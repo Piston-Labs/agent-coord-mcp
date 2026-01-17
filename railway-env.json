@@ -1,8 +1,0 @@
-{
-  "ANTHROPIC_API_KEY": "YOUR_ANTHROPIC_KEY_HERE",
-  "API_BASE": "https://agent-coord-mcp.vercel.app",
-  "AGENT_ID": "autonomous-agent",
-  "AGENT_ROLE": "orchestrator",
-  "POLL_INTERVAL": "3000",
-  "GITHUB_ORG": "Piston-Labs"
-}
